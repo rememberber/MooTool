@@ -19,8 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
@@ -42,15 +42,29 @@ import com.rememberber.mootool.next.compose.domain.QrEngine
 import com.rememberber.mootool.next.compose.domain.QrErrorCorrection
 import com.rememberber.mootool.next.compose.domain.QrException
 import com.rememberber.mootool.next.compose.domain.QrTab
+import com.rememberber.mootool.next.compose.model.AppSettings
+import com.rememberber.mootool.next.compose.storage.VaultPathConfig
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
+import com.rememberber.mootool.next.compose.ui.components.IoTwoPaneRow
 import com.rememberber.mootool.next.compose.sessions.QrSession
+import com.rememberber.mootool.next.compose.ui.components.FileDropRow
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooMenu
+import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
+import com.rememberber.mootool.next.compose.ui.components.MooToolTab
+import com.rememberber.mootool.next.compose.ui.components.MooToolTabsRow
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
+import com.rememberber.mootool.next.compose.ui.persistToolsExportDirectory
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
+import com.rememberber.mootool.next.compose.ui.workbench.applyUserEditClearingStatusNotice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
@@ -64,7 +78,6 @@ import java.awt.Frame
 import java.awt.Image as AwtImage
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
-import java.awt.datatransfer.StringSelection
 import java.awt.datatransfer.Transferable
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
@@ -84,6 +97,7 @@ fun QrCodeScreen(container: AppContainer, detached: Boolean) {
         val tools = container.settings.value.tools
         container.sessionManager.qrSession(tools.qrCodeSize, tools.qrErrorCorrection)
     }
+    val settings by container.settings.collectAsState()
     val revision by container.sessionManager.revision.collectAsState()
     var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
     val colors = MooTheme.colors
@@ -102,11 +116,11 @@ fun QrCodeScreen(container: AppContainer, detached: Boolean) {
         val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
         Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("qrcode.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("qrcode.title"))
             Spacer(Modifier.weight(1f))
             OverflowActionCluster(
                 overflow = overflow,
@@ -116,12 +130,9 @@ fun QrCodeScreen(container: AppContainer, detached: Boolean) {
                 }
             )
         }
-        Row(
-            modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
+        MooToolTabsRow {
             QrTab.entries.forEach { tab ->
-                MooButton(container.t(tabTitleKey(tab)), primary = session.tab == tab, onClick = {
+                MooToolTab(container.t(tabTitleKey(tab)), selected = session.tab == tab, onClick = {
                     session.tab = tab
                     session.error = ""
                     if (tab == QrTab.History) session.historyTick += 1
@@ -130,12 +141,12 @@ fun QrCodeScreen(container: AppContainer, detached: Boolean) {
             }
         }
         when (session.tab) {
-            QrTab.Generate -> GeneratePanel(container, session, scope, Modifier.weight(1f).fillMaxWidth()) { refresh() }
-            QrTab.Recognize -> RecognizePanel(container, session, scope, Modifier.weight(1f).fillMaxWidth()) { refresh() }
+            QrTab.Generate -> GeneratePanel(container, settings, session, scope, Modifier.weight(1f).fillMaxWidth()) { refresh() }
+            QrTab.Recognize -> RecognizePanel(container, settings, session, scope, Modifier.weight(1f).fillMaxWidth()) { refresh() }
             QrTab.History -> HistoryPanel(container, session, historyItems, Modifier.weight(1f).fillMaxWidth()) { refresh() }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).mooStatusBarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -153,6 +164,7 @@ fun QrCodeScreen(container: AppContainer, detached: Boolean) {
 @Composable
 private fun GeneratePanel(
     container: AppContainer,
+    settings: AppSettings,
     session: QrSession,
     scope: kotlinx.coroutines.CoroutineScope,
     modifier: Modifier,
@@ -160,31 +172,45 @@ private fun GeneratePanel(
 ) {
     val colors = MooTheme.colors
     val preview = remember(session.pngBytes) { session.pngBytes?.toImageBitmap() }
-    Row(modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(container.t("qrcode.content"), color = colors.textSecondary, fontSize = 12.sp)
+    IoTwoPaneRow(
+        container = container,
+        settings = settings,
+        paneKey = "qrcode-generate",
+        minLeft = 300f,
+        minRight = 280f,
+        defaultLeftFraction = 0.5f,
+        modifier = modifier.padding(12.dp),
+        left = {
+        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(container.t("qrcode.content"), color = colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
             MooTextField(
                 session.content,
-                { session.content = it; session.error = ""; onChanged() },
+                {
+                    applyUserEditClearingStatusNotice({ session.notice }, { session.notice = it }) {
+                        session.content = it
+                        session.error = ""
+                    }
+                    onChanged()
+                },
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 singleLine = false
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(container.t("qrcode.size"), color = colors.textSecondary, fontSize = 12.sp)
+                Text(container.t("qrcode.size"), color = colors.textMuted, fontSize = 11.sp)
                 MooTextField(session.size.toString(), { value ->
                     session.size = value.toIntOrNull() ?: session.size
                     onChanged()
-                }, modifier = Modifier.width(80.dp))
-                Text("px", color = colors.textSecondary, fontSize = 12.sp)
+                }, modifier = Modifier.width(80.dp), compact = true)
+                Text("px", color = colors.textMuted, fontSize = 11.sp)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(container.t("qrcode.correction"), color = colors.textSecondary, fontSize = 12.sp)
+                Text(container.t("qrcode.correction"), color = colors.textMuted, fontSize = 11.sp)
                 Box {
                     var correctionOpen by remember { mutableStateOf(false) }
-                    MooButton(container.t("qrcode.level.${session.correction.name}"), onClick = { correctionOpen = true })
-                    DropdownMenu(expanded = correctionOpen, onDismissRequest = { correctionOpen = false }) {
+                    MooButton(container.t("qrcode.level.${session.correction.name}"), onClick = { correctionOpen = true }, p5Toolbar = true)
+                    MooMenu(expanded = correctionOpen, onDismissRequest = { correctionOpen = false }) {
                         QrErrorCorrection.entries.forEach { level ->
-                            DropdownMenuItem(onClick = {
+                            MooMenuItem(onClick = {
                                 correctionOpen = false
                                 session.correction = level
                                 onChanged()
@@ -195,66 +221,79 @@ private fun GeneratePanel(
                     }
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(container.t("qrcode.logo"), color = colors.textSecondary, fontSize = 12.sp)
-                MooButton(session.logoName.ifBlank { container.t("qrcode.chooseLogo") }, onClick = {
-                    val file = chooseImage(container.t("qrcode.chooseLogo")) ?: return@MooButton
-                    runCatching { QrEngine.readImageFile(file.toPath()) }
-                        .onSuccess { image ->
-                            session.logoName = file.name
-                            session.logoPath = file.absolutePath
-                            session.logoImage = image
-                            session.error = ""
-                            onChanged()
-                        }
-                        .onFailure { error ->
-                            session.error = messageFor(container, error)
-                            session.notice = ""
-                            onChanged()
-                        }
-                })
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(container.t("qrcode.logo"), color = colors.textMuted, fontSize = 11.sp)
+                FileDropRow(
+                    chooseLabel = container.t("qrcode.chooseLogo"),
+                    fileName = session.logoName,
+                    emptyLabel = "—",
+                    modifier = Modifier.weight(1f),
+                    p5Toolbar = true,
+                    onChoose = {
+                        val file = chooseImage(container.t("qrcode.chooseLogo")) ?: return@FileDropRow
+                        applyLogoFile(container, session, file, onChanged)
+                    },
+                    onDropFiles = { files ->
+                        applyLogoFile(container, session, files.first(), onChanged)
+                    }
+                )
                 if (session.logoName.isNotEmpty()) {
-                    MooButton(container.t("common.clear"), onClick = {
-                        session.logoName = ""
-                        session.logoPath = ""
-                        session.logoImage = null
-                        onChanged()
-                    })
+                    MooButton(
+                        container.t("common.clear"),
+                        onClick = {
+                            session.logoName = ""
+                            session.logoPath = ""
+                            session.logoImage = null
+                            onChanged()
+                        },
+                        p5Toolbar = true
+                    )
                 }
             }
             MooButton(
                 if (session.busy) container.t("common.processing") else container.t("qrcode.generate"),
-                primary = true,
+                prominent = true,
+                p5Toolbar = true,
                 enabled = !session.busy && session.content.isNotBlank(),
                 onClick = {
                     generateQr(container, session, scope, onChanged)
                 }
             )
         }
-        Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        },
+        right = {
+        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             PreviewBox(preview, container.t("qrcode.preview"), Modifier.weight(1f).fillMaxWidth())
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.save"), enabled = session.pngBytes != null, onClick = {
+                MooButton(container.t("common.save"), enabled = session.pngBytes != null, p5Toolbar = true, onClick = {
                     val bytes = session.pngBytes ?: return@MooButton
-                    val file = chooseSave(container.t("common.save")) ?: return@MooButton
+                    val exportDir = VaultPathConfig.effectiveCustomRoot(container.settings.value.tools.exportDirectory)
+                    val file = chooseSave(container.t("common.save"), exportDir) ?: return@MooButton
                     runCatching { file.writeBytes(bytes) }
-                        .onSuccess { session.notice = container.t("common.save"); session.error = "" }
+                        .onSuccess {
+                            persistToolsExportDirectory(container, file)
+                            session.notice = container.t("common.save")
+                            container.toastSuccess(container.t("common.save"))
+                            session.error = ""
+                        }
                         .onFailure { session.error = it.message ?: container.t("qrcode.error.generic") }
                     onChanged()
                 })
-                MooButton(container.t("common.action.copy"), enabled = session.pngBytes != null, onClick = {
+                MooButton(container.t("common.action.copy"), enabled = session.pngBytes != null, p5Toolbar = true, onClick = {
                     val bytes = session.pngBytes
                     session.notice = if (bytes != null) copyImage(bytes, container) else container.t("qrcode.nothingToCopy")
                     onChanged()
                 })
             }
         }
-    }
+        }
+    )
 }
 
 @Composable
 private fun RecognizePanel(
     container: AppContainer,
+    settings: AppSettings,
     session: QrSession,
     scope: kotlinx.coroutines.CoroutineScope,
     modifier: Modifier,
@@ -262,16 +301,32 @@ private fun RecognizePanel(
 ) {
     val colors = MooTheme.colors
     val sourcePreview = remember(session.recognitionBytes) { session.recognitionBytes?.toImageBitmap() }
-    Row(modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("qrcode.chooseImage"), onClick = {
-                    val file = chooseImage(container.t("qrcode.chooseImage")) ?: return@MooButton
-                    session.recognitionName = file.name
-                    session.recognitionBytes = file.readBytes()
-                    recognizeQr(container, session, scope, onChanged)
-                })
-                MooButton(container.t("qrcode.fromClipboard"), onClick = {
+    IoTwoPaneRow(
+        container = container,
+        settings = settings,
+        paneKey = "qrcode-recognize",
+        minLeft = 300f,
+        minRight = 280f,
+        defaultLeftFraction = 0.5f,
+        modifier = modifier.padding(12.dp),
+        left = {
+        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                FileDropRow(
+                    chooseLabel = container.t("qrcode.chooseImage"),
+                    fileName = session.recognitionName,
+                    emptyLabel = container.t("qrcode.chooseImage"),
+                    modifier = Modifier.weight(1f),
+                    p5Toolbar = true,
+                    onChoose = {
+                        val file = chooseImage(container.t("qrcode.chooseImage")) ?: return@FileDropRow
+                        applyRecognitionFile(container, session, scope, file, onChanged)
+                    },
+                    onDropFiles = { files ->
+                        applyRecognitionFile(container, session, scope, files.first(), onChanged)
+                    }
+                )
+                MooButton(container.t("qrcode.fromClipboard"), p5Toolbar = true, onClick = {
                     val image = readClipboardImage()
                     if (image == null) {
                         session.error = container.t("qrcode.clipboardEmpty")
@@ -285,30 +340,31 @@ private fun RecognizePanel(
                 })
                 MooButton(
                     if (session.busy) container.t("common.processing") else container.t("qrcode.recognize"),
-                    primary = true,
+                    prominent = true,
+                    p5Toolbar = true,
                     enabled = session.recognitionBytes != null && !session.busy,
                     onClick = { recognizeQr(container, session, scope, onChanged) }
                 )
             }
             PreviewBox(sourcePreview, session.recognitionName.ifBlank { container.t("qrcode.chooseImage") }, Modifier.weight(1f).fillMaxWidth())
-            if (session.recognitionName.isNotEmpty()) {
-                Text(session.recognitionName, color = colors.textSecondary, fontSize = 12.sp)
-            }
         }
-        Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(container.t("qrcode.result"), color = colors.textSecondary, fontSize = 12.sp)
+        },
+        right = {
+        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(container.t("qrcode.result"), color = colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
             MooTextField(
                 session.recognitionResult,
                 { session.recognitionResult = it; onChanged() },
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 singleLine = false
             )
-            MooButton(container.t("common.action.copy"), enabled = session.recognitionResult.isNotEmpty(), onClick = {
+            MooButton(container.t("common.action.copy"), enabled = session.recognitionResult.isNotEmpty(), p5Toolbar = true, onClick = {
                 session.notice = copyText(session.recognitionResult, container)
                 onChanged()
             })
         }
-    }
+        }
+    )
 }
 
 @Composable
@@ -345,9 +401,8 @@ private fun HistoryPanel(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Column(
-                            Modifier.weight(1f).clickable {
+                            Modifier.weight(1f).mooFocusClickable {
                                 applyHistory(session, item)
-                                session.notice = container.t("json.notice.restored")
                                 onChanged()
                             }.padding(4.dp)
                         ) {
@@ -377,8 +432,11 @@ private fun HistoryPanel(
 @Composable
 private fun PreviewBox(bitmap: ImageBitmap?, placeholder: String, modifier: Modifier) {
     val colors = MooTheme.colors
+    val flatten = !colors.restoresWorkspaceChrome()
+    val radius = if (flatten) 0.dp else MooTheme.dimens.radius
+    val shape = RoundedCornerShape(radius)
     Box(
-        modifier.border(1.dp, colors.border, RoundedCornerShape(8.dp)).background(colors.surfaceSubtle, RoundedCornerShape(8.dp)),
+        modifier.background(colors.surfaceSubtle, shape).border(1.dp, colors.borderSoft, shape),
         contentAlignment = Alignment.Center
     ) {
         if (bitmap != null) {
@@ -419,6 +477,7 @@ private fun generateQr(
                 session.size = size
                 session.pngBytes = bytes
                 session.notice = container.t("qrcode.generated")
+                container.toastSuccess(container.t("qrcode.generated"))
                 session.error = ""
                 container.updateSettings { current ->
                     current.copy(tools = current.tools.copy(qrCodeSize = size, qrErrorCorrection = correction.name))
@@ -460,6 +519,7 @@ private fun recognizeQr(
             result.onSuccess { text ->
                 session.recognitionResult = text
                 session.notice = container.t("qrcode.recognized")
+                container.toastSuccess(container.t("qrcode.recognized"))
                 session.error = ""
                 val meta = QrHistoryMeta("recognize")
                 container.history.save(
@@ -512,17 +572,18 @@ private fun ByteArray.toImageBitmap(): ImageBitmap =
 
 private fun copyText(value: String, container: AppContainer): String {
     if (value.isEmpty()) return container.t("qrcode.nothingToCopy")
-    return runCatching {
-        Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null)
-        container.t("json.notice.copied")
-    }.getOrElse { container.t("qrcode.error.generic") }
+    return if (container.copyText(value)) container.t("json.notice.copied") else container.t("qrcode.error.generic")
 }
 
 private fun copyImage(png: ByteArray, container: AppContainer): String = runCatching {
     val image = ImageIO.read(ByteArrayInputStream(png)) ?: return container.t("qrcode.error.image")
     Toolkit.getDefaultToolkit().systemClipboard.setContents(ImageSelection(image), null)
+    container.toastCopied(true)
     container.t("json.notice.copied")
-}.getOrElse { container.t("qrcode.error.generic") }
+}.getOrElse {
+    container.toastCopied(false)
+    container.t("qrcode.error.generic")
+}
 
 private fun readClipboardImage(): BufferedImage? = runCatching {
     val contents = Toolkit.getDefaultToolkit().systemClipboard.getContents(null) ?: return null
@@ -546,6 +607,34 @@ private class ImageSelection(private val image: BufferedImage) : Transferable {
     override fun getTransferData(flavor: DataFlavor): Any = image
 }
 
+private fun applyLogoFile(container: AppContainer, session: QrSession, file: File, onChanged: () -> Unit) {
+    runCatching { QrEngine.readImageFile(file.toPath()) }
+        .onSuccess { image ->
+            session.logoName = file.name
+            session.logoPath = file.absolutePath
+            session.logoImage = image
+            session.error = ""
+            onChanged()
+        }
+        .onFailure { error ->
+            session.error = messageFor(container, error)
+            session.notice = ""
+            onChanged()
+        }
+}
+
+private fun applyRecognitionFile(
+    container: AppContainer,
+    session: QrSession,
+    scope: kotlinx.coroutines.CoroutineScope,
+    file: File,
+    onChanged: () -> Unit
+) {
+    session.recognitionName = file.name
+    session.recognitionBytes = file.readBytes()
+    recognizeQr(container, session, scope, onChanged)
+}
+
 private fun chooseImage(title: String): File? {
     val dialog = FileDialog(null as Frame?, title, FileDialog.LOAD)
     dialog.isVisible = true
@@ -554,9 +643,17 @@ private fun chooseImage(title: String): File? {
     return File(directory, file)
 }
 
-private fun chooseSave(title: String): File? {
+private fun chooseSave(title: String, initialDirectory: String = ""): File? {
     val dialog = FileDialog(null as Frame?, title, FileDialog.SAVE)
     dialog.file = "mootool-qrcode.png"
+    if (initialDirectory.isNotBlank()) {
+        val dir = File(initialDirectory)
+        if (dir.isDirectory) {
+            dialog.directory = initialDirectory
+        } else {
+            dir.parentFile?.takeIf { it.isDirectory }?.let { dialog.directory = it.absolutePath }
+        }
+    }
     dialog.isVisible = true
     val directory = dialog.directory ?: return null
     val file = dialog.file ?: return null

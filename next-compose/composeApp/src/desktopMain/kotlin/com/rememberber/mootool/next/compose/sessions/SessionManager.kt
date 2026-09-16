@@ -77,6 +77,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import com.rememberber.mootool.next.compose.domain.VaultConflictState
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -92,6 +93,7 @@ data class JsonSessionSnapshot(
     val matchCase: Boolean = false,
     val wholeWord: Boolean = false,
     val regex: Boolean = false,
+    val findReplacedCount: Int = 0,
     val jsonPath: String = "$",
     val currentFile: String = "",
     val spaces: Int = 2,
@@ -100,7 +102,10 @@ data class JsonSessionSnapshot(
     val checkDuplicateKeys: Boolean = true,
     val vaultQuery: String = "",
     val includeContent: Boolean = true,
-    val vaultSort: String = "name"
+    val vaultSort: String = "name",
+    val className: String = "Root",
+    val pathResult: String = "",
+    val vaultSelectedPath: String = "",
 )
 
 class JsonSession {
@@ -111,6 +116,7 @@ class JsonSession {
     var findQuery: String = ""
     var replaceText: String = ""
     var findOptions: FindReplaceOptions = FindReplaceOptions()
+    var findReplacedCount: Int = 0
     var jsonPath: String = "$"
     var currentFile: String = ""
     var savedText: String = SAMPLE_JSON
@@ -121,17 +127,44 @@ class JsonSession {
     var compactAux: String = ""
     var notice: String = ""
     var pathResult: String = ""
+    var vaultSelectedPath: String = ""
+    fun isVaultEditorDirty(): Boolean =
+        currentFile.isNotBlank() && editor.text != savedText
     var dialogTitle: String = ""
     var dialogBody: String = ""
     var dialogInputMode: String = ""
     var dialogInput: String = ""
     var dialogTarget: String = ""
+    /** Inspector XML/Bean conversion overlay (`xml` / `bean`); separate from Vault `dialogInput*`. */
+    var conversionMode: String = ""
+    var conversionInput: String = ""
     var historyOpen: Boolean = false
+    var gitDialogOpen: Boolean = false
     var className: String = "Root"
     var pathPickerOpen: Boolean = false
+    var pathPickerSelection: String = ""
+    /** 非空表示 Vault 删除确认 overlay 待删相对路径。 */
+    var vaultDeleteConfirmPath: String = ""
+    var vaultContextMenuPath: String = ""
+    var vaultTreeExpanded: Map<String, Boolean> = emptyMap()
+    var vaultTreeScrollOffset: Int = 0
+    var vaultConflict: VaultConflictState? = null
     var columnLatch: Boolean = false
     var copyState: String = "idle"
     var copyGeneration: Int = 0
+
+    fun resetVaultScopedOverlays() {
+        gitDialogOpen = false
+        vaultConflict = null
+        vaultDeleteConfirmPath = ""
+        vaultContextMenuPath = ""
+        pathPickerOpen = false
+        dialogTitle = ""
+        dialogBody = ""
+        dialogInputMode = ""
+        dialogInput = ""
+        dialogTarget = ""
+    }
 
     fun snapshot(): JsonSessionSnapshot = JsonSessionSnapshot(
         content = editor.text,
@@ -143,6 +176,7 @@ class JsonSession {
         matchCase = findOptions.matchCase,
         wholeWord = findOptions.wholeWord,
         regex = findOptions.regex,
+        findReplacedCount = findReplacedCount,
         jsonPath = jsonPath,
         currentFile = currentFile,
         spaces = formatOptions.spaces,
@@ -151,7 +185,10 @@ class JsonSession {
         checkDuplicateKeys = formatOptions.checkDuplicateKeys,
         vaultQuery = vaultQuery,
         includeContent = includeContent,
-        vaultSort = vaultSort
+        vaultSort = vaultSort,
+        className = className,
+        pathResult = pathResult,
+        vaultSelectedPath = vaultSelectedPath,
     )
 
     fun restore(snapshot: JsonSessionSnapshot) {
@@ -162,6 +199,7 @@ class JsonSession {
         findQuery = snapshot.findQuery
         replaceText = snapshot.replaceText
         findOptions = FindReplaceOptions(snapshot.matchCase, snapshot.wholeWord, snapshot.regex)
+        findReplacedCount = snapshot.findReplacedCount
         jsonPath = snapshot.jsonPath
         currentFile = snapshot.currentFile
         formatOptions = JsonFormatOptions(
@@ -173,6 +211,9 @@ class JsonSession {
         vaultQuery = snapshot.vaultQuery
         includeContent = snapshot.includeContent
         vaultSort = VaultSort.normalize(snapshot.vaultSort, allowCreated = false)
+        className = snapshot.className
+        pathResult = snapshot.pathResult
+        vaultSelectedPath = snapshot.vaultSelectedPath
         savedText = snapshot.content
     }
 
@@ -1321,7 +1362,8 @@ data class HostSessionSnapshot(
     val replaceText: String = "",
     val matchCase: Boolean = false,
     val wholeWord: Boolean = false,
-    val regex: Boolean = false
+    val regex: Boolean = false,
+    val findReplacedCount: Int = 0,
 )
 
 class HostSession {
@@ -1336,6 +1378,7 @@ class HostSession {
     var findQuery: String = ""
     var replaceText: String = ""
     var findOptions: FindReplaceOptions = FindReplaceOptions()
+    var findReplacedCount: Int = 0
     var notice: String = ""
     var error: String = ""
     var applying: Boolean = false
@@ -1351,6 +1394,8 @@ class HostSession {
     var renameValue: String = ""
     var lastBackup: String = ""
     var historyOpen: Boolean = false
+    /** 非空表示左侧方案列表右键菜单针对的 profile id。 */
+    var profileContextMenuId: String = ""
     val dirty: Boolean get() = name != savedName || content != savedContent
 
     fun snapshotState(): HostSessionSnapshot = HostSessionSnapshot(
@@ -1364,7 +1409,8 @@ class HostSession {
         replaceText = replaceText,
         matchCase = findOptions.matchCase,
         wholeWord = findOptions.wholeWord,
-        regex = findOptions.regex
+        regex = findOptions.regex,
+        findReplacedCount = findReplacedCount,
     )
 
     fun restore(snapshot: HostSessionSnapshot) {
@@ -1379,6 +1425,7 @@ class HostSession {
         findQuery = snapshot.findQuery
         replaceText = snapshot.replaceText
         findOptions = FindReplaceOptions(snapshot.matchCase, snapshot.wholeWord, snapshot.regex)
+        findReplacedCount = snapshot.findReplacedCount
         notice = ""
         error = ""
         applying = false
@@ -1450,6 +1497,8 @@ class HttpSession {
     var findQuery: String = ""
     var findOptions: FindReplaceOptions = FindReplaceOptions()
     var findIndex: Int = 0
+    /** Compose 请求子面板（Tabs/Params/Headers/Cookies，不含 URL 行）是否持有焦点；Body RSTA 见 [bodyEditor]。 */
+    var requestPaneComposeFocused: Boolean = false
     var copyState: String = "idle"
     var copyGeneration: Int = 0
 
@@ -1655,9 +1704,11 @@ data class QuickNoteSessionSnapshot(
     val matchCase: Boolean = false,
     val wholeWord: Boolean = false,
     val regex: Boolean = false,
+    val findReplacedCount: Int = 0,
     val currentFile: String = "",
     val vaultQuery: String = "",
     val replaceOpen: Boolean = true,
+    val vaultTreeOpen: Boolean = true,
     val viewMode: String = "edit",
     val columnLatch: Boolean = false,
     val includeContent: Boolean = true,
@@ -1668,7 +1719,8 @@ data class QuickNoteSessionSnapshot(
     val fontSize: Int = 14,
     val lineSpacing: Double = 1.0,
     val color: String = "default",
-    val createdAt: String = ""
+    val createdAt: String = "",
+    val vaultSelectedPath: String = "",
 )
 
 class QuickNoteSession {
@@ -1678,13 +1730,22 @@ class QuickNoteSession {
     var findQuery: String = ""
     var replaceText: String = ""
     var findOptions: FindReplaceOptions = FindReplaceOptions()
+    var findReplacedCount: Int = 0
     var currentFile: String = ""
     var savedText: String = SAMPLE
     var vaultQuery: String = ""
     var replaceOpen: Boolean = true
+    var vaultTreeOpen: Boolean = true
     var notice: String = ""
     var error: String = ""
     var historyOpen: Boolean = false
+    var gitDialogOpen: Boolean = false
+    /** 非空表示文档信息 overlay 打开（相对 Vault 路径）。 */
+    var documentInfoPath: String = ""
+    var vaultContextMenuPath: String = ""
+    var vaultTreeExpanded: Map<String, Boolean> = emptyMap()
+    var vaultTreeScrollOffset: Int = 0
+    var vaultConflict: VaultConflictState? = null
     var dialogMode: String = ""
     var dialogValue: String = ""
     var dialogTarget: String = ""
@@ -1694,6 +1755,23 @@ class QuickNoteSession {
     var vaultSort: String = VaultSort.MODIFIED
     var compactAux: String = ""
     var metadata: NoteMetadata = NoteMetadata.defaults("Untitled")
+    var savedMetadata: NoteMetadata = NoteMetadata.defaults("Untitled")
+    var vaultSelectedPath: String = ""
+
+    fun isVaultEditorDirty(): Boolean {
+        if (currentFile.isBlank()) return false
+        return editor.text != savedText || metadata != savedMetadata
+    }
+
+    fun resetVaultScopedOverlays() {
+        gitDialogOpen = false
+        vaultConflict = null
+        documentInfoPath = ""
+        vaultContextMenuPath = ""
+        dialogMode = ""
+        dialogValue = ""
+        dialogTarget = ""
+    }
 
     fun snapshot(): QuickNoteSessionSnapshot = QuickNoteSessionSnapshot(
         content = editor.text,
@@ -1704,9 +1782,11 @@ class QuickNoteSession {
         matchCase = findOptions.matchCase,
         wholeWord = findOptions.wholeWord,
         regex = findOptions.regex,
+        findReplacedCount = findReplacedCount,
         currentFile = currentFile,
         vaultQuery = vaultQuery,
         replaceOpen = replaceOpen,
+        vaultTreeOpen = vaultTreeOpen,
         viewMode = viewMode,
         columnLatch = columnLatch,
         includeContent = includeContent,
@@ -1717,7 +1797,8 @@ class QuickNoteSession {
         fontSize = metadata.fontSize,
         lineSpacing = metadata.lineSpacing,
         color = metadata.color,
-        createdAt = metadata.createdAt
+        createdAt = metadata.createdAt,
+        vaultSelectedPath = vaultSelectedPath,
     )
 
     fun restore(snapshot: QuickNoteSessionSnapshot) {
@@ -1727,10 +1808,12 @@ class QuickNoteSession {
         findQuery = snapshot.findQuery
         replaceText = snapshot.replaceText
         findOptions = FindReplaceOptions(snapshot.matchCase, snapshot.wholeWord, snapshot.regex)
+        findReplacedCount = snapshot.findReplacedCount
         currentFile = snapshot.currentFile
         savedText = snapshot.content.ifBlank { SAMPLE }
         vaultQuery = snapshot.vaultQuery
         replaceOpen = snapshot.replaceOpen
+        vaultTreeOpen = snapshot.vaultTreeOpen
         viewMode = snapshot.viewMode.ifBlank { "edit" }
         columnLatch = snapshot.columnLatch
         includeContent = snapshot.includeContent
@@ -1746,6 +1829,8 @@ class QuickNoteSession {
             createdAt = snapshot.createdAt,
             modifiedAt = snapshot.createdAt
         )
+        savedMetadata = metadata
+        vaultSelectedPath = snapshot.vaultSelectedPath
         notice = ""
         error = ""
         historyOpen = false
@@ -1931,6 +2016,9 @@ class SessionManager(private val store: SessionStore) {
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
     val revision: StateFlow<Long> = _revision
+    private val _sessionGeneration = MutableStateFlow(0L)
+    /** 仅在 `reloadAllToolSessionsFromStore` 时递增，供 UI 同步 `remember` 持有的局部状态。 */
+    val sessionGeneration: StateFlow<Long> = _sessionGeneration
 
     fun jsonSession(defaultWrap: Boolean = true): JsonSession = sessions.getOrPut(ToolId.Json) {
         JsonSession().also { session ->
@@ -2376,6 +2464,62 @@ class SessionManager(private val store: SessionStore) {
     }
 
     fun isDetached(toolId: ToolId): Boolean = toolId in _detached.value
+
+    /** 备份恢复或 SQLite 被外部替换后，在既有会话实例上从 `tool_sessions` 重新装载（分离窗 `remember` 仍有效）。 */
+    fun reloadAllToolSessionsFromStore() {
+        cancelNetCommands()
+        cancelHttp()
+        cancelTranslation()
+        cancelCodeRun()
+        sessions.values.forEach(::reloadJsonSessionInPlace)
+        quickNoteSessionCache?.let(::reloadQuickNoteSessionInPlace)
+        timeSessionCache?.let { decodeToolState<TimeSessionSnapshot>(ToolId.TimeConvert)?.let(it::restore) }
+        calculatorSessionCache?.let { decodeToolState<CalculatorSessionSnapshot>(ToolId.Calculator)?.let(it::restore) }
+        encodeSessionCache?.let { decodeToolState<EncodeSessionSnapshot>(ToolId.Encode)?.let(it::restore) }
+        uaSessionCache?.let { decodeToolState<UaSessionSnapshot>(ToolId.UaParse)?.let(it::restore) }
+        regexSessionCache?.let { decodeToolState<RegexSessionSnapshot>(ToolId.Regex)?.let(it::restore) }
+        cronSessionCache?.let { decodeToolState<CronSessionSnapshot>(ToolId.Cron)?.let(it::restore) }
+        diffSessionCache?.let { decodeToolState<DiffSessionSnapshot>(ToolId.TextDiff)?.let(it::restore) }
+        reformatSessionCache?.let { decodeToolState<ReformatSessionSnapshot>(ToolId.Reformat)?.let(it::restore) }
+        configSessionCache?.let { decodeToolState<ConfigSessionSnapshot>(ToolId.YmlProperties)?.let(it::restore) }
+        protobufSessionCache?.let { decodeToolState<ProtobufSessionSnapshot>(ToolId.Protobuf)?.let(it::restore) }
+        cryptoSessionCache?.let { decodeToolState<CryptoSessionSnapshot>(ToolId.Crypto)?.let(it::restore) }
+        qrSessionCache?.let { decodeToolState<QrSessionSnapshot>(ToolId.QrCode)?.let(it::restore) }
+        colorSessionCache?.let { decodeToolState<ColorSessionSnapshot>(ToolId.ColorBoard)?.let(it::restore) }
+        messageBoardSessionCache?.let { decodeToolState<MessageBoardSessionSnapshot>(ToolId.MessageBoard)?.let(it::restore) }
+        pdfSessionCache?.let { decodeToolState<PdfSessionSnapshot>(ToolId.Pdf)?.let(it::restore) }
+        imageSessionCache?.let { decodeToolState<ImageSessionSnapshot>(ToolId.Image)?.let(it::restore) }
+        netSessionCache?.let { decodeToolState<NetSessionSnapshot>(ToolId.Net)?.let(it::restore) }
+        variablesSessionCache?.let { decodeToolState<VariablesSessionSnapshot>(ToolId.Variables)?.let(it::restore) }
+        hostSessionCache?.let { decodeToolState<HostSessionSnapshot>(ToolId.Host)?.let(it::restore) }
+        httpSessionCache?.let { decodeToolState<HttpSessionSnapshot>(ToolId.Http)?.let(it::restore) }
+        translationSessionCache?.let { decodeToolState<TranslationSessionSnapshot>(ToolId.Translation)?.let(it::restore) }
+        codeRunSessionCache?.let { decodeToolState<CodeRunSessionSnapshot>(ToolId.Java)?.let(it::restore) }
+        hardwareSessionCache?.let { decodeToolState<HardwareSessionSnapshot>(ToolId.Hardware)?.let(it::restore) }
+        _sessionGeneration.value += 1
+        bump()
+    }
+
+    private inline fun <reified T> decodeToolState(toolId: ToolId): T? =
+        store.load(toolId.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<T>(raw) }.getOrNull()
+        }
+
+    private fun reloadJsonSessionInPlace(session: JsonSession) {
+        session.resetVaultScopedOverlays()
+        session.historyOpen = false
+        session.conversionMode = ""
+        session.conversionInput = ""
+        session.pathPickerOpen = false
+        session.pathPickerSelection = ""
+        decodeToolState<JsonSessionSnapshot>(ToolId.Json)?.let(session::restore)
+    }
+
+    private fun reloadQuickNoteSessionInPlace(session: QuickNoteSession) {
+        session.resetVaultScopedOverlays()
+        session.historyOpen = false
+        decodeToolState<QuickNoteSessionSnapshot>(ToolId.QuickNote)?.let(session::restore)
+    }
 
     fun bump() {
         _revision.value += 1

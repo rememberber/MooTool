@@ -15,4 +15,14 @@ class PaneHandleTest {
         assertNull(paneKeyboardDelta("left", vertical = true))
         assertNull(paneKeyboardDelta("enter", vertical = false))
     }
+
+    @Test
+    fun resizeLineMatchesElectronPaneResizer() {
+        assertEquals(0f, paneHandleLineAlpha(hovered = false, focused = false, dragging = false))
+        assertEquals(0.5f, paneHandleLineAlpha(hovered = true, focused = false, dragging = false))
+        assertEquals(0.5f, paneHandleLineAlpha(hovered = false, focused = true, dragging = false))
+        assertEquals(0.9f, paneHandleLineAlpha(hovered = true, focused = true, dragging = true))
+        assertEquals(1f, paneHandleLineThickness(dragging = false))
+        assertEquals(2f, paneHandleLineThickness(dragging = true))
+    }
 }

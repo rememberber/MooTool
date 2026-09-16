@@ -13,13 +13,22 @@ import kotlin.io.path.name
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
+internal fun jsonVaultImportRelativePath(targetDirectory: String, fileName: String): String =
+    listOfNotNull(targetDirectory.trim().takeIf { it.isNotBlank() }, fileName).joinToString("/")
+
+internal fun jsonVaultEntryRelativePath(vaultRoot: Path, entry: Path): String =
+    vaultRoot.toAbsolutePath().normalize()
+        .relativize(entry.toAbsolutePath().normalize())
+        .toString()
+        .replace('\\', '/')
+
 class JsonVault(
     private val directories: AppDirectories,
     private val customRoot: String = ""
 ) {
     fun root(): Path {
-        val configured = customRoot.trim()
-        val path = if (configured.isEmpty()) directories.jsonVault else Path.of(configured)
+        val effective = VaultPathConfig.effectiveCustomRoot(customRoot)
+        val path = if (effective.isEmpty()) directories.jsonVault else Path.of(effective)
         return path.apply { createDirectories() }
     }
 

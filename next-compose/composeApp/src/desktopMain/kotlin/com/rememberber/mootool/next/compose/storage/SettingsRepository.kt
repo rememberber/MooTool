@@ -2,6 +2,7 @@ package com.rememberber.mootool.next.compose.storage
 
 import com.rememberber.mootool.next.compose.app.AppDirectories
 import com.rememberber.mootool.next.compose.app.ProductIdentity
+import com.rememberber.mootool.next.compose.domain.NavigationToolVisibility
 import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.model.SETTINGS_SCHEMA_VERSION
 import kotlinx.serialization.encodeToString
@@ -40,7 +41,12 @@ class SettingsRepository(
         }
         return try {
             val parsed = json.decodeFromString<AppSettings>(file.readText())
-            current = parsed.copy(schemaVersion = SETTINGS_SCHEMA_VERSION)
+            val base = parsed.copy(schemaVersion = SETTINGS_SCHEMA_VERSION)
+            val sanitized = sanitizeLoadedSettings(base)
+            current = sanitized
+            if (sanitized != base) {
+                save(sanitized)
+            }
             loadError = null
             current
         } catch (error: Exception) {
@@ -53,7 +59,7 @@ class SettingsRepository(
     }
 
     fun save(settings: AppSettings) {
-        current = settings.copy(schemaVersion = SETTINGS_SCHEMA_VERSION)
+        current = sanitizeLoadedSettings(settings.copy(schemaVersion = SETTINGS_SCHEMA_VERSION))
         atomicWrite(directories.settingsFile, json.encodeToString(current))
         writeProductMarker()
     }
@@ -73,6 +79,31 @@ class SettingsRepository(
             }
         """.trimIndent()
         atomicWrite(directories.productMarker, payload)
+    }
+
+    private fun sanitizeLoadedSettings(settings: AppSettings): AppSettings {
+        val vault = settings.vault
+        val quickNotePath = VaultPathConfig.effectiveCustomRoot(vault.quickNotePath)
+        val jsonPath = VaultPathConfig.effectiveCustomRoot(vault.jsonPath)
+        val exportDirectory = VaultPathConfig.effectiveCustomRoot(settings.tools.exportDirectory)
+        val dataDirectory = DataPathConfig.normalizedCustomDataRoot(settings.data.directory) ?: ""
+        val hiddenNavigationToolIds =
+            NavigationToolVisibility.normalizeHiddenNavigationToolIds(settings.layout.hiddenNavigationToolIds)
+        val layout = settings.layout.copy(hiddenNavigationToolIds = hiddenNavigationToolIds)
+        if (quickNotePath == vault.quickNotePath &&
+            jsonPath == vault.jsonPath &&
+            exportDirectory == settings.tools.exportDirectory &&
+            dataDirectory == settings.data.directory &&
+            layout == settings.layout
+        ) {
+            return settings
+        }
+        return settings.copy(
+            layout = layout,
+            data = settings.data.copy(directory = dataDirectory),
+            vault = vault.copy(quickNotePath = quickNotePath, jsonPath = jsonPath),
+            tools = settings.tools.copy(exportDirectory = exportDirectory)
+        )
     }
 
     companion object {

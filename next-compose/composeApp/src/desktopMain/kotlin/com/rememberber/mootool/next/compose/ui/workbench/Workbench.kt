@@ -2,7 +2,11 @@ package com.rememberber.mootool.next.compose.ui.workbench
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -50,6 +54,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.PaddingValues
 import com.rememberber.mootool.next.compose.app.AppContainer
@@ -79,13 +84,17 @@ import com.rememberber.mootool.next.compose.features.runtime.CodeRunScreen
 import com.rememberber.mootool.next.compose.features.placeholder.DetachedNotice
 import com.rememberber.mootool.next.compose.features.placeholder.PlaceholderScreen
 import com.rememberber.mootool.next.compose.features.qrcode.QrCodeScreen
+import com.rememberber.mootool.next.compose.features.settings.LegacyMigrationHintDialog
 import com.rememberber.mootool.next.compose.features.settings.SettingsScreen
 import com.rememberber.mootool.next.compose.features.time.TimeConvertScreen
 import com.rememberber.mootool.next.compose.features.ua.UaParseScreen
 import com.rememberber.mootool.next.compose.features.variables.VariablesScreen
 import com.rememberber.mootool.next.compose.model.ToolId
+import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
+import com.rememberber.mootool.next.compose.ui.components.mooFocusOutline
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.ui.components.mooWorkspaceBackground
 import com.rememberber.mootool.next.compose.ui.icons.ToolIcon
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
@@ -102,7 +111,7 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
     val fontScale = (settings.appearance.fontSize.coerceIn(12, 18) / 13f)
     CompositionLocalProvider(LocalDensity provides Density(density.density, density.fontScale * fontScale)) {
     BoxWithConstraints(Modifier.fillMaxSize().onPreviewKeyEvent { event ->
-            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+            if (event.type != KeyEventType.KeyDown || event.blockedByIme()) return@onPreviewKeyEvent false
             when {
                 matchesShortcut(event, settings.shortcuts.search) -> {
                     container.setSearchOpen(true)
@@ -261,6 +270,7 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
     if (groupManagerOpen) {
         CustomGroupManager(container)
     }
+    LegacyMigrationHintDialog(container)
     }
     }
 }
@@ -281,7 +291,7 @@ private fun CommandSearch(container: AppContainer) {
         container.setSearchOpen(false)
     }
     fun onSearchKey(event: androidx.compose.ui.input.key.KeyEvent): Boolean {
-        if (event.type != KeyEventType.KeyDown) return false
+        if (event.type != KeyEventType.KeyDown || event.blockedByIme()) return false
         return when (event.key) {
             Key.DirectionDown -> { selected = nextCommandIndex(selected, results.size, down = true); true }
             Key.DirectionUp -> { selected = nextCommandIndex(selected, results.size, down = false); true }
@@ -298,15 +308,22 @@ private fun CommandSearch(container: AppContainer) {
         Column(
             Modifier
                 .width(620.dp)
-                .shadow(24.dp, RoundedCornerShape(8.dp))
-                .clip(RoundedCornerShape(8.dp))
-                .background(colors.workspace)
-                .border(1.dp, colors.border, RoundedCornerShape(8.dp))
+                .mooDialogSurface(MooTheme.dimens.commandRadius)
                 .semantics { contentDescription = container.t("app.search.title") }
                 .onPreviewKeyEvent(::onSearchKey)
         ) {
             Row(
-                Modifier.fillMaxWidth().height(54.dp).padding(horizontal = 12.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .height(54.dp)
+                    .then(
+                        if (colors.styleId == "smartisan" || colors.styleId == "miui-v5") {
+                            Modifier.background(colors.toolbarBrush())
+                        } else {
+                            Modifier
+                        }
+                    )
+                    .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -326,7 +343,7 @@ private fun CommandSearch(container: AppContainer) {
                     color = colors.textSecondary,
                     fontSize = 18.sp,
                     modifier = Modifier
-                        .clickable { container.setSearchOpen(false) }
+                        .mooFocusClickable { container.setSearchOpen(false) }
                         .padding(6.dp)
                         .semantics {
                             role = Role.Button
@@ -348,11 +365,20 @@ private fun CommandSearch(container: AppContainer) {
                     itemsIndexed(results) { index, tool ->
                         val active = index == selected
                         val groupKey = ToolRegistry.groupTitleKey(tool.groupId)
+                        val rowShape = RoundedCornerShape(MooTheme.dimens.navRadius)
+                        val rowInteraction = remember(index) { MutableInteractionSource() }
+                        val rowFocused by rowInteraction.collectIsFocusedAsState()
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(if (active) colors.selected else androidx.compose.ui.graphics.Color.Transparent)
+                                .mooFocusOutline(rowFocused, rowShape)
+                                .clip(rowShape)
+                                .background(colors.sidebarItemBrush(active, card = false, hovered = false))
+                                .border(
+                                    if (rowFocused) 2.dp else 1.dp,
+                                    if (rowFocused) colors.focusRing else colors.navItemBorder(active, hovered = false),
+                                    rowShape,
+                                )
                                 .pointerInput(index) {
                                     awaitPointerEventScope {
                                         while (true) {
@@ -363,7 +389,12 @@ private fun CommandSearch(container: AppContainer) {
                                         }
                                     }
                                 }
-                                .clickable { choose(index) }
+                                .focusable(true, rowInteraction)
+                                .clickable(
+                                    interactionSource = rowInteraction,
+                                    indication = LocalIndication.current,
+                                    onClick = { choose(index) },
+                                )
                                 .padding(horizontal = 10.dp, vertical = 10.dp)
                                 .semantics {
                                     role = Role.Button
@@ -373,11 +404,12 @@ private fun CommandSearch(container: AppContainer) {
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            ToolIcon(tool.id, if (active) colors.accent else colors.textSecondary)
+                            ToolIcon(tool.id, if (active) colors.navSelectedIcon() else colors.textSecondary)
                             Text(
                                 container.t(tool.titleKey),
-                                color = if (active) colors.textPrimary else colors.textPrimary,
+                                color = if (active) colors.navSelectedContent() else colors.textPrimary,
                                 fontSize = 13.sp,
+                                fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
                                 modifier = Modifier.weight(1f)
                             )
                             if (groupKey != null) {

@@ -35,6 +35,13 @@ class LayoutPolicyTest {
     }
 
     @Test
+    fun jsonInspectorDesktopBreakpointMatchesElectron() {
+        assertFalse(LayoutPolicy.jsonInspectorDesktopOpen(1320f))
+        assertTrue(LayoutPolicy.jsonInspectorDesktopOpen(1321f))
+        assertTrue(LayoutPolicy.jsonInspectorDesktopOpen(1920f))
+    }
+
+    @Test
     fun compactAuxShowsOnePanelAtATime() {
         assertEquals("vault", LayoutPolicy.toggleAux("", "vault"))
         assertEquals("", LayoutPolicy.toggleAux("vault", "vault"))
@@ -48,5 +55,7 @@ class LayoutPolicyTest {
         assertFalse(LayoutPolicy.showReplace(compact = true, compactAux = "vault", replaceOpen = true))
         assertTrue(LayoutPolicy.showReplace(compact = true, compactAux = "replace", replaceOpen = false))
         assertTrue(LayoutPolicy.showReplace(compact = false, compactAux = "", replaceOpen = true))
+        assertFalse(LayoutPolicy.showQuickNoteVault(compact = false, compactAux = "", vaultTreeOpen = false))
+        assertTrue(LayoutPolicy.showQuickNoteVault(compact = false, compactAux = "", vaultTreeOpen = true))
     }
 }

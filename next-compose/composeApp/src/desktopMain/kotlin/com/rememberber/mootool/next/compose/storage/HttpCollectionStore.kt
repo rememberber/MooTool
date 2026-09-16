@@ -76,6 +76,23 @@ class HttpCollectionStore(
         persist(load().filterNot { it.id == id })
     }
 
+    fun mergeImport(requests: List<SavedHttpRequest>): Int {
+        if (requests.isEmpty()) return 0
+        val items = load().toMutableList()
+        val seen = items.map { it.draft.name.trim().lowercase() to it.draft.url.trim() }.toMutableSet()
+        var imported = 0
+        requests.forEach { candidate ->
+            val key = candidate.draft.name.trim().lowercase() to candidate.draft.url.trim()
+            if (key.first.isEmpty() && key.second.isEmpty()) return@forEach
+            if (key in seen) return@forEach
+            items.add(0, candidate)
+            seen += key
+            imported += 1
+        }
+        if (imported > 0) persist(items)
+        return imported
+    }
+
     private fun load(): List<SavedHttpRequest> {
         if (!file.exists()) return emptyList()
         return runCatching { json.decodeFromString<List<SavedHttpRequest>>(file.readText()) }.getOrDefault(emptyList())

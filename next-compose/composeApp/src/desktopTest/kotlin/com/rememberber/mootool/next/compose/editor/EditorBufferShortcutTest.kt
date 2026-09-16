@@ -26,6 +26,7 @@ class EditorBufferShortcutTest {
         val menu = Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx
         val input = buffer.area.getInputMap(JComponent.WHEN_FOCUSED)
         assertEquals(EditorBuffer.ACTION_FIND, input.get(KeyStroke.getKeyStroke(KeyEvent.VK_F, menu)))
+        assertEquals(EditorBuffer.ACTION_FIND, input.get(KeyStroke.getKeyStroke(KeyEvent.VK_R, menu)))
         assertEquals(
             EditorBuffer.ACTION_FORMAT,
             input.get(KeyStroke.getKeyStroke(KeyEvent.VK_F, menu or InputEvent.SHIFT_DOWN_MASK))

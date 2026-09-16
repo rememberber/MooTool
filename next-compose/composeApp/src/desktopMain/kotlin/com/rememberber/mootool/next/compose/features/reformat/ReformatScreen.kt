@@ -15,12 +15,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,9 +38,9 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.ReformatEngine
 import com.rememberber.mootool.next.compose.domain.ReformatException
@@ -50,13 +49,28 @@ import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.ReformatSession
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
+import com.rememberber.mootool.next.compose.ui.components.FileDropRow
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooMenu
+import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
+import com.rememberber.mootool.next.compose.ui.components.MooToolTab
+import com.rememberber.mootool.next.compose.ui.components.mooToolTabsBackground
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
+import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooToolShell
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.CopyFeedbackPolicy
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
+import com.rememberber.mootool.next.compose.ui.workbench.blockedByIme
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.applyUserEditClearingStatusNotice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -64,15 +78,15 @@ import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.withContext
 import java.awt.FileDialog
 import java.awt.Frame
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
 import java.io.File
 import java.nio.charset.StandardCharsets
 
 @Composable
 fun ReformatScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.reformatSession() }
+    DismissModalOverlaysOnDispose(container, ToolId.Reformat) { session.dismissModalOverlays() }
     val revision by container.sessionManager.revision.collectAsState()
+    val settings by container.settings.collectAsState()
     val colors = MooTheme.colors
 
     fun refresh() {
@@ -93,7 +107,7 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
             session.notice = container.t("reformat.nothingToCopy")
             session.copyState = CopyFeedbackPolicy.IDLE
         } else {
-            val success = copyText(content)
+            val success = container.copyText(content)
             session.copyState = CopyFeedbackPolicy.afterCopy(success)
             session.copyGeneration += 1
             session.notice = if (success) container.t("common.copied") else container.t("json.notice.copyFailed")
@@ -109,19 +123,19 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
 
     fun clearOutput() {
         clearTab(session)
-        session.notice = container.t("json.notice.cleared")
         session.error = ""
         refresh()
     }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
-    val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+    val contentMaxWidth = maxWidth.value
+    val overflow = LayoutPolicy.overflowToolbar(contentMaxWidth)
     var typeOpen by remember { mutableStateOf(false) }
     var indentOpen by remember { mutableStateOf(false) }
     var moreOpen by remember { mutableStateOf(false) }
     Column(
         Modifier.fillMaxSize().background(colors.workspace).onPreviewKeyEvent { event ->
-            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+            if (event.type != KeyEventType.KeyDown || event.blockedByIme()) return@onPreviewKeyEvent false
             val meta = event.isMetaPressed || event.isCtrlPressed
             if (meta && event.isShiftPressed && event.key == Key.F) {
                 runFormat(container, session) { refresh() }
@@ -132,11 +146,11 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
         }
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("reformat.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("reformat.title"))
             Spacer(Modifier.weight(1f))
             OverflowActionCluster(
                 overflow = overflow,
@@ -148,25 +162,25 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
             )
         }
         Row(
-            modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle).horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().mooToolTabsBackground().horizontalScroll(rememberScrollState()).padding(start = 10.dp, end = 10.dp, top = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            MooButton(container.t("reformat.tab.text"), primary = session.tab == "text", onClick = {
+            MooToolTab(container.t("reformat.tab.text"), selected = session.tab == "text", onClick = {
                 session.tab = "text"
                 session.error = ""
                 refresh()
             })
-            MooButton(container.t("reformat.tab.file"), primary = session.tab == "file", onClick = {
+            MooToolTab(container.t("reformat.tab.file"), selected = session.tab == "file", onClick = {
                 session.tab = "file"
                 session.error = ""
                 refresh()
             })
             Box {
-                MooButton("${container.t("reformat.type")}: ${typeLabel(session.type)}", onClick = { typeOpen = true })
-                DropdownMenu(expanded = typeOpen, onDismissRequest = { typeOpen = false }) {
+                MooButton("${container.t("reformat.type")}: ${typeLabel(session.type)}", onClick = { typeOpen = true }, p5Toolbar = true)
+                MooMenu(expanded = typeOpen, onDismissRequest = { typeOpen = false }) {
                     ReformatEngine.types.forEach { type ->
-                        DropdownMenuItem(onClick = {
+                        MooMenuItem(onClick = {
                             typeOpen = false
                             changeType(session, type)
                             refresh()
@@ -177,10 +191,10 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
                 }
             }
             Box {
-                MooButton("${container.t("reformat.indent")}: ${session.indent}", onClick = { indentOpen = true })
-                DropdownMenu(expanded = indentOpen, onDismissRequest = { indentOpen = false }) {
+                MooButton("${container.t("reformat.indent")}: ${session.indent}", onClick = { indentOpen = true }, p5Toolbar = true)
+                MooMenu(expanded = indentOpen, onDismissRequest = { indentOpen = false }) {
                     listOf(2, 3, 4, 5, 6).forEach { size ->
-                        DropdownMenuItem(onClick = {
+                        MooMenuItem(onClick = {
                             indentOpen = false
                             session.indent = size
                             refresh()
@@ -192,28 +206,30 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
             }
             MooButton(
                 if (session.busy) container.t("reformat.processing") else container.t("reformat.format"),
-                primary = true,
+                prominent = true,
+                p5Toolbar = true,
                 enabled = !session.busy && currentInput(session).isNotBlank(),
                 onClick = { runFormat(container, session) { refresh() } }
             )
             if (!overflow) {
                 MooButton(
                     container.t(CopyFeedbackPolicy.buttonKey(session.copyState, "reformat.copy")),
-                    onClick = { copyOutput() }
+                    onClick = { copyOutput() },
+                    p5Toolbar = true
                 )
-                MooButton(container.t("reformat.save"), onClick = { saveOutput() })
-                MooButton(container.t("common.action.clear"), onClick = { clearOutput() })
+                MooButton(container.t("reformat.save"), onClick = { saveOutput() }, p5Toolbar = true)
+                MooButton(container.t("common.action.clear"), onClick = { clearOutput() }, p5Toolbar = true)
             } else {
                 Box {
-                    MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true })
-                    DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
-                        DropdownMenuItem(onClick = { moreOpen = false; copyOutput() }) {
+                    MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true }, p5Toolbar = true)
+                    MooMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
+                        MooMenuItem(onClick = { moreOpen = false; copyOutput() }) {
                             Text(container.t(CopyFeedbackPolicy.buttonKey(session.copyState, "reformat.copy")))
                         }
-                        DropdownMenuItem(onClick = { moreOpen = false; saveOutput() }) {
+                        MooMenuItem(onClick = { moreOpen = false; saveOutput() }) {
                             Text(container.t("reformat.save"))
                         }
-                        DropdownMenuItem(onClick = { moreOpen = false; clearOutput() }) {
+                        MooMenuItem(onClick = { moreOpen = false; clearOutput() }) {
                             Text(container.t("common.action.clear"))
                         }
                     }
@@ -221,39 +237,69 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
             }
         }
         if (session.tab == "text") {
-            Column(Modifier.weight(1f).fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(Modifier.weight(1f).fillMaxWidth().mooToolShell().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(container.t("reformat.input"), color = colors.textSecondary, fontSize = 12.sp)
                 MooTextField(
                     session.text,
-                    { session.text = it; session.error = ""; refresh() },
+                    {
+                        applyUserEditClearingStatusNotice({ session.notice }, { session.notice = it }) {
+                            session.text = it
+                            session.error = ""
+                        }
+                        refresh()
+                    },
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     singleLine = false
                 )
             }
         } else {
             Column(Modifier.weight(1f).fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MooButton(container.t("reformat.chooseFile"), onClick = {
+                FileDropRow(
+                    chooseLabel = container.t("reformat.chooseFile"),
+                    fileName = session.fileName,
+                    emptyLabel = container.t("reformat.noFile"),
+                    onChoose = {
                         chooseSourceFile(container, session)
                         refresh()
-                    })
-                    Text(
-                        session.fileName.ifEmpty { container.t("reformat.noFile") },
-                        color = colors.textSecondary,
-                        fontSize = 13.sp
-                    )
-                }
-                Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    },
+                    onDropFiles = { files ->
+                        loadSourceFile(container, session, files.first())
+                        refresh()
+                    }
+                )
+                val minPane = 260f
+                val paneHandle = 10f
+                val innerWidth = contentMaxWidth - 24f
+                val maxLeft = (innerWidth - paneHandle - minPane).coerceAtLeast(minPane)
+                val defaultLeft = (innerWidth * 0.5f).coerceIn(minPane, maxLeft)
+                val leftWidth = settings.layout.pane(ToolId.Reformat.id, 0, defaultLeft, minPane, maxLeft)
+                Row(Modifier.weight(1f).fillMaxWidth()) {
+                    Column(
+                        Modifier.width(leftWidth.dp).widthIn(min = 260.dp).fillMaxHeight().mooToolShell().padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         Text(container.t("reformat.original"), color = colors.textSecondary, fontSize = 12.sp)
                         MooTextField(
                             session.fileSource,
-                            { session.fileSource = it; session.error = ""; refresh() },
+                            {
+                                applyUserEditClearingStatusNotice({ session.notice }, { session.notice = it }) {
+                                    session.fileSource = it
+                                    session.error = ""
+                                }
+                                refresh()
+                            },
                             modifier = Modifier.weight(1f).fillMaxWidth(),
                             singleLine = false
                         )
                     }
-                    Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    VerticalPaneHandle(
+                        onDelta = { container.setPaneSize(ToolId.Reformat.id, 0, leftWidth + it, 1) },
+                        onReset = { container.setPaneSize(ToolId.Reformat.id, 0, defaultLeft, 1) }
+                    )
+                    Column(
+                        Modifier.weight(1f).widthIn(min = 260.dp).fillMaxHeight().mooToolShell().padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         Text(container.t("reformat.result"), color = colors.textSecondary, fontSize = 12.sp)
                         MooTextField(
                             session.fileResult,
@@ -266,7 +312,7 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).mooStatusBarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -287,7 +333,6 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
             title = container.t("common.action.history"),
             onRestore = { item ->
                 applyHistory(session, item)
-                session.notice = container.t("json.notice.restored")
                 session.historyOpen = false
                 refresh()
             },
@@ -350,6 +395,7 @@ private fun runFormat(container: AppContainer, session: ReformatSession, onChang
                 if (tab == "file") session.fileResult = output else session.text = output
                 session.error = ""
                 session.notice = container.t("reformat.formatted")
+                container.toastSuccess(container.t("reformat.formatted"))
                 val summary = container.t("reformat.historySummary", mapOf("type" to type.name.uppercase()))
                 container.history.save(
                     ToolId.Reformat.id,
@@ -382,6 +428,10 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
 
 private fun chooseSourceFile(container: AppContainer, session: ReformatSession) {
     val file = chooseFile(save = false, title = container.t("reformat.chooseFile")) ?: return
+    loadSourceFile(container, session, file)
+}
+
+private fun loadSourceFile(container: AppContainer, session: ReformatSession, file: File) {
     runCatching { file.readText(StandardCharsets.UTF_8) }
         .onSuccess { content ->
             session.fileName = file.name
@@ -389,6 +439,7 @@ private fun chooseSourceFile(container: AppContainer, session: ReformatSession) 
             session.fileResult = ""
             session.error = ""
             session.notice = container.t("json.notice.imported")
+            container.toastSuccess(container.t("json.notice.imported"))
         }
         .onFailure { error ->
             session.error = container.t("reformat.error.read", mapOf("message" to (error.message ?: file.path)))
@@ -413,19 +464,11 @@ private fun saveResult(container: AppContainer, session: ReformatSession) {
         .onSuccess {
             session.error = ""
             session.notice = container.t("reformat.saved")
+            container.toastSuccess(container.t("reformat.saved"))
         }
         .onFailure { error ->
             session.error = container.t("reformat.error.write", mapOf("message" to (error.message ?: file.path)))
         }
-}
-
-private fun copyText(value: String): Boolean {
-    return try {
-        Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null)
-        true
-    } catch (_: Exception) {
-        false
-    }
 }
 
 private fun chooseFile(save: Boolean, title: String, defaultName: String = ""): File? {

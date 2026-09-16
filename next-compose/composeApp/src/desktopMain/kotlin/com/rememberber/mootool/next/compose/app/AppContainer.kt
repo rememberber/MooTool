@@ -10,10 +10,15 @@ import com.rememberber.mootool.next.compose.ui.workbench.DetachPolicy
 import com.rememberber.mootool.next.compose.ui.workbench.DetachedFocusRequest
 import com.rememberber.mootool.next.compose.storage.AppDatabase
 import com.rememberber.mootool.next.compose.storage.HistoryRepository
+import com.rememberber.mootool.next.compose.storage.LegacyMigrationRowRepository
+import com.rememberber.mootool.next.compose.storage.DataPathConfig
 import com.rememberber.mootool.next.compose.storage.JsonVault
 import com.rememberber.mootool.next.compose.storage.NoteVault
 import com.rememberber.mootool.next.compose.storage.BackupEngine
 import com.rememberber.mootool.next.compose.storage.BackupExportResult
+import com.rememberber.mootool.next.compose.storage.BackupInfo
+import com.rememberber.mootool.next.compose.storage.BackupInfoResolver
+import com.rememberber.mootool.next.compose.storage.BackupOpenLocation
 import com.rememberber.mootool.next.compose.storage.BackupRestoreResult
 import com.rememberber.mootool.next.compose.domain.DisplayWakeLock
 import com.rememberber.mootool.next.compose.storage.ColorFavoriteStore
@@ -26,10 +31,20 @@ import com.rememberber.mootool.next.compose.storage.RegexFavoriteStore
 import com.rememberber.mootool.next.compose.storage.SessionStore
 import com.rememberber.mootool.next.compose.storage.SettingsRepository
 import com.rememberber.mootool.next.compose.services.RegexWorkerClient
+import com.rememberber.mootool.next.compose.domain.GitActionResult
 import com.rememberber.mootool.next.compose.domain.GitEngine
 import com.rememberber.mootool.next.compose.domain.GitIdentity
+import com.rememberber.mootool.next.compose.domain.ElectronNextSettingsImport
+import com.rememberber.mootool.next.compose.domain.ImportedLegacyHistory
+import com.rememberber.mootool.next.compose.domain.LegacyToolDraftApplier
+import com.rememberber.mootool.next.compose.domain.UpdateAutoCheckScheduler
+import com.rememberber.mootool.next.compose.domain.VaultGitAutoPull
 import com.rememberber.mootool.next.compose.domain.VaultGitCheckpointScheduler
 import com.rememberber.mootool.next.compose.domain.VaultGitPullScheduler
+import com.rememberber.mootool.next.compose.features.settings.SettingsNavCategory
+import com.rememberber.mootool.next.compose.features.settings.settingsNavCategoryFromStorageId
+import com.rememberber.mootool.next.compose.ai.AiDataAccessRequest
+import com.rememberber.mootool.next.compose.ai.AiIntegrationService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -40,6 +55,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.awt.Desktop
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
@@ -53,15 +70,16 @@ class AppContainer(
     val settingsRepository: SettingsRepository,
     val database: AppDatabase,
     val history: HistoryRepository,
+    val migrationRows: LegacyMigrationRowRepository,
     val sessions: SessionStore
 ) {
-    val regexFavorites = RegexFavoriteStore(directories)
-    val cronFavorites = CronFavoriteStore(directories)
-    val colorFavorites = ColorFavoriteStore(directories)
-    val imageLibrary = ImageLibraryStore(directories)
-    val hostProfiles = HostProfileStore(directories)
-    val httpCollections = HttpCollectionStore(directories)
-    val translations = TranslationStore(directories)
+    val regexFavorites: RegexFavoriteStore get() = RegexFavoriteStore(dataDirectories())
+    val cronFavorites: CronFavoriteStore get() = CronFavoriteStore(dataDirectories())
+    val colorFavorites: ColorFavoriteStore get() = ColorFavoriteStore(dataDirectories())
+    val imageLibrary: ImageLibraryStore get() = ImageLibraryStore(dataDirectories())
+    val hostProfiles: HostProfileStore get() = HostProfileStore(dataDirectories())
+    val httpCollections: HttpCollectionStore get() = HttpCollectionStore(dataDirectories())
+    val translations: TranslationStore get() = TranslationStore(dataDirectories())
     val displayWake = DisplayWakeLock()
     val regexWorker = RegexWorkerClient()
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -78,51 +96,57 @@ class AppContainer(
     val searchOpen: StateFlow<Boolean> = _searchOpen
     private val _groupManagerOpen = MutableStateFlow(false)
     val groupManagerOpen: StateFlow<Boolean> = _groupManagerOpen
+    /** 设置页左侧当前分类（切工具再回设置时恢复，对照 Electron 会话内 `activeCategory`）。 */
+    var settingsNavCategoryId: String = SettingsNavCategory.General.storageId()
     private val _status = MutableStateFlow("")
     val status: StateFlow<String> = _status
+    val toasts = ToastQueue()
     private val _detachedFocus = MutableStateFlow<DetachedFocusRequest?>(null)
     val detachedFocus: StateFlow<DetachedFocusRequest?> = _detachedFocus
+    private val _jsonVaultAutoPullTick = MutableStateFlow(0L)
+    val jsonVaultAutoPullTick: StateFlow<Long> = _jsonVaultAutoPullTick
+    private val _quickNoteVaultAutoPullTick = MutableStateFlow(0L)
+    val quickNoteVaultAutoPullTick: StateFlow<Long> = _quickNoteVaultAutoPullTick
     val jsonVault: JsonVault
-        get() = JsonVault(directories, _settings.value.vault.jsonPath)
+        get() = JsonVault(dataDirectories(), _settings.value.vault.jsonPath)
+
+    fun dataDirectories(): AppDirectories =
+        DataPathConfig.withEffectiveDataRoot(directories, _settings.value.data.directory)
     private var gitJob: Job? = null
+    private val updateAutoCheckScheduler = UpdateAutoCheckScheduler(
+        scope = scope,
+        enabled = { _settings.value.general.autoCheckUpdates },
+        autoDownload = { _settings.value.general.autoDownloadUpdates },
+        check = { autoDownload -> updates.check(autoDownload = autoDownload, automatic = true) },
+    )
     private val noteGitScheduler = VaultGitCheckpointScheduler(
         enabled = { _settings.value.vault.autoCommit },
-        hasUnsavedEditorChanges = {
-            val session = sessionManager.quickNoteSession()
-            session.currentFile.isNotBlank() && session.editor.text != session.savedText
-        },
+        hasUnsavedEditorChanges = { sessionManager.quickNoteSession().isVaultEditorDirty() },
         idleMilliseconds = { _settings.value.vault.autoCommitIdleSeconds.coerceIn(5, 3600) * 1_000L },
         inactiveMilliseconds = { _settings.value.vault.autoCommitInactiveSeconds.coerceIn(5, 3600) * 1_000L },
                 checkpoint = { message -> checkpointVault(noteVault().root(), message) }
     )
     private val jsonGitScheduler = VaultGitCheckpointScheduler(
         enabled = { _settings.value.vault.autoCommit },
-        hasUnsavedEditorChanges = {
-            val session = sessionManager.jsonSession()
-            session.currentFile.isNotBlank() && session.editor.text != session.savedText
-        },
+        hasUnsavedEditorChanges = { sessionManager.jsonSession().isVaultEditorDirty() },
         idleMilliseconds = { _settings.value.vault.autoCommitIdleSeconds.coerceIn(5, 3600) * 1_000L },
         inactiveMilliseconds = { _settings.value.vault.autoCommitInactiveSeconds.coerceIn(5, 3600) * 1_000L },
         checkpoint = { message -> checkpointVault(jsonVault.root(), message) }
     )
     private val notePullScheduler = VaultGitPullScheduler(
         enabled = { _settings.value.vault.autoPullMinutes > 0 },
-        hasUnsavedEditorChanges = {
-            val session = sessionManager.quickNoteSession()
-            session.currentFile.isNotBlank() && session.editor.text != session.savedText
-        },
+        hasUnsavedEditorChanges = { sessionManager.quickNoteSession().isVaultEditorDirty() },
         intervalMilliseconds = { _settings.value.vault.autoPullMinutes.coerceIn(0, 1440) * 60_000L },
-        pull = { pullVault(noteVault().root()) }
+        pull = { runScheduledVaultPull(noteVault().root(), forJson = false) }
     )
     private val jsonPullScheduler = VaultGitPullScheduler(
         enabled = { _settings.value.vault.autoPullMinutes > 0 },
-        hasUnsavedEditorChanges = {
-            val session = sessionManager.jsonSession()
-            session.currentFile.isNotBlank() && session.editor.text != session.savedText
-        },
+        hasUnsavedEditorChanges = { sessionManager.jsonSession().isVaultEditorDirty() },
         intervalMilliseconds = { _settings.value.vault.autoPullMinutes.coerceIn(0, 1440) * 60_000L },
-        pull = { pullVault(jsonVault.root()) }
+        pull = { runScheduledVaultPull(jsonVault.root(), forJson = true) }
     )
+
+    val aiIntegration: AiIntegrationService by lazy { AiIntegrationService(this) }
 
     fun t(key: String, params: Map<String, String> = emptyMap()): String = translator.t(key, params)
 
@@ -133,9 +157,37 @@ class AppContainer(
     }
 
     fun updateSettings(transform: (AppSettings) -> AppSettings) {
+        val previous = _settings.value
         val next = settingsRepository.update(transform)
         translator.setLanguage(AppLanguage.fromCode(next.general.language))
         _settings.value = next
+        if (previous.data.directory != next.data.directory) {
+            val nextDirs = dataDirectories()
+            DataPathConfig.ensureDataRootExists(nextDirs)
+            database.rebindDataDirectories(nextDirs)
+        }
+        if (previous.data.directory != next.data.directory ||
+            previous.vault.quickNotePath != next.vault.quickNotePath ||
+            previous.vault.jsonPath != next.vault.jsonPath
+        ) {
+            runCatching {
+                aiIntegration.setDataAccess(AiDataAccessRequest(notes = false, json = false))
+            }
+        }
+        if (previous.general.autoCheckUpdates != next.general.autoCheckUpdates) {
+            configureAutomaticUpdateChecks()
+        }
+        if (!previous.general.autoDownloadUpdates && next.general.autoDownloadUpdates) {
+            updates.applyAutoDownloadSetting(enabled = true)
+        }
+        if (previous.vault.autoPullMinutes != next.vault.autoPullMinutes ||
+            previous.data.directory != next.data.directory ||
+            previous.vault.jsonPath != next.vault.jsonPath ||
+            previous.vault.quickNotePath != next.vault.quickNotePath
+        ) {
+            notePullScheduler.resetIntervalClock()
+            jsonPullScheduler.resetIntervalClock()
+        }
     }
 
     fun openTool(id: ToolId) {
@@ -167,7 +219,10 @@ class AppContainer(
         if (sessionManager.isDetached(id)) sessionManager.reattach(id) else sessionManager.detach(id)
     }
 
-    fun openSettings(open: Boolean = true) {
+    fun openSettings(open: Boolean = true, categoryId: String? = null) {
+        if (!categoryId.isNullOrBlank()) {
+            settingsNavCategoryId = settingsNavCategoryFromStorageId(categoryId).storageId()
+        }
         _showSettings.value = open
     }
 
@@ -183,7 +238,39 @@ class AppContainer(
         _status.value = value
     }
 
-    fun noteVault(): NoteVault = NoteVault(directories, _settings.value.vault.quickNotePath)
+    fun toastSuccess(message: String) {
+        toasts.success(message)
+    }
+
+    fun toastError(message: String) {
+        toasts.error(message)
+    }
+
+    fun toastInfo(message: String) {
+        toasts.info(message)
+    }
+
+    /** 查找/替换无命中：仅 info toast，不改工具状态栏 notice（对齐 Electron `toast.info(findReplace.noMatches)`）。 */
+    fun toastFindNoMatches() {
+        toastInfo(t("find.noMatches"))
+    }
+
+    fun toastCopied(success: Boolean) {
+        if (success) toastSuccess(t("json.notice.copied")) else toastError(t("json.notice.copyFailed"))
+    }
+
+    fun copyText(value: String): Boolean {
+        return try {
+            Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null)
+            toastCopied(true)
+            true
+        } catch (_: Exception) {
+            toastCopied(false)
+            false
+        }
+    }
+
+    fun noteVault(): NoteVault = NoteVault(dataDirectories(), _settings.value.vault.quickNotePath)
 
     fun recordVaultActivity(message: String, json: Boolean = false) {
         if (json) jsonGitScheduler.recordActivity(message) else noteGitScheduler.recordActivity(message)
@@ -200,14 +287,30 @@ class AppContainer(
         return file.readLines().map { it.trim() }.filter { it.isNotEmpty() }.toSet()
     }
 
-    fun rememberImport(fingerprint: String) {
+    fun rememberImport(vararg fingerprints: String) {
         val file = fingerprintFile()
         file.parent.createDirectories()
-        val next = importedFingerprints() + fingerprint
+        val next = importedFingerprints() + fingerprints.filter { it.isNotBlank() }
+        file.writeText(next.distinct().joinToString("\n"))
+    }
+
+    fun appliedLegacyDraftKeys(): Set<String> {
+        val file = appliedDraftKeysFile()
+        if (!file.exists()) return emptySet()
+        return file.readLines().map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+    }
+
+    fun rememberLegacyDraftKeys(keys: Collection<String>) {
+        if (keys.isEmpty()) return
+        val file = appliedDraftKeysFile()
+        file.parent.createDirectories()
+        val next = appliedLegacyDraftKeys() + keys.filter { it.isNotBlank() }
         file.writeText(next.joinToString("\n"))
     }
 
-    private fun fingerprintFile(): Path = directories.dataRoot.resolve("imports").resolve("fingerprints.txt")
+    private fun fingerprintFile(): Path = dataDirectories().dataRoot.resolve("imports").resolve("fingerprints.txt")
+
+    private fun appliedDraftKeysFile(): Path = dataDirectories().dataRoot.resolve("imports").resolve("applied-tool-drafts.txt")
 
     private fun checkpointVault(root: Path, message: String) = GitEngine.automaticCheckpoint(
         root,
@@ -216,12 +319,27 @@ class AppContainer(
         token = _settings.value.vault.gitToken
     )
 
-    private fun pullVault(root: Path): com.rememberber.mootool.next.compose.domain.GitActionResult {
+    private fun runScheduledVaultPull(root: Path, forJson: Boolean): GitActionResult {
         val status = GitEngine.status(root)
-        if (!status.available || !status.repository || status.remote.isBlank() || status.merging) {
-            return com.rememberber.mootool.next.compose.domain.GitActionResult(true, "skipped")
+        if (!VaultGitAutoPull.mayPullCleanWorkingTree(status)) {
+            return GitActionResult(true, "skipped")
         }
-        return GitEngine.pull(root, token = _settings.value.vault.gitToken)
+        val result = GitEngine.pull(root, token = _settings.value.vault.gitToken)
+        val after = GitEngine.status(root)
+        if (VaultGitAutoPull.shouldNotifyVaultAfterPull(result, after)) {
+            if (forJson) notifyJsonVaultTreeChanged() else notifyQuickNoteVaultTreeChanged()
+        }
+        return result
+    }
+
+    /** Electron `broadcast('json-vault:changed')` → Vault 面板 `load()` + 干净编辑器 `reloadSelectedFromDisk`。 */
+    fun notifyJsonVaultTreeChanged() {
+        _jsonVaultAutoPullTick.value += 1
+    }
+
+    /** Electron `broadcast('quick-note-vault:changed')` 同上。 */
+    fun notifyQuickNoteVaultTreeChanged() {
+        _quickNoteVaultAutoPullTick.value += 1
     }
 
     fun openExternal(uri: String) {
@@ -230,6 +348,17 @@ class AppContainer(
 
     fun openDirectory(path: Path) {
         runCatching { Desktop.getDesktop().open(path.toFile()) }
+    }
+
+    fun chooseDirectory(title: String, initialPath: String = ""): String? =
+        DesktopFileDialogs.chooseDirectory(title, initialPath)
+
+    fun chooseExecutable(title: String, initialPath: String = ""): String? =
+        DesktopFileDialogs.chooseExecutable(title, initialPath)
+
+    fun defaultLegacyImportSource(): String {
+        val legacy = Path.of(System.getProperty("user.home"), ".MooTool")
+        return if (java.nio.file.Files.isDirectory(legacy)) legacy.toAbsolutePath().normalize().toString() else ""
     }
 
     fun revealInFileManager(path: Path) {
@@ -248,19 +377,70 @@ class AppContainer(
 
     fun exportBackup(zipPath: Path): BackupExportResult {
         persistWorkspace()
-        return BackupEngine.export(directories, zipPath, database)
+        return BackupEngine.export(dataDirectories(), zipPath, database)
     }
 
     fun previewBackup(zipPath: Path) = BackupEngine.preview(zipPath)
 
+    fun backupInfo(): BackupInfo =
+        BackupInfoResolver.resolve(dataDirectories(), noteVault().root(), jsonVault.root())
+
+    fun openBackupLocation(location: BackupOpenLocation) {
+        val target = backupInfo().pathForOpen(location)
+        when (location) {
+            BackupOpenLocation.DatabaseFile -> {
+                runCatching { target.parent?.createDirectories() }
+                revealInFileManager(target)
+            }
+            BackupOpenLocation.SettingsConfig -> {
+                runCatching { target.createDirectories() }
+                openDirectory(target)
+            }
+            BackupOpenLocation.Images,
+            BackupOpenLocation.QuickNote,
+            BackupOpenLocation.JsonVault,
+            -> {
+                runCatching { target.createDirectories() }
+                openDirectory(target)
+            }
+        }
+    }
+
+    /** 备份恢复、跨产品导入等改写磁盘/SQLite 后，在既有会话实例上重载 `tool_sessions` 并递增 `sessionGeneration`。 */
+    fun reloadToolSessionsFromStore() {
+        sessionManager.reloadAllToolSessionsFromStore()
+        notifyJsonVaultTreeChanged()
+        notifyQuickNoteVaultTreeChanged()
+    }
+
     fun restoreBackup(zipPath: Path): BackupRestoreResult {
         persistWorkspace()
-        val result = BackupEngine.restore(zipPath, directories, database)
+        val result = BackupEngine.restore(zipPath, dataDirectories(), database)
         val loaded = settingsRepository.load()
         translator.setLanguage(AppLanguage.fromCode(loaded.general.language))
         _settings.value = loaded
+        val nextDirs = dataDirectories()
+        DataPathConfig.ensureDataRootExists(nextDirs)
+        database.rebindDataDirectories(nextDirs)
+        runCatching {
+            aiIntegration.setDataAccess(AiDataAccessRequest(notes = false, json = false))
+        }
+        reloadToolSessionsFromStore()
         return result
     }
+
+    fun mergeElectronCodeRunFromStore(store: Path): Boolean {
+        val patch = ElectronNextSettingsImport.loadCodeRunPatchFromStore(store) ?: return false
+        if (!ElectronNextSettingsImport.hasCodeRunPatch(patch)) return false
+        val session = sessionManager.codeRunSession()
+        val merged = ElectronNextSettingsImport.mergeCodeRunSnapshots(session.snapshotState(), patch)
+        session.restore(merged)
+        sessionManager.persistCodeRun()
+        return true
+    }
+
+    fun applyLegacyToolDrafts(rows: List<ImportedLegacyHistory>): Int =
+        LegacyToolDraftApplier.apply(sessionManager, rows, history)
 
     fun persistWorkspace() {
         sessionManager.persistJson()
@@ -291,10 +471,12 @@ class AppContainer(
         settingsRepository.save(_settings.value)
     }
 
+    fun configureAutomaticUpdateChecks() {
+        updateAutoCheckScheduler.reconfigure()
+    }
+
     fun startBackgroundTasks() {
-        if (settings.value.general.autoCheckUpdates) {
-            updates.check(autoDownload = settings.value.general.autoDownloadUpdates)
-        }
+        configureAutomaticUpdateChecks()
         if (gitJob != null) return
         gitJob = scope.launch {
             while (isActive) {
@@ -310,6 +492,7 @@ class AppContainer(
     fun close() {
         gitJob?.cancel()
         gitJob = null
+        updateAutoCheckScheduler.stop()
         updates.cancel()
         regexWorker.cancel()
         displayWake.releaseAll()
@@ -326,12 +509,15 @@ class AppContainer(
             val directories = AppPaths.resolve(dataDir)
             directories.ensureCreated()
             val settings = SettingsRepository(directories).also { it.load() }
-            val database = AppDatabase(directories)
+            val dataDirs = DataPathConfig.withEffectiveDataRoot(directories, settings.current.data.directory)
+            DataPathConfig.ensureDataRootExists(dataDirs)
+            val database = AppDatabase(dataDirs)
             return AppContainer(
                 directories = directories,
                 settingsRepository = settings,
                 database = database,
                 history = HistoryRepository(database),
+                migrationRows = LegacyMigrationRowRepository(database),
                 sessions = SessionStore(database)
             ).also { it.startBackgroundTasks() }
         }

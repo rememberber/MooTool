@@ -107,4 +107,58 @@ class VaultConflictEngineTest {
             root.toFile().deleteRecursively()
         }
     }
+
+    @Test
+    fun rebaselineAfterBulkImportAvoidsReplayDiff() {
+        val root = Files.createTempDirectory("mootool-compose-vault-rebase-")
+        try {
+            root.resolve("seed.md").writeText("v1")
+            val monitor = VaultRevisionMonitor(root, ignoreAttachments = true, intervalMs = 50) {}
+            monitor.start()
+            monitor.rebaseline()
+            root.resolve("imported.md").writeText("new")
+            val latch = CountDownLatch(1)
+            val seen = mutableListOf<List<String>>()
+            val live = VaultRevisionMonitor(root, ignoreAttachments = true, intervalMs = 60) { paths ->
+                seen += paths
+                latch.countDown()
+            }
+            live.start()
+            live.rebaseline()
+            try {
+                Thread.sleep(90)
+                root.resolve("later.md").writeText("x")
+                assertTrue(latch.await(2, TimeUnit.SECONDS))
+                assertEquals(listOf("later.md"), seen.single())
+            } finally {
+                live.close()
+            }
+            monitor.close()
+        } finally {
+            root.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun rebaselineAfterLocalDeleteAvoidsSpuriousPoll() {
+        val root = Files.createTempDirectory("mootool-compose-vault-delete-rebase-")
+        try {
+            root.resolve("keep.md").writeText("k")
+            root.resolve("drop.md").writeText("d")
+            val seen = mutableListOf<List<String>>()
+            val monitor = VaultRevisionMonitor(root, ignoreAttachments = true, intervalMs = 60) { paths ->
+                seen += paths
+            }
+            monitor.start()
+            monitor.rebaseline()
+            Thread.sleep(90)
+            Files.delete(root.resolve("drop.md"))
+            monitor.rebaseline()
+            Thread.sleep(150)
+            assertTrue(seen.isEmpty(), "local delete after rebaseline should not surface as external change")
+            monitor.close()
+        } finally {
+            root.toFile().deleteRecursively()
+        }
+    }
 }

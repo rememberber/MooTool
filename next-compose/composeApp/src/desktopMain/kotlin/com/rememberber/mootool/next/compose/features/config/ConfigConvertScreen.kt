@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -31,20 +32,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.ConfigEngine
 import com.rememberber.mootool.next.compose.domain.ConfigException
+import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.ConfigSession
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
+import com.rememberber.mootool.next.compose.ui.components.statusPillContent
+import com.rememberber.mootool.next.compose.ui.components.statusPillFill
+import com.rememberber.mootool.next.compose.ui.components.MooStatusKind
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooToolTab
+import com.rememberber.mootool.next.compose.ui.components.MooToolTabsRow
+import com.rememberber.mootool.next.compose.ui.components.IoThreePaneRow
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooToolShell
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.applyUserEditClearingStatusNotice
 import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
@@ -53,7 +67,9 @@ import java.nio.charset.StandardCharsets
 @Composable
 fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.configSession() }
+    DismissModalOverlaysOnDispose(container, ToolId.YmlProperties) { session.dismissModalOverlays() }
     val revision by container.sessionManager.revision.collectAsState()
+    val settings by container.settings.collectAsState()
     val colors = MooTheme.colors
 
     fun refresh() {
@@ -66,11 +82,11 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
         val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
         Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("config.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("config.title"))
             Spacer(Modifier.weight(1f))
             OverflowActionCluster(
                 overflow = overflow,
@@ -87,135 +103,187 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
                             session.yaml = ""
                         }
                         session.error = ""
-                        session.notice = container.t("json.notice.cleared")
                         refresh()
                     })
                     if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.YmlProperties) })
                 }
             )
         }
-        Row(
-            modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            MooButton(container.t("config.tab.convert"), primary = session.tab == "convert", onClick = {
+        MooToolTabsRow {
+            MooToolTab(container.t("config.tab.convert"), selected = session.tab == "convert", onClick = {
                 session.tab = "convert"
                 session.error = ""
                 refresh()
             })
-            MooButton(container.t("config.tab.validate"), primary = session.tab == "validate", onClick = {
+            MooToolTab(container.t("config.tab.validate"), selected = session.tab == "validate", onClick = {
                 session.tab = "validate"
                 session.error = ""
                 refresh()
             })
         }
         if (session.tab == "convert") {
-            Row(Modifier.weight(1f).fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            ConfigIoPanes(
+                container = container,
+                settings = settings,
+                paneKey = "config-convert",
+                middleRatio = 0.28f,
+                minRight = 240f,
+                modifier = Modifier.weight(1f).fillMaxWidth().padding(12.dp),
+                left = {
+                Column(Modifier.fillMaxSize().mooToolShell().padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(container.t("config.properties"), color = colors.textSecondary, fontSize = 12.sp)
                     MooTextField(
                         session.properties,
-                        { session.properties = it; session.error = ""; refresh() },
+                        {
+                            applyUserEditClearingStatusNotice({ session.notice }, { session.notice = it }) {
+                                session.properties = it
+                                session.error = ""
+                            }
+                            refresh()
+                        },
                         modifier = Modifier.weight(1f).fillMaxWidth(),
                         singleLine = false
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        MooButton(container.t("config.importProperties"), onClick = {
+                        MooButton(container.t("config.importProperties"), p5Toolbar = true, onClick = {
                             importText(container.t("config.importProperties"))?.let {
                                 session.properties = it
                                 session.notice = container.t("json.notice.imported")
+                                container.toastSuccess(container.t("json.notice.imported"))
                                 session.error = ""
                                 refresh()
                             }
                         })
-                        MooButton(container.t("config.exportProperties"), onClick = {
+                        MooButton(container.t("config.exportProperties"), p5Toolbar = true, onClick = {
                             exportText(container, session, session.properties, "config.properties")
                             refresh()
                         })
                     }
                 }
+                },
+                middle = {
                 Column(
-                    modifier = Modifier.width(176.dp).fillMaxHeight(),
+                    modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    MooButton(container.t("config.toYaml"), primary = true, onClick = {
+                    MooButton(container.t("config.toYaml"), prominent = true, p5Toolbar = true, onClick = {
                         convert(container, session, toYaml = true)
                         refresh()
                     })
-                    MooButton(container.t("config.toProperties"), onClick = {
+                    MooButton(container.t("config.toProperties"), p5Toolbar = true, onClick = {
                         convert(container, session, toYaml = false)
                         refresh()
                     })
                 }
-                Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                },
+                right = {
+                Column(Modifier.fillMaxSize().mooToolShell().padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(container.t("config.yaml"), color = colors.textSecondary, fontSize = 12.sp)
                     MooTextField(
                         session.yaml,
-                        { session.yaml = it; session.error = ""; refresh() },
+                        {
+                            applyUserEditClearingStatusNotice({ session.notice }, { session.notice = it }) {
+                                session.yaml = it
+                                session.error = ""
+                            }
+                            refresh()
+                        },
                         modifier = Modifier.weight(1f).fillMaxWidth(),
                         singleLine = false
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        MooButton(container.t("config.importYaml"), onClick = {
+                        MooButton(container.t("config.importYaml"), p5Toolbar = true, onClick = {
                             importText(container.t("config.importYaml"))?.let {
                                 session.yaml = it
                                 session.notice = container.t("json.notice.imported")
+                                container.toastSuccess(container.t("json.notice.imported"))
                                 session.error = ""
                                 refresh()
                             }
                         })
-                        MooButton(container.t("config.exportYaml"), onClick = {
+                        MooButton(container.t("config.exportYaml"), p5Toolbar = true, onClick = {
                             exportText(container, session, session.yaml, "config.yaml")
                             refresh()
                         })
                     }
                 }
-            }
+                }
+            )
         } else {
-            Row(Modifier.weight(1f).fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(Modifier.weight(1.2f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            ConfigIoPanes(
+                container = container,
+                settings = settings,
+                paneKey = "config-validate",
+                middleRatio = 0.32f,
+                minRight = 220f,
+                modifier = Modifier.weight(1f).fillMaxWidth().padding(12.dp),
+                left = {
+                Column(Modifier.fillMaxSize().mooToolShell().padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(container.t("config.yaml"), color = colors.textSecondary, fontSize = 12.sp)
                     MooTextField(
                         session.validateSource,
-                        { session.validateSource = it; session.error = ""; session.valid = null; refresh() },
+                        {
+                            applyUserEditClearingStatusNotice({ session.notice }, { session.notice = it }) {
+                                session.validateSource = it
+                                session.error = ""
+                                session.valid = null
+                            }
+                            refresh()
+                        },
                         modifier = Modifier.weight(1f).fillMaxWidth(),
                         singleLine = false
                     )
                 }
+                },
+                middle = {
                 Column(
-                    modifier = Modifier.width(140.dp).fillMaxHeight(),
+                    modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    MooButton(container.t("config.validate"), primary = true, onClick = {
+                    MooButton(container.t("config.validate"), prominent = true, p5Toolbar = true, onClick = {
                         validate(container, session)
                         refresh()
                     })
-                    MooButton(container.t("config.format"), onClick = {
+                    MooButton(container.t("config.format"), p5Toolbar = true, onClick = {
                         format(container, session)
                         refresh()
                     })
                 }
-                Column(Modifier.weight(0.8f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                },
+                right = {
+                Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(container.t("config.result"), color = colors.textSecondary, fontSize = 12.sp)
+                    val kind = when (session.valid) {
+                        true -> MooStatusKind.Valid
+                        false -> MooStatusKind.Error
+                        null -> MooStatusKind.Neutral
+                    }
+                    val dark = MooTheme.dark
                     Column(
-                        Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(8.dp))
-                            .background(colors.surfaceSubtle)
-                            .padding(10.dp)
+                        Modifier.weight(1f).fillMaxWidth()
+                            .clip(RoundedCornerShape(7.dp))
+                            .background(
+                                if (kind == MooStatusKind.Neutral) colors.surfaceSubtle
+                                else statusPillFill(kind, dark)
+                            )
+                            .padding(18.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
                         Text(
                             session.validation.ifEmpty { container.t("config.validate") },
-                            color = if (session.valid == false) colors.danger else colors.textPrimary,
-                            fontSize = 13.sp
+                            color = statusPillContent(kind, dark, colors.textPrimary),
+                            fontSize = 11.sp,
+                            lineHeight = 18.sp
                         )
                     }
                 }
-            }
+                }
+            )
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).mooStatusBarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -236,13 +304,27 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
             title = container.t("common.action.history"),
             onRestore = { item ->
                 applyHistory(session, item)
-                session.notice = container.t("json.notice.restored")
                 session.historyOpen = false
                 refresh()
             },
             onDismiss = { session.historyOpen = false; refresh() }
         )
     }
+}
+
+@Composable
+private fun ConfigIoPanes(
+    container: AppContainer,
+    settings: AppSettings,
+    paneKey: String,
+    middleRatio: Float,
+    minRight: Float,
+    modifier: Modifier,
+    left: @Composable () -> Unit,
+    middle: @Composable () -> Unit,
+    right: @Composable () -> Unit
+) {
+    IoThreePaneRow(container, settings, paneKey, middleRatio, minRight, modifier, left, middle, right)
 }
 
 private fun convert(container: AppContainer, session: ConfigSession, toYaml: Boolean) {
@@ -254,10 +336,13 @@ private fun convert(container: AppContainer, session: ConfigSession, toYaml: Boo
         if (toYaml) session.yaml = output else session.properties = output
         session.error = ""
         session.notice = summary
+        container.toastSuccess(summary)
         container.history.save(ToolId.YmlProperties.id, summary, summary, input, output, if (toYaml) "toYaml" else "toProperties")
     }.onFailure { error ->
         session.notice = ""
-        session.error = messageFor(container, error)
+        val message = messageFor(container, error)
+        session.error = message
+        container.toastError(message)
     }
 }
 
@@ -266,7 +351,9 @@ private fun validate(container: AppContainer, session: ConfigSession) {
     session.valid = result.valid
     session.validation = if (result.valid) container.t("config.valid") else container.t("config.invalid", mapOf("message" to result.message))
     session.error = if (result.valid) "" else session.validation
-    session.notice = if (result.valid) container.t("config.valid") else ""
+    val notice = if (result.valid) container.t("config.valid") else ""
+    session.notice = notice
+    if (result.valid) container.toastSuccess(notice)
     container.history.save(ToolId.YmlProperties.id, container.t("config.validate"), container.t("config.validate"), session.validateSource, session.validation, "validate")
 }
 
@@ -279,12 +366,15 @@ private fun format(container: AppContainer, session: ConfigSession) {
             session.validation = container.t("config.valid")
             session.error = ""
             session.notice = container.t("config.format")
+            container.toastSuccess(session.notice)
             container.history.save(ToolId.YmlProperties.id, container.t("config.format"), container.t("config.format"), input, output, "format")
         }
         .onFailure { error ->
             session.valid = false
             session.notice = ""
-            session.error = messageFor(container, error)
+            val message = messageFor(container, error)
+            session.error = message
+            container.toastError(message)
         }
 }
 
@@ -313,6 +403,7 @@ private fun exportText(container: AppContainer, session: ConfigSession, content:
         .onSuccess {
             session.error = ""
             session.notice = container.t("json.notice.exported")
+            container.toastSuccess(container.t("json.notice.exported"))
         }
         .onFailure { error ->
             session.error = container.t("config.error.write", mapOf("message" to (error.message ?: file.path)))

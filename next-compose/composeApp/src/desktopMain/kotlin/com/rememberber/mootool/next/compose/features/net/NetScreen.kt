@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,8 +13,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -22,7 +25,6 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,9 +41,9 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.NetCommandHandle
 import com.rememberber.mootool.next.compose.domain.NetConvertException
@@ -53,23 +55,32 @@ import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.NetSession
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
+import com.rememberber.mootool.next.compose.ui.components.setPaneSize
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.components.rememberFollowTailScroll
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
+import com.rememberber.mootool.next.compose.ui.workbench.blockedByIme
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.OnToolLeaveUnlessDetached
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
 
 @Composable
 fun NetScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.netSession() }
+    DismissModalOverlaysOnDispose(container, ToolId.Net) { session.dismissModalOverlays() }
     val revision by container.sessionManager.revision.collectAsState()
+    val settings by container.settings.collectAsState()
     val colors = MooTheme.colors
     val scope = rememberCoroutineScope()
     var commandJob by remember { mutableStateOf<Job?>(null) }
@@ -142,15 +153,17 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                 session.error = if (result.errorCode != null && result.errorCode != NetworkErrorCode.ABORTED) {
                     localized ?: result.output
                 } else ""
-                session.notice = action.name
+                val label = networkActionLabel(container, action)
+                session.notice = label
+                if (session.error.isNotEmpty()) container.toastError(session.error) else container.toastSuccess(label)
                 val historyOutput = session.output.take(8_000)
                 container.history.save(
                     ToolId.Net.id,
-                    action.name,
-                    "${action.name} ${target.orEmpty()} ${ports.orEmpty()}".trim(),
+                    label,
+                    "${label} ${target.orEmpty()} ${ports.orEmpty()}".trim(),
                     target.orEmpty(),
                     historyOutput,
-                    action.name
+                    label
                 )
                 persist()
             }
@@ -160,24 +173,27 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
     LaunchedEffect(Unit) {
         if (session.ipv4Addresses.isEmpty() && session.ipv6Addresses.isEmpty()) refreshAddresses()
     }
-    DisposableEffect(Unit) {
-        onDispose {
-            if (!container.sessionManager.isDetached(ToolId.Net)) {
-                handle.cancel()
-                session.running = null
-            }
-        }
+    OnToolLeaveUnlessDetached(container, ToolId.Net) {
+        handle.cancel()
+        session.running = null
     }
 
     BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
         val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+        val minOutputPane = 340f
+        val minToolsPane = 300f
+        val paneHandle = 10f
+        val innerWidth = maxWidth.value - 24f
+        val maxOutputWidth = (innerWidth - paneHandle - minToolsPane).coerceAtLeast(minOutputPane)
+        val defaultOutputWidth = (innerWidth * (1.15f / 2f)).coerceIn(minOutputPane, maxOutputWidth)
+        val outputWidth = settings.layout.pane(ToolId.Net.id, 0, defaultOutputWidth, minOutputPane, maxOutputWidth)
         Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("net.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("net.title"))
             if (revision < 0) Spacer(Modifier.width(0.dp))
             Spacer(Modifier.weight(1f))
             OverflowActionCluster(
@@ -192,29 +208,35 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
         if (session.error.isNotEmpty()) {
             Text(session.error, color = colors.danger, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), fontSize = 12.sp)
         }
-        Row(Modifier.weight(1f).fillMaxWidth()) {
-            Column(
-                Modifier.weight(1.15f).fillMaxHeight().padding(12.dp)
-                    .clip(RoundedCornerShape(12.dp)).background(colors.surfaceSubtle).border(1.dp, colors.border, RoundedCornerShape(12.dp))
-            ) {
+        Box(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .mooToolShell(p5 = true, endBorder = false)
+        ) {
+        Row(Modifier.fillMaxSize()) {
+            Column(Modifier.width(outputWidth.dp).widthIn(min = 340.dp).fillMaxHeight()) {
                 Row(
-                    Modifier.fillMaxWidth().padding(8.dp),
+                    Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 9.dp, vertical = 7.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     MooButton(
                         NetEngine.interfacesCommandLabel(),
                         onClick = { runAction(NetworkAction.Interfaces) },
-                        enabled = session.running == null
+                        enabled = session.running == null,
+                        p5Toolbar = true
                     )
                     MooButton(
                         "netstat",
                         onClick = { runAction(NetworkAction.Connections) },
-                        enabled = session.running == null
+                        enabled = session.running == null,
+                        p5Toolbar = true
                     )
                     Spacer(Modifier.weight(1f))
                     if (session.running != null) {
-                        MooButton(container.t("common.stop"), onClick = { stop() })
+                        MooButton(container.t("common.stop"), onClick = { stop() }, p5Toolbar = true)
                     }
                     OverflowActionCluster(
                         overflow = overflow,
@@ -232,24 +254,28 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                         )
                     )
                 }
-                SelectionContainer {
+                Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
+                SelectionContainer(Modifier.weight(1f).fillMaxWidth()) {
                     Text(
                         session.output.ifBlank { container.t("net.outputPlaceholder") },
-                        color = if (session.output.isBlank()) colors.textSecondary else colors.textPrimary,
-                        fontSize = 12.sp,
+                        color = if (session.output.isBlank()) colors.textMuted else colors.textBody,
+                        fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
-                        modifier = Modifier.fillMaxSize().verticalScroll(outputScroll).padding(12.dp)
+                        modifier = Modifier.fillMaxSize().verticalScroll(outputScroll).padding(horizontal = 16.dp, vertical = 14.dp)
                     )
                 }
             }
+            VerticalPaneHandle(
+                onDelta = { container.setPaneSize(ToolId.Net.id, 0, outputWidth + it, 1) },
+                onReset = { container.setPaneSize(ToolId.Net.id, 0, defaultOutputWidth, 1) }
+            )
             Column(
-                Modifier.weight(0.85f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                Modifier.weight(1f).widthIn(min = 300.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 16.dp)
             ) {
                 Section(container.t("net.ipv4Long")) {
                     LabeledField("IPv4", session.ipv4) { session.ipv4 = it; persist() }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        MooButton("${container.t("common.convert")} ↓", onClick = {
+                        MooButton("${container.t("common.convert")} ↓", p5Toolbar = true, onClick = {
                             runCatching { NetEngine.ipv4ToLong(session.ipv4).toString() }
                                 .onSuccess { value ->
                                     session.longValue = value
@@ -262,7 +288,7 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                                     persist()
                                 }
                         })
-                        MooButton("↑ ${container.t("common.convert")}", onClick = {
+                        MooButton("↑ ${container.t("common.convert")}", p5Toolbar = true, onClick = {
                             runCatching { NetEngine.longToIpv4(session.longValue) }
                                 .onSuccess { value ->
                                     session.ipv4 = value
@@ -296,13 +322,13 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                     onChange = { session.ipRange = it; persist() },
                     onRun = { runAction(NetworkAction.PingRange, session.ipRange) }
                 )
-                Text(container.t("net.ipRangeHint"), color = colors.textSecondary, fontSize = 11.sp)
+                Text(container.t("net.ipRangeHint"), color = colors.textMuted, fontSize = 9.sp, modifier = Modifier.padding(start = 20.dp, top = 2.dp))
                 Section(container.t("net.portScan")) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.onPreviewKeyEvent { event ->
-                            if (event.type == KeyEventType.KeyDown && event.key == Key.Enter && session.running == null) {
+                            if (!event.blockedByIme() && event.type == KeyEventType.KeyDown && event.key == Key.Enter && session.running == null) {
                                 runAction(NetworkAction.PortScan, session.portScanTarget, session.portSpec)
                                 true
                             } else false
@@ -311,20 +337,25 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                         MooTextField(
                             session.portScanTarget,
                             { session.portScanTarget = it; persist() },
-                            modifier = Modifier.weight(1f),
-                            placeholder = container.t("net.portScanTargetPlaceholder")
+                            modifier = Modifier.weight(0.8f),
+                            placeholder = container.t("net.portScanTargetPlaceholder"),
+                            dense = true
                         )
                         MooTextField(
                             session.portSpec,
                             { session.portSpec = it; persist() },
-                            modifier = Modifier.weight(1f),
-                            placeholder = container.t("net.portScanPortsPlaceholder")
+                            modifier = Modifier.weight(1.2f),
+                            placeholder = container.t("net.portScanPortsPlaceholder"),
+                            dense = true
                         )
-                        MooButton(container.t("net.scan"), onClick = {
-                            runAction(NetworkAction.PortScan, session.portScanTarget, session.portSpec)
-                        }, enabled = session.running == null)
+                        MooButton(
+                            container.t("net.scan"),
+                            onClick = { runAction(NetworkAction.PortScan, session.portScanTarget, session.portSpec) },
+                            enabled = session.running == null,
+                            p5Toolbar = true
+                        )
                     }
-                    Text(container.t("net.portScanHint"), color = colors.textSecondary, fontSize = 11.sp)
+                    Text(container.t("net.portScanHint"), color = colors.textMuted, fontSize = 9.sp, modifier = Modifier.padding(start = 20.dp, top = 2.dp))
                 }
                 CommandSection(
                     title = container.t("net.resolve"),
@@ -348,23 +379,25 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                     MooButton(
                         container.t("net.flushDns"),
                         onClick = { runAction(NetworkAction.FlushDns) },
-                        enabled = session.running == null
+                        enabled = session.running == null,
+                        p5Toolbar = true
                     )
                 }
                 Section(container.t("net.localAddresses")) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("IPv4", color = colors.textSecondary, fontSize = 12.sp)
-                            MooTextField(session.ipv4Addresses, {}, modifier = Modifier.fillMaxWidth(), singleLine = false)
+                            Text("IPv4", color = colors.textMuted, fontSize = 9.sp)
+                            MooTextField(session.ipv4Addresses, {}, modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp), singleLine = false, code = true)
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("IPv6", color = colors.textSecondary, fontSize = 12.sp)
-                            MooTextField(session.ipv6Addresses, {}, modifier = Modifier.fillMaxWidth(), singleLine = false)
+                            Text("IPv6", color = colors.textMuted, fontSize = 9.sp)
+                            MooTextField(session.ipv6Addresses, {}, modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp), singleLine = false, code = true)
                         }
                     }
-                    MooButton(container.t("common.refresh"), onClick = { refreshAddresses() })
+                    MooButton(container.t("common.refresh"), onClick = { refreshAddresses() }, p5Toolbar = true)
                 }
             }
+        }
         }
     }
     }
@@ -385,12 +418,12 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
 private fun Section(title: String, content: @Composable () -> Unit) {
     val colors = MooTheme.colors
     Column(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(colors.surfaceSubtle)
-            .border(1.dp, colors.border, RoundedCornerShape(12.dp)).padding(12.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(title, color = colors.textPrimary, fontSize = 14.sp)
+        Text(title, color = colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         content()
+        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
     }
 }
 
@@ -406,26 +439,26 @@ private fun CommandSection(
 ) {
     Section(title) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.onPreviewKeyEvent { event ->
-                if (event.type == KeyEventType.KeyDown && event.key == Key.Enter && !disabled) {
+                if (!event.blockedByIme() && event.type == KeyEventType.KeyDown && event.key == Key.Enter && !disabled) {
                     onRun()
                     true
                 } else false
             }
         ) {
-            MooTextField(value, onChange, modifier = Modifier.weight(1f), placeholder = placeholder.orEmpty())
-            MooButton(button, onClick = onRun, enabled = !disabled)
+            MooTextField(value, onChange, modifier = Modifier.weight(1f), placeholder = placeholder.orEmpty(), dense = true)
+            MooButton(button, onClick = onRun, enabled = !disabled, p5Toolbar = true)
         }
     }
 }
 
 @Composable
 private fun LabeledField(label: String, value: String, onChange: (String) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(label, color = MooTheme.colors.textSecondary, fontSize = 12.sp)
-        MooTextField(value, onChange, modifier = Modifier.fillMaxWidth())
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Text(label, color = MooTheme.colors.textMuted, fontSize = 9.sp)
+        MooTextField(value, onChange, modifier = Modifier.fillMaxWidth(), dense = true)
     }
 }
 
@@ -452,6 +485,17 @@ private fun restoreNetHistory(session: NetSession, item: HistoryRecord) {
     }
 }
 
+private fun networkActionLabel(container: AppContainer, action: NetworkAction): String = when (action) {
+    NetworkAction.Interfaces -> "ifconfig"
+    NetworkAction.Connections -> "netstat"
+    NetworkAction.Ping -> container.t("net.ping")
+    NetworkAction.PingRange -> container.t("net.ipRangeScan")
+    NetworkAction.PortScan -> container.t("net.portScan")
+    NetworkAction.FlushDns -> container.t("net.flushDns")
+    NetworkAction.Resolve -> container.t("net.resolve")
+    NetworkAction.Whois -> container.t("net.whois")
+}
+
 private fun errorMessage(container: AppContainer, code: NetworkErrorCode, raw: String): String {
     val key = "net.error.${code.name}"
     val localized = container.t(key)
@@ -470,10 +514,5 @@ private fun convertMessage(container: AppContainer, error: Throwable): String {
 }
 
 private fun copyText(value: String, container: AppContainer): String {
-    return try {
-        Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null)
-        container.t("json.notice.copied")
-    } catch (_: Exception) {
-        container.t("common.copyFailed")
-    }
+    return if (container.copyText(value)) container.t("json.notice.copied") else container.t("common.copyFailed")
 }

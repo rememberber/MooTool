@@ -73,7 +73,15 @@ object JsonEngine {
                 throw JsonException(t.t("json.error.duplicateKeys", mapOf("paths" to duplicates.joinToString(", "))))
             }
         }
-        return rewrite(input, t, pretty = true, spaces = options.spaces, sortKeys = options.sortKeys, ignoreCase = options.ignoreCase)
+        val pretty = options.spaces > 0
+        return rewrite(
+            input,
+            t,
+            pretty = pretty,
+            spaces = options.spaces,
+            sortKeys = options.sortKeys,
+            ignoreCase = options.ignoreCase,
+        )
     }
 
     fun findDuplicateKeys(input: String, ignoreCase: Boolean = false): List<String> {
@@ -138,6 +146,29 @@ object JsonEngine {
         } catch (error: JsonPathException) {
             throw JsonException(t.t("json.error.invalidPath", mapOf("reason" to (error.message ?: path))))
         }
+    }
+
+    /** 路径选择器/内联树预览：对齐 Electron `JsonPathPicker` `formatPreview`（字符串不包 JSON 引号）。 */
+    fun pathPickerPreview(input: String, path: String, t: JsonTranslator): String {
+        if (path.isBlank()) return ""
+        val document = parsePreserving(input, t)
+        return try {
+            formatPickerPreview(JsonPath.using(jsonPathConfig).parse(document).read<JsonNode>(path.trim()))
+        } catch (_: PathNotFoundException) {
+            ""
+        } catch (error: InvalidPathException) {
+            throw JsonException(t.t("json.error.invalidPath", mapOf("reason" to (error.message ?: path))))
+        } catch (error: JsonPathException) {
+            throw JsonException(t.t("json.error.invalidPath", mapOf("reason" to (error.message ?: path))))
+        }
+    }
+
+    private fun formatPickerPreview(result: JsonNode?): String {
+        if (result == null || result.isMissingNode) return ""
+        val node = if (result.isArray && result.size() == 1) result[0] else result
+        if (node == null || node.isMissingNode) return ""
+        if (node.isTextual) return node.textValue()
+        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(node)
     }
 
     private fun formatPathResult(result: JsonNode?): String {

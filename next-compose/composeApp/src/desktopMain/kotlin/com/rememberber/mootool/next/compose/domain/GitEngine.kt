@@ -7,6 +7,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
+import kotlin.io.path.isRegularFile
+import kotlin.io.path.name
 import kotlin.io.path.pathString
 import kotlin.io.path.writeText
 
@@ -75,6 +77,10 @@ object GitEngine {
     const val TIMEOUT_MS = 30_000L
     const val REMOTE_TIMEOUT_MS = 120_000L
     const val MAX_DIFF_PREVIEW_BYTES = 512 * 1024
+    private const val STALE_INDEX_LOCK_MS = 5 * 60 * 1_000L
+    private const val INDEX_LOCK_RETRY_MS = 250L
+    private const val INDEX_LOCK_STABILITY_MS = 100L
+    private val INDEX_LOCK_FAILURE = Regex("""unable to create [^\r\n]*index\.lock['"]?: file exists""", RegexOption.IGNORE_CASE)
     private val COMMIT_HASH = Regex("^[0-9a-f]{7,40}$", RegexOption.IGNORE_CASE)
     val defaultGitignore: String = ".DS_Store\n.idea/\n.vscode/\n*.tmp\n.migrated-from-db\n"
     private val locks = ConcurrentHashMap<String, Any>()
@@ -183,12 +189,14 @@ object GitEngine {
             if (!COMMIT_HASH.matches(normalizedCommit)) return@locked emptyList()
             return@locked commitDiffFiles(root, normalizedCommit, path, isolateConfig)
         }
+        val pathArg = path?.trim().orEmpty()
         val wanted = normalizeGitPath(path)
+        if (pathArg.isNotEmpty() && wanted == null) {
+            throw IllegalArgumentException("Invalid Git path")
+        }
         val changes = if (wanted == null) current.changes else current.changes.filter { it.path == wanted }
         if (wanted != null && changes.isEmpty()) {
-            val before = readBlobPreview(root, "HEAD", wanted, isolateConfig)
-            val after = readWorkingPreview(root, wanted)
-            return@locked listOf(toFileDiff(GitChange(wanted, null, " M", false), before, after))
+            return@locked emptyList()
         }
         changes.map { change ->
             val before = readBlobPreview(root, "HEAD", change.originalPath ?: change.path, isolateConfig)
@@ -197,10 +205,26 @@ object GitEngine {
         }
     }
 
+    fun normalizeGitRemote(value: String): String {
+        val remote = value.trim()
+        if (remote.isEmpty()) return ""
+        if (remote.length > 2048 || remote.any { it == '\r' || it == '\n' || it == '\u0000' }) {
+            throw IllegalArgumentException("Invalid Git remote")
+        }
+        if (!GIT_REMOTE_PREFIX.containsMatchIn(remote)) {
+            throw IllegalArgumentException("Invalid Git remote")
+        }
+        return remote
+    }
+
     fun setRemote(root: Path, url: String, isolateConfig: Boolean = false): GitActionResult = locked(root) {
         val current = status(root, isolateConfig)
         if (!current.repository) return@locked GitActionResult(false, "Git repository is not initialized in the Vault root")
-        val remote = url.trim()
+        val remote = try {
+            normalizeGitRemote(url)
+        } catch (error: IllegalArgumentException) {
+            return@locked GitActionResult(false, error.message ?: "Invalid Git remote")
+        }
         val exists = run(listOf("remote", "get-url", "origin"), root, isolateConfig).exitCode == 0
         val result = when {
             remote.isEmpty() && exists -> run(listOf("remote", "remove", "origin"), root, isolateConfig)
@@ -218,8 +242,8 @@ object GitEngine {
     fun pull(root: Path, isolateConfig: Boolean = false, token: String = ""): GitActionResult = locked(root) {
         val current = status(root, isolateConfig)
         if (!current.repository) return@locked GitActionResult(false, "Git repository is not initialized")
-        if (current.remote.isBlank()) return@locked GitActionResult(false, "No origin remote is configured")
         if (current.merging) return@locked GitActionResult(false, "Finish or abort the current merge/rebase before pulling")
+        if (current.remote.isBlank()) return@locked GitActionResult(false, "No origin remote is configured")
         val result = run(listOf("pull", "--no-rebase", "origin"), root, isolateConfig, token, REMOTE_TIMEOUT_MS)
         if (result.exitCode == 0) GitActionResult(true, result.stdout.trim().ifBlank { result.stderr.trim().ifBlank { "Done" } })
         else failure(result)
@@ -474,6 +498,8 @@ object GitEngine {
     private fun failure(result: GitCommandResult): GitActionResult =
         GitActionResult(false, result.stderr.trim().ifBlank { result.stdout.trim().ifBlank { "Git command failed" } })
 
+    private val GIT_REMOTE_PREFIX = Regex("^(https?://|ssh://|git://|git@|file://)", RegexOption.IGNORE_CASE)
+
     private val windows: Boolean
         get() = System.getProperty("os.name").orEmpty().contains("Windows", ignoreCase = true)
 
@@ -483,6 +509,78 @@ object GitEngine {
     }
 
     internal fun run(
+        args: List<String>,
+        cwd: Path?,
+        isolateConfig: Boolean,
+        token: String = "",
+        timeoutMs: Long = TIMEOUT_MS
+    ): GitCommandResult {
+        var result = executeRun(args, cwd, isolateConfig, token, timeoutMs)
+        if (cwd == null || !isIndexLockFailure(result)) return result
+        Thread.sleep(INDEX_LOCK_RETRY_MS)
+        result = executeRun(args, cwd, isolateConfig, token, timeoutMs)
+        if (!isIndexLockFailure(result)) return result
+        val quarantined = quarantineStaleIndexLock(cwd, isolateConfig)
+        if (quarantined == null) return result
+        try {
+            return executeRun(args, cwd, isolateConfig, token, timeoutMs)
+        } finally {
+            Files.deleteIfExists(quarantined)
+        }
+    }
+
+    private fun isIndexLockFailure(result: GitCommandResult): Boolean =
+        INDEX_LOCK_FAILURE.containsMatchIn("${result.stderr}\n${result.stdout}")
+
+    private fun quarantineStaleIndexLock(root: Path, isolateConfig: Boolean): Path? {
+        val lockPath = resolveIndexLockPath(root, isolateConfig) ?: return null
+        if (!lockPath.isRegularFile()) return null
+        val initial = Files.getLastModifiedTime(lockPath)
+        if (System.currentTimeMillis() - initial.toMillis() < STALE_INDEX_LOCK_MS) return null
+        if (gitIndexLockHasOpenHandle(lockPath)) return null
+        Thread.sleep(INDEX_LOCK_STABILITY_MS)
+        if (!lockPath.isRegularFile()) return null
+        val stable = Files.getLastModifiedTime(lockPath)
+        if (initial != stable) return null
+        val quarantined = lockPath.resolveSibling(
+            "${lockPath.name}.mootool-stale-${System.currentTimeMillis()}-${ProcessHandle.current().pid()}",
+        )
+        return try {
+            Files.move(lockPath, quarantined)
+            quarantined
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun resolveIndexLockPath(root: Path, isolateConfig: Boolean): Path? {
+        val result = executeRun(listOf("rev-parse", "--git-path", "index.lock"), root, isolateConfig)
+        if (result.exitCode != 0) return null
+        val relative = result.stdout.trim()
+        if (relative.isEmpty()) return null
+        val lockPath = root.resolve(relative).normalize()
+        return if (lockPath.name == "index.lock") lockPath else null
+    }
+
+    private fun gitIndexLockHasOpenHandle(lockPath: Path): Boolean {
+        val executable = when {
+            System.getProperty("os.name").orEmpty().contains("Mac", ignoreCase = true) -> "/usr/sbin/lsof"
+            System.getProperty("os.name").orEmpty().contains("Linux", ignoreCase = true) -> "lsof"
+            else -> return false
+        }
+        return try {
+            val process = ProcessBuilder(listOf(executable, "-t", "--", lockPath.pathString))
+                .redirectErrorStream(true)
+                .start()
+            val output = process.inputStream.bufferedReader().readText()
+            process.waitFor(2, TimeUnit.SECONDS)
+            output.isNotBlank()
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun executeRun(
         args: List<String>,
         cwd: Path?,
         isolateConfig: Boolean,

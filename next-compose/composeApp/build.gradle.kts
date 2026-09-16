@@ -96,6 +96,8 @@ kotlin {
                 implementation(libs.commonmark.ext.gfm.tables)
                 implementation(libs.commonmark.ext.gfm.strikethrough)
                 implementation(libs.commonmark.ext.task.list.items)
+                implementation(libs.mcp)
+                implementation(libs.tomlj)
             }
         }
         val desktopTest by getting {

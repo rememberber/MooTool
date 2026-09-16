@@ -23,6 +23,17 @@ class VaultTreeTest {
     }
 
     @Test
+    fun vaultTreeExpandForMode_smart_expandsRootOnly() {
+        val items = listOf(
+            VaultEntry("Work", "Work", true, 0),
+            VaultEntry("Work/nested", "nested", true, 0),
+        )
+        val map = vaultTreeExpandForMode("smart", items)
+        assertEquals(true, map["Work"])
+        assertEquals(false, map["Work/nested"])
+    }
+
+    @Test
     fun contextMenuHidesFileOnlyActionsOnDirectories() {
         val actions = listOf(
             VaultContextAction(VaultContextId.Rename, "Rename"),

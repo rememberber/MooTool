@@ -14,6 +14,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -22,7 +24,9 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.DiffEngine
 import com.rememberber.mootool.next.compose.domain.VaultConflictState
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
+import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 
 @Composable
@@ -31,7 +35,10 @@ fun VaultConflictDialog(
     conflict: VaultConflictState,
     onReload: () -> Unit,
     onSaveCopy: () -> Unit,
-    onKeep: () -> Unit
+    onKeep: () -> Unit,
+    reloadButtonModifier: Modifier = Modifier,
+    saveCopyButtonModifier: Modifier = Modifier,
+    keepButtonModifier: Modifier = Modifier,
 ) {
     val colors = MooTheme.colors
     val preview = if (conflict.deleted) {
@@ -44,13 +51,10 @@ fun VaultConflictDialog(
     }
     MooOverlay(onDismiss = onKeep) {
         Column(
-            Modifier.width(640.dp).height(420.dp)
-                .background(colors.workspace, RoundedCornerShape(12.dp))
-                .border(1.dp, colors.border, RoundedCornerShape(12.dp))
-                .padding(16.dp),
+            Modifier.width(640.dp).height(420.dp).mooDialogSurface().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("vault.conflict.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("vault.conflict.title"))
             Text(conflict.relativePath, color = colors.warning, fontSize = 12.sp)
             Text(container.t("vault.conflict.hint"), color = colors.textSecondary, fontSize = 12.sp)
             Text(
@@ -62,10 +66,29 @@ fun VaultConflictDialog(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (!conflict.deleted) {
-                    MooButton(container.t("vault.conflict.reload"), primary = true, onClick = onReload)
+                    MooButton(
+                        container.t("vault.conflict.reload"),
+                        prominent = true,
+                        onClick = onReload,
+                        modifier = reloadButtonModifier.semantics {
+                            contentDescription = container.t("vault.conflict.reload")
+                        },
+                    )
                 }
-                MooButton(container.t("vault.conflict.saveCopy"), onClick = onSaveCopy)
-                MooButton(container.t("vault.conflict.keep"), onClick = onKeep)
+                MooButton(
+                    container.t("vault.conflict.saveCopy"),
+                    onClick = onSaveCopy,
+                    modifier = saveCopyButtonModifier.semantics {
+                        contentDescription = container.t("vault.conflict.saveCopy")
+                    },
+                )
+                MooButton(
+                    container.t("vault.conflict.keep"),
+                    onClick = onKeep,
+                    modifier = keepButtonModifier.semantics {
+                        contentDescription = container.t("vault.conflict.keep")
+                    },
+                )
             }
         }
     }

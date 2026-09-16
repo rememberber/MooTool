@@ -63,6 +63,24 @@ class HostProfileStore(
         persist(load().filterNot { it.id == id })
     }
 
+    fun mergeImport(profiles: List<HostProfile>): Int {
+        if (profiles.isEmpty()) return 0
+        val items = load().toMutableList()
+        val seen = items.map { it.name.trim().lowercase() }.toMutableSet()
+        var imported = 0
+        profiles.forEach { profile ->
+            val name = profile.name.trim()
+            if (name.isEmpty()) return@forEach
+            val key = name.lowercase()
+            if (key in seen) return@forEach
+            items.add(0, profile)
+            seen += key
+            imported += 1
+        }
+        if (imported > 0) persist(items)
+        return imported
+    }
+
     private fun load(): List<HostProfile> {
         if (!file.exists()) return emptyList()
         return runCatching { json.decodeFromString<List<HostProfile>>(file.readText()) }.getOrDefault(emptyList())

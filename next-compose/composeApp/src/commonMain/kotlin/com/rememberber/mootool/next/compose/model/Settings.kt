@@ -38,7 +38,8 @@ data class GeneralSettings(
     val autoDownloadUpdates: Boolean = false,
     val startMaximized: Boolean = false,
     val closeBehavior: String = CloseBehavior.Ask.name.lowercase(),
-    val trayEnabled: Boolean = true
+    val trayEnabled: Boolean = true,
+    val legacyMigrationHintDismissed: Boolean = false,
 )
 
 @Serializable

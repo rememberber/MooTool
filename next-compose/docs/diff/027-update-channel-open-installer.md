@@ -16,7 +16,7 @@ Flutter `next-flutter` 更接近本产品：下载校验后打开安装包，不
 
 稳定版忽略 prerelease。只选当前 OS/arch；darwin 只要 `dmg`。下载走 HTTPS 到本产品 `cache/updates`，校验字节数与标准 Base64 SHA-512，成功后写 `{fileName}.ready`。校验失败删除临时文件，不打开。可取消。完整流程是检查→展示说明→下载→校验→**打开安装包**。界面不声称自动安装完成，也不调用 Electron updater。
 
-`autoCheckUpdates`（默认 true）在启动后后台检查；`autoDownloadUpdates`（默认 false）可自动下载，仍需用户点打开。Feed 默认 GitHub raw 清单，可用 `MOOTOOL_COMPOSE_UPDATE_FEED_URL` 覆盖。HTTPS 重定向允许，跳到 http 则拒绝。
+`autoCheckUpdates`（默认 true）在启动后后台检查（2.5s 首次、每小时重复，见 [DIFF-409](409-update-auto-check-schedule.md)）；`autoDownloadUpdates`（默认 false）可自动下载，仍需用户点打开。Feed 默认 GitHub raw 清单，可用 `MOOTOOL_COMPOSE_UPDATE_FEED_URL` 覆盖。HTTPS 重定向允许，跳到 http 则拒绝。
 
 本轮不往仓库根 `update-manifest.json` 预填 `next-compose` 节点。签名/公证、退出后自动替换安装、Windows/Linux 安装器实装仍未做。
 

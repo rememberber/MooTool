@@ -1,16 +1,20 @@
 package com.rememberber.mootool.next.compose.features.crypto
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,8 +22,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,9 +33,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.AsymmetricAlgorithm
 import com.rememberber.mootool.next.compose.domain.BaseAlgorithm
@@ -43,14 +48,30 @@ import com.rememberber.mootool.next.compose.domain.CryptoTab
 import com.rememberber.mootool.next.compose.domain.DigestAlgorithm
 import com.rememberber.mootool.next.compose.domain.RandomKind
 import com.rememberber.mootool.next.compose.domain.SymmetricAlgorithm
+import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.CryptoSession
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.SelectedFileName
+import com.rememberber.mootool.next.compose.ui.components.desktopFileDropTarget
+import com.rememberber.mootool.next.compose.ui.components.MooGhostButton
+import com.rememberber.mootool.next.compose.ui.components.MooMenu
+import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
+import com.rememberber.mootool.next.compose.ui.components.MooToolTab
+import com.rememberber.mootool.next.compose.ui.components.MooToolTabsRow
+import com.rememberber.mootool.next.compose.ui.components.IoThreePaneRow
+import com.rememberber.mootool.next.compose.ui.components.IoTwoPaneRow
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.onUserInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
@@ -59,8 +80,6 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.awt.FileDialog
 import java.awt.Frame
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
 import java.io.File
 
 @Serializable
@@ -75,7 +94,9 @@ fun CryptoScreen(container: AppContainer, detached: Boolean) {
     val session = remember {
         container.sessionManager.cryptoSession(container.settings.value.tools.randomStringLength)
     }
+    DismissModalOverlaysOnDispose(container, ToolId.Crypto) { session.dismissModalOverlays() }
     val revision by container.sessionManager.revision.collectAsState()
+    val settings by container.settings.collectAsState()
     val colors = MooTheme.colors
     val scope = rememberCoroutineScope()
     var moreOpen by remember { mutableStateOf(false) }
@@ -89,11 +110,11 @@ fun CryptoScreen(container: AppContainer, detached: Boolean) {
         val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
         Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("crypto.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("crypto.title"))
             Spacer(Modifier.weight(1f))
             if (!overflow) {
                 MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; refresh() })
@@ -103,12 +124,12 @@ fun CryptoScreen(container: AppContainer, detached: Boolean) {
             } else {
                 Box {
                     MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true })
-                    DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
-                        DropdownMenuItem(onClick = { moreOpen = false; session.historyOpen = true; refresh() }) {
+                    MooMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
+                        MooMenuItem(onClick = { moreOpen = false; session.historyOpen = true; refresh() }) {
                             Text(container.t("common.action.history"))
                         }
                         if (!detached) {
-                            DropdownMenuItem(onClick = { moreOpen = false; container.sessionManager.detach(ToolId.Crypto) }) {
+                            MooMenuItem(onClick = { moreOpen = false; container.sessionManager.detach(ToolId.Crypto) }) {
                                 Text(container.t("app.tool.detach"))
                             }
                         }
@@ -116,12 +137,9 @@ fun CryptoScreen(container: AppContainer, detached: Boolean) {
                 }
             }
         }
-        Row(
-            modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
+        MooToolTabsRow {
             CryptoTab.entries.forEach { tab ->
-                MooButton(container.t(tabTitleKey(tab)), primary = session.tab == tab, onClick = {
+                MooToolTab(container.t(tabTitleKey(tab)), selected = session.tab == tab, onClick = {
                     session.tab = tab
                     session.error = ""
                     refresh()
@@ -129,14 +147,14 @@ fun CryptoScreen(container: AppContainer, detached: Boolean) {
             }
         }
         when (session.tab) {
-            CryptoTab.Symmetric -> SymmetricPanel(container, session, Modifier.weight(1f).fillMaxWidth()) { refresh() }
-            CryptoTab.Asymmetric -> AsymmetricPanel(container, session, scope, Modifier.weight(1f).fillMaxWidth()) { refresh() }
+            CryptoTab.Symmetric -> SymmetricPanel(container, session, settings, Modifier.weight(1f).fillMaxWidth()) { refresh() }
+            CryptoTab.Asymmetric -> AsymmetricPanel(container, session, settings, scope, Modifier.weight(1f).fillMaxWidth()) { refresh() }
             CryptoTab.Digest -> DigestPanel(container, session, scope, Modifier.weight(1f).fillMaxWidth()) { refresh() }
-            CryptoTab.Base -> BasePanel(container, session, Modifier.weight(1f).fillMaxWidth()) { refresh() }
+            CryptoTab.Base -> BasePanel(container, session, settings, Modifier.weight(1f).fillMaxWidth()) { refresh() }
             CryptoTab.Random -> RandomPanel(container, session, Modifier.weight(1f).fillMaxWidth()) { refresh() }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).mooStatusBarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -157,7 +175,6 @@ fun CryptoScreen(container: AppContainer, detached: Boolean) {
             title = container.t("common.action.history"),
             onRestore = { item ->
                 applyHistory(session, item)
-                session.notice = container.t("json.notice.restored")
                 session.historyOpen = false
                 refresh()
             },
@@ -167,9 +184,15 @@ fun CryptoScreen(container: AppContainer, detached: Boolean) {
 }
 
 @Composable
-private fun SymmetricPanel(container: AppContainer, session: CryptoSession, modifier: Modifier, onChanged: () -> Unit) {
+private fun SymmetricPanel(
+    container: AppContainer,
+    session: CryptoSession,
+    settings: AppSettings,
+    modifier: Modifier,
+    onChanged: () -> Unit
+) {
     val colors = MooTheme.colors
-    Column(modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(container.t("crypto.algorithm"), color = colors.textSecondary, fontSize = 12.sp)
             CompactChoice(
@@ -183,41 +206,59 @@ private fun SymmetricPanel(container: AppContainer, session: CryptoSession, modi
                 }
             )
             Text(container.t("crypto.key"), color = colors.textSecondary, fontSize = 12.sp)
-            MooTextField(session.symKey, { session.symKey = it; session.error = ""; onChanged() }, modifier = Modifier.width(220.dp))
-            Text(container.t("crypto.keyHint"), color = colors.textSecondary, fontSize = 12.sp)
+            MooTextField(
+                session.symKey,
+                { session.onUserInput { session.symKey = it; session.error = ""; onChanged() } },
+                modifier = Modifier.width(220.dp)
+            )
+            Text(container.t("crypto.keyHint"), color = colors.textMuted, fontSize = 10.sp)
         }
-        Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            LabeledField(container.t("crypto.plainText"), session.symPlain, { session.symPlain = it; session.error = ""; onChanged() }, Modifier.weight(1f))
-            Column(
-                modifier = Modifier.width(140.dp).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                MooButton(container.t("crypto.encrypt"), primary = true, onClick = {
-                    runCrypto(container, session, "symmetric", "encrypt", session.symAlgorithm.name, session.symPlain) {
-                        session.symCipher = CryptoEngine.symmetricEncrypt(session.symAlgorithm, session.symPlain, session.symKey)
-                        session.symCipher
-                    }
-                    onChanged()
-                })
-                MooButton(container.t("crypto.decrypt"), onClick = {
-                    runCrypto(container, session, "symmetric", "decrypt", session.symAlgorithm.name, session.symCipher) {
-                        session.symPlain = CryptoEngine.symmetricDecrypt(session.symAlgorithm, session.symCipher, session.symKey)
-                        session.symPlain
-                    }
-                    onChanged()
-                })
-                MooButton(container.t("crypto.copy"), onClick = { session.notice = copyText(session.symCipher, container); onChanged() })
+        IoThreePaneRow(
+            container = container,
+            settings = settings,
+            paneKey = "crypto-symmetric",
+            middleRatio = 0.28f,
+            minRight = 240f,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            left = {
+                LabeledField(session, container.t("crypto.plainText"), session.symPlain, { session.symPlain = it; session.error = ""; onChanged() }, Modifier.fillMaxSize())
+            },
+            middle = {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterVertically),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    MooButton(container.t("crypto.encrypt"), prominent = true, p5Toolbar = true, onClick = {
+                        runCrypto(container, session, "symmetric", "encrypt", session.symAlgorithm.name, session.symPlain) {
+                            session.symCipher = CryptoEngine.symmetricEncrypt(session.symAlgorithm, session.symPlain, session.symKey)
+                            session.symCipher
+                        }
+                        onChanged()
+                    })
+                    MooButton(container.t("crypto.decrypt"), p5Toolbar = true, onClick = {
+                        runCrypto(container, session, "symmetric", "decrypt", session.symAlgorithm.name, session.symCipher) {
+                            session.symPlain = CryptoEngine.symmetricDecrypt(session.symAlgorithm, session.symCipher, session.symKey)
+                            session.symPlain
+                        }
+                        onChanged()
+                    })
+                    MooButton(container.t("crypto.copy"), p5Toolbar = true, onClick = { session.notice = copyText(session.symCipher, container); onChanged() })
+                }
+            },
+            right = {
+                LabeledField(session, container.t("crypto.cipherText"), session.symCipher, { session.symCipher = it; session.error = ""; onChanged() }, Modifier.fillMaxSize())
             }
-            LabeledField(container.t("crypto.cipherText"), session.symCipher, { session.symCipher = it; session.error = ""; onChanged() }, Modifier.weight(1f))
-        }
+        )
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AsymmetricPanel(
     container: AppContainer,
     session: CryptoSession,
+    settings: AppSettings,
     scope: kotlinx.coroutines.CoroutineScope,
     modifier: Modifier,
     onChanged: () -> Unit
@@ -238,7 +279,8 @@ private fun AsymmetricPanel(
             )
             MooButton(
                 if (session.asymBusy) container.t("common.processing") else container.t("crypto.generateKeyPair"),
-                primary = true,
+                prominent = true,
+                p5Toolbar = true,
                 enabled = !session.asymBusy,
                 onClick = {
                     session.asymBusy = true
@@ -253,6 +295,7 @@ private fun AsymmetricPanel(
                                 session.publicKey = pair.publicKey
                                 session.privateKey = pair.privateKey
                                 session.notice = container.t("crypto.keyGenerated")
+                                container.toastSuccess(container.t("crypto.keyGenerated"))
                                 session.error = ""
                             }.onFailure { error ->
                                 session.notice = ""
@@ -264,30 +307,45 @@ private fun AsymmetricPanel(
                 }
             )
         }
-        Row(Modifier.height(140.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            LabeledField(container.t("crypto.publicKey"), session.publicKey, { session.publicKey = it; onChanged() }, Modifier.weight(1f))
-            LabeledField(container.t("crypto.privateKey"), session.privateKey, { session.privateKey = it; onChanged() }, Modifier.weight(1f))
+        IoTwoPaneRow(
+            container = container,
+            settings = settings,
+            paneKey = "crypto-key-pair",
+            minLeft = 260f,
+            minRight = 260f,
+            defaultLeftFraction = 0.5f,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp),
+            left = {
+                LabeledField(session, container.t("crypto.publicKey"), session.publicKey, { session.publicKey = it; onChanged() }, Modifier.fillMaxSize().height(140.dp))
+            },
+            right = {
+                LabeledField(session, container.t("crypto.privateKey"), session.privateKey, { session.privateKey = it; onChanged() }, Modifier.fillMaxSize().height(140.dp))
+            }
+        )
+        Row(Modifier.fillMaxWidth().heightIn(min = 160.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            LabeledField(session, container.t("crypto.plainText"), session.asymPlain, { session.asymPlain = it; onChanged() }, Modifier.weight(1f).height(160.dp))
+            LabeledField(session, container.t("crypto.cipherOrSignature"), session.asymCipher, { session.asymCipher = it; onChanged() }, Modifier.weight(1f).height(160.dp))
         }
-        Row(Modifier.height(160.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            LabeledField(container.t("crypto.plainText"), session.asymPlain, { session.asymPlain = it; onChanged() }, Modifier.weight(1f))
-            LabeledField(container.t("crypto.cipherOrSignature"), session.asymCipher, { session.asymCipher = it; onChanged() }, Modifier.weight(1f))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            MooButton(container.t("crypto.publicEncrypt"), onClick = {
+        FlowRow(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            MooButton(container.t("crypto.publicEncrypt"), p5Toolbar = true, onClick = {
                 runCrypto(container, session, "asymmetric", "publicEncrypt", session.asymAlgorithm.name, session.asymPlain) {
                     session.asymCipher = CryptoEngine.asymmetricEncrypt(session.asymAlgorithm, session.asymPlain, session.publicKey)
                     session.asymCipher
                 }
                 onChanged()
             })
-            MooButton(container.t("crypto.privateDecrypt"), onClick = {
+            MooButton(container.t("crypto.privateDecrypt"), p5Toolbar = true, onClick = {
                 runCrypto(container, session, "asymmetric", "privateDecrypt", session.asymAlgorithm.name, session.asymCipher) {
                     session.asymPlain = CryptoEngine.asymmetricDecrypt(session.asymAlgorithm, session.asymCipher, session.privateKey)
                     session.asymPlain
                 }
                 onChanged()
             })
-            MooButton(container.t("crypto.privateEncrypt"), enabled = session.asymAlgorithm == AsymmetricAlgorithm.RSA, onClick = {
+            MooButton(container.t("crypto.privateEncrypt"), enabled = session.asymAlgorithm == AsymmetricAlgorithm.RSA, p5Toolbar = true, onClick = {
                 runCrypto(container, session, "asymmetric", "privateEncrypt", "RSA", session.asymPlain) {
                     if (session.asymAlgorithm != AsymmetricAlgorithm.RSA) throw CryptoException("rsa-only", container.t("crypto.rsaOnly"))
                     session.asymCipher = CryptoEngine.privateEncrypt(session.asymPlain, session.privateKey)
@@ -295,7 +353,7 @@ private fun AsymmetricPanel(
                 }
                 onChanged()
             })
-            MooButton(container.t("crypto.publicDecrypt"), enabled = session.asymAlgorithm == AsymmetricAlgorithm.RSA, onClick = {
+            MooButton(container.t("crypto.publicDecrypt"), enabled = session.asymAlgorithm == AsymmetricAlgorithm.RSA, p5Toolbar = true, onClick = {
                 runCrypto(container, session, "asymmetric", "publicDecrypt", "RSA", session.asymCipher) {
                     if (session.asymAlgorithm != AsymmetricAlgorithm.RSA) throw CryptoException("rsa-only", container.t("crypto.rsaOnly"))
                     session.asymPlain = CryptoEngine.publicDecrypt(session.asymCipher, session.publicKey)
@@ -303,27 +361,31 @@ private fun AsymmetricPanel(
                 }
                 onChanged()
             })
-            MooButton(container.t("crypto.sign"), onClick = {
+            MooButton(container.t("crypto.sign"), p5Toolbar = true, onClick = {
                 runCrypto(container, session, "asymmetric", "sign", session.asymAlgorithm.name, session.asymPlain) {
                     session.asymCipher = CryptoEngine.signContent(session.asymAlgorithm, session.asymPlain, session.privateKey, session.publicKey)
                     session.asymCipher
                 }
                 onChanged()
             })
-            MooButton(container.t("crypto.verify"), onClick = {
+            MooButton(container.t("crypto.verify"), p5Toolbar = true, onClick = {
                 session.error = ""
                 runCatching {
                     CryptoEngine.verifySignature(session.asymAlgorithm, session.asymPlain, session.asymCipher, session.publicKey)
                 }.onSuccess { valid ->
-                    session.notice = container.t(if (valid) "crypto.verified" else "crypto.notVerified")
+                    val notice = container.t(if (valid) "crypto.verified" else "crypto.notVerified")
+                    session.notice = notice
+                    if (valid) container.toastSuccess(notice) else container.toastError(notice)
                     if (!valid) session.error = container.t("crypto.notVerified")
                 }.onFailure { error ->
                     session.notice = ""
-                    session.error = messageFor(container, error)
+                    val message = messageFor(container, error)
+                    session.error = message
+                    container.toastError(message)
                 }
                 onChanged()
             })
-            MooButton(container.t("crypto.copy"), onClick = { session.notice = copyText(session.asymCipher, container); onChanged() })
+            MooButton(container.t("crypto.copy"), p5Toolbar = true, onClick = { session.notice = copyText(session.asymCipher, container); onChanged() })
         }
     }
 }
@@ -338,7 +400,13 @@ private fun DigestPanel(
 ) {
     val colors = MooTheme.colors
     Column(modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth().desktopFileDropTarget { files ->
+                digestPickedFile(container, session, scope, files.first(), onChanged)
+            },
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(container.t("crypto.algorithm"), color = colors.textSecondary, fontSize = 12.sp)
             CompactChoice(
                 current = session.digestAlgorithm,
@@ -349,7 +417,7 @@ private fun DigestPanel(
                     onChanged()
                 }
             )
-            MooButton(container.t("crypto.textDigest"), primary = true, onClick = {
+            MooButton(container.t("crypto.textDigest"), prominent = true, p5Toolbar = true, onClick = {
                 runCrypto(container, session, "digest", "text", digestLabel(session.digestAlgorithm), session.digestInput) {
                     session.digestOutput = CryptoEngine.digestText(session.digestAlgorithm, session.digestInput)
                     session.digestFileName = ""
@@ -357,43 +425,32 @@ private fun DigestPanel(
                 }
                 onChanged()
             })
-            MooButton(container.t("crypto.fileDigest"), onClick = {
+            MooButton(container.t("crypto.fileDigest"), p5Toolbar = true, onClick = {
                 val file = chooseFile(container.t("crypto.fileDigest")) ?: return@MooButton
-                session.notice = container.t("common.processing")
-                onChanged()
-                scope.launch(Dispatchers.Default) {
-                    val result = runCatching { CryptoEngine.digestFile(session.digestAlgorithm, file.toPath()) }
-                    kotlinx.coroutines.withContext(Dispatchers.Swing) {
-                        result.onSuccess { digest ->
-                            session.digestFileName = file.name
-                            session.digestOutput = digest
-                            session.error = ""
-                            session.notice = container.t("crypto.fileDigest")
-                            saveHistory(container, "digest", "file", digestLabel(session.digestAlgorithm), file.path, digest)
-                        }.onFailure { error ->
-                            session.notice = ""
-                            session.error = messageFor(container, error)
-                        }
-                        onChanged()
-                    }
-                }
+                digestPickedFile(container, session, scope, file, onChanged)
             })
-            if (session.digestFileName.isNotEmpty()) {
-                Text(session.digestFileName, color = colors.textSecondary, fontSize = 12.sp)
-            }
+            SelectedFileName(session.digestFileName, Modifier.weight(1f, fill = false))
         }
-        LabeledField(container.t("crypto.digestInput"), session.digestInput, { session.digestInput = it; onChanged() }, Modifier.weight(1f).fillMaxWidth())
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(container.t("crypto.digestResult"), color = colors.textSecondary, fontSize = 12.sp)
-            Text(session.digestOutput.ifEmpty { "—" }, color = colors.textPrimary, fontSize = 13.sp, modifier = Modifier.weight(1f))
-            MooButton(container.t("crypto.copy"), onClick = { session.notice = copyText(session.digestOutput, container); onChanged() })
+        LabeledField(session, container.t("crypto.digestInput"), session.digestInput, { session.digestInput = it; onChanged() }, Modifier.weight(1f).fillMaxWidth())
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(container.t("crypto.digestResult"), color = colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Text(session.digestOutput.ifEmpty { "—" }, color = colors.textBody, fontSize = 11.sp, modifier = Modifier.weight(1f))
+            MooGhostButton(container.t("crypto.copy"), onClick = { session.notice = copyText(session.digestOutput, container); onChanged() }, size = 24.dp) {
+                Text("⎘", color = colors.textMuted, fontSize = 12.sp)
+            }
         }
     }
 }
 
 @Composable
-private fun BasePanel(container: AppContainer, session: CryptoSession, modifier: Modifier, onChanged: () -> Unit) {
-    Column(modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+private fun BasePanel(
+    container: AppContainer,
+    session: CryptoSession,
+    settings: AppSettings,
+    modifier: Modifier,
+    onChanged: () -> Unit
+) {
+    Column(modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(container.t("crypto.algorithm"), color = MooTheme.colors.textSecondary, fontSize = 12.sp)
             CompactChoice(
@@ -406,44 +463,60 @@ private fun BasePanel(container: AppContainer, session: CryptoSession, modifier:
                 }
             )
         }
-        Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            LabeledField(container.t("crypto.plainText"), session.basePlain, { session.basePlain = it; onChanged() }, Modifier.weight(1f))
-            Column(
-                modifier = Modifier.width(140.dp).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                MooButton(container.t("crypto.encode"), primary = true, onClick = {
-                    runCrypto(container, session, "base", "encode", session.baseAlgorithm.name, session.basePlain) {
-                        session.baseCipher = CryptoEngine.encodeBase(session.baseAlgorithm, session.basePlain)
-                        session.baseCipher
-                    }
-                    onChanged()
-                })
-                MooButton(container.t("crypto.decode"), onClick = {
-                    runCrypto(container, session, "base", "decode", session.baseAlgorithm.name, session.baseCipher) {
-                        session.basePlain = CryptoEngine.decodeBase(session.baseAlgorithm, session.baseCipher)
-                        session.basePlain
-                    }
-                    onChanged()
-                })
-                MooButton(container.t("crypto.copy"), onClick = { session.notice = copyText(session.baseCipher, container); onChanged() })
+        IoThreePaneRow(
+            container = container,
+            settings = settings,
+            paneKey = "crypto-base",
+            middleRatio = 0.28f,
+            minRight = 240f,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            left = {
+                LabeledField(session, container.t("crypto.plainText"), session.basePlain, { session.basePlain = it; onChanged() }, Modifier.fillMaxSize())
+            },
+            middle = {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterVertically),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    MooButton(container.t("crypto.encode"), prominent = true, p5Toolbar = true, onClick = {
+                        runCrypto(container, session, "base", "encode", session.baseAlgorithm.name, session.basePlain) {
+                            session.baseCipher = CryptoEngine.encodeBase(session.baseAlgorithm, session.basePlain)
+                            session.baseCipher
+                        }
+                        onChanged()
+                    })
+                    MooButton(container.t("crypto.decode"), p5Toolbar = true, onClick = {
+                        runCrypto(container, session, "base", "decode", session.baseAlgorithm.name, session.baseCipher) {
+                            session.basePlain = CryptoEngine.decodeBase(session.baseAlgorithm, session.baseCipher)
+                            session.basePlain
+                        }
+                        onChanged()
+                    })
+                    MooButton(container.t("crypto.copy"), p5Toolbar = true, onClick = { session.notice = copyText(session.baseCipher, container); onChanged() })
+                }
+            },
+            right = {
+                LabeledField(session, session.baseAlgorithm.name, session.baseCipher, { session.baseCipher = it; onChanged() }, Modifier.fillMaxSize())
             }
-            LabeledField(session.baseAlgorithm.name, session.baseCipher, { session.baseCipher = it; onChanged() }, Modifier.weight(1f))
-        }
+        )
     }
 }
 
 @Composable
 private fun RandomPanel(container: AppContainer, session: CryptoSession, modifier: Modifier, onChanged: () -> Unit) {
     val colors = MooTheme.colors
-    Column(modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(container.t("crypto.length"), color = colors.textSecondary, fontSize = 12.sp)
+    Column(modifier.padding(14.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(0.dp)) {
+        Row(
+            modifier = Modifier.padding(bottom = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(9.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(container.t("crypto.length"), color = colors.textMuted, fontSize = 11.sp)
             MooTextField(session.randomLength.toString(), { value ->
                 session.randomLength = value.toIntOrNull() ?: session.randomLength
                 onChanged()
-            }, modifier = Modifier.width(80.dp))
+            }, modifier = Modifier.width(100.dp), compact = true)
         }
         RandomRow(container, container.t("crypto.random.uuid"), session.uuid) {
             generateRandom(container, session, RandomKind.Uuid)
@@ -466,12 +539,30 @@ private fun RandomPanel(container: AppContainer, session: CryptoSession, modifie
 
 @Composable
 private fun RandomRow(container: AppContainer, label: String, value: String, onGenerate: () -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(label, color = MooTheme.colors.textSecondary, fontSize = 13.sp, modifier = Modifier.width(100.dp))
-        Text(value.ifEmpty { "—" }, color = MooTheme.colors.textPrimary, fontSize = 13.sp, modifier = Modifier.weight(1f))
-        MooButton(container.t("crypto.copy"), onClick = { copyText(value, container) })
-        MooButton(container.t("crypto.generate"), primary = true, onClick = onGenerate)
+    val colors = MooTheme.colors
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(label, color = colors.textBody, fontSize = 12.sp, modifier = Modifier.width(124.dp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(
+            value.ifEmpty { "—" },
+            color = colors.textBody,
+            fontSize = 11.sp,
+            fontFamily = FontFamily.Monospace,
+            modifier = Modifier.weight(1f).heightIn(min = 34.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(colors.workspace)
+                .border(1.dp, colors.borderControl, RoundedCornerShape(6.dp))
+                .padding(horizontal = 10.dp, vertical = 8.dp)
+        )
+        MooGhostButton(container.t("crypto.copy"), onClick = { copyText(value, container) }, size = 32.dp) {
+            Text("⎘", color = colors.textMuted, fontSize = 13.sp)
+        }
+        MooButton(container.t("crypto.generate"), prominent = true, p5Toolbar = true, onClick = onGenerate, modifier = Modifier.width(84.dp))
     }
+    Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
 }
 
 @Composable
@@ -483,10 +574,10 @@ private fun <T> CompactChoice(
 ) {
     var open by remember { mutableStateOf(false) }
     Box {
-        MooButton(label(current), onClick = { open = true })
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        MooButton(label(current), onClick = { open = true }, p5Toolbar = true)
+        MooMenu(expanded = open, onDismissRequest = { open = false }) {
             options.forEach { option ->
-                DropdownMenuItem(onClick = {
+                MooMenuItem(onClick = {
                     open = false
                     onSelect(option)
                 }) {
@@ -498,10 +589,21 @@ private fun <T> CompactChoice(
 }
 
 @Composable
-private fun LabeledField(label: String, value: String, onChange: (String) -> Unit, modifier: Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(label, color = MooTheme.colors.textSecondary, fontSize = 12.sp)
-        MooTextField(value, onChange, modifier = Modifier.weight(1f).fillMaxWidth(), singleLine = false)
+private fun LabeledField(
+    session: CryptoSession,
+    label: String,
+    value: String,
+    onChange: (String) -> Unit,
+    modifier: Modifier,
+) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Text(label, color = MooTheme.colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+        MooTextField(
+            value,
+            { new -> session.onUserInput { onChange(new) } },
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            singleLine = false
+        )
     }
 }
 
@@ -511,6 +613,36 @@ private fun tabTitleKey(tab: CryptoTab): String = when (tab) {
     CryptoTab.Digest -> "crypto.tab.digest"
     CryptoTab.Base -> "crypto.tab.base"
     CryptoTab.Random -> "crypto.tab.random"
+}
+
+private fun digestPickedFile(
+    container: AppContainer,
+    session: CryptoSession,
+    scope: kotlinx.coroutines.CoroutineScope,
+    file: java.io.File,
+    onChanged: () -> Unit
+) {
+    session.notice = container.t("common.processing")
+    onChanged()
+    scope.launch(Dispatchers.Default) {
+        val result = runCatching { CryptoEngine.digestFile(session.digestAlgorithm, file.toPath()) }
+        kotlinx.coroutines.withContext(Dispatchers.Swing) {
+            result.onSuccess { digest ->
+                session.digestFileName = file.name
+                session.digestOutput = digest
+                session.error = ""
+                session.notice = container.t("crypto.fileDigest")
+                container.toastSuccess(session.notice)
+                saveHistory(container, "digest", "file", digestLabel(session.digestAlgorithm), file.path, digest)
+            }.onFailure { error ->
+                session.notice = ""
+                val message = messageFor(container, error)
+                session.error = message
+                container.toastError(message)
+            }
+            onChanged()
+        }
+    }
 }
 
 private fun digestLabel(algorithm: DigestAlgorithm): String = when (algorithm) {
@@ -536,10 +668,13 @@ private fun runCrypto(
     runCatching(block).onSuccess { output ->
         session.error = ""
         session.notice = algorithm
+        container.toastSuccess(algorithm)
         saveHistory(container, tab, operation, algorithm, input, output)
     }.onFailure { error ->
         session.notice = ""
-        session.error = messageFor(container, error)
+        val message = messageFor(container, error)
+        session.error = message
+        container.toastError(message)
     }
 }
 
@@ -590,6 +725,7 @@ private fun generateRandom(container: AppContainer, session: CryptoSession, kind
         }
         session.error = ""
         session.notice = container.t("crypto.generate")
+        container.toastSuccess(session.notice)
         val operation = kind.name.lowercase()
         saveHistory(container, "random", operation, kind.name, if (kind == RandomKind.Uuid) "" else session.randomLength.toString(), output)
         val length = session.randomLength.coerceIn(CryptoEngine.MIN_RANDOM_LENGTH, CryptoEngine.MAX_RANDOM_LENGTH)
@@ -598,7 +734,9 @@ private fun generateRandom(container: AppContainer, session: CryptoSession, kind
         }
     }.onFailure { error ->
         session.notice = ""
-        session.error = messageFor(container, error)
+        val message = messageFor(container, error)
+        session.error = message
+        container.toastError(message)
     }
 }
 
@@ -619,10 +757,7 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
 
 private fun copyText(value: String, container: AppContainer): String {
     if (value.isEmpty()) return container.t("crypto.nothingToCopy")
-    return runCatching {
-        Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null)
-        container.t("json.notice.copied")
-    }.getOrElse { container.t("crypto.error.generic") }
+    return if (container.copyText(value)) container.t("json.notice.copied") else container.t("crypto.error.generic")
 }
 
 private fun chooseFile(title: String): File? {

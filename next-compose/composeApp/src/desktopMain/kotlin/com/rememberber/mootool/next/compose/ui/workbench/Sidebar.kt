@@ -5,6 +5,7 @@ import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -31,8 +32,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -43,6 +42,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -51,13 +52,22 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ToolRegistry
+import com.rememberber.mootool.next.compose.domain.NavigationToolVisibility
 import com.rememberber.mootool.next.compose.model.AppLanguage
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooMenu
+import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
+import com.rememberber.mootool.next.compose.ui.components.MooGhostButton
 import com.rememberber.mootool.next.compose.ui.components.MooTooltip
+import com.rememberber.mootool.next.compose.ui.components.mooFocusOutline
 import com.rememberber.mootool.next.compose.ui.components.mooSidebarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
+import com.rememberber.mootool.next.compose.ui.components.MooStatusMeta
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.icons.ToolIcon
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 
@@ -74,10 +84,18 @@ fun Sidebar(container: AppContainer, collapsed: Boolean, onToggle: () -> Unit) {
             .width(if (collapsed) 84.dp else settings.layout.sidebarWidth.dp.coerceIn(208.dp, 300.dp))
             .fillMaxHeight()
             .mooSidebarBackground()
-            .border(width = 0.dp, color = colors.border)
+            .drawBehind {
+                val x = size.width - 0.5f
+                drawLine(
+                    color = colors.borderSoft,
+                    start = Offset(x, 0f),
+                    end = Offset(x, size.height),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 8.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -121,7 +139,11 @@ fun Sidebar(container: AppContainer, collapsed: Boolean, onToggle: () -> Unit) {
                         NavItem(container, id, collapsed, active == id && !container.showSettings.value)
                     }
                 }
-                if (settings.layout.customGroups.isNotEmpty() && settings.layout.showSeparators) {
+                if (
+                    settings.layout.customGroups.isNotEmpty() &&
+                    settings.layout.showSeparators &&
+                    NavigationToolVisibility.visibleNavigationToolCount(hidden) > 0
+                ) {
                     GroupLabel(container.t("app.group.all"), collapsed)
                 }
                 ToolRegistry.groups.forEach { group ->
@@ -198,7 +220,7 @@ private fun GroupLabel(text: String, collapsed: Boolean) {
     }
     Text(
         text,
-        color = MooTheme.colors.textSecondary,
+        color = MooTheme.colors.textMuted,
         fontSize = 11.sp,
         modifier = Modifier.padding(top = 10.dp, bottom = 4.dp, start = 6.dp)
     )
@@ -227,11 +249,10 @@ private fun NavItem(container: AppContainer, id: ToolId, collapsed: Boolean, sel
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val hovered by interaction.collectIsHoveredAsState()
-    val shape = RoundedCornerShape(if (card) MooTheme.dimens.radiusLarge else MooTheme.dimens.radius)
+    val shape = RoundedCornerShape(if (card) MooTheme.dimens.radiusLarge else MooTheme.dimens.navRadius)
     val itemBorder = when {
         focused -> 2.dp to colors.focusRing
-        selected || hovered -> 1.dp to colors.border
-        else -> 1.dp to Color.Transparent
+        else -> 1.dp to colors.navItemBorder(selected, hovered)
     }
     MooTooltip(label, enabled = collapsed) {
     Box {
@@ -239,10 +260,12 @@ private fun NavItem(container: AppContainer, id: ToolId, collapsed: Boolean, sel
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = if (compact) 1.dp else 2.dp)
+            .mooFocusOutline(focused, shape)
             .clip(shape)
             .background(colors.sidebarItemBrush(selected, card, hovered))
             .border(itemBorder.first, itemBorder.second, shape)
             .hoverable(interaction)
+            .focusable(true, interaction)
             .semantics {
                 role = Role.Button
                 contentDescription = label
@@ -271,10 +294,16 @@ private fun NavItem(container: AppContainer, id: ToolId, collapsed: Boolean, sel
             Box(Modifier.width(3.dp).height(18.dp).background(colors.navActiveBar, RoundedCornerShape(2.dp)))
             Spacer(Modifier.width(5.dp))
         }
-        ToolIcon(id, if (selected) colors.navActiveBar else colors.textSecondary, Modifier.size(18.dp))
+        ToolIcon(id, if (selected) colors.navSelectedIcon() else colors.textSecondary, Modifier.size(18.dp))
         if (!collapsed) {
             Spacer(Modifier.width(8.dp))
-            Text(label, color = colors.textPrimary, fontSize = 13.sp, modifier = Modifier.weight(1f))
+            Text(
+                label,
+                color = if (selected) colors.navSelectedContent() else colors.textPrimary,
+                fontSize = 13.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                modifier = Modifier.weight(1f)
+            )
         } else {
             Spacer(Modifier.weight(1f))
         }
@@ -288,12 +317,14 @@ private fun NavItem(container: AppContainer, id: ToolId, collapsed: Boolean, sel
                     color = if (isDetached) colors.accent else colors.textSecondary,
                     fontSize = 12.sp,
                     modifier = Modifier
+                        .mooFocusOutline(actionFocused, actionShape)
                         .clip(actionShape)
                         .border(
                             if (actionFocused) 2.dp else 0.dp,
                             if (actionFocused) colors.focusRing else Color.Transparent,
                             actionShape
                         )
+                        .focusable(true, actionInteraction)
                         .clickable(
                             interactionSource = actionInteraction,
                             indication = LocalIndication.current
@@ -305,15 +336,15 @@ private fun NavItem(container: AppContainer, id: ToolId, collapsed: Boolean, sel
         }
     }
     if (id.detachable) {
-        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            DropdownMenuItem(onClick = {
+        MooMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            MooMenuItem(onClick = {
                 menuOpen = false
                 container.toggleDetach(id)
             }) {
                 Text(if (isDetached) container.t("app.tool.reattach") else container.t("app.tool.detach"))
             }
             if (isDetached) {
-                DropdownMenuItem(onClick = {
+                MooMenuItem(onClick = {
                     menuOpen = false
                     container.openTool(id)
                 }) {
@@ -329,28 +360,10 @@ private fun NavItem(container: AppContainer, id: ToolId, collapsed: Boolean, sel
 @Composable
 private fun SidebarGhost(label: String, glyph: String, onClick: () -> Unit) {
     val colors = MooTheme.colors
-    val interaction = remember { MutableInteractionSource() }
-    val focused by interaction.collectIsFocusedAsState()
-    val shape = RoundedCornerShape(6.dp)
     MooTooltip(label) {
-        Text(
-            glyph,
-            color = colors.textSecondary,
-            modifier = Modifier
-                .clip(shape)
-                .border(
-                    if (focused) 2.dp else 0.dp,
-                    if (focused) colors.focusRing else Color.Transparent,
-                    shape
-                )
-                .clickable(
-                    interactionSource = interaction,
-                    indication = LocalIndication.current,
-                    onClick = onClick
-                )
-                .padding(6.dp)
-                .semantics { role = Role.Button; contentDescription = label }
-        )
+        MooGhostButton(label, onClick = onClick) {
+            Text(glyph, color = colors.textMuted, fontSize = 13.sp)
+        }
     }
 }
 
@@ -374,12 +387,14 @@ private fun LanguageRow(container: AppContainer, collapsed: Boolean) {
                 color = if (selected) MooTheme.colors.accent else MooTheme.colors.textSecondary,
                 fontSize = 12.sp,
                 modifier = Modifier
+                    .mooFocusOutline(focused, shape)
                     .clip(shape)
                     .border(
                         if (focused) 2.dp else 0.dp,
                         if (focused) MooTheme.colors.focusRing else Color.Transparent,
                         shape
                     )
+                    .focusable(true, interaction)
                     .clickable(
                         interactionSource = interaction,
                         indication = LocalIndication.current
@@ -395,15 +410,14 @@ private fun LanguageRow(container: AppContainer, collapsed: Boolean) {
 
 @Composable
 fun StatusBar(container: AppContainer, extra: String) {
-    val colors = MooTheme.colors
     val status by container.status.collectAsState()
     Row(
-        modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar)
+        modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).mooStatusBarBackground()
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(extra.ifBlank { status.ifBlank { container.t("app.status.ready") } }, color = colors.textSecondary, fontSize = 12.sp)
+        MooStatusMeta(extra.ifBlank { status.ifBlank { container.t("app.status.ready") } })
         Spacer(Modifier.weight(1f))
-        Text(container.directories.dataRoot.toString(), color = colors.textSecondary, fontSize = 11.sp)
+        MooStatusMeta(container.dataDirectories().dataRoot.toString())
     }
 }

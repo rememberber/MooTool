@@ -2,6 +2,7 @@ package com.rememberber.mootool.next.compose.features.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -9,12 +10,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,61 +27,96 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
+import com.rememberber.mootool.next.compose.storage.BackupInfo
+import com.rememberber.mootool.next.compose.storage.BackupOpenLocation
 import com.rememberber.mootool.next.compose.app.InstallIdentity
 import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.app.ToolRegistry
+import com.rememberber.mootool.next.compose.domain.NavigationToolVisibility
 import com.rememberber.mootool.next.compose.app.UpdateUiState
 import com.rememberber.mootool.next.compose.model.AppLanguage
 import com.rememberber.mootool.next.compose.model.CloseBehavior
 import com.rememberber.mootool.next.compose.model.InterfaceStyle
 import com.rememberber.mootool.next.compose.model.NavigationStyle
 import com.rememberber.mootool.next.compose.model.ToolId
-import com.rememberber.mootool.next.compose.domain.CrossProductImporter
 import com.rememberber.mootool.next.compose.domain.ShortcutBindings
 import com.rememberber.mootool.next.compose.ui.components.AccentSwatches
 import com.rememberber.mootool.next.compose.ui.components.FontSelect
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooKbd
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
+import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooSegmented
 import com.rememberber.mootool.next.compose.ui.components.MooSelect
 import com.rememberber.mootool.next.compose.ui.components.MooSwitch
+import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
+import com.rememberber.mootool.next.compose.ui.icons.ToolIcon
+import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.SettingRow
+import com.rememberber.mootool.next.compose.storage.VaultPathConfig
 import com.rememberber.mootool.next.compose.ui.components.SettingTextField
 import com.rememberber.mootool.next.compose.ui.components.SettingsGroup
 import com.rememberber.mootool.next.compose.ui.components.SettingsNavItem
 import com.rememberber.mootool.next.compose.ui.components.mooSidebarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooWorkspaceBackground
-import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.model.AppSettings
 
-private enum class SettingsCategory { General, Appearance, Layout, Editor, Network, Data, Vault, Runtime, Tools, Shortcuts, About }
+private const val SETTINGS_PANE_KEY = "settings-page"
 
 @Composable
 fun SettingsScreen(container: AppContainer) {
     val colors = MooTheme.colors
     val settings by container.settings.collectAsState()
-    var category by remember { mutableStateOf(SettingsCategory.General) }
-    Row(Modifier.fillMaxSize().mooWorkspaceBackground()) {
-        Column(Modifier.width(220.dp).fillMaxHeight().mooSidebarBackground().padding(vertical = 12.dp)) {
-            SettingsCategory.entries.forEach { item ->
+    val sessionGeneration by container.sessionManager.sessionGeneration.collectAsState()
+    val showSettings by container.showSettings.collectAsState()
+    var category by remember {
+        mutableStateOf(settingsNavCategoryFromStorageId(container.settingsNavCategoryId))
+    }
+    LaunchedEffect(showSettings, container.settingsNavCategoryId) {
+        if (showSettings) {
+            category = settingsNavCategoryFromStorageId(container.settingsNavCategoryId)
+        }
+    }
+    BoxWithConstraints(Modifier.fillMaxSize().mooWorkspaceBackground()) {
+        val minNav = 180f
+        val minContent = 420f
+        val paneHandle = 10f
+        val maxNav = (maxWidth.value - paneHandle - minContent).coerceAtLeast(minNav)
+        val defaultNav = (maxWidth.value * (220f / 1000f)).coerceIn(minNav, maxNav)
+        val navWidth = settings.layout.pane(SETTINGS_PANE_KEY, 0, defaultNav, minNav, maxNav)
+        Row(Modifier.fillMaxSize()) {
+        Column(Modifier.width(navWidth.dp).widthIn(min = 180.dp).fillMaxHeight().mooSidebarBackground().padding(vertical = 12.dp)) {
+            SettingsNavCategory.entries.forEach { item ->
                 SettingsNavItem(
                     label = container.t("settings.${item.name.lowercase()}"),
                     selected = item == category,
-                    onClick = { category = item }
+                    onClick = {
+                        category = item
+                        container.settingsNavCategoryId = item.storageId()
+                    }
                 )
             }
         }
-        Column(Modifier.weight(1f).fillMaxHeight()) {
+        VerticalPaneHandle(
+            onDelta = { container.setPaneSize(SETTINGS_PANE_KEY, 0, navWidth + it, 1) },
+            onReset = { container.setPaneSize(SETTINGS_PANE_KEY, 0, defaultNav, 1) }
+        )
+        Column(Modifier.weight(1f).widthIn(min = 420.dp).fillMaxHeight()) {
             Row(
-                modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 20.dp),
+                modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 20.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(container.t("settings.${category.name.lowercase()}"), fontSize = 18.sp, color = colors.textPrimary)
+                MooPageTitle(container.t("settings.${category.name.lowercase()}"), settings = true)
             }
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             when (category) {
-                SettingsCategory.General -> SettingsGroup(container.t("settings.group.application")) {
+                SettingsNavCategory.General -> SettingsGroup(container.t("settings.group.application")) {
                     SettingRow(container.t("settings.language")) {
                         MooSelect(
                             options = AppLanguage.entries.map { it.code to container.t("settings.language.${it.code}") },
@@ -118,7 +157,7 @@ fun SettingsScreen(container: AppContainer) {
                     }
                     Text(container.t("settings.update.autoDownloadHint"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
                 }
-                SettingsCategory.Appearance -> SettingsGroup(container.t("settings.group.theme")) {
+                SettingsNavCategory.Appearance -> SettingsGroup(container.t("settings.group.theme")) {
                     SettingRow(container.t("settings.style")) {
                         MooSelect(
                             options = InterfaceStyle.entries.map { style ->
@@ -171,7 +210,7 @@ fun SettingsScreen(container: AppContainer) {
                     }
                     Text(container.t("settings.style.live"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
                 }
-                SettingsCategory.Layout -> {
+                SettingsNavCategory.Layout -> {
                     SettingsGroup(container.t("settings.group.navigation")) {
                     Toggle(container, container.t("settings.nav.recent"), settings.layout.showRecent) {
                         container.updateSettings { current -> current.copy(layout = current.layout.copy(showRecent = !current.layout.showRecent)) }
@@ -196,17 +235,38 @@ fun SettingsScreen(container: AppContainer) {
                     }
                     }
                     SettingsGroup(container.t("settings.nav.toolsTitle")) {
-                    Text(container.t("settings.nav.hidden"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
-                    ToolRegistry.tools.filter { it.id != ToolId.Mootool }.forEach { tool ->
-                        val hidden = tool.id.id in settings.layout.hiddenNavigationToolIds
-                        Toggle(container, container.t(tool.titleKey), !hidden) {
-                            container.updateSettings { current ->
-                                val next = if (hidden) current.layout.hiddenNavigationToolIds - tool.id.id
-                                else current.layout.hiddenNavigationToolIds + tool.id.id
-                                current.copy(layout = current.layout.copy(hiddenNavigationToolIds = next))
+                    Text(container.t("settings.nav.toolsDescription"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
+                    val navigationToolIds = NavigationToolVisibility.navigationToolIds
+                    val visibleCount = NavigationToolVisibility.visibleNavigationToolCount(
+                        settings.layout.hiddenNavigationToolIds
+                    )
+                    Row(
+                        Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        MooButton(
+                            container.t("settings.nav.showAll"),
+                            enabled = visibleCount < navigationToolIds.size,
+                            p5Toolbar = true,
+                            onClick = {
+                                container.updateSettings {
+                                    it.copy(layout = it.layout.copy(hiddenNavigationToolIds = NavigationToolVisibility.showAll()))
+                                }
                             }
-                        }
+                        )
+                        MooButton(
+                            container.t("settings.nav.hideAll"),
+                            enabled = visibleCount > 0,
+                            p5Toolbar = true,
+                            onClick = {
+                                container.updateSettings {
+                                    it.copy(layout = it.layout.copy(hiddenNavigationToolIds = NavigationToolVisibility.hideAll()))
+                                }
+                            }
+                        )
                     }
+                    Text(container.t("settings.nav.hidden"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
+                    NavigationToolVisibilityList(container, settings)
                     }
                     SettingsGroup(container.t("app.group.manage.title")) {
                     Text(container.t("app.group.manage.hint"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
@@ -215,7 +275,7 @@ fun SettingsScreen(container: AppContainer) {
                     }
                     }
                 }
-                SettingsCategory.Editor -> SettingsGroup(container.t("settings.group.editor")) {
+                SettingsNavCategory.Editor -> SettingsGroup(container.t("settings.group.editor")) {
                     Toggle(container, container.t("settings.softWrap"), settings.editor.softWrap) {
                         container.updateSettings { current -> current.copy(editor = current.editor.copy(softWrap = !current.editor.softWrap)) }
                     }
@@ -272,17 +332,77 @@ fun SettingsScreen(container: AppContainer) {
                         )
                     }
                 }
-                SettingsCategory.Data -> {
+                SettingsNavCategory.Data -> {
                     SettingsGroup(container.t("settings.group.storage")) {
-                        SettingRow(container.t("settings.dataPath")) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Text(container.directories.dataRoot.toString(), color = colors.textSecondary, fontSize = 12.sp)
-                                MooButton(container.t("settings.openData"), onClick = { container.openDirectory(container.directories.dataRoot) })
-                            }
+                        Text(
+                            container.t("settings.dataPath.defaultHint", mapOf("path" to container.directories.dataRoot.toString())),
+                            color = colors.textSecondary,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+                        )
+                        DirectorySettingRow(
+                            container = container,
+                            label = container.t("settings.dataPath"),
+                            value = settings.data.directory,
+                            placeholder = container.t("settings.vault.default"),
+                            onCommit = { path ->
+                                container.updateSettings { current -> current.copy(data = current.data.copy(directory = path)) }
+                            },
+                        )
+                        Text(
+                            container.t(
+                                "settings.dataPath.effectiveHint",
+                                mapOf("path" to container.dataDirectories().dataRoot.toString()),
+                            ),
+                            color = colors.textSecondary,
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+                        )
+                        Text(
+                            container.t(
+                                "settings.configPath.effectiveHint",
+                                mapOf("path" to container.directories.configRoot.toString()),
+                            ),
+                            color = colors.textSecondary,
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+                        )
+                        Row(
+                            Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            MooButton(
+                                container.t("settings.openData"),
+                                onClick = { container.openDirectory(container.dataDirectories().dataRoot) },
+                            )
+                            MooButton(
+                                container.t("settings.openConfig"),
+                                p5Toolbar = true,
+                                onClick = { container.openDirectory(container.directories.configRoot) },
+                            )
                         }
                     }
                     SettingsGroup(container.t("settings.group.backup")) {
                     Text(container.t("settings.backup.hint"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
+                    var backupPaths by remember { mutableStateOf<BackupInfo?>(null) }
+                    LaunchedEffect(settings.data.directory, settings.vault.jsonPath, settings.vault.quickNotePath, sessionGeneration) {
+                        backupPaths = container.backupInfo()
+                    }
+                    backupPaths?.let { info ->
+                        Text(
+                            container.t("settings.backup.pathsHint"),
+                            color = colors.textSecondary,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+                        )
+                        BackupPathRow(container, container.t("settings.backup.database"), info.databasePath, BackupOpenLocation.DatabaseFile)
+                        BackupPathRow(container, container.t("settings.backup.settings"), info.settingsPath, BackupOpenLocation.SettingsConfig)
+                        BackupPathRow(container, container.t("settings.backup.images"), info.imagesPath, BackupOpenLocation.Images)
+                        BackupPathRow(container, container.t("settings.vault.quickNote"), info.quickNotePath, BackupOpenLocation.QuickNote)
+                        BackupPathRow(container, container.t("settings.vault.json"), info.jsonVaultPath, BackupOpenLocation.JsonVault)
+                    }
                     var backupNotice by remember { mutableStateOf("") }
                     var backupError by remember { mutableStateOf("") }
                     if (backupError.isNotBlank()) Text(backupError, color = colors.danger, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp))
@@ -301,9 +421,11 @@ fun SettingsScreen(container: AppContainer) {
                             }.onSuccess {
                                 backupError = ""
                                 backupNotice = container.t("settings.backup.exported", mapOf("count" to it.manifest.files.size.toString()))
+                                container.toastSuccess(backupNotice)
                             }.onFailure {
                                 backupNotice = ""
                                 backupError = it.message ?: container.t("settings.backup.failed")
+                                container.toastError(backupError)
                             }
                         }
                     })
@@ -329,77 +451,24 @@ fun SettingsScreen(container: AppContainer) {
                                 .onSuccess {
                                     backupError = ""
                                     backupNotice = container.t("settings.backup.restored")
+                                    container.toastSuccess(backupNotice)
                                 }
                                 .onFailure {
                                     backupNotice = ""
                                     backupError = it.message ?: container.t("settings.backup.failed")
+                                    container.toastError(backupError)
                                 }
                         }
                     })
                     }
                     Text(container.t("settings.backup.credentials"), color = colors.warning, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
                     }
-                    SettingsGroup(container.t("settings.group.migration")) {
-                    Text(container.t("settings.import.hint"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
-                    var importNotice by remember { mutableStateOf("") }
-                    var importError by remember { mutableStateOf("") }
-                    if (importError.isNotBlank()) Text(importError, color = colors.danger, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp))
-                    if (importNotice.isNotBlank()) Text(importNotice, color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp))
-                    Row(Modifier.padding(14.dp)) {
-                    MooButton(container.t("settings.import.choose"), onClick = {
-                        val chooser = javax.swing.JFileChooser().apply {
-                            fileSelectionMode = javax.swing.JFileChooser.DIRECTORIES_ONLY
-                        }
-                        if (chooser.showOpenDialog(null) == javax.swing.JFileChooser.APPROVE_OPTION) {
-                            runCatching {
-                                val preview = CrossProductImporter.inspect(chooser.selectedFile.toPath())
-                                if (preview.notes + preview.jsonItems + preview.customGroups == 0) {
-                                    error(preview.warnings.joinToString("; ").ifBlank { container.t("settings.import.empty") })
-                                }
-                                val backup = container.exportBackup(
-                                    java.nio.file.Files.createTempDirectory("mootool-compose-pre-import").resolve("backup.zip")
-                                )
-                                val applied = CrossProductImporter.apply(
-                                    preview,
-                                    container.noteVault(),
-                                    container.jsonVault,
-                                    container.importedFingerprints()
-                                )
-                                if (preview.groups.isNotEmpty()) {
-                                    container.updateSettings { current ->
-                                        current.copy(layout = current.layout.copy(customGroups = current.layout.customGroups + preview.groups.filter { group ->
-                                            current.layout.customGroups.none { it.id == group.id }
-                                        }))
-                                    }
-                                }
-                                container.rememberImport(preview.fingerprint)
-                                Triple(preview, applied, backup)
-                            }.onSuccess { (preview, applied, backup) ->
-                                importError = ""
-                                importNotice = container.t(
-                                    "settings.import.done",
-                                    mapOf(
-                                        "kind" to preview.sourceKind,
-                                        "notes" to applied.importedNotes.toString(),
-                                        "json" to applied.importedJson.toString(),
-                                        "groups" to applied.importedGroups.toString(),
-                                        "skipped" to applied.skipped.toString(),
-                                        "backup" to backup.zipPath.fileName.toString()
-                                    )
-                                )
-                            }.onFailure {
-                                importNotice = ""
-                                importError = it.message ?: container.t("settings.import.failed")
-                            }
-                        }
-                    })
-                    }
-                    }
+                    MigrationSettingsPanel(container)
                 }
-                SettingsCategory.About -> SettingsGroup(container.t("settings.about")) {
+                SettingsNavCategory.About -> SettingsGroup(container.t("settings.about")) {
                     val update by container.updates.state.collectAsState()
                     val result = update.result
-                    Text(ProductIdentity.DISPLAY_NAME, fontSize = 16.sp, color = colors.textPrimary)
+                    MooPageTitle(ProductIdentity.DISPLAY_NAME)
                     Text("v${ProductIdentity.VERSION}", color = colors.textSecondary)
                     Text(ProductIdentity.APPLICATION_ID, color = colors.textSecondary)
                     Text(container.t("settings.about.bundle"), color = colors.textSecondary, fontSize = 12.sp)
@@ -442,7 +511,7 @@ fun SettingsScreen(container: AppContainer) {
                         if (result?.download != null && update.downloaded == null) {
                             MooButton(
                                 container.t("settings.update.download"),
-                                primary = true,
+                                prominent = true,
                                 enabled = !update.busy,
                                 onClick = { container.updates.download() }
                             )
@@ -453,7 +522,7 @@ fun SettingsScreen(container: AppContainer) {
                         if (update.downloaded != null) {
                             MooButton(
                                 container.t("settings.update.openInstaller"),
-                                primary = true,
+                                prominent = true,
                                 enabled = !update.busy,
                                 onClick = { container.updates.openInstaller() }
                             )
@@ -462,46 +531,32 @@ fun SettingsScreen(container: AppContainer) {
                     }
                     Text(container.t("settings.update.manualInstall"), color = colors.warning, fontSize = 12.sp)
                 }
-                SettingsCategory.Runtime -> SettingsGroup(container.t("settings.group.runtimes")) {
-                    Text(container.t("settings.runtime.hint"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
-                    SettingRow("Java") {
-                        SettingTextField(settings.runtime.javaPath, {
-                            container.updateSettings { current -> current.copy(runtime = current.runtime.copy(javaPath = it)) }
-                        }, placeholder = container.t("settings.runtime.auto"))
-                    }
-                    SettingRow("Groovy") {
-                        SettingTextField(settings.runtime.groovyPath, {
-                            container.updateSettings { current -> current.copy(runtime = current.runtime.copy(groovyPath = it)) }
-                        }, placeholder = container.t("settings.runtime.auto"))
-                    }
-                    SettingRow("Python") {
-                        SettingTextField(settings.runtime.pythonPath, {
-                            container.updateSettings { current -> current.copy(runtime = current.runtime.copy(pythonPath = it)) }
-                        }, placeholder = container.t("settings.runtime.auto"))
-                    }
-                    SettingRow("Node.js") {
-                        SettingTextField(settings.runtime.nodePath, {
-                            container.updateSettings { current -> current.copy(runtime = current.runtime.copy(nodePath = it)) }
-                        }, placeholder = container.t("settings.runtime.auto"))
-                    }
-                    Text(container.t("settings.runtime.jvmNote"), color = colors.warning, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
-                }
-                SettingsCategory.Vault -> {
+                SettingsNavCategory.Ai -> AiIntegrationSettingsPanel(container)
+                SettingsNavCategory.Runtime -> RuntimeSettingsPanel(container)
+                SettingsNavCategory.Vault -> {
                     SettingsGroup(container.t("settings.group.vaultPaths")) {
                     Text(container.t("settings.vault.hint"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
-                    SettingRow(container.t("settings.vault.quickNote")) {
-                        SettingTextField(settings.vault.quickNotePath, {
-                            container.updateSettings { current -> current.copy(vault = current.vault.copy(quickNotePath = it)) }
-                        }, placeholder = container.t("settings.vault.default"))
-                    }
+                    DirectorySettingRow(
+                        container = container,
+                        label = container.t("settings.vault.quickNote"),
+                        value = settings.vault.quickNotePath,
+                        placeholder = container.t("settings.vault.default"),
+                        onCommit = { path ->
+                            container.updateSettings { current -> current.copy(vault = current.vault.copy(quickNotePath = path)) }
+                        }
+                    )
                     Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
                         MooButton(container.t("quickNote.openVault"), onClick = { container.openDirectory(container.noteVault().root()) })
                     }
-                    SettingRow(container.t("settings.vault.json")) {
-                        SettingTextField(settings.vault.jsonPath, {
-                            container.updateSettings { current -> current.copy(vault = current.vault.copy(jsonPath = it)) }
-                        }, placeholder = container.t("settings.vault.default"))
-                    }
+                    DirectorySettingRow(
+                        container = container,
+                        label = container.t("settings.vault.json"),
+                        value = settings.vault.jsonPath,
+                        placeholder = container.t("settings.vault.default"),
+                        onCommit = { path ->
+                            container.updateSettings { current -> current.copy(vault = current.vault.copy(jsonPath = path)) }
+                        }
+                    )
                     SettingRow(container.t("settings.vault.jsonTreeExpand")) {
                         MooSegmented(
                             options = listOf("smart", "expandAll", "collapseAll").map { it to container.t("settings.vault.expand.$it") },
@@ -567,30 +622,31 @@ fun SettingsScreen(container: AppContainer) {
                     }
                     }
                 }
-                SettingsCategory.Network -> {
+                SettingsNavCategory.Network -> {
                     SettingsGroup(container.t("settings.group.proxy")) {
-                    Toggle(container, container.t("settings.proxy.enabled"), settings.network.proxyEnabled) {
+                    val proxyEnabled = settings.network.proxyEnabled
+                    Toggle(container, container.t("settings.proxy.enabled"), proxyEnabled) {
                         container.updateSettings { it.copy(network = it.network.copy(proxyEnabled = !it.network.proxyEnabled)) }
                     }
                     SettingRow(container.t("settings.proxy.host")) {
                         SettingTextField(settings.network.proxyHost, {
                             container.updateSettings { current -> current.copy(network = current.network.copy(proxyHost = it)) }
-                        })
+                        }, enabled = proxyEnabled)
                     }
                     SettingRow(container.t("settings.proxy.port")) {
                         SettingTextField(settings.network.proxyPort, {
                             container.updateSettings { current -> current.copy(network = current.network.copy(proxyPort = it)) }
-                        })
+                        }, enabled = proxyEnabled)
                     }
                     SettingRow(container.t("settings.proxy.username")) {
                         SettingTextField(settings.network.proxyUsername, {
                             container.updateSettings { current -> current.copy(network = current.network.copy(proxyUsername = it)) }
-                        })
+                        }, enabled = proxyEnabled)
                     }
                     SettingRow(container.t("settings.proxy.password")) {
                         SettingTextField(settings.network.proxyPassword, {
                             container.updateSettings { current -> current.copy(network = current.network.copy(proxyPassword = it)) }
-                        })
+                        }, enabled = proxyEnabled)
                     }
                     }
                     SettingsGroup(container.t("settings.group.timeouts")) {
@@ -610,7 +666,7 @@ fun SettingsScreen(container: AppContainer) {
                     }
                     }
                 }
-                SettingsCategory.Tools -> SettingsGroup(container.t("settings.group.toolDefaults")) {
+                SettingsNavCategory.Tools -> SettingsGroup(container.t("settings.group.toolDefaults")) {
                     SettingRow(container.t("settings.tools.qrSize") + ": ${settings.tools.qrCodeSize}") {
                         MooSegmented(
                             options = listOf(200, 300, 400, 600).map { it.toString() to it.toString() },
@@ -638,11 +694,16 @@ fun SettingsScreen(container: AppContainer) {
                             }
                         )
                     }
-                    SettingRow(container.t("settings.tools.exportDir")) {
-                        SettingTextField(settings.tools.exportDirectory, {
-                            container.updateSettings { current -> current.copy(tools = current.tools.copy(exportDirectory = it)) }
-                        })
-                    }
+                    Text(container.t("settings.tools.exportDirHint"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
+                    DirectorySettingRow(
+                        container = container,
+                        label = container.t("settings.tools.exportDir"),
+                        value = settings.tools.exportDirectory,
+                        placeholder = container.t("settings.tools.exportDirDefault"),
+                        onCommit = { path ->
+                            container.updateSettings { current -> current.copy(tools = current.tools.copy(exportDirectory = path)) }
+                        }
+                    )
                     SettingRow(container.t("settings.tools.translator")) {
                         MooSegmented(
                             options = listOf("google", "bing").map { it to it },
@@ -663,12 +724,13 @@ fun SettingsScreen(container: AppContainer) {
                         })
                     }
                 }
-                SettingsCategory.Shortcuts -> SettingsGroup(container.t("settings.group.shortcuts")) {
+                SettingsNavCategory.Shortcuts -> SettingsGroup(container.t("settings.group.shortcuts")) {
                     var searchDraft by remember(settings.shortcuts.search) { mutableStateOf(settings.shortcuts.search) }
                     var settingsDraft by remember(settings.shortcuts.settings) { mutableStateOf(settings.shortcuts.settings) }
                     var shortcutError by remember { mutableStateOf("") }
                     Text(container.t("settings.shortcuts.hint"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
                     SettingRow(container.t("settings.shortcuts.search")) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     SettingTextField(searchDraft, { value ->
                         searchDraft = value
                         val next = value.trim().ifBlank { "Meta+K" }
@@ -679,8 +741,11 @@ fun SettingsScreen(container: AppContainer) {
                             container.updateSettings { it.copy(shortcuts = it.shortcuts.copy(search = next)) }
                         }
                     })
+                    MooKbd(ShortcutBindings.formatDisplay(searchDraft))
+                    }
                     }
                     SettingRow(container.t("settings.shortcuts.settings")) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     SettingTextField(settingsDraft, { value ->
                         settingsDraft = value
                         val next = value.trim().ifBlank { "Meta+Comma" }
@@ -691,6 +756,8 @@ fun SettingsScreen(container: AppContainer) {
                             container.updateSettings { it.copy(shortcuts = it.shortcuts.copy(settings = next)) }
                         }
                     })
+                    MooKbd(ShortcutBindings.formatDisplay(settingsDraft))
+                    }
                     }
                     if (shortcutError.isNotBlank()) {
                         Text(shortcutError, color = colors.danger, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp))
@@ -699,6 +766,7 @@ fun SettingsScreen(container: AppContainer) {
                 }
             }
             }
+        }
         }
     }
 }
@@ -709,9 +777,153 @@ private fun Label(text: String) {
 }
 
 @Composable
+private fun NavigationToolVisibilityList(container: AppContainer, settings: AppSettings) {
+    val colors = MooTheme.colors
+    val hidden = settings.layout.hiddenNavigationToolIds.toSet()
+    Column(Modifier.padding(horizontal = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        ToolRegistry.groups.forEach { group ->
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    container.t(group.titleKey),
+                    color = colors.textMuted,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                )
+                group.toolIds.forEach { toolId ->
+                    val tool = ToolRegistry.byId.getValue(toolId)
+                    val isHidden = tool.id.id in hidden
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .mooFocusClickable {
+                                container.updateSettings { current ->
+                                    val nextHidden = if (isHidden) {
+                                        current.layout.hiddenNavigationToolIds - tool.id.id
+                                    } else {
+                                        current.layout.hiddenNavigationToolIds + tool.id.id
+                                    }
+                                    current.copy(
+                                        layout = current.layout.copy(
+                                            hiddenNavigationToolIds = NavigationToolVisibility.normalizeHiddenNavigationToolIds(nextHidden)
+                                        )
+                                    )
+                                }
+                            }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        ToolIcon(tool.id, colors.textSecondary, Modifier.size(15.dp))
+                        Text(
+                            container.t(tool.titleKey),
+                            color = colors.textPrimary,
+                            fontSize = 12.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        MooSwitch(checked = !isHidden) {
+                            container.updateSettings { current ->
+                                val nextHidden = if (isHidden) {
+                                    current.layout.hiddenNavigationToolIds - tool.id.id
+                                } else {
+                                    current.layout.hiddenNavigationToolIds + tool.id.id
+                                }
+                                current.copy(
+                                    layout = current.layout.copy(
+                                        hiddenNavigationToolIds = NavigationToolVisibility.normalizeHiddenNavigationToolIds(nextHidden)
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun Toggle(container: AppContainer, label: String, value: Boolean, onClick: () -> Unit) {
     SettingRow(label) {
         MooSwitch(value) { onClick() }
+    }
+}
+
+@Composable
+private fun DirectorySettingRow(
+    container: AppContainer,
+    label: String,
+    value: String,
+    placeholder: String,
+    onCommit: (String) -> Unit,
+) {
+    SettingRow(label) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            MooTextField(
+                value,
+                { commitVaultPath(container, it, onCommit) },
+                modifier = Modifier.weight(1f),
+                placeholder = placeholder
+            )
+            MooButton(
+                container.t("settings.chooseDirectory"),
+                p5Toolbar = true,
+                onClick = {
+                    container.chooseDirectory(label, value)?.let { picked ->
+                        commitVaultPath(container, picked, onCommit)
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun BackupPathRow(
+    container: AppContainer,
+    label: String,
+    path: String,
+    openLocation: BackupOpenLocation,
+) {
+    val colors = MooTheme.colors
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 6.dp),
+    ) {
+        Text(label, color = colors.textPrimary, fontSize = 12.sp)
+        Row(
+            Modifier.fillMaxWidth().padding(top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                path,
+                color = colors.textSecondary,
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier.weight(1f),
+            )
+            MooButton(
+                container.t("settings.backup.open"),
+                p5Toolbar = true,
+                onClick = { container.openBackupLocation(openLocation) },
+            )
+        }
+    }
+}
+
+private fun commitVaultPath(container: AppContainer, raw: String, apply: (String) -> Unit) {
+    when (val normalized = VaultPathConfig.normalizedCustomRoot(raw)) {
+        null -> {
+            if (raw.trim().isNotEmpty()) {
+                container.toastError(container.t("settings.vault.absoluteRequired"))
+            }
+        }
+        else -> apply(normalized)
     }
 }
 

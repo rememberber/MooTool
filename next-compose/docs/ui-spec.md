@@ -26,7 +26,7 @@
 - Electron 主窗口默认 1440×920、最小 1080×720；Compose 首轮沿用默认尺寸，以 1080×720 作为必须完整可用尺寸。
 - 额外以 960×640 作为紧凑布局目标；验证通过后才放宽产品最小尺寸。窗口管理器强制更小时仍保留关闭/搜索和滚动路径。
 - 侧栏初始 248，折叠 84；拖动范围建议 208–300，折叠宽度固定。状态按窗口角色保存，工具面板尺寸按工具保存。
-- 顶部工具栏 44–48，底部状态栏 24–28；窗口装饰区单独计算，不从截图像素直接当作内容高度。
+- 顶部工具栏对照 `--desktop-control`：modern 48、hero 52、quiet 44；底部状态栏 24–28；窗口装饰区单独计算，不从截图像素直接当作内容高度。
 - 标题区空白可拖动；按钮、输入、Tab、分割条、编辑区域不可被拖窗覆盖。
 - 默认使用可靠的系统窗口装饰。自定义融合标题栏放在平台验证后做；保留 macOS 原生交通灯、Windows 系统菜单/贴靠、Linux 窗口管理器行为。不要在所有平台绘制假的 macOS 红黄绿按钮。
 - 拆出的工具窗口不再渲染应用总侧栏；标题显示“工具名 · MooTool Next Compose”，保留工具栏、关闭收回行为与保存状态。
@@ -43,10 +43,20 @@
 | surfaceSubtle | `#F7F7F8` | `#252527` | 次级分组 |
 | control | `#F1F1F2` | `#2C2C2F` | 输入及次级按钮底色 |
 | border | `#E2E2E5` | `#39393D` | 结构分隔 |
+| borderSoft | `#ECECEF` | `#303034` | 侧栏右边线、卡片/弹层细边；modern 对齐 `data-interface-style='modern'` 的 `--border-soft` |
+| borderControl | `#DCDCE0` | `#414146` | 按钮、输入、分段、未选中开关边；modern 对齐 `--border-control` |
+| borderControlHover | `#CCCDD1` | `#505056` | 按钮/输入悬停边；对齐 `--border-control-hover` |
+| surfaceCard | `#F4F4F5` | `#29292C` | 首页卡片、设置分组、弹层底；modern 对齐 `--surface-card`（不是 `:root` 的 `#F2F2F3`） |
+| surfaceCardHover | `#EDEDEE` | `#303033` | 卡片悬停；对齐 `--surface-card-hover` |
+| controlHover / controlActive | `rgba(0,0,0,.06)` / `#E7E7E9` | `rgba(255,255,255,.08)` / `#38383C` | 次级按钮悬停/按下；对齐 `--control-hover` / `--control-active` |
+| shadow / shadowSoft | `rgba(25,27,31,.10)` / `.065` | `rgba(0,0,0,.40)` / `.24` | 弹层与卡片阴影；对齐 `--shadow` / `--shadow-soft` |
 | textPrimary | `#202124` | `#EDEDEE` | 主要正文 |
+| textStrong | `#1D1E21` | `#F7F7F8` | 标题/分区；对齐 `--text-strong` |
+| textBody | `#3D3E43` | `#D9D9DC` | 介绍正文；对齐 `--text-body` |
+| textMuted | `#76787E` | `#A8A8AE` | 分组名与副文案；对齐 `--text-muted` |
 | textSecondary | `#64676F` | `#B0B0B8` | 辅助说明，比旧浅色更可读 |
 | accent | `#4F83CC` | `#85B4F0` | 选中、链接、进度 |
-| accentAction | `#3F6FAE` | `#A9CCFA` | 主按钮背景；配白/深色前景 |
+| accentAction | `#3F6FAE` | `#A9CCFA` | 开关开、hero/smartisan 主按钮；modern 主按钮改走 prominent 中性色，见 [DIFF-069](diff/069-desktop-control-system.md) |
 | focusRing | `#316DC0` | `#94BDF4` | 键盘焦点 |
 | success | `#246448` | `#88D5AF` | 成功文字和图标 |
 | warning | `#82520A` | `#F1C56D` | 警告 |
@@ -57,15 +67,18 @@
 | 类型 | 规格 |
 | --- | --- |
 | 间距 | 4/8/12/16/24/32；工具栏 gap 6–8、内边距 8–12 |
-| 圆角 | 小控件 6、输入/常规按钮 8、对话框 12；主工作区不加整页圆角 |
-| 线条 | 1 dp，按 DPI 校准，避免分隔线重复叠加 |
-| UI 字体 | 默认系统字体，13 sp；设置范围 12–18；字号放大需同步增行高 |
+| 圆角 | 对照 Electron `--desktop-control-radius`：modern 9、hero 12、claude 10、smartisan 7、miui-v5 4、quiet 6；`editor-shell`/`vault-panel`/`settings-group` 走 `shellRadius`：modern 8、hero 14、claude 12、smartisan 10、miui-v5 5、quiet 8，见 [DIFF-075](diff/075-style-shell-tabs-header.md)；对话框 `radiusLarge` 12–16；主工作区不加整页圆角。JSON/HTTP 在 modern/quiet/miui 工作区压平（无壳圆角/阴影），hero/smartisan/claude 加回，见 [DIFF-069](diff/069-desktop-control-system.md)。输入框底为 workspace/`--surface`，悬停边 `borderControlHover`，见 [DIFF-072](diff/072-style-text-field-surface.md)。下拉菜单走当前风格 surface；smartisan/miui 按钮保持 raised，见 [DIFF-073](diff/073-style-menu-tactile-command.md) |
+| 线条 | 1 dp，按 DPI 校准，避免分隔线重复叠加。分栏 `.pane-resizer` 命中区 10 dp，默认无线；悬停/焦点 1 dp 强调色 0.5，拖动 2 dp 0.9，见 [DIFF-078](diff/078-style-vault-node-pane-resizer.md) |
+| UI 字体 | 默认系统字体，正文 13 sp / Medium(500)；控件 12 sp / SemiBold(600)；设置范围 12–18；字号放大需同步增行高 |
 | 编辑器字体 | 默认等宽 14 sp，建议随包提供获授权字体并配置中日韩/emoji 回退 |
-| 标题 | 页面少量标题 18–20 sp，中等字重；工具栏/分区 12–13 sp |
+| 标题 | 设置分类头 modern 18 sp / 650，其余 22 sp；hero Bold、claude 560、miui SemiBold、smartisan 650+高光字影；工具栏页标题 16 sp；分区 12–13 sp。工具页 Tab 为下划线选中，见 [DIFF-075](diff/075-style-shell-tabs-header.md) |
+| 状态栏 | JSON/随手记/应用状态栏 10 sp `textMuted`，底为 toolbar 渐变，见 [DIFF-071](diff/071-style-toggle-tooltip-statusbar.md) |
+| 开关/分段 | modern/quiet/hero 无边开关；smartisan inset+红轨；miui 矩形橙轨；claude 纸色拇指；分段选中 smartisan raised、miui 底栏橙条 |
+| 提示 | `--tooltip-bg`/`--tooltip-text`：modern `#2E2E31`/`#fff`，hero 9dp、claude 8dp、miui 4dp，见 [DIFF-071](diff/071-style-toggle-tooltip-statusbar.md) |
 | 行高 | 正文 1.4–1.5，编辑器 1.45–1.6；不能用固定像素高度截断字体 |
 | 图标 | 线性统一风格，常用 16–18；有意义的图标按钮具备名称与 tooltip |
-| 命中区 | 桌面常规按钮 32–36 高；图标视觉可以小，命中区至少 28–32 |
-| 列表 | 标准 34–36 高；紧凑 30–32；多行内容按内容增高 |
+| 命中区 | 桌面常规按钮对照 `--desktop-control-height`：modern/claude/smartisan/miui 34、hero 36、quiet 30；图标命中区至少 28–32 |
+| 列表 | 标准 34–36 高；紧凑 30–32；多行内容按内容增高。Vault `.vault-node` 最小 36、圆角 5、悬停/选中 `--control`、13 sp 正文省略，见 [DIFF-078](diff/078-style-vault-node-pane-resizer.md) |
 | 动效 | hover/focus 80–140 ms，面板 120–180 ms；大文本不做整页进场动画 |
 
 可访问性目标：正文对比度至少 4.5:1、关键非文本边界/焦点至少 3:1。此为本项目设计门槛，最终仍需测量实际状态组合；禁用项不作为唯一信息来源。
@@ -74,12 +87,12 @@
 
 - 保留 [功能清单](feature-parity.md) 的 Tool ID、默认次序和 6 组；首页独立在最前。
 - classic 为默认；card 与 grouped 为独立设置选择。三者只改变导航表达，不改变业务与会话。
-- 展开态文字+图标，选中态明确；折叠态提供完整名称 tooltip、可访问名称和明显选中标志。
+- 展开态文字+图标，选中态用风格块 `navSelectedFill`/`navSelectedContent`（hero 强调叠底、claude 暖底、miui 左侧条），选中边与图标色见 [DIFF-074](diff/074-style-nav-border-findbar.md)；折叠态提供完整名称 tooltip、可访问名称和明显选中标志。
 - 自定义分组支持命名、工具选择、排序、删除组；删除组不删除工具数据。隐藏工具仍可搜索到。管理器为独立弹层，见 [DIFF-055](diff/055-custom-group-dialog.md)。
 - 最近使用最多 5，默认不展示；点击当前工具不制造重复项。
 - 侧栏自身纵向滚动，底部设置/语言入口固定可达；导航不带着整个工具页滚动。
 - 标题栏动作顺序为折叠、搜索、管理分组，与 Electron `sidebar-actions` 一致；搜索 tooltip 含 `⌘K`/`Ctrl+K`。见 [DIFF-056](diff/056-command-palette-sidebar-search.md)。
-- `Cmd/Ctrl+K` 或侧栏搜索打开命令盘，匹配本地化名称、ID、中文/英文/日文关键词；↑↓选择、Enter 打开、Esc 关闭并把焦点归还原控件。弹层显示分组名，输入框内方向键有效。命令盘与分组管理器为应用内遮罩（点空白关闭），见 [DIFF-057](diff/057-in-app-overlay-dialogs.md)。
+- `Cmd/Ctrl+K` 或侧栏搜索打开命令盘，匹配本地化名称、ID、中文/英文/日文关键词；↑↓选择、Enter 打开、Esc 关闭并把焦点归还原控件。弹层显示分组名，输入框内方向键有效。命令盘、分组管理器、工具内确认/输入弹层与关闭确认均为应用内遮罩（点空白关闭），见 [DIFF-057](diff/057-in-app-overlay-dialogs.md)、[DIFF-059](diff/059-tool-dialogs-to-overlay.md)、[DIFF-060](diff/060-close-overlay-chrome-tokens.md)、[DIFF-071](diff/071-style-toggle-tooltip-statusbar.md)。关闭确认按钮顺序为隐藏到后台 / 退出 / 取消，与 Electron `showMessageBox` 一致。hero 遮罩 0.46、smartisan 0.42、miui 0.38、claude 0.34、其余浅色 0.24。
 - 打开已分离工具时聚焦既有窗口，不创建第二个相同编辑器会话。右键/显式按钮提供分离与收回。
 
 ## 5. 页面布局模板
@@ -98,7 +111,7 @@
 
 文件树建议 200–320，中间编辑器优先剩余空间，右面板建议 240–340。JSON 左面板是文件 Vault，不要和右侧 JSONPath 结构树混淆。JSON 检查器：缩进分段、格式开关、转换两列网格、类名在转换区，JSONPath 后再到结果；路径树是额外能力。随手记中间支持编辑/分栏/预览；快速替换位于右侧。见 [DIFF-052](diff/052-json-inspector-screencapture-chrome.md)。
 
-宽度不足时依次折叠右面板、总导航，再将文件树切为按需显示；编辑器不得被挤到只剩几个字。窄布局面板优先占据重排后的独立区域；若采用浮层，必须通过 Swing 叠层验收。
+宽度不足时依次折叠右面板、总导航，再将文件树切为按需显示；编辑器不得被挤到只剩几个字。窄布局面板优先占据重排后的独立区域；若采用浮层，必须通过 Swing 叠层验收。Vault/检查器/编辑器外框见 [DIFF-065](diff/065-tool-shell-editor-frame.md)；JSON/HTTP 工作区在 modern/quiet/miui 压平见 [DIFF-069](diff/069-desktop-control-system.md)。
 
 ### L2 文本变换：编解码、配置、格式化、Protobuf
 
@@ -109,7 +122,7 @@
 └───────────────────────────────────────────────────────────────┘
 ```
 
-遵循各工具当前左右/上下关系；Protobuf 保留 schema + message 名与三种 Tab，不能强塞为两个没有语义标签的文本框。输入、输出都有名称、语言模式、复制/导入/导出适用操作。输出只读但可选择。
+遵循各工具当前左右/上下关系；Protobuf 保留 schema + message 名与三种 Tab，不能强塞为两个没有语义标签的文本框。类型 Tab 为 toolbar 底 + 选中下划线，见 [DIFF-075](diff/075-style-shell-tabs-header.md)。输入、输出都有名称、语言模式、复制/导入/导出适用操作。输出只读但可选择。
 
 ### Host
 
@@ -137,7 +150,7 @@
 └──────────────────┴─────────────────────────────────────────────────┘
 ```
 
-Method 固定适当宽度，URL 吃剩余宽度；发送按钮始终可见；响应与请求可调高度。失败或取消时保留请求和上次结果，旧结果标明“上次响应”。长 URL 不拉伸窗口。
+Method 固定适当宽度，URL 吃剩余宽度；发送按钮始终可见；请求/响应 Tab 为下划线选中，见 [DIFF-076](diff/076-style-toast-http-tabs-ghost.md)。响应与请求可调高度。失败或取消时保留请求和上次结果，旧结果标明“上次响应”。长 URL 不拉伸窗口。
 
 ### L4 代码运行
 
@@ -172,7 +185,7 @@ Method 固定适当宽度，URL 吃剩余宽度；发送按钮始终可见；响
 
 每个适用页面覆盖：首次空态、正在读取、输入错误、执行中、成功、失败、取消、保存失败、无权限、缺少运行环境。纯计算瞬时完成不闪现假进度。
 
-- 输入错误在相关字段旁显示，编辑器错误给行/列和跳转；不能只弹一瞬间 toast。
+- 输入错误在相关字段旁显示，编辑器错误给行/列和跳转；不能只弹一瞬间 toast。复制/保存/备份成功另有右下角 toast（最多 4 条、可关闭），见 [DIFF-076](diff/076-style-toast-http-tabs-ghost.md)。
 - 长任务在 300 ms 内给忙碌反馈，显示阶段和可取消状态；没有总量就用不确定进度。
 - 点击复制后短暂反馈，并保留键盘焦点；系统剪贴板失败要报告。
 - 格式化、批量替换、清空可撤销；文件删除和系统改动清楚显示对象及影响。
@@ -194,11 +207,11 @@ Method 固定适当宽度，URL 吃剩余宽度；发送按钮始终可见；响
 | 运行/发送 | Cmd+Enter | Ctrl+Enter | 运行台/HTTP 等适用页 |
 | Escape | 先输入法/局部弹层，再搜索/演示/对话框 | 相同 | 不一键退出整个应用 |
 
-快捷键由统一注册与优先级路由：IME 预编辑 > 当前编辑器 > 当前工具 > 窗口 > 应用；相同事件只消费一次。自定义快捷键要检测冲突并显示平台实际符号，不能在 Windows 写死 `⌘`。
+快捷键由统一注册与优先级路由：IME 预编辑 > 当前编辑器 > 当前工具 > 窗口 > 应用；相同事件只消费一次。预编辑与提交后短暂抑制见 [DIFF-064](diff/064-ime-shortcut-home-focus.md)。自定义快捷键要检测冲突并显示平台实际符号，不能在 Windows 写死 `⌘`。
 
 中文预编辑时不重写全文、不自动格式化、不拦截 Enter 导致误发送。选区、emoji、组合字符、列编辑、Tab/Shift+Tab、软换行都需要实测。右键菜单、鼠标双击选词、触控板横纵滚动与系统复制粘贴保持自然。
 
-交互节点有角色、标签、选中/禁用/展开语义；focus ring 不因鼠标样式消失。复杂树提供方向键展开/折叠，错误可以由键盘定位。Compose 与 Swing 两套节点需分别测试读屏。官方当前列出的平台边界见 [基线资料](baseline.md)，Linux 不能声称完整读屏支持。
+交互节点有角色、标签、选中/禁用/展开语义；focus ring 不因鼠标样式消失。键盘焦点使用 2dp 外描边且间距 2dp（对照 Electron `outline` / `outline-offset`），见 [DIFF-061](diff/061-column-focus-toolbar-outline.md)、[DIFF-066](diff/066-focus-clickable-list-rows.md)、[DIFF-068](diff/068-command-history-nav-active.md)。复杂树提供方向键展开/折叠，错误可以由键盘定位。Compose 与 Swing 两套节点需分别测试读屏。官方当前列出的平台边界见 [基线资料](baseline.md)，Linux 不能声称完整读屏支持。
 
 ## 9. 视觉验收
 

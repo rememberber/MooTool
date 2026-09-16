@@ -55,6 +55,18 @@ class CronFavoriteStore(
         save(loadAll().filterNot { it.id == id })
     }
 
+    fun mergeImport(items: List<CronFavorite>): Int {
+        if (items.isEmpty()) return 0
+        val existing = loadAll()
+        val seen = existing.map { it.expression.trim() to it.name.trim() }.toSet()
+        val newItems = items.filter { item ->
+            (item.expression.trim() to item.name.trim()) !in seen
+        }
+        if (newItems.isEmpty()) return 0
+        save(existing + newItems)
+        return newItems.size
+    }
+
     private fun save(items: List<CronFavorite>) {
         SettingsRepository.atomicWrite(file, json.encodeToString(items))
     }

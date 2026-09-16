@@ -551,6 +551,9 @@ data class HttpFindSpan(
 )
 
 object HttpResponseFind {
+    /** 查找条已打开但用户尚未点「查找/上一处/下一处」；仅高亮全部命中，不选中首条（对齐 Electron `openFind`）。 */
+    const val FIND_INDEX_UNSET = -1
+
     fun payload(result: HttpResponseResult?, tab: HttpResponseTab): String = when (tab) {
         HttpResponseTab.Body -> result?.body.orEmpty()
         HttpResponseTab.Headers -> result?.headers.orEmpty()
@@ -565,11 +568,12 @@ object HttpResponseFind {
 
     fun spans(textLength: Int, matches: List<FindMatch>, currentIndex: Int): List<HttpFindSpan> {
         if (matches.isEmpty() || textLength <= 0) return emptyList()
-        val current = currentIndex.coerceIn(0, matches.size - 1)
+        val highlightCurrent = currentIndex >= 0
+        val current = if (highlightCurrent) currentIndex.coerceIn(0, matches.size - 1) else -1
         return matches.mapIndexedNotNull { index, match ->
             val start = match.start.coerceIn(0, textLength)
             val end = match.end.coerceIn(start, textLength)
-            if (end > start) HttpFindSpan(start, end, index == current) else null
+            if (end > start) HttpFindSpan(start, end, highlightCurrent && index == current) else null
         }
     }
 }

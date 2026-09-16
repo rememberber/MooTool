@@ -103,7 +103,7 @@ RSTA 作为第三方依赖由本产品自带，使用自有 theme、行号、滚
 
 `factory` 创建宿主组件，更新阶段只应用变化的属性；组件与 Document 的所有权明确，不因 Composable 重建丢掉文档状态。设置主题通过 adapter 映射 Compose Token，保留字体回退；现有 Java CJK painter 可作为一次性参考，不能直接依赖根源文件。
 
-SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框或面板覆盖可能被编辑器遮挡。P0 默认选择不会重叠的分栏、真实独立 Dialog/Popup 窗口，或临时撤下被遮挡的 host 并在关闭后恢复焦点；这些路径也必须实测。experimental blending 仅做实验，不能未经验证当成完整解决方案。[官方互操作约束](https://kotlinlang.org/docs/multiplatform/compose-desktop-swing-interoperability.html)
+SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框或面板覆盖可能被编辑器遮挡。应用内 `MooOverlay` 打开时通过 `ModalOverlayState` 暂时卸下 `EditorHost` 的 `SwingPanel`，关闭后恢复同一 `EditorBuffer`，见 [DIFF-058](diff/058-overlay-blocks-swing-editor.md)、[DIFF-059](diff/059-tool-dialogs-to-overlay.md)。experimental blending 仅做实验，不能未经验证当成完整解决方案。[官方互操作约束](https://kotlinlang.org/docs/multiplatform/compose-desktop-swing-interoperability.html)
 
 ### 5.3 列编辑不能省略
 

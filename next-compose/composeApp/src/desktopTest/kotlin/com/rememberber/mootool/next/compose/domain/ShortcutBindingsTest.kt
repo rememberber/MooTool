@@ -14,4 +14,12 @@ class ShortcutBindingsTest {
         assertFalse(ShortcutBindings.conflict("", "Meta+K"))
         assertFalse(ShortcutBindings.conflict("Meta+K", "   "))
     }
+
+    @Test
+    fun formatDisplayUsesPlatformMetaKey() {
+        assertEquals("⌘+K", ShortcutBindings.formatDisplay("Meta+K", mac = true))
+        assertEquals("Ctrl+K", ShortcutBindings.formatDisplay("Meta+K", mac = false))
+        assertEquals("⌘+,", ShortcutBindings.formatDisplay("Meta+Comma", mac = true))
+        assertEquals("Ctrl+,", ShortcutBindings.formatDisplay("CommandOrControl+Comma", mac = false))
+    }
 }

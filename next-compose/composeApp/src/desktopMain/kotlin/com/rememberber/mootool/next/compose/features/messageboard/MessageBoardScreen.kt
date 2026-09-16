@@ -3,6 +3,9 @@ package com.rememberber.mootool.next.compose.features.messageboard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -13,14 +16,14 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -33,7 +36,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -59,11 +65,21 @@ import com.rememberber.mootool.next.compose.domain.MessageBoardEngine
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.MessageBoardSession
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooMenu
+import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
+import com.rememberber.mootool.next.compose.ui.workbench.blockedByIme
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.onUserInput
 
 private const val WAKE_TOKEN = "message-board"
 
@@ -76,6 +92,7 @@ fun MessageBoardScreen(container: AppContainer, detached: Boolean) {
             }
         }
     }
+    DismissModalOverlaysOnDispose(container, ToolId.MessageBoard) { session.dismissModalOverlays() }
     val revision by container.sessionManager.revision.collectAsState()
     val colors = MooTheme.colors
 
@@ -107,11 +124,11 @@ fun MessageBoardScreen(container: AppContainer, detached: Boolean) {
         val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
         Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("messageBoard.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("messageBoard.title"))
             if (revision < 0) Spacer(Modifier.width(0.dp))
             Spacer(Modifier.weight(1f))
             OverflowActionCluster(
@@ -129,7 +146,7 @@ fun MessageBoardScreen(container: AppContainer, detached: Boolean) {
             StagePanel(container, session, Modifier.weight(1f).fillMaxHeight(), presenting = false, onPresent = ::enterPresentation)
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).mooStatusBarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -153,7 +170,7 @@ fun MessageBoardScreen(container: AppContainer, detached: Boolean) {
         ) {
             Box(
                 Modifier.fillMaxSize().onPreviewKeyEvent { event ->
-                    if (event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
+                    if (!event.blockedByIme() && event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
                         exitPresentation()
                         true
                     } else {
@@ -183,20 +200,41 @@ private fun ControlPanel(
         Text("${session.message.length}/${MessageBoardEngine.MAX_LENGTH}", color = colors.textSecondary, fontSize = 12.sp)
         MooTextField(
             session.message,
-            { session.message = MessageBoardEngine.clip(it); session.error = ""; onChanged() },
+            { value ->
+                session.onUserInput {
+                    session.message = MessageBoardEngine.clip(value)
+                    session.error = ""
+                    onChanged()
+                }
+            },
             modifier = Modifier.fillMaxWidth().height(96.dp),
             placeholder = container.t("messageBoard.placeholder"),
             singleLine = false
         )
         Text(container.t("messageBoard.messageHint"), color = colors.textSecondary, fontSize = 12.sp)
         Text(container.t("messageBoard.presets"), color = colors.textPrimary, fontSize = 14.sp)
-        MessageBoardEngine.presets.forEach { preset ->
-            val label = container.t(preset.messageKey)
-            MooButton(label, primary = session.message == label, onClick = {
-                session.message = label
-                session.theme = preset.theme
-                onChanged()
-            })
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            MessageBoardEngine.presets.chunked(2).forEach { pair ->
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                    pair.forEach { preset ->
+                        val label = container.t(preset.messageKey)
+                        MessageBoardPresetChip(
+                            label = label,
+                            theme = preset.theme,
+                            active = session.message == label,
+                            onClick = {
+                                session.onUserInput {
+                                    session.message = label
+                                    session.theme = preset.theme
+                                    onChanged()
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    if (pair.size == 1) Spacer(Modifier.weight(1f))
+                }
+            }
         }
         Text(container.t("messageBoard.style"), color = colors.textPrimary, fontSize = 14.sp)
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -210,7 +248,7 @@ private fun ControlPanel(
                             RoundedCornerShape(8.dp)
                         )
                         .background(palette.background.toComposeColor())
-                        .clickable { session.theme = theme; onChanged() }
+                        .mooFocusClickable { session.theme = theme; onChanged() }
                 )
             }
         }
@@ -231,14 +269,14 @@ private fun ControlPanel(
                     BoardAlignment.Left -> container.t("messageBoard.alignLeft")
                     BoardAlignment.Center -> container.t("messageBoard.alignCenter")
                 }
-                MooButton(current, onClick = { alignOpen = true })
-                DropdownMenu(expanded = alignOpen, onDismissRequest = { alignOpen = false }) {
-                    DropdownMenuItem(onClick = {
+                MooButton(current, onClick = { alignOpen = true }, p5Toolbar = true)
+                MooMenu(expanded = alignOpen, onDismissRequest = { alignOpen = false }) {
+                    MooMenuItem(onClick = {
                         alignOpen = false
                         session.alignment = BoardAlignment.Left
                         onChanged()
                     }) { Text(container.t("messageBoard.alignLeft")) }
-                    DropdownMenuItem(onClick = {
+                    MooMenuItem(onClick = {
                         alignOpen = false
                         session.alignment = BoardAlignment.Center
                         onChanged()
@@ -272,9 +310,9 @@ private fun StagePanel(
                 fontSize = 12.sp
             )
             if (!presenting) {
-                MooButton(container.t("messageBoard.display"), onClick = onPresent)
+                MooButton(container.t("messageBoard.display"), onClick = onPresent, p5Toolbar = true)
             } else {
-                MooButton(container.t("messageBoard.exitHint"), onClick = onExit)
+                MooButton(container.t("messageBoard.exitHint"), onClick = onExit, p5Toolbar = true)
             }
         }
         FittedMessage(
@@ -324,4 +362,68 @@ private fun FittedMessage(
 private fun String.toComposeColor(): Color {
     val rgb = removePrefix("#").toInt(16)
     return Color((rgb shr 16) and 0xff, (rgb shr 8) and 0xff, rgb and 0xff)
+}
+
+@Composable
+private fun MessageBoardPresetChip(
+    label: String,
+    theme: BoardTheme,
+    active: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = MooTheme.colors
+    val interaction = remember { MutableInteractionSource() }
+    val hovered by interaction.collectIsHoveredAsState()
+    val shape = RoundedCornerShape(8.dp)
+    val (dotFill, dotRing) = presetDot(theme)
+    val fill = when {
+        active -> colors.accent.copy(alpha = 0.08f).compositeOver(colors.workspace)
+        hovered -> colors.hoveredControlFill()
+        else -> colors.workspace
+    }
+    val stroke = when {
+        active -> colors.accent.copy(alpha = 0.38f).compositeOver(colors.borderControl)
+        hovered -> colors.borderControlHover
+        else -> colors.borderControl
+    }
+    Row(
+        modifier = modifier
+            .heightIn(min = 34.dp)
+            .clip(shape)
+            .background(fill)
+            .border(1.dp, stroke, shape)
+            .hoverable(interaction)
+            .mooFocusClickable(shape = shape, onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        Box(
+            Modifier.size(7.dp)
+                .drawBehind {
+                    drawCircle(dotRing.copy(alpha = 0.10f), radius = size.minDimension / 2f + 3.dp.toPx())
+                }
+                .clip(CircleShape)
+                .background(dotFill)
+        )
+        Text(
+            label,
+            color = if (active || hovered) colors.textStrong else colors.textBody,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+private fun presetDot(theme: BoardTheme): Pair<Color, Color> = when (theme) {
+    BoardTheme.Sunbeam -> Color(0xFFF4CE57) to Color(0xFFD3A81D)
+    BoardTheme.Coral -> Color(0xFFF36B55) to Color(0xFFD74937)
+    BoardTheme.Cobalt -> Color(0xFF5172E5) to Color(0xFF3459D4)
+    BoardTheme.Forest -> Color(0xFF2D765C) to Color(0xFF0F4A3A)
+    BoardTheme.Paper -> Color(0xFFD8C9AE) to Color(0xFFA38F70)
+    BoardTheme.Midnight -> Color(0xFF697591) to Color(0xFF424A64)
 }

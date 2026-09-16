@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,16 +62,31 @@ fun MooTooltip(
         content()
         if (visible) {
             val colors = MooTheme.colors
+            val radius = colors.tooltipRadius()
+            val shape = RoundedCornerShape(radius)
+            val border = if (colors.styleId == "smartisan") {
+                colors.tooltipContent().copy(alpha = 0.14f)
+            } else {
+                Color.Transparent
+            }
+            val elevation = when (colors.styleId) {
+                "claude" -> 10.dp
+                "miui-v5" -> 6.dp
+                else -> 8.dp
+            }
+            val padH = if (colors.styleId == "hero") 10.dp else 8.dp
+            val padV = if (colors.styleId == "hero") 7.dp else 6.dp
             Popup(alignment = Alignment.CenterEnd, offset = IntOffset(10, 0)) {
                 Text(
                     text,
-                    color = colors.workspace,
+                    color = colors.tooltipContent(),
                     fontSize = 12.sp,
+                    lineHeight = 16.sp,
                     modifier = Modifier
-                        .shadow(8.dp, RoundedCornerShape(6.dp))
-                        .background(colors.textPrimary, RoundedCornerShape(6.dp))
-                        .border(1.dp, colors.border, RoundedCornerShape(6.dp))
-                        .padding(horizontal = 8.dp, vertical = 5.dp)
+                        .shadow(elevation, shape, ambientColor = colors.shadow, spotColor = colors.shadow)
+                        .background(colors.tooltipFill(), shape)
+                        .border(1.dp, border, shape)
+                        .padding(horizontal = padH, vertical = padV)
                 )
             }
         }

@@ -64,8 +64,8 @@ fun FontSelect(
                     Modifier
                         .width(280.dp)
                         .shadow(8.dp, RoundedCornerShape(8.dp))
-                        .background(colors.workspace, RoundedCornerShape(8.dp))
-                        .border(1.dp, colors.border, RoundedCornerShape(8.dp))
+                        .background(colors.surfaceCard, RoundedCornerShape(8.dp))
+                        .border(1.dp, colors.borderSoft, RoundedCornerShape(8.dp))
                         .padding(8.dp)
                 ) {
                     if (emptyLabel != null) {
@@ -73,7 +73,7 @@ fun FontSelect(
                             emptyLabel,
                             color = if (value.isBlank()) colors.accent else colors.textPrimary,
                             fontSize = 12.sp,
-                            modifier = Modifier.fillMaxWidth().clickable {
+                            modifier = Modifier.fillMaxWidth().mooFocusClickable {
                                 onChange("")
                                 open = false
                             }.padding(6.dp)
@@ -88,7 +88,7 @@ fun FontSelect(
                                 labels[font] ?: font,
                                 color = if (selected) colors.accent else colors.textPrimary,
                                 fontSize = 12.sp,
-                                modifier = Modifier.fillMaxWidth().clickable {
+                                modifier = Modifier.fillMaxWidth().mooFocusClickable {
                                     onChange(font)
                                     open = false
                                 }.padding(horizontal = 6.dp, vertical = 5.dp)

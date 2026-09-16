@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,15 +13,15 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,9 +33,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.UaEngine
 import com.rememberber.mootool.next.compose.domain.UaException
@@ -44,21 +45,33 @@ import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.UaSession
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
+import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.MooMenu
+import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooToolShell
+import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.applyUserEditClearingStatusNotice
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
-import java.awt.datatransfer.StringSelection
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 @Composable
 fun UaParseScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.uaSession() }
+    DismissModalOverlaysOnDispose(container, ToolId.UaParse) { session.dismissModalOverlays() }
     val revision by container.sessionManager.revision.collectAsState()
+    val settings by container.settings.collectAsState()
     var presetOpen by remember { mutableStateOf(false) }
     val colors = MooTheme.colors
 
@@ -70,13 +83,19 @@ fun UaParseScreen(container: AppContainer, detached: Boolean) {
 
     BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
         val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+        val minPane = 300f
+        val handle = 10f
+        val innerWidth = maxWidth.value - 24f
+        val maxLeft = (innerWidth - handle - minPane).coerceAtLeast(minPane)
+        val defaultLeft = (innerWidth * 0.45f).coerceIn(minPane, maxLeft)
+        val leftWidth = settings.layout.pane(ToolId.UaParse.id, 0, defaultLeft, minPane, maxLeft)
         Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("ua.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("ua.title"))
             Spacer(Modifier.weight(1f))
             OverflowActionCluster(
                 overflow = overflow,
@@ -87,21 +106,51 @@ fun UaParseScreen(container: AppContainer, detached: Boolean) {
                 }
             )
         }
-        Row(Modifier.weight(1f).fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(container.t("ua.input"), color = colors.textSecondary, fontSize = 12.sp)
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxSize()
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .mooToolShell(p5 = true, endBorder = false)
+        ) {
+        Row(Modifier.fillMaxSize()) {
+            Column(
+                Modifier
+                    .width(leftWidth.dp)
+                    .widthIn(min = 300.dp)
+                    .fillMaxHeight()
+                    .padding(start = 22.dp, end = 14.dp, top = 14.dp, bottom = 22.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(container.t("ua.input"), color = colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                 MooTextField(
                     session.source,
-                    { session.source = it; session.error = ""; refresh() },
+                    {
+                        applyUserEditClearingStatusNotice({ session.notice }, { session.notice = it }) {
+                            session.source = it
+                            session.error = ""
+                        }
+                        refresh()
+                    },
                     modifier = Modifier.weight(1f).fillMaxWidth(),
-                    singleLine = false
+                    singleLine = false,
+                    borderless = true
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.foundation.layout.Box {
-                        MooButton(container.t("ua.preset"), onClick = { presetOpen = true })
-                        DropdownMenu(expanded = presetOpen, onDismissRequest = { presetOpen = false }) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    androidx.compose.foundation.layout.Box(Modifier.weight(1f)) {
+                        MooButton(
+                            container.t("ua.preset"),
+                            onClick = { presetOpen = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            p5Toolbar = true
+                        )
+                        MooMenu(expanded = presetOpen, onDismissRequest = { presetOpen = false }) {
                             UaEngine.presets.forEach { (name, value) ->
-                                DropdownMenuItem(onClick = {
+                                MooMenuItem(onClick = {
                                     session.source = value
                                     session.error = ""
                                     presetOpen = false
@@ -110,48 +159,82 @@ fun UaParseScreen(container: AppContainer, detached: Boolean) {
                             }
                         }
                     }
-                    MooButton(container.t("common.action.paste"), onClick = {
-                        pasteFromClipboard()?.let { session.source = it; session.error = ""; refresh() }
-                            ?: run { session.error = container.t("json.notice.copyFailed"); refresh() }
-                    })
-                    MooButton(container.t("common.action.clear"), onClick = {
-                        session.source = ""
-                        session.result = null
-                        session.error = ""
-                        session.notice = container.t("json.notice.cleared")
-                        refresh()
-                    })
-                    MooButton(container.t("ua.parse"), primary = true, onClick = {
-                        parseSource(container, session)
-                        refresh()
-                    })
+                    MooButton(
+                        container.t("common.action.paste"),
+                        onClick = {
+                            pasteFromClipboard()?.let { session.source = it; session.error = ""; refresh() }
+                                ?: run { session.error = container.t("json.notice.copyFailed"); refresh() }
+                        },
+                        p5Toolbar = true
+                    )
+                    MooButton(
+                        container.t("common.action.clear"),
+                        onClick = {
+                            session.source = ""
+                            session.result = null
+                            session.error = ""
+                            refresh()
+                        },
+                        p5Toolbar = true
+                    )
+                    MooButton(
+                        container.t("ua.parse"),
+                        prominent = true,
+                        onClick = {
+                            parseSource(container, session)
+                            refresh()
+                        },
+                        p5Toolbar = true
+                    )
                 }
             }
+            VerticalPaneHandle(
+                onDelta = { container.setPaneSize(ToolId.UaParse.id, 0, leftWidth + it, 1) },
+                onReset = { container.setPaneSize(ToolId.UaParse.id, 0, defaultLeft, 1) }
+            )
             Column(
-                modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(12.dp))
-                    .background(colors.surfaceSubtle).border(1.dp, colors.border, RoundedCornerShape(12.dp)).padding(16.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .widthIn(min = 300.dp)
+                    .fillMaxHeight()
+                    .background(colors.borderSoft)
+                    .padding(1.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(container.t("common.result"), color = colors.textPrimary, fontSize = 14.sp)
+                Row(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 22.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(container.t("common.result"), color = colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.weight(1f))
-                    MooButton(container.t("time.copy"), onClick = {
-                        val text = session.result?.let { resultCodec.encodeToString(it) } ?: session.source
-                        session.notice = copyText(text, container)
-                        refresh()
-                    })
+                    MooButton(
+                        container.t("time.copy"),
+                        onClick = {
+                            val text = session.result?.let { resultCodec.encodeToString(it) } ?: session.source
+                            session.notice = copyText(text, container)
+                            refresh()
+                        },
+                        p5Toolbar = true
+                    )
                 }
-                resultRows(container, session.result).forEach { (label, value) ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(label, color = colors.textSecondary, fontSize = 13.sp)
-                        Text(value.ifBlank { container.t("ua.unknown") }, color = colors.textPrimary, fontSize = 13.sp)
+                Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    resultRows(container, session.result).chunked(2).forEach { pair ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(1.dp)) {
+                            pair.forEach { (label, value) ->
+                                Column(
+                                    Modifier.weight(1f).heightIn(min = 72.dp).background(colors.workspace).padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(7.dp)
+                                ) {
+                                    Text(label, color = colors.textMuted, fontSize = 10.sp)
+                                    Text(value.ifBlank { container.t("ua.unknown") }, color = colors.textBody, fontSize = 13.sp)
+                                }
+                            }
+                            if (pair.size == 1) Spacer(Modifier.weight(1f).heightIn(min = 72.dp).background(colors.workspace))
+                        }
                     }
                 }
             }
         }
+        }
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).mooStatusBarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -173,7 +256,6 @@ fun UaParseScreen(container: AppContainer, detached: Boolean) {
             onRestore = { item ->
                 session.source = item.input
                 session.result = runCatching { resultCodec.decodeFromString<UaResult>(item.output) }.getOrNull()
-                session.notice = container.t("json.notice.restored")
                 session.historyOpen = false
                 refresh()
             },
@@ -190,11 +272,13 @@ private fun parseSource(container: AppContainer, session: UaSession) {
             session.result = result
             session.error = ""
             session.notice = container.t("ua.parse")
+            container.toastSuccess(session.notice)
             container.history.save(ToolId.UaParse.id, container.t("ua.title"), container.t("ua.title"), session.source, resultCodec.encodeToString(result))
         }
         .onFailure { error ->
             session.notice = ""
             session.error = if ((error as? UaException)?.code == "empty") container.t("ua.empty") else (error.message ?: container.t("ua.empty"))
+            container.toastError(session.error)
         }
 }
 
@@ -224,10 +308,5 @@ private fun pasteFromClipboard(): String? = try {
 }
 
 private fun copyText(value: String, container: AppContainer): String {
-    return try {
-        Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null)
-        container.t("time.notice.copied")
-    } catch (_: Exception) {
-        container.t("json.notice.copyFailed")
-    }
+    return if (container.copyText(value)) container.t("time.notice.copied") else container.t("json.notice.copyFailed")
 }

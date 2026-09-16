@@ -152,6 +152,53 @@ class TranslationStore(
         synchronized(lock) { persistHistory(emptyList()) }
     }
 
+    fun mergeImportWords(words: List<TranslationWord>): Int {
+        if (words.isEmpty()) return 0
+        return synchronized(lock) {
+            val items = loadWords().toMutableList()
+            val seen = items.map {
+                Triple(it.sourceText.trim(), it.sourceLang, it.targetLang)
+            }.toMutableSet()
+            var imported = 0
+            words.forEach { word ->
+                val source = word.sourceText.trim()
+                if (source.isEmpty()) return@forEach
+                val key = Triple(source, word.sourceLang, word.targetLang)
+                if (key in seen) return@forEach
+                items.add(0, word)
+                seen += key
+                imported += 1
+            }
+            if (imported > 0) persistWords(items)
+            imported
+        }
+    }
+
+    fun mergeImportHistory(items: List<TranslationHistoryItem>): Int {
+        if (items.isEmpty()) return 0
+        return synchronized(lock) {
+            val existing = loadHistory().toMutableList()
+            val seen = existing.map {
+                Triple(it.sourceText.trim(), it.sourceLang, it.targetLang)
+            }.toMutableSet()
+            var imported = 0
+            val merged = ArrayList<TranslationHistoryItem>()
+            items.forEach { item ->
+                val source = item.sourceText.trim()
+                if (source.isEmpty()) return@forEach
+                val key = Triple(source, item.sourceLang, item.targetLang)
+                if (key in seen) return@forEach
+                merged += item
+                seen += key
+                imported += 1
+            }
+            if (imported > 0) {
+                persistHistory((merged + existing).take(TranslationEngine.HISTORY_LIMIT))
+            }
+            imported
+        }
+    }
+
     private fun loadWords(): List<TranslationWord> {
         if (!wordsFile.exists()) return emptyList()
         return runCatching { json.decodeFromString<List<TranslationWord>>(wordsFile.readText()) }.getOrDefault(emptyList())

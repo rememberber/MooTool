@@ -2,7 +2,6 @@ package com.rememberber.mootool.next.compose.features.time
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -12,15 +11,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,10 +36,11 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.TimeEngine
 import com.rememberber.mootool.next.compose.domain.TimeException
@@ -51,13 +50,21 @@ import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.TimeSession
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooMenu
+import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
+import com.rememberber.mootool.next.compose.ui.components.MooStatusPill
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
+import com.rememberber.mootool.next.compose.ui.workbench.blockedByIme
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.onUserInput
 import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -69,6 +76,7 @@ private data class TimeHistoryOptions(val zone: String, val unit: String)
 @Composable
 fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolean) {
     val session = remember { container.sessionManager.timeSession() }
+    DismissModalOverlaysOnDispose(container, ToolId.TimeConvert) { session.dismissModalOverlays() }
     val revision by container.sessionManager.revision.collectAsState()
     var nowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
     var zoneMenuOpen by remember { mutableStateOf(false) }
@@ -96,11 +104,11 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
         val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
         Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("time.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("time.title"))
             Spacer(Modifier.weight(1f))
             OverflowActionCluster(
                 overflow = overflow,
@@ -112,23 +120,23 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
             )
         }
         Column(
-            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).background(colors.workspace)
+                .border(1.dp, colors.border, RoundedCornerShape(8.dp)).verticalScroll(rememberScrollState())
         ) {
 
         CurrentBand(container, session, nowMillis, onChanged = { refresh() })
 
-        Column(
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(colors.surfaceSubtle)
-                .border(1.dp, colors.border, RoundedCornerShape(12.dp)).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(container.t("time.timezone"), color = colors.textSecondary, fontSize = 12.sp)
-            Box {
-                MooButton(TimeEngine.formatTimezoneLabel(session.zone, nowMillis), onClick = { zoneMenuOpen = true })
-                DropdownMenu(expanded = zoneMenuOpen, onDismissRequest = { zoneMenuOpen = false }) {
+            Text(container.t("time.timezone"), color = colors.textMuted, fontSize = 11.sp)
+            Box(Modifier.weight(1f)) {
+                MooButton(TimeEngine.formatTimezoneLabel(session.zone, nowMillis), onClick = { zoneMenuOpen = true }, p5Toolbar = true)
+                MooMenu(expanded = zoneMenuOpen, onDismissRequest = { zoneMenuOpen = false }) {
                     zones.forEach { zone ->
-                        DropdownMenuItem(onClick = {
+                        MooMenuItem(onClick = {
                             session.zone = zone
                             session.localTime = TimeEngine.formatLocalTime(nowMillis, zone)
                             session.error = ""
@@ -140,48 +148,60 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
                     }
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                Modifier.clip(RoundedCornerShape(7.dp)).background(colors.control).padding(3.dp),
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
                 TimeEngine.quickTimezones.forEach { (zone, label) ->
-                    MooButton(label, primary = session.zone == zone, onClick = {
-                        session.zone = zone
-                        session.localTime = TimeEngine.formatLocalTime(nowMillis, zone)
-                        session.error = ""
-                        refresh()
-                    })
+                    MooButton(
+                        label,
+                        primary = session.zone == zone,
+                        onClick = {
+                            session.zone = zone
+                            session.localTime = TimeEngine.formatLocalTime(nowMillis, zone)
+                            session.error = ""
+                            refresh()
+                        },
+                        p5Toolbar = true
+                    )
                 }
             }
         }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
 
         Column(
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(colors.surfaceSubtle)
-                .border(1.dp, colors.border, RoundedCornerShape(12.dp)).padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(container.t("time.timestamp"), color = colors.textSecondary, fontSize = 12.sp)
+            Text(container.t("time.timestamp"), color = colors.textMuted, fontSize = 11.sp)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MooTextField(
                     session.timestamp,
-                    { session.timestamp = it; session.error = ""; refresh() },
+                    {
+                        session.onUserInput { session.timestamp = it; session.error = "" }
+                        refresh()
+                    },
                     modifier = Modifier.weight(1f).onPreviewKeyEvent { event ->
-                        if (event.type == KeyEventType.KeyDown && event.key == Key.Enter) {
+                        if (!event.blockedByIme() && event.type == KeyEventType.KeyDown && event.key == Key.Enter) {
                             convertToLocal(container, session, refresh = { refresh() })
                             true
                         } else false
                     }
                 )
-                MooButton(container.t("time.copy"), onClick = { copyField(container, session, session.timestamp, refresh = { refresh() }) })
+                MooButton(container.t("time.copy"), onClick = { copyField(container, session, session.timestamp, refresh = { refresh() }) }, p5Toolbar = true)
                 Box {
                     MooButton(
                         if (session.unit == TimestampUnit.Second) container.t("time.unit.second") else container.t("time.unit.millisecond"),
-                        onClick = { unitMenuOpen = true }
+                        onClick = { unitMenuOpen = true },
+                        p5Toolbar = true
                     )
-                    DropdownMenu(expanded = unitMenuOpen, onDismissRequest = { unitMenuOpen = false }) {
-                        DropdownMenuItem(onClick = {
+                    MooMenu(expanded = unitMenuOpen, onDismissRequest = { unitMenuOpen = false }) {
+                        MooMenuItem(onClick = {
                             session.unit = TimestampUnit.Second
                             unitMenuOpen = false
                             refresh()
                         }) { Text(container.t("time.unit.second")) }
-                        DropdownMenuItem(onClick = {
+                        MooMenuItem(onClick = {
                             session.unit = TimestampUnit.Millisecond
                             unitMenuOpen = false
                             refresh()
@@ -191,39 +211,49 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("time.toLocal"), primary = true, onClick = {
-                    convertToLocal(container, session, refresh = { refresh() })
-                })
-                MooButton(container.t("time.toTimestamp"), onClick = {
-                    convertToTimestamp(container, session, refresh = { refresh() })
-                })
+                MooButton(
+                    container.t("time.toLocal"),
+                    prominent = true,
+                    onClick = { convertToLocal(container, session, refresh = { refresh() }) },
+                    p5Toolbar = true
+                )
+                MooButton(
+                    container.t("time.toTimestamp"),
+                    onClick = { convertToTimestamp(container, session, refresh = { refresh() }) },
+                    p5Toolbar = true
+                )
             }
 
-            Text("${container.t("time.localTime")} · ${session.zone}", color = colors.textSecondary, fontSize = 12.sp)
+            Text("${container.t("time.localTime")} · ${session.zone}", color = colors.textMuted, fontSize = 11.sp)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MooTextField(
                     session.localTime,
-                    { session.localTime = it; session.error = ""; refresh() },
+                    {
+                        session.onUserInput { session.localTime = it; session.error = "" }
+                        refresh()
+                    },
                     modifier = Modifier.weight(1f).onPreviewKeyEvent { event ->
-                        if (event.type == KeyEventType.KeyDown && event.key == Key.Enter) {
+                        if (!event.blockedByIme() && event.type == KeyEventType.KeyDown && event.key == Key.Enter) {
                             convertToTimestamp(container, session, refresh = { refresh() })
                             true
                         } else false
                     }
                 )
-                Text(container.t("time.formatHint"), color = colors.textSecondary, fontSize = 12.sp)
-                MooButton(container.t("time.copy"), onClick = { copyField(container, session, session.localTime, refresh = { refresh() }) })
+                Text(container.t("time.formatHint"), color = colors.textMuted, fontSize = 10.sp)
+                MooButton(container.t("time.copy"), onClick = { copyField(container, session, session.localTime, refresh = { refresh() }) }, p5Toolbar = true)
             }
         }
 
         if (session.error.isNotEmpty()) {
-            Text(session.error, color = colors.danger, fontSize = 13.sp)
+            Text(session.error, color = colors.danger, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 22.dp, vertical = 8.dp))
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(26.dp),
+            modifier = Modifier.fillMaxWidth().height(26.dp).padding(horizontal = 22.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(session.notice, color = colors.textSecondary, fontSize = 12.sp)
+            if (session.notice.isNotEmpty()) {
+                Text(session.notice, color = colors.textSecondary, fontSize = 12.sp)
+            }
             Spacer(Modifier.weight(1f))
             if (detached) Text("detached", color = colors.textSecondary, fontSize = 12.sp)
         }
@@ -237,7 +267,6 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
             title = container.t("time.history"),
             onRestore = { item ->
                 applyHistory(session, item)
-                session.notice = container.t("json.notice.restored")
                 session.historyOpen = false
                 refresh()
             },
@@ -255,34 +284,45 @@ private fun CurrentBand(container: AppContainer, session: TimeSession, nowMillis
     val colors = MooTheme.colors
     val currentTimestamp = (nowMillis / 1000).toString()
     val currentLocal = TimeEngine.formatLocalTime(nowMillis, session.zone)
-    Column(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(colors.surfaceSubtle)
-            .border(1.dp, colors.border, RoundedCornerShape(12.dp)).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    Row(
+        modifier = Modifier.fillMaxWidth().heightIn(min = 104.dp).background(colors.surfaceSubtle)
+            .padding(horizontal = 22.dp, vertical = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        Text(container.t("time.current"), color = colors.textPrimary, fontSize = 14.sp)
-        Row(horizontalArrangement = Arrangement.spacedBy(24.dp), modifier = Modifier.fillMaxWidth()) {
-            TimeValue(container, container.t("time.timestamp"), currentTimestamp) {
+        Text(container.t("time.current"), color = colors.textMuted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+            TimeValue(container, container.t("time.timestamp"), currentTimestamp, Modifier.weight(0.8f)) {
                 copyField(container, session, currentTimestamp, onChanged)
             }
-            TimeValue(container, "${container.t("time.localTime")} · ${session.zone}", currentLocal) {
+            TimeValue(container, "${container.t("time.localTime")} · ${session.zone}", currentLocal, Modifier.weight(1.2f)) {
                 copyField(container, session, currentLocal, onChanged)
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            MooButton(container.t("time.clock"), onClick = { session.clockOpen = true; onChanged() })
-            Text(TimeEngine.formatTimezoneLabel(session.zone, nowMillis), color = colors.textSecondary, fontSize = 12.sp)
+        Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
+            MooButton(container.t("time.clock"), onClick = { session.clockOpen = true; onChanged() }, p5Toolbar = true)
+            MooStatusPill(TimeEngine.formatTimezoneLabel(session.zone, nowMillis))
         }
     }
+    Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
 }
 
 @Composable
-private fun TimeValue(container: AppContainer, label: String, value: String, onCopy: () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.width(320.dp)) {
-        Text(label, color = MooTheme.colors.textSecondary, fontSize = 12.sp)
+private fun TimeValue(container: AppContainer, label: String, value: String, modifier: Modifier = Modifier, onCopy: () -> Unit) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(label, color = MooTheme.colors.textMuted, fontSize = 10.sp)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(value, color = MooTheme.colors.textPrimary, fontSize = 16.sp)
-            MooButton(container.t("time.copy"), onClick = onCopy)
+            Text(
+                value,
+                color = MooTheme.colors.textBody,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                fontFamily = FontFamily.Monospace,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            MooButton(container.t("time.copy"), onClick = onCopy, p5Toolbar = true)
         }
     }
 }
@@ -294,18 +334,13 @@ private fun ClockOverlay(container: AppContainer, session: TimeSession, nowMilli
     val parts = formatted.split(" ")
     val date = parts.getOrNull(0).orEmpty()
     val time = parts.getOrNull(1).orEmpty()
-    Dialog(
-        onDismissRequest = { session.clockOpen = false; onChanged() },
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    MooOverlay(
+        onDismiss = { session.clockOpen = false; onChanged() },
+        contentPadding = PaddingValues(0.dp),
+        fillMaxSize = true
     ) {
         Box(
-            modifier = Modifier.fillMaxSize().background(Color(0xFF111113)).onPreviewKeyEvent { event ->
-                if (event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
-                    session.clockOpen = false
-                    onChanged()
-                    true
-                } else false
-            },
+            modifier = Modifier.fillMaxSize().background(Color(0xFF111113)),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -329,6 +364,7 @@ private fun convertToLocal(container: AppContainer, session: TimeSession, refres
             session.error = ""
             val notice = container.t("time.notice.toLocal", mapOf("zone" to session.zone))
             session.notice = notice
+            container.toastSuccess(notice)
             saveHistory(container, session, notice, session.timestamp, result.localTime)
         }
         .onFailure { error ->
@@ -345,6 +381,7 @@ private fun convertToTimestamp(container: AppContainer, session: TimeSession, re
             session.error = ""
             val notice = container.t("time.notice.toTimestamp")
             session.notice = notice
+            container.toastSuccess(notice)
             saveHistory(container, session, notice, session.localTime, result)
         }
         .onFailure { error ->
@@ -389,12 +426,7 @@ private fun copyField(container: AppContainer, session: TimeSession, value: Stri
 }
 
 private fun copyText(value: String, container: AppContainer): String {
-    return try {
-        Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null)
-        container.t("time.notice.copied")
-    } catch (_: Exception) {
-        container.t("json.notice.copyFailed")
-    }
+    return if (container.copyText(value)) container.t("time.notice.copied") else container.t("json.notice.copyFailed")
 }
 
 private fun messageFor(container: AppContainer, error: Throwable): String {

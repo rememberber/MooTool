@@ -2,6 +2,7 @@ package com.rememberber.mootool.next.compose.features.hardware
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -16,7 +18,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Checkbox
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -26,6 +27,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
@@ -33,16 +35,20 @@ import com.rememberber.mootool.next.compose.domain.HardwareEngine
 import com.rememberber.mootool.next.compose.domain.HardwareTab
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooToolTab
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
+import com.rememberber.mootool.next.compose.ui.workbench.OnToolLeaveUnlessDetached
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -60,20 +66,27 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
     }
 
     fun collect() {
-        if (session.loading) return
+        collectJob?.cancel()
         session.loading = true
         session.error = ""
         persist()
-        collectJob?.cancel()
         collectJob = scope.launch(Dispatchers.Default) {
-            val result = runCatching { HardwareEngine.collect() }
+            val result = try {
+                Result.success(HardwareEngine.collect())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
             withContext(Dispatchers.Main) {
                 session.loading = false
                 result.onSuccess {
                     session.snapshot = it
                     session.error = ""
+                    container.toastSuccess(container.t("hardware.refresh"))
                 }.onFailure {
                     session.error = it.message ?: container.t("hardware.error.generic")
+                    container.toastError(session.error)
                 }
                 persist()
             }
@@ -83,11 +96,9 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
     LaunchedEffect(Unit) {
         if (session.snapshot == null && !session.loading) collect()
     }
-    DisposableEffect(Unit) {
-        onDispose {
-            collectJob?.cancel()
-            session.loading = false
-        }
+    OnToolLeaveUnlessDetached(container, ToolId.Hardware) {
+        collectJob?.cancel()
+        session.loading = false
     }
 
     val snapshot = session.snapshot
@@ -96,26 +107,34 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
         val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
         Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("hardware.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("hardware.title"))
             if (revision < 0) Spacer(Modifier.width(0.dp))
-            Spacer(Modifier.weight(1f))
+            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.Bottom) {
+                HardwareTab.entries.forEach { tab ->
+                    MooToolTab(
+                        container.t(tabKey(tab)),
+                        selected = session.tab == tab,
+                        onClick = { session.tab = tab; persist() }
+                    )
+                }
+            }
             Text(
                 snapshot?.collectedAt?.atZone(ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern("HH:mm:ss")).orEmpty(),
-                color = colors.textSecondary,
-                fontSize = 12.sp
+                color = colors.textMuted,
+                fontSize = 10.sp
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Checkbox(session.revealSensitive, {
                     session.revealSensitive = it
                     persist()
                 })
-                Text(container.t("hardware.revealSerials"), color = colors.textSecondary, fontSize = 12.sp)
+                Text(container.t("hardware.revealSerials"), color = colors.textMuted, fontSize = 10.sp)
             }
-            MooButton(container.t("hardware.refresh"), onClick = { collect() }, enabled = !session.loading)
+            MooButton(container.t("hardware.refresh"), onClick = { collect() }, enabled = !session.loading, p5Toolbar = true)
             OverflowActionCluster(
                 overflow = overflow,
                 moreLabel = container.t("json.action.overflow"),
@@ -123,54 +142,69 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
                     add(OverflowAction(container.t("hardware.copy"), enabled = groups.isNotEmpty() && !session.loading) {
                         if (snapshot == null) return@OverflowAction
                         val text = HardwareEngine.plainText(snapshot, session.tab, session.revealSensitive) { container.t(it) }
-                        runCatching {
-                            Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(text), null)
-                            container.setStatus(container.t("json.notice.copied"))
-                        }.onFailure { session.error = container.t("common.copyFailed"); persist() }
+                        if (!container.copyText(text)) {
+                            session.error = container.t("common.copyFailed")
+                            persist()
+                        }
                     })
                     if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.Hardware) })
                 }
             )
         }
-        Row(
-            Modifier.fillMaxWidth().background(colors.toolbar).padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxSize()
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .mooToolShell(p5 = true, endBorder = false)
         ) {
-            HardwareTab.entries.forEach { tab ->
-                MooButton(
-                    container.t(tabKey(tab)),
-                    primary = session.tab == tab,
-                    onClick = { session.tab = tab; persist() }
-                )
-            }
-        }
         when {
             session.error.isNotEmpty() -> Text(session.error, color = colors.danger, modifier = Modifier.padding(16.dp))
             session.loading && snapshot == null -> Text(container.t("hardware.loading"), color = colors.textSecondary, modifier = Modifier.padding(16.dp))
             groups.isEmpty() -> Text(container.t("hardware.empty"), color = colors.textSecondary, modifier = Modifier.padding(16.dp))
-            else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                groups.forEach { group ->
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(title(container, group.titleKey), color = colors.textPrimary, fontSize = 15.sp)
-                        group.items.forEach { item ->
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Text(
-                                    container.t(item.labelKey),
-                                    color = colors.textSecondary,
-                                    fontSize = 13.sp,
-                                    modifier = Modifier.width(160.dp)
-                                )
-                                Text(
-                                    HardwareEngine.displayValue(item, session.revealSensitive),
-                                    color = colors.textPrimary,
-                                    fontSize = 13.sp,
-                                    modifier = Modifier.weight(1f)
-                                )
+            else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 8.dp)) {
+                groups.forEachIndexed { groupIndex, group ->
+                    Column(Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
+                        Text(
+                            title(container, group.titleKey),
+                            color = colors.textStrong,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(bottom = 10.dp)
+                        )
+                        group.items.chunked(2).forEach { pair ->
+                            Row(Modifier.fillMaxWidth()) {
+                                pair.forEach { item ->
+                                    Row(
+                                        Modifier.weight(1f).heightIn(min = 33.dp).padding(end = 24.dp, top = 7.dp, bottom = 7.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Text(
+                                            container.t(item.labelKey),
+                                            color = colors.textMuted,
+                                            fontSize = 11.sp,
+                                            modifier = Modifier.weight(0.45f)
+                                        )
+                                        Text(
+                                            HardwareEngine.displayValue(item, session.revealSensitive),
+                                            color = colors.textBody,
+                                            fontSize = 11.sp,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+                                if (pair.size == 1) Spacer(Modifier.weight(1f))
                             }
+                            Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
                         }
+                    }
+                    if (groupIndex != groups.lastIndex) {
+                        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
                     }
                 }
             }
+        }
         }
     }
     }

@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,9 +20,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.border
 import androidx.compose.material.Checkbox
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -31,10 +32,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
+import com.rememberber.mootool.next.compose.storage.VaultPathConfig
 import com.rememberber.mootool.next.compose.domain.PdfEngine
 import com.rememberber.mootool.next.compose.domain.PdfException
 import com.rememberber.mootool.next.compose.domain.PdfSplitRule
@@ -46,11 +49,26 @@ import com.rememberber.mootool.next.compose.sessions.PdfSession
 import com.rememberber.mootool.next.compose.sessions.PdfSplitRow
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.desktopFileDropTarget
+import com.rememberber.mootool.next.compose.ui.components.MooGhostButton
+import com.rememberber.mootool.next.compose.ui.components.MooMenu
+import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
+import com.rememberber.mootool.next.compose.ui.components.MooToolTab
+import com.rememberber.mootool.next.compose.ui.components.mooToolTabsBackground
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
+import com.rememberber.mootool.next.compose.ui.components.MooOverlay
+import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.onUserInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
@@ -63,6 +81,10 @@ import java.io.File
 @Composable
 fun PdfScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.pdfSession() }
+    DismissModalOverlaysOnDispose(container, ToolId.Pdf) {
+        if (session.busy) session.cancelled = true
+        session.dismissModalOverlays()
+    }
     val revision by container.sessionManager.revision.collectAsState()
     val colors = MooTheme.colors
     val scope = rememberCoroutineScope()
@@ -76,11 +98,11 @@ fun PdfScreen(container: AppContainer, detached: Boolean) {
         val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
         Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("pdf.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("pdf.title"))
             if (revision < 0) Spacer(Modifier.width(0.dp))
             Spacer(Modifier.weight(1f))
             OverflowActionCluster(
@@ -94,11 +116,12 @@ fun PdfScreen(container: AppContainer, detached: Boolean) {
             )
         }
         Row(
-            modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            modifier = Modifier.fillMaxWidth().mooToolTabsBackground().padding(start = 10.dp, end = 10.dp, top = 7.dp, bottom = 0.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             PdfTab.entries.forEach { tab ->
-                MooButton(container.t(tabTitleKey(tab)), primary = session.tab == tab, onClick = {
+                MooToolTab(container.t(tabTitleKey(tab)), selected = session.tab == tab, onClick = {
                     session.tab = tab
                     session.error = ""
                     refresh()
@@ -109,14 +132,16 @@ fun PdfScreen(container: AppContainer, detached: Boolean) {
             MooButton(
                 if (session.tab == PdfTab.Split) container.t("pdf.addTask") else container.t("pdf.addFile"),
                 enabled = !session.busy && !limitReached,
+                p5Toolbar = true,
                 onClick = { addFiles(container, session, ::refresh) }
             )
             if (session.busy) {
-                MooButton(container.t("common.cancel"), onClick = { session.cancelled = true; refresh() })
+                MooButton(container.t("common.cancel"), p5Toolbar = true, onClick = { session.cancelled = true; refresh() })
             } else {
                 MooButton(
                     if (session.tab == PdfTab.Split) container.t("pdf.startSplit") else container.t("pdf.startMerge"),
-                    primary = true,
+                    prominent = true,
+                    p5Toolbar = true,
                     onClick = {
                         if (session.tab == PdfTab.Split) {
                             session.confirmSplit = true
@@ -147,13 +172,13 @@ fun PdfScreen(container: AppContainer, detached: Boolean) {
                         output,
                         color = colors.accent,
                         fontSize = 12.sp,
-                        modifier = Modifier.clickable { reveal(output) }
+                        modifier = Modifier.mooFocusClickable { reveal(output) }
                     )
                 }
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).mooStatusBarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -177,9 +202,6 @@ fun PdfScreen(container: AppContainer, detached: Boolean) {
             title = container.t("common.action.history"),
             onRestore = { item ->
                 session.lastOutputs = item.output.lines().map { it.trim() }.filter { it.isNotEmpty() }
-                session.notice = listOf(container.t("json.notice.restored"), item.summary, item.output)
-                    .filter { it.isNotBlank() }
-                    .joinToString(" · ")
                 session.historyOpen = false
                 refresh()
             },
@@ -200,51 +222,82 @@ fun PdfScreen(container: AppContainer, detached: Boolean) {
 @Composable
 private fun SplitTable(container: AppContainer, session: PdfSession, modifier: Modifier, onChanged: () -> Unit) {
     val colors = MooTheme.colors
-    Column(modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("#", color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.width(28.dp))
-            Text(container.t("pdf.fileName"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.width(220.dp))
-            Text(container.t("pdf.pageRange"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.width(120.dp))
-            Text(container.t("pdf.rule"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.width(110.dp))
-            Text(container.t("pdf.customRule"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.width(140.dp))
-            Text(container.t("pdf.progress"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.width(80.dp))
+    Column(
+        modifier.desktopFileDropTarget(enabled = !session.busy, acceptMultiple = true) { dropped ->
+            ingestPdfFiles(container, session, dropped, onChanged)
+        }
+    ) {
+        PdfTableHeader {
+            Text("#", color = colors.textMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(44.dp))
+            Text(container.t("pdf.fileName"), color = colors.textMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(220.dp))
+            Text(container.t("pdf.pageRange"), color = colors.textMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(120.dp))
+            Text(container.t("pdf.rule"), color = colors.textMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(110.dp))
+            Text(container.t("pdf.customRule"), color = colors.textMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(140.dp))
+            Text(container.t("pdf.progress"), color = colors.textMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(80.dp))
+            Spacer(Modifier.width(44.dp))
         }
         if (session.splitRows.isEmpty()) {
-            Text(container.t("pdf.empty"), color = colors.textSecondary)
+            PdfEmpty(container)
         } else {
             LazyColumn(Modifier.weight(1f)) {
-                itemsIndexed(session.splitRows, key = { _, row -> row.path }) { index, row ->
+                itemsIndexed(session.splitRows, key = { _, row -> row.path }) { _, row ->
                     Row(
-                        Modifier.fillMaxWidth().padding(vertical = 4.dp).horizontalScroll(rememberScrollState()),
+                        Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(horizontal = 8.dp)
+                            .horizontalScroll(rememberScrollState()),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Checkbox(row.selected, { checked -> row.selected = checked; onChanged() }, modifier = Modifier.width(28.dp), enabled = !session.busy)
+                        Checkbox(row.selected, { checked -> row.selected = checked; onChanged() }, modifier = Modifier.width(44.dp), enabled = !session.busy)
                         Column(Modifier.width(220.dp)) {
-                            Text(row.name, color = colors.textPrimary, fontSize = 13.sp)
-                            Text("${row.pageCount} ${container.t("pdf.pages")} · ${PdfEngine.formatBytes(row.size)}", color = colors.textSecondary, fontSize = 11.sp)
+                            Text(row.name, color = colors.textBody, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(
+                                "${row.pageCount} ${container.t("pdf.pages")} · ${PdfEngine.formatBytes(row.size)}",
+                                color = colors.textMuted,
+                                fontSize = 9.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
-                        MooTextField(row.pageRange, { row.pageRange = it; onChanged() }, modifier = Modifier.width(120.dp))
+                        MooTextField(
+                            row.pageRange,
+                            { value -> session.onUserInput { row.pageRange = value; onChanged() } },
+                            modifier = Modifier.width(120.dp),
+                            compact = true
+                        )
                         RulePicker(container, row, enabled = !session.busy, onChanged)
                         if (row.rule == PdfSplitRule.Custom) {
                             MooTextField(
                                 row.customRule,
-                                { row.customRule = it; onChanged() },
+                                { value -> session.onUserInput { row.customRule = value; onChanged() } },
                                 modifier = Modifier.width(140.dp),
-                                placeholder = "1-5;8;10"
+                                placeholder = "1-5;8;10",
+                                compact = true
                             )
                         } else {
-                            Text("—", color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.width(140.dp))
+                            Text("—", color = colors.textMuted, fontSize = 11.sp, modifier = Modifier.width(140.dp))
                         }
-                        Text(container.t(statusKey(row.status)), color = if (row.status == PdfTaskStatus.Error) colors.danger else colors.textSecondary, fontSize = 12.sp, modifier = Modifier.width(80.dp))
-                        if (!session.busy) {
-                            MooButton(container.t("common.delete"), onClick = {
-                                session.splitRows = session.splitRows.filterNot { it.path == row.path }
-                                onChanged()
-                            })
+                        Text(
+                            container.t(statusKey(row.status)),
+                            color = when (row.status) {
+                                PdfTaskStatus.Done -> colors.success
+                                PdfTaskStatus.Error -> colors.danger
+                                else -> colors.textMuted
+                            },
+                            fontSize = 11.sp,
+                            modifier = Modifier.width(80.dp)
+                        )
+                        Box(Modifier.width(44.dp), contentAlignment = Alignment.Center) {
+                            if (!session.busy) {
+                                MooGhostButton(container.t("common.delete"), onClick = {
+                                    session.splitRows = session.splitRows.filterNot { it.path == row.path }
+                                    onChanged()
+                                }, size = 28.dp) {
+                                    Text("×", color = colors.textMuted, fontSize = 16.sp)
+                                }
+                            }
                         }
-                        Text("${index + 1}", color = colors.textSecondary, fontSize = 11.sp)
                     }
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
                 }
             }
         }
@@ -254,31 +307,67 @@ private fun SplitTable(container: AppContainer, session: PdfSession, modifier: M
 @Composable
 private fun MergeTable(container: AppContainer, session: PdfSession, modifier: Modifier, onChanged: () -> Unit) {
     val colors = MooTheme.colors
-    Column(modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(
+        modifier.desktopFileDropTarget(enabled = !session.busy, acceptMultiple = true) { dropped ->
+            ingestPdfFiles(container, session, dropped, onChanged)
+        }
+    ) {
+        PdfTableHeader {
+            Text("#", color = colors.textMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(44.dp))
+            Text(container.t("pdf.fileName"), color = colors.textMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Text(container.t("pdf.mergeRange"), color = colors.textMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(140.dp))
+            Text(container.t("pdf.progress"), color = colors.textMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(80.dp))
+            Spacer(Modifier.width(44.dp))
+        }
         if (session.mergeRows.isEmpty()) {
-            Text(container.t("pdf.empty"), color = colors.textSecondary)
+            PdfEmpty(container)
         } else {
             LazyColumn(Modifier.weight(1f)) {
                 itemsIndexed(session.mergeRows, key = { _, row -> row.path }) { _, row ->
                     Row(
-                        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Checkbox(row.selected, { checked -> row.selected = checked; onChanged() }, enabled = !session.busy)
+                        Checkbox(row.selected, { checked -> row.selected = checked; onChanged() }, modifier = Modifier.width(44.dp), enabled = !session.busy)
                         Column(Modifier.weight(1f)) {
-                            Text(row.name, color = colors.textPrimary, fontSize = 13.sp)
-                            Text("${row.pageCount} ${container.t("pdf.pages")} · ${PdfEngine.formatBytes(row.size)}", color = colors.textSecondary, fontSize = 11.sp)
+                            Text(row.name, color = colors.textBody, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(
+                                "${row.pageCount} ${container.t("pdf.pages")} · ${PdfEngine.formatBytes(row.size)}",
+                                color = colors.textMuted,
+                                fontSize = 9.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
-                        MooTextField(row.pages, { row.pages = it; onChanged() }, modifier = Modifier.width(140.dp))
-                        Text(container.t(statusKey(row.status)), color = if (row.status == PdfTaskStatus.Error) colors.danger else colors.textSecondary, fontSize = 12.sp)
-                        if (!session.busy) {
-                            MooButton(container.t("common.delete"), onClick = {
-                                session.mergeRows = session.mergeRows.filterNot { it.path == row.path }
-                                onChanged()
-                            })
+                        MooTextField(
+                            row.pages,
+                            { value -> session.onUserInput { row.pages = value; onChanged() } },
+                            modifier = Modifier.width(140.dp),
+                            compact = true
+                        )
+                        Text(
+                            container.t(statusKey(row.status)),
+                            color = when (row.status) {
+                                PdfTaskStatus.Done -> colors.success
+                                PdfTaskStatus.Error -> colors.danger
+                                else -> colors.textMuted
+                            },
+                            fontSize = 11.sp,
+                            modifier = Modifier.width(80.dp)
+                        )
+                        Box(Modifier.width(44.dp), contentAlignment = Alignment.Center) {
+                            if (!session.busy) {
+                                MooGhostButton(container.t("common.delete"), onClick = {
+                                    session.mergeRows = session.mergeRows.filterNot { it.path == row.path }
+                                    onChanged()
+                                }, size = 28.dp) {
+                                    Text("×", color = colors.textMuted, fontSize = 16.sp)
+                                }
+                            }
                         }
                     }
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
                 }
             }
         }
@@ -286,13 +375,35 @@ private fun MergeTable(container: AppContainer, session: PdfSession, modifier: M
 }
 
 @Composable
+private fun PdfTableHeader(content: @Composable RowScope.() -> Unit) {
+    val colors = MooTheme.colors
+    Column {
+        Row(
+            Modifier.fillMaxWidth().height(36.dp).background(colors.toolbar).padding(horizontal = 8.dp)
+                .horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            content = content
+        )
+        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
+    }
+}
+
+@Composable
+private fun PdfEmpty(container: AppContainer) {
+    Box(Modifier.fillMaxWidth().height(240.dp), contentAlignment = Alignment.Center) {
+        Text(container.t("pdf.empty"), color = MooTheme.colors.textMuted, fontSize = 11.sp)
+    }
+}
+
+@Composable
 private fun RulePicker(container: AppContainer, row: PdfSplitRow, enabled: Boolean, onChanged: () -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box(Modifier.width(110.dp)) {
-        MooButton(container.t(ruleKey(row.rule)), enabled = enabled, onClick = { open = true })
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        MooButton(container.t(ruleKey(row.rule)), enabled = enabled, p5Toolbar = true, onClick = { open = true })
+        MooMenu(expanded = open, onDismissRequest = { open = false }) {
             PdfSplitRule.entries.forEach { rule ->
-                DropdownMenuItem(onClick = {
+                MooMenuItem(onClick = {
                     row.rule = rule
                     open = false
                     onChanged()
@@ -309,9 +420,9 @@ private fun HelpDialog(container: AppContainer, session: PdfSession, onChanged: 
     } else {
         listOf("pdf.help.merge1", "pdf.help.merge2", "pdf.help.merge3")
     }
-    Dialog(onDismissRequest = { session.helpOpen = false; onChanged() }) {
+    MooOverlay(onDismiss = { session.helpOpen = false; onChanged() }) {
         Column(
-            Modifier.width(520.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+            Modifier.width(520.dp).mooDialogSurface().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t(if (session.tab == PdfTab.Split) "pdf.helpSplitTitle" else "pdf.helpMergeTitle"), color = MooTheme.colors.textPrimary)
@@ -323,14 +434,14 @@ private fun HelpDialog(container: AppContainer, session: PdfSession, onChanged: 
 
 @Composable
 private fun ConfirmDialog(container: AppContainer, session: PdfSession, onConfirm: () -> Unit, onCancel: () -> Unit) {
-    Dialog(onDismissRequest = onCancel) {
+    MooOverlay(onDismiss = onCancel) {
         Column(
-            Modifier.width(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+            Modifier.width(420.dp).mooDialogSurface().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(container.t("pdf.confirmSplit"), color = MooTheme.colors.textPrimary)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.yes"), primary = true, onClick = onConfirm)
+                MooButton(container.t("common.yes"), prominent = true, onClick = onConfirm)
                 MooButton(container.t("common.no"), onClick = onCancel)
             }
         }
@@ -340,6 +451,11 @@ private fun ConfirmDialog(container: AppContainer, session: PdfSession, onConfir
 private fun addFiles(container: AppContainer, session: PdfSession, onChanged: () -> Unit) {
     val files = choosePdfs(container.t(if (session.tab == PdfTab.Split) "pdf.addTask" else "pdf.addFile"))
     if (files.isEmpty()) return
+    ingestPdfFiles(container, session, files, onChanged)
+}
+
+private fun ingestPdfFiles(container: AppContainer, session: PdfSession, files: List<File>, onChanged: () -> Unit) {
+    if (session.busy) return
     val remaining = PdfEngine.MAX_TASKS - currentCount(session)
     val errors = mutableListOf<String>()
     files.take(remaining).forEach { file ->
@@ -399,6 +515,7 @@ private fun runSplit(
                 selected.forEach { it.status = PdfTaskStatus.Done }
                 session.lastOutputs = value.outputs
                 session.notice = container.t("pdf.splitComplete", mapOf("count" to value.pageCount.toString()))
+                container.toastSuccess(session.notice)
                 session.error = ""
                 container.history.save(ToolId.Pdf.id, session.notice, session.notice, selected.joinToString { it.name }, value.outputs.joinToString("\n"), "split")
             }.onFailure { error ->
@@ -440,6 +557,7 @@ private fun runMerge(
                 selected.forEach { it.status = PdfTaskStatus.Done }
                 session.lastOutputs = value.outputs
                 session.notice = container.t("pdf.mergeComplete", mapOf("count" to value.pageCount.toString()))
+                container.toastSuccess(session.notice)
                 session.error = ""
                 container.history.save(ToolId.Pdf.id, session.notice, session.notice, selected.joinToString { it.name }, value.outputs.joinToString("\n"), "merge")
             }.onFailure { error ->
@@ -490,7 +608,7 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
 }
 
 private fun defaultMergeName(container: AppContainer): String {
-    val export = container.settings.value.tools.exportDirectory
+    val export = VaultPathConfig.effectiveCustomRoot(container.settings.value.tools.exportDirectory)
     val directory = export.takeIf { it.isNotBlank() }?.let { File(it) }?.takeIf { it.isDirectory }
         ?: File(System.getProperty("user.home"), "Desktop").takeIf { it.isDirectory }
         ?: File(System.getProperty("user.home"))

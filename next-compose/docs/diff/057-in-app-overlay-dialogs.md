@@ -26,5 +26,5 @@ Electron 弹层属于壳，不离开主窗口。系统 `Dialog` 在 macOS 上半
 ## 受影响范围
 
 - 仍非六套 CSS 逐选择器皮肤。
-- JSON/随手记等工具内 `Dialog` 未全部改为 overlay。
+- 工具内 `Dialog` 已由 [DIFF-059](059-tool-dialogs-to-overlay.md) 改为 overlay。
 - 产品主窗 Tab/IME 手工、托盘 TCC、三平台安装未测。

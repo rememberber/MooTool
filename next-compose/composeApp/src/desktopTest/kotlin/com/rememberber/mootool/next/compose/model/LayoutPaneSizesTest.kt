@@ -14,5 +14,7 @@ class LayoutPaneSizesTest {
         assertEquals(200f, clamped.pane("json", 0, 240f, 200f, 320f))
         val wide = updated.withPane("host", 0, 900f, 1)
         assertEquals(320f, wide.pane("host", 0, 240f, 200f, 320f))
+        val ua = LayoutSettings().withPane("uaParse", 0, 420f, 1)
+        assertEquals(420f, ua.pane("uaParse", 0, 400f, 300f, 600f))
     }
 }

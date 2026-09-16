@@ -37,7 +37,10 @@ import com.rememberber.mootool.next.compose.domain.CustomGroupDraft
 import com.rememberber.mootool.next.compose.model.CustomToolGroup
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
+import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.ui.components.MooSwitch
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
@@ -46,7 +49,6 @@ import java.util.UUID
 @Composable
 fun CustomGroupManager(container: AppContainer) {
     val colors = MooTheme.colors
-    val radius = MooTheme.dimens.radiusLarge
     val initial = container.settings.value.layout.customGroups
     var groups by remember { mutableStateOf(CustomGroupDraft.copyOf(initial)) }
     var selectedId by remember { mutableStateOf(groups.firstOrNull()?.id) }
@@ -56,13 +58,10 @@ fun CustomGroupManager(container: AppContainer) {
     Box(Modifier.fillMaxSize()) {
     MooOverlay(onDismiss = { container.setGroupManagerOpen(false) }) {
         Column(
-            Modifier.width(720.dp).heightIn(max = 560.dp)
-                .background(colors.workspace, RoundedCornerShape(radius))
-                .border(1.dp, colors.border, RoundedCornerShape(radius))
-                .padding(16.dp),
+            Modifier.width(720.dp).heightIn(max = 560.dp).mooDialogSurface().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(container.t("app.group.manage.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("app.group.manage.title"))
             Row(Modifier.fillMaxWidth().height(360.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(
                     Modifier.width(200.dp).fillMaxHeight().clip(RoundedCornerShape(MooTheme.dimens.radius))
@@ -86,7 +85,7 @@ fun CustomGroupManager(container: AppContainer) {
                             Row(
                                 Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp))
                                     .background(if (active) colors.selected else Color.Transparent)
-                                    .clickable { selectedId = group.id }
+                                    .mooFocusClickable { selectedId = group.id }
                                     .padding(horizontal = 8.dp, vertical = 8.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
@@ -156,7 +155,7 @@ fun CustomGroupManager(container: AppContainer) {
                 MooButton(container.t("common.cancel"), onClick = { container.setGroupManagerOpen(false) })
                 MooButton(
                     container.t("common.save"),
-                    primary = true,
+                    prominent = true,
                     enabled = invalid == null,
                     onClick = {
                         if (invalid != null) return@MooButton
@@ -172,8 +171,7 @@ fun CustomGroupManager(container: AppContainer) {
     if (pendingDelete && selected != null) {
         MooOverlay(onDismiss = { pendingDelete = false }) {
             Column(
-                Modifier.width(420.dp).background(colors.workspace, RoundedCornerShape(12.dp))
-                    .border(1.dp, colors.border, RoundedCornerShape(12.dp)).padding(16.dp),
+                Modifier.width(420.dp).mooDialogSurface().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
@@ -181,7 +179,7 @@ fun CustomGroupManager(container: AppContainer) {
                     color = colors.textPrimary
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MooButton(container.t("app.group.manage.delete"), primary = true, onClick = {
+                    MooButton(container.t("app.group.manage.delete"), danger = true, onClick = {
                         val id = selected.id
                         val index = groups.indexOfFirst { it.id == id }
                         val next = groups.filterNot { it.id == id }

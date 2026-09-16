@@ -113,6 +113,78 @@ class EditorBufferColumnEditTest {
                 // Robot 截屏可能被 TCC 拒绝；列编辑/IME 断言仍有效。此帧不能代替产品窗口手势验收。
             }
         } finally {
+            ImeShortcutGate.reset()
+            SwingUtilities.invokeAndWait { frame.dispose() }
+        }
+    }
+
+    @Test
+    fun shownComponentColumnTypeWritesEveryLineAndRequestsFocus() {
+        Assume.assumeFalse(GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance)
+        val buffer = EditorBuffer("aa\nbb")
+        buffer.columnEdits.enabled = true
+        buffer.columnEdits.dragWithoutAlt = true
+        val frame = JFrame("next-compose-column-type")
+        frame.contentPane.add(buffer.scrollPane)
+        frame.setSize(480, 320)
+        try {
+            SwingUtilities.invokeAndWait {
+                frame.isVisible = true
+                buffer.area.font = Font(Font.MONOSPACED, Font.PLAIN, 16)
+                buffer.area.size = buffer.area.preferredSize
+                buffer.area.validate()
+                val start = buffer.area.modelToView2D(0)
+                val end = buffer.area.modelToView2D(buffer.area.getLineStartOffset(1) + 1)
+                assertNotNull(start)
+                assertNotNull(end)
+                val press = MouseEvent(
+                    buffer.area,
+                    MouseEvent.MOUSE_PRESSED,
+                    System.currentTimeMillis(),
+                    MouseEvent.BUTTON1_DOWN_MASK,
+                    start.x.toInt() + 1,
+                    start.y.toInt() + 2,
+                    1,
+                    false,
+                    MouseEvent.BUTTON1
+                )
+                val drag = MouseEvent(
+                    buffer.area,
+                    MouseEvent.MOUSE_DRAGGED,
+                    System.currentTimeMillis(),
+                    MouseEvent.BUTTON1_DOWN_MASK,
+                    end.x.toInt() + 1,
+                    end.y.toInt() + 2,
+                    1,
+                    false,
+                    MouseEvent.BUTTON1
+                )
+                buffer.area.dispatchEvent(press)
+                buffer.area.dispatchEvent(drag)
+            }
+            assertNotNull(buffer.columnEdits.selection)
+            repeat(12) {
+                SwingUtilities.invokeAndWait { buffer.area.requestFocusInWindow() }
+                if (buffer.area.isFocusOwner) return@repeat
+                Thread.sleep(40)
+            }
+            SwingUtilities.invokeAndWait {
+                val typed = java.awt.event.KeyEvent(
+                    buffer.area,
+                    java.awt.event.KeyEvent.KEY_TYPED,
+                    System.currentTimeMillis(),
+                    0,
+                    java.awt.event.KeyEvent.VK_UNDEFINED,
+                    'x'
+                )
+                buffer.area.dispatchEvent(typed)
+            }
+            val lines = buffer.text.split('\n')
+            assertEquals(2, lines.size)
+            assertTrue(lines[0].contains("x"), buffer.text)
+            assertTrue(lines[1].contains("x"), buffer.text)
+        } finally {
+            ImeShortcutGate.reset()
             SwingUtilities.invokeAndWait { frame.dispose() }
         }
     }
@@ -177,6 +249,7 @@ class EditorBufferColumnEditTest {
             }
             assertEquals(before, buffer.text)
         } finally {
+            ImeShortcutGate.reset()
             SwingUtilities.invokeAndWait { frame.dispose() }
         }
     }

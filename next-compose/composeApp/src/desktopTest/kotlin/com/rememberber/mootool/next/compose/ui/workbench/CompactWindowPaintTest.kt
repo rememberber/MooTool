@@ -15,6 +15,7 @@ import androidx.compose.ui.awt.ComposePanel
 import androidx.compose.ui.unit.dp
 import com.rememberber.mootool.next.compose.model.ThemePreference
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import org.junit.Assume
 import java.awt.Dimension
@@ -40,8 +41,8 @@ class CompactWindowPaintTest {
                     val colors = MooTheme.colors
                     val collapsed = LayoutPolicy.collapseNavigation(959f, false, false)
                     Column(Modifier.fillMaxSize().background(colors.workspace)) {
-                        Row(Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush())) {
-                            MooButton("JSON", onClick = {}, primary = true)
+                        Row(Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground()) {
+                            MooButton("JSON", onClick = {}, prominent = true)
                             MooButton("JSON Vault", onClick = {})
                             MooButton("More tools", onClick = {})
                         }

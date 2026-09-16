@@ -51,11 +51,24 @@ object FindReplace {
         query: String,
         replacement: String,
         options: FindReplaceOptions,
-        fromIndex: Int
+        fromIndex: Int,
+        selectionStart: Int = -1,
+        selectionEnd: Int = -1,
     ): Pair<String, FindMatch?> {
+        if (query.isEmpty()) return content to null
+        if (selectionEnd > selectionStart) {
+            val selected = content.substring(selectionStart, selectionEnd)
+            val inner = findAll(selected, query, options)
+            if (inner.size == 1 && inner[0].start == 0 && inner[0].end == selected.length) {
+                val expanded = expandReplacement(replacement, options.regex)
+                val updated = content.replaceRange(selectionStart, selectionEnd, expanded)
+                return updated to FindMatch(selectionStart, selectionStart + expanded.length)
+            }
+        }
         val match = findNext(content, query, options, fromIndex, true) ?: return content to null
-        val updated = content.replaceRange(match.start, match.end, expandReplacement(replacement, options.regex))
-        return updated to FindMatch(match.start, match.start + expandReplacement(replacement, options.regex).length)
+        val expanded = expandReplacement(replacement, options.regex)
+        val updated = content.replaceRange(match.start, match.end, expanded)
+        return updated to FindMatch(match.start, match.start + expanded.length)
     }
 
     fun replaceAll(

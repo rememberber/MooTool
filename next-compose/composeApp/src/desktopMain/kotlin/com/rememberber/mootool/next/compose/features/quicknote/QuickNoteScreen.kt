@@ -19,16 +19,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
+import androidx.compose.foundation.border
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,13 +41,13 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.DocumentFormatEngine
 import com.rememberber.mootool.next.compose.domain.FindReplace
@@ -57,47 +58,94 @@ import com.rememberber.mootool.next.compose.domain.NoteListEngine
 import com.rememberber.mootool.next.compose.domain.NoteMetadata
 import com.rememberber.mootool.next.compose.domain.QuickReplaceAction
 import com.rememberber.mootool.next.compose.domain.QuickReplaceEngine
-import com.rememberber.mootool.next.compose.domain.VaultChangeKind
-import com.rememberber.mootool.next.compose.domain.VaultConflictEngine
 import com.rememberber.mootool.next.compose.domain.VaultConflictState
+import com.rememberber.mootool.next.compose.domain.VaultGitCheckpointMessages
 import com.rememberber.mootool.next.compose.domain.VaultRevisionMonitor
+import com.rememberber.mootool.next.compose.domain.noteOwnWriteQuickNoteFile
+import com.rememberber.mootool.next.compose.domain.rebaselineAfterLocalCrud
 import com.rememberber.mootool.next.compose.domain.VaultSearchIndex
+import com.rememberber.mootool.next.compose.features.git.GitActionButton
 import com.rememberber.mootool.next.compose.features.git.VaultGitDialog
+import com.rememberber.mootool.next.compose.features.git.gitActionMenuLabel
+import com.rememberber.mootool.next.compose.features.git.rememberVaultGitChangeCount
+import com.rememberber.mootool.next.compose.features.vault.applyQuickNoteVaultConflictKeep
+import com.rememberber.mootool.next.compose.features.vault.applyQuickNoteVaultConflictReload
+import com.rememberber.mootool.next.compose.features.vault.applyQuickNoteVaultConflictSaveCopy
 import com.rememberber.mootool.next.compose.features.vault.VaultConflictDialog
+import com.rememberber.mootool.next.compose.features.vault.RebBaselineVaultMonitorOnSessionReload
+import com.rememberber.mootool.next.compose.features.vault.dismissVaultScopedOverlays
+import com.rememberber.mootool.next.compose.features.vault.vaultMoveFolderOptions
+import com.rememberber.mootool.next.compose.features.vault.vaultPathsAfterDelete
 import com.rememberber.mootool.next.compose.editor.EditorAppShortcuts
+import com.rememberber.mootool.next.compose.editor.FindReplaceShortcutPolicy
+import com.rememberber.mootool.next.compose.editor.onFindBarRowKeys
+import com.rememberber.mootool.next.compose.editor.onFindQueryEnterKey
+import com.rememberber.mootool.next.compose.editor.openFindBarSeedingSelection
+import com.rememberber.mootool.next.compose.editor.EditorFindHighlight
+import com.rememberber.mootool.next.compose.editor.RstaFindNavigation
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import com.rememberber.mootool.next.compose.editor.EditorHost
 import com.rememberber.mootool.next.compose.editor.EditorLimits
 import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.QuickNoteSession
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
+import com.rememberber.mootool.next.compose.storage.NoteDocument
 import com.rememberber.mootool.next.compose.storage.NoteVault
+import com.rememberber.mootool.next.compose.storage.VaultEntry
+import com.rememberber.mootool.next.compose.ui.components.desktopFileDropTarget
 import com.rememberber.mootool.next.compose.ui.components.FontSelect
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
+import com.rememberber.mootool.next.compose.ui.components.MooCompactListButton
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooMenu
+import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
+import com.rememberber.mootool.next.compose.ui.components.MooMenuSeparator
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooEditorFrame
+import com.rememberber.mootool.next.compose.ui.components.mooToolShell
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooFindBarBackground
+import com.rememberber.mootool.next.compose.ui.components.MooStatusMeta
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.domain.VaultMove
+import com.rememberber.mootool.next.compose.domain.VaultSelectionPath
 import com.rememberber.mootool.next.compose.ui.components.VaultContextAction
 import com.rememberber.mootool.next.compose.ui.components.VaultContextId
 import com.rememberber.mootool.next.compose.ui.components.VaultSortMenu
+import com.rememberber.mootool.next.compose.ui.components.VaultSelectionFooter
+import com.rememberber.mootool.next.compose.ui.components.OnVaultEffectiveRootChanged
 import com.rememberber.mootool.next.compose.ui.components.VaultTreeList
+import com.rememberber.mootool.next.compose.ui.components.resetVaultTreeOnCustomRootChange
+import com.rememberber.mootool.next.compose.ui.components.IoTwoPaneRow
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
+import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.QuickNoteEditorWindowFocus
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
-import java.awt.FileDialog
-import java.awt.Frame
+import com.rememberber.mootool.next.compose.ui.workbench.blockedByIme
+import com.rememberber.mootool.next.compose.ui.chooseFileWithExportDirectory
+import com.rememberber.mootool.next.compose.ui.persistToolsExportDirectory
 import java.awt.Image as AwtImage
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
-import java.awt.datatransfer.StringSelection
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import javax.imageio.ImageIO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.withContext
 import javax.swing.SwingUtilities
 import javax.swing.event.DocumentEvent
@@ -108,9 +156,11 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.quickNoteSession(container.settings.value.editor.softWrap) }
     val settings by container.settings.collectAsState()
     val revision by container.sessionManager.revision.collectAsState()
-    val vault = remember(settings.vault.quickNotePath) { container.noteVault() }
+    val sessionGeneration by container.sessionManager.sessionGeneration.collectAsState()
+    val vault = remember(settings.vault.quickNotePath, settings.data.directory) { container.noteVault() }
     var tick by remember { mutableStateOf(0L) }
     var filterRev by remember { mutableStateOf(0) }
+    var gitCountRev by remember { mutableIntStateOf(0) }
     var snapshot by remember { mutableStateOf(vault.snapshot(settings.vault.hideGitignoredFiles)) }
     fun refresh() {
         tick += 1
@@ -118,32 +168,89 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
         container.sessionManager.persistQuickNote()
     }
     fun persistFilter() {
+        quickNoteReloadOpenFileIfClean(session, vault)
         filterRev += 1
+        gitCountRev++
         container.sessionManager.bump()
         container.sessionManager.persistQuickNote()
     }
-    var gitOpen by remember { mutableStateOf(false) }
-    var conflict by remember { mutableStateOf<VaultConflictState?>(null) }
+    val quickNoteVaultAutoPullTick by container.quickNoteVaultAutoPullTick.collectAsState()
+    LaunchedEffect(quickNoteVaultAutoPullTick, settings.vault.hideGitignoredFiles) {
+        if (quickNoteVaultAutoPullTick == 0L) return@LaunchedEffect
+        snapshot = withContext(Dispatchers.IO) { vault.snapshot(settings.vault.hideGitignoredFiles) }
+        persistFilter()
+    }
+    val quickNoteVaultRootKey = remember(settings.vault.quickNotePath, settings.data.directory) {
+        vault.root().toAbsolutePath().normalize().toString()
+    }
+    OnVaultEffectiveRootChanged(quickNoteVaultRootKey) {
+        session.dismissVaultScopedOverlays()
+        session.resetVaultTreeOnCustomRootChange()
+        filterRev += 1
+        gitCountRev++
+        when (quickNoteReloadOpenFileIfClean(session, vault)) {
+            QuickNoteReloadOpenResult.ClearedMissing -> session.notice = container.t("vault.conflict.deleted")
+            QuickNoteReloadOpenResult.Reloaded -> session.notice = container.t("vault.conflict.reloaded")
+            QuickNoteReloadOpenResult.Unchanged -> Unit
+        }
+        container.sessionManager.bump()
+    }
+    val gitChangeCount = rememberVaultGitChangeCount(vault.root(), tick + gitCountRev)
     var monitor by remember { mutableStateOf<VaultRevisionMonitor?>(null) }
+    DisposableEffect(session.editor) {
+        val columnHint = container.t("quickNote.columnEdit.hint")
+        session.editor.onUserDocumentChange = {
+            session.notice = quickNoteNoticeOnUserDocumentChange(session.columnLatch, columnHint)
+            session.error = quickNoteErrorOnUserDocumentChange()
+            container.sessionManager.bump()
+        }
+        onDispose { session.editor.onUserDocumentChange = null }
+    }
+    DismissModalOverlaysOnDispose(container, ToolId.QuickNote) { session.dismissModalOverlays() }
+    EditorFindHighlight.ClearOnDispose(session.editor)
+    val activeTool by container.activeTool.collectAsState()
+    val quickNoteToolActive = detached || activeTool == ToolId.QuickNote
+    QuickNoteEditorWindowFocus(session, quickNoteToolActive)
+    LaunchedEffect(session.editor.revision, session.metadata, session.currentFile, session.vaultConflict) {
+        if (session.vaultConflict != null) return@LaunchedEffect
+        if (session.currentFile.isBlank()) return@LaunchedEffect
+        if (!quickNoteDirty(session)) return@LaunchedEffect
+        kotlinx.coroutines.delay(250)
+        if (session.currentFile.isBlank()) return@LaunchedEffect
+        if (!quickNoteDirty(session)) return@LaunchedEffect
+        if (quickNoteIdleAutosaveAttempt(container, session, vault, monitor) { session.vaultConflict = it }) {
+            persistFilter()
+        } else {
+            container.sessionManager.bump()
+        }
+    }
     val colors = MooTheme.colors
     val noteShortcuts = EditorAppShortcuts(
         onFind = {
-            session.findOpen = true
-            refresh()
+            openFindBarSeedingSelection(session.editor) { selected ->
+                selected?.let { session.findQuery = it }
+                session.findOpen = true
+                session.findReplacedCount = 0
+                refresh()
+            }
         },
         onFormat = {
             formatCurrentNote(container, session)
             refresh()
         },
         onSave = {
-            saveCurrent(container, session, vault, monitor) { conflict = it }
+            quickNoteSaveFromUserAction(container, session, vault, monitor) { session.vaultConflict = it }
             refresh()
         }
     )
     DisposableEffect(vault.root()) {
         val next = VaultRevisionMonitor(vault.root(), ignoreAttachments = true) { paths ->
             SwingUtilities.invokeLater {
-                handleQuickNoteVaultChange(container, session, vault, paths, { conflict = it }, { refresh() })
+                container.notifyQuickNoteVaultTreeChanged()
+                handleQuickNoteVaultChange(container, session, vault, paths, { session.vaultConflict = it }) {
+                    gitCountRev++
+                    refresh()
+                }
             }
         }
         next.start()
@@ -153,8 +260,24 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
             if (monitor === next) monitor = null
         }
     }
-    LaunchedEffect(tick, settings.vault.quickNotePath, settings.vault.hideGitignoredFiles) {
+    RebBaselineVaultMonitorOnSessionReload(sessionGeneration, monitor)
+    LaunchedEffect(tick, settings.vault.quickNotePath, settings.data.directory, settings.vault.hideGitignoredFiles, sessionGeneration) {
         snapshot = withContext(Dispatchers.IO) { vault.snapshot(settings.vault.hideGitignoredFiles) }
+    }
+    LaunchedEffect(activeTool, detached, settings.vault.quickNotePath, settings.data.directory, settings.vault.hideGitignoredFiles, sessionGeneration) {
+        if (!detached && activeTool != ToolId.QuickNote) return@LaunchedEffect
+        snapshot = withContext(Dispatchers.IO) { vault.snapshot(settings.vault.hideGitignoredFiles) }
+        filterRev += 1
+        val current = session.currentFile
+        if (current.isBlank()) return@LaunchedEffect
+        if (quickNoteDirty(session)) return@LaunchedEffect
+        withContext(Dispatchers.Swing) {
+            when (quickNoteReloadOpenFileIfClean(session, vault)) {
+                QuickNoteReloadOpenResult.Reloaded -> session.notice = container.t("vault.conflict.reloaded")
+                QuickNoteReloadOpenResult.ClearedMissing -> session.notice = container.t("vault.conflict.deleted")
+                QuickNoteReloadOpenResult.Unchanged -> Unit
+            }
+        }
     }
     val vaultItems = remember(snapshot, session.vaultQuery, session.includeContent, filterRev) {
         VaultSearchIndex.filter(snapshot, session.vaultQuery, session.includeContent).filter { item ->
@@ -178,16 +301,35 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
 
     BoxWithConstraints(
         Modifier.fillMaxSize().background(colors.workspace).onPreviewKeyEvent { event ->
-            if (event.type == KeyEventType.KeyDown && event.key == Key.S && (event.isMetaPressed || event.isCtrlPressed)) {
-                saveCurrent(container, session, vault, monitor) { conflict = it }
+            if (event.blockedByIme()) {
+                false
+            } else if (event.type == KeyEventType.KeyDown && event.key == Key.S && (event.isMetaPressed || event.isCtrlPressed)) {
+                quickNoteSaveFromUserAction(container, session, vault, monitor) { session.vaultConflict = it }
                 refresh()
                 true
             } else if (event.type == KeyEventType.KeyDown && event.key == Key.F && event.isShiftPressed && (event.isMetaPressed || event.isCtrlPressed)) {
                 formatCurrentNote(container, session)
                 refresh()
                 true
-            } else if (event.type == KeyEventType.KeyDown && event.key == Key.F && (event.isMetaPressed || event.isCtrlPressed)) {
-                session.findOpen = true
+            } else if (
+                event.type == KeyEventType.KeyDown &&
+                FindReplaceShortcutPolicy.opensFindReplace(
+                    event.key,
+                    meta = event.isMetaPressed || event.isCtrlPressed,
+                    shift = event.isShiftPressed,
+                    alt = event.isAltPressed,
+                )
+            ) {
+                openFindBarSeedingSelection(session.editor) { selected ->
+                    selected?.let { session.findQuery = it }
+                    session.findOpen = true
+                    session.findReplacedCount = 0
+                    refresh()
+                }
+                true
+            } else if (event.type == KeyEventType.KeyDown && event.key == Key.Escape && session.findOpen) {
+                session.findOpen = false
+                session.findReplacedCount = 0
                 refresh()
                 true
             } else false
@@ -198,13 +340,21 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
         var moreOpen by remember { mutableStateOf(false) }
         Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 8.dp).horizontalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 8.dp).horizontalScroll(rememberScrollState()),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(container.t("quickNote.title"), color = colors.textPrimary, fontSize = 16.sp)
-            MooButton(container.t("quickNote.save"), primary = true, onClick = {
-                saveCurrent(container, session, vault, monitor) { conflict = it }
+            MooPageTitle(container.t("quickNote.title"))
+            MooButton(
+                if (session.vaultTreeOpen) container.t("quickNote.openVault") else container.t("quickNote.vault"),
+                primary = session.vaultTreeOpen,
+                onClick = {
+                    session.vaultTreeOpen = !session.vaultTreeOpen
+                    refresh()
+                },
+            )
+            MooButton(container.t("quickNote.save"), prominent = true, onClick = {
+                quickNoteSaveFromUserAction(container, session, vault, monitor) { session.vaultConflict = it }
                 refresh()
             })
             MooButton(container.t("quickNote.format"), onClick = {
@@ -225,21 +375,53 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                 refresh()
             })
             var colorOpen by remember { mutableStateOf(false) }
+            val colorShape = RoundedCornerShape(6.dp)
+            val currentColor = NoteColors.normalize(session.metadata.color)
             Box {
-                MooButton(
-                    container.t("quickNote.color") + " · " + NoteColors.normalize(session.metadata.color),
-                    onClick = { colorOpen = true }
-                )
-                DropdownMenu(expanded = colorOpen, onDismissRequest = { colorOpen = false }) {
-                    NoteColors.swatches.forEach { (id, argb) ->
-                        DropdownMenuItem(onClick = {
-                            session.metadata = session.metadata.copy(color = id)
-                            colorOpen = false
-                            refresh()
-                        }) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Box(Modifier.size(12.dp).clip(RoundedCornerShape(3.dp)).background(Color(argb)))
-                                Text(id, color = if (NoteColors.normalize(session.metadata.color) == id) MooTheme.colors.accent else MooTheme.colors.textPrimary)
+                Box(
+                    Modifier
+                        .size(width = 36.dp, height = 32.dp)
+                        .clip(colorShape)
+                        .background(if (colorOpen) colors.hoveredControlFill() else colors.workspace)
+                        .border(1.dp, if (colorOpen) colors.borderControlHover else colors.borderControl, colorShape)
+                        .clickable { colorOpen = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        Modifier
+                            .size(16.dp)
+                            .clip(CircleShape)
+                            .background(Color(NoteColors.argb(currentColor)))
+                            .border(1.dp, colors.borderControl.copy(alpha = 0.78f), CircleShape)
+                    )
+                }
+                MooMenu(expanded = colorOpen, onDismissRequest = { colorOpen = false }) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        NoteColors.swatches.chunked(4).forEach { row ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                row.forEach { (id, argb) ->
+                                    val active = currentColor == id
+                                    Box(
+                                        Modifier
+                                            .size(28.dp)
+                                            .clip(RoundedCornerShape(5.dp))
+                                            .background(if (active) colors.hoveredControlFill() else Color.Transparent)
+                                            .clickable {
+                                                session.metadata = session.metadata.copy(color = id)
+                                                colorOpen = false
+                                                refresh()
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Box(
+                                            Modifier
+                                                .size(20.dp)
+                                                .clip(CircleShape)
+                                                .background(Color(argb))
+                                                .border(1.dp, colors.borderControl.copy(alpha = 0.78f), CircleShape)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -284,15 +466,13 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                     "${container.t("quickNote.syntax")} · ${NoteSyntaxOptions.firstOrNull { it.first == syntax }?.second ?: syntax}",
                     onClick = { syntaxOpen = true }
                 )
-                DropdownMenu(expanded = syntaxOpen, onDismissRequest = { syntaxOpen = false }) {
+                MooMenu(expanded = syntaxOpen, onDismissRequest = { syntaxOpen = false }) {
                     NoteSyntaxOptions.forEach { (id, label) ->
-                        DropdownMenuItem(onClick = {
+                        MooMenuItem(label) {
                             session.metadata = session.metadata.copy(syntax = id)
                             session.editor.syntax = DocumentFormatEngine.rstaSyntax(id)
                             syntaxOpen = false
                             refresh()
-                        }) {
-                            Text(label)
                         }
                     }
                 }
@@ -326,28 +506,44 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                 refresh()
             })
             }
-            MooButton(container.t("quickNote.find"), onClick = { session.findOpen = !session.findOpen; refresh() })
+            MooButton(container.t("quickNote.find"), onClick = {
+                if (session.findOpen) {
+                    session.findOpen = false
+                    refresh()
+                } else {
+                    openFindBarSeedingSelection(session.editor) { selected ->
+                        selected?.let { session.findQuery = it }
+                        session.findOpen = true
+                        session.findReplacedCount = 0
+                        refresh()
+                    }
+                }
+            })
             MooButton(container.t("json.action.copy"), onClick = {
-                Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(session.editor.text), null)
-                session.notice = container.t("json.notice.copied")
+                if (container.copyText(session.editor.text)) {
+                    session.notice = container.t("json.notice.copied")
+                } else {
+                    session.notice = container.t("json.notice.copyFailed")
+                }
                 refresh()
             })
             if (!overflow) {
             MooButton(container.t("json.action.import"), onClick = {
-                chooseFile(false)?.let { file ->
-                    runCatching { vault.importFile(file.toPath()) }
-                        .onSuccess { imported ->
-                            openFile(session, vault, imported.fileName.toString().replace('\\', '/'))
-                            session.notice = container.t("json.notice.imported")
-                        }
+                chooseFile(container, save = false)?.let { file ->
+                    runQuickNoteVaultImport(container, session, vault, monitor, vaultItems, file) { session.vaultConflict = it }
                         .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
                     refresh()
                 }
             })
             MooButton(container.t("quickNote.export"), enabled = session.currentFile.isNotBlank(), onClick = {
-                chooseFile(true)?.let { file ->
-                    runCatching { vault.exportFile(session.currentFile, file.toPath()) }
-                        .onSuccess { session.notice = container.t("json.notice.exported") }
+                val defaultName = quickNoteExportDefaultFileName(session.currentFile, session.metadata.title)
+                chooseFile(container, save = true, defaultFileName = defaultName)?.let { file ->
+                    runCatching { exportQuickNoteVaultEntryToPath(session, vault, session.currentFile, file.toPath()) }
+                        .onSuccess {
+                            persistToolsExportDirectory(container, file)
+                            session.notice = container.t("json.notice.exported")
+                            container.toastSuccess(container.t("json.notice.exported"))
+                        }
                         .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
                     refresh()
                 }
@@ -370,98 +566,83 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
             }
             if (!overflow) {
             MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; refresh() })
-            MooButton(container.t("git.action"), onClick = { gitOpen = true })
+            GitActionButton(container.t("quickNote.git"), gitChangeCount, onClick = { session.gitDialogOpen = true; refresh() })
             } else {
                 Box {
                     MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true })
-                    DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
+                    MooMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
                         listOf(12, 13, 14, 16, 18).forEach { size ->
-                            DropdownMenuItem(onClick = {
+                            MooMenuItem("${container.t("quickNote.fontSize")} $size") {
                                 session.metadata = session.metadata.copy(fontSize = size)
                                 moreOpen = false
                                 refresh()
-                            }) {
-                                Text("${container.t("quickNote.fontSize")} $size")
                             }
                         }
                         listOf(1.0, 1.2, 1.4, 1.6, 1.8, 2.0).forEach { spacing ->
-                            DropdownMenuItem(onClick = {
+                            MooMenuItem("${container.t("quickNote.lineSpacing")} ${"%.1f".format(java.util.Locale.US, spacing)}×") {
                                 session.metadata = session.metadata.copy(lineSpacing = spacing)
                                 moreOpen = false
                                 refresh()
-                            }) {
-                                Text("${container.t("quickNote.lineSpacing")} ${"%.1f".format(java.util.Locale.US, spacing)}×")
                             }
                         }
-                        DropdownMenuItem(onClick = {
+                        MooMenuSeparator()
+                        MooMenuItem(container.t("quickNote.columnEdit")) {
                             moreOpen = false
                             session.columnLatch = !session.columnLatch
                             session.notice = if (session.columnLatch) {
                                 if (session.wrap) container.t("quickNote.columnEdit.wrap") else container.t("quickNote.columnEdit.hint")
                             } else ""
                             refresh()
-                        }) {
-                            Text(container.t("quickNote.columnEdit"))
                         }
-                        DropdownMenuItem(onClick = {
+                        MooMenuItem(container.t("quickNote.pasteImage")) {
                             moreOpen = false
                             pasteClipboardImage(container, session, vault)
                             refresh()
-                        }) {
-                            Text(container.t("quickNote.pasteImage"))
                         }
-                        DropdownMenuItem(onClick = {
+                        MooMenuItem(container.t("quickNote.insertImage")) {
                             moreOpen = false
                             insertImageFile(container, session, vault)
                             refresh()
-                        }) {
-                            Text(container.t("quickNote.insertImage"))
                         }
-                        DropdownMenuItem(onClick = {
+                        MooMenuItem(container.t("json.action.import")) {
                             moreOpen = false
-                            chooseFile(false)?.let { file ->
-                                runCatching { vault.importFile(file.toPath()) }
-                                    .onSuccess { imported ->
-                                        openFile(session, vault, imported.fileName.toString().replace('\\', '/'))
-                                        session.notice = container.t("json.notice.imported")
+                            chooseFile(container, save = false)?.let { file ->
+                                runQuickNoteVaultImport(container, session, vault, monitor, vaultItems, file) { session.vaultConflict = it }
+                                    .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
+                                refresh()
+                            }
+                        }
+                        MooMenuItem(container.t("quickNote.export")) {
+                            moreOpen = false
+                            if (session.currentFile.isBlank()) return@MooMenuItem
+                            val defaultName = quickNoteExportDefaultFileName(session.currentFile, session.metadata.title)
+                            chooseFile(container, save = true, defaultFileName = defaultName)?.let { file ->
+                                runCatching { exportQuickNoteVaultEntryToPath(session, vault, session.currentFile, file.toPath()) }
+                                    .onSuccess {
+                                        persistToolsExportDirectory(container, file)
+                                        session.notice = container.t("json.notice.exported")
+                                        container.toastSuccess(container.t("json.notice.exported"))
                                     }
                                     .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
                                 refresh()
                             }
-                        }) {
-                            Text(container.t("json.action.import"))
                         }
-                        DropdownMenuItem(onClick = {
-                            moreOpen = false
-                            if (session.currentFile.isBlank()) return@DropdownMenuItem
-                            chooseFile(true)?.let { file ->
-                                runCatching { vault.exportFile(session.currentFile, file.toPath()) }
-                                    .onSuccess { session.notice = container.t("json.notice.exported") }
-                                    .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
-                                refresh()
-                            }
-                        }) {
-                            Text(container.t("quickNote.export"))
-                        }
-                        DropdownMenuItem(onClick = {
+                        MooMenuSeparator()
+                        MooMenuItem(container.t("common.action.history")) {
                             moreOpen = false
                             session.historyOpen = true
                             refresh()
-                        }) {
-                            Text(container.t("common.action.history"))
                         }
-                        DropdownMenuItem(onClick = {
+                        MooMenuItem(onClick = {
                             moreOpen = false
-                            gitOpen = true
+                            session.gitDialogOpen = true; refresh()
                         }) {
-                            Text(container.t("git.action"))
+                            Text(gitActionMenuLabel(container.t("quickNote.git"), gitChangeCount))
                         }
                         if (!detached) {
-                            DropdownMenuItem(onClick = {
+                            MooMenuItem(container.t("app.tool.detach")) {
                                 moreOpen = false
                                 container.sessionManager.detach(ToolId.QuickNote)
-                            }) {
-                                Text(container.t("app.tool.detach"))
                             }
                         }
                     }
@@ -471,29 +652,21 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
             if (!detached && !overflow) MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.QuickNote) })
         }
         if (session.findOpen) {
-            Row(
-                modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle).padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                MooTextField(session.findQuery, { session.findQuery = it; refresh() }, placeholder = container.t("quickNote.findPlaceholder"), modifier = Modifier.weight(1f))
-                MooTextField(session.replaceText, { session.replaceText = it; refresh() }, placeholder = container.t("quickNote.replacePlaceholder"), modifier = Modifier.weight(1f))
-                MooButton(container.t("quickNote.replaceAll"), onClick = {
-                    val (next, count) = FindReplace.replaceAll(session.editor.text, session.findQuery, session.replaceText, session.findOptions)
-                    onEdt { session.editor.setText(next, recordUndo = true) }
-                    session.notice = container.t("json.find.matches", mapOf("count" to count.toString()))
-                    refresh()
-                })
-                MooButton(container.t("common.close"), onClick = { session.findOpen = false; refresh() })
+            QuickNoteFindBar(container, session) { refresh() }
+        }
+        LaunchedEffect(session.findOpen, session.findQuery, session.findOptions, tick, session.editor.revision) {
+            quickNoteOnEdt {
+                EditorFindHighlight.sync(session.editor, session.findOpen, session.findQuery, session.findOptions, colors)
             }
         }
-        val vaultWidth = settings.layout.pane(ToolId.QuickNote.id, 0, 240f, 200f, 320f)
-        val replaceWidth = settings.layout.pane(ToolId.QuickNote.id, 1, 240f, 240f, 340f)
-        val showVault = LayoutPolicy.showVault(compact, session.compactAux)
+        val showVault = LayoutPolicy.showQuickNoteVault(compact, session.compactAux, session.vaultTreeOpen)
         val showReplace = LayoutPolicy.showReplace(compact, session.compactAux, session.replaceOpen)
+        val workspacePaneKey = quickNoteWorkspacePaneKey(showVault, showReplace)
+        val vaultWidth = quickNoteWorkspacePane(settings, workspacePaneKey, 0, 240f, 200f, 320f)
+        val replaceWidth = quickNoteWorkspacePane(settings, workspacePaneKey, 1, 240f, 240f, 340f)
         Row(Modifier.weight(1f).fillMaxWidth()) {
             if (showVault) {
-            Column(Modifier.width(vaultWidth.dp).fillMaxHeight().background(colors.sidebar).padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(Modifier.width(vaultWidth.dp).fillMaxHeight().mooToolShell(colors.sidebar).padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(container.t("quickNote.vault"), color = colors.textPrimary, fontSize = 12.sp)
                 MooTextField(session.vaultQuery, { session.vaultQuery = it; persistFilter() }, placeholder = container.t("app.search.placeholder"))
                 MooButton(
@@ -517,10 +690,20 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                     }
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    MooButton(container.t("quickNote.newNote"), onClick = { session.dialogMode = "note"; session.dialogValue = "note.md"; refresh() })
-                    MooButton(container.t("quickNote.newFolder"), onClick = { session.dialogMode = "folder"; session.dialogValue = "folder"; refresh() })
+                    MooButton(container.t("quickNote.newNote"), onClick = {
+                        openQuickNoteNewNoteDialog(session)
+                        refresh()
+                    })
+                    MooButton(container.t("quickNote.newFolder"), onClick = {
+                        session.dialogMode = "folder"
+                        session.dialogValue = ""
+                        refresh()
+                    })
                 }
-                MooButton(container.t("quickNote.openVault"), onClick = { container.openDirectory(vault.root()) })
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    MooButton(container.t("quickNote.openVault"), onClick = { container.openDirectory(vault.root()) })
+                    MooButton(container.t("quickNote.refreshVault"), onClick = { container.notifyQuickNoteVaultTreeChanged() })
+                }
                 MooButton(container.t("quickNote.cleanOrphans"), onClick = {
                     val orphans = NoteAttachmentEngine.unreferenced(vault)
                     if (orphans.isEmpty()) {
@@ -532,40 +715,104 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                     }
                     refresh()
                 })
-                if (vaultItems.isEmpty()) {
-                    Text(container.t("quickNote.empty"), color = colors.textSecondary, fontSize = 12.sp)
-                } else {
-                    VaultTreeList(
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .desktopFileDropTarget(acceptMultiple = true) { dropped ->
+                            val dir = quickNoteVaultImportTargetDirectory(
+                                session.vaultSelectedPath,
+                                session.currentFile,
+                                vaultItems,
+                            )
+                            handleQuickNoteVaultTreeFileDrop(
+                                container,
+                                session,
+                                vault,
+                                monitor,
+                                dropped,
+                                dir,
+                                onConflict = { session.vaultConflict = it },
+                            ) {
+                                persistFilter()
+                                refresh()
+                            }
+                        }
+                ) {
+                    if (vaultItems.isEmpty()) {
+                        Text(
+                            container.t("quickNote.empty"),
+                            color = colors.textSecondary,
+                            fontSize = 12.sp,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    } else {
+                        VaultTreeList(
                         items = vaultItems.map { item ->
                             if (item.relativePath == session.currentFile) item.copy(color = session.metadata.color) else item
                         },
-                        selectedPath = session.currentFile,
+                        selectedPath = session.vaultSelectedPath.ifBlank { session.currentFile },
                         emptyLabel = container.t("quickNote.empty"),
+                        onSelect = selectVaultEntry@ { entry ->
+                            if (entry.directory) {
+                                if (!prepareQuickNoteVaultContext(container, session, vault, monitor, entry) { session.vaultConflict = it }) {
+                                    refresh()
+                                    return@selectVaultEntry
+                                }
+                            } else {
+                                session.vaultSelectedPath = entry.relativePath
+                            }
+                            refresh()
+                        },
+                        activeFilePath = session.currentFile,
+                        activeFileDirty = quickNoteDirty(session),
                         onOpen = { item ->
                             if (!item.directory) {
-                                if (saveIfNeeded(container, session, vault, monitor) { conflict = it }) {
-                                    openFile(session, vault, item.relativePath)
-                                }
+                                prepareQuickNoteVaultContext(container, session, vault, monitor, item) { session.vaultConflict = it }
                                 refresh()
                             }
                         },
                         onMove = { from, to ->
+                            if (VaultMove.moveAffectsOpenPath(session.currentFile, from) &&
+                                !quickNoteVaultSaveIfNeeded(container, session, vault, monitor) { session.vaultConflict = it }
+                            ) {
+                                session.error = session.error.ifBlank { container.t("quickNote.saveFailed") }
+                                refresh()
+                                return@VaultTreeList
+                            }
                             runCatching { vault.move(from, to) }
                                 .onSuccess { next ->
-                                    session.currentFile = VaultMove.retargetAfterMove(session.currentFile, from, next)
+                                    val (file, selected) = VaultMove.retargetVaultPaths(
+                                        session.currentFile,
+                                        session.vaultSelectedPath,
+                                        from,
+                                        next,
+                                    )
+                                    session.currentFile = file
+                                    session.vaultSelectedPath = selected
                                     session.notice = container.t("vault.moved")
+                                    container.toastSuccess(container.t("quickNote.move"))
+                                    container.recordVaultActivity(VaultGitCheckpointMessages.MOVE_QUICK_NOTE_ENTRY)
+                                    monitor.rebaselineAfterLocalCrud()
                                 }
                                 .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
                             refresh()
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxSize(),
                         expandMode = settings.vault.quickNoteTreeExpandMode,
                         sort = session.vaultSort,
+                        contextMenuPath = session.vaultContextMenuPath,
+                        onContextMenuPathChange = { session.vaultContextMenuPath = it; refresh() },
+                        treeExpanded = session.vaultTreeExpanded,
+                        onTreeExpandedChange = { session.vaultTreeExpanded = it; refresh() },
+                        treeScrollOffset = session.vaultTreeScrollOffset,
+                        onTreeScrollOffsetChange = { session.vaultTreeScrollOffset = it; refresh() },
                         contextActions = listOf(
                             VaultContextAction(VaultContextId.Rename, container.t("quickNote.rename")),
                             VaultContextAction(VaultContextId.Move, container.t("quickNote.move")),
                             VaultContextAction(VaultContextId.Duplicate, container.t("quickNote.duplicate"), filesOnly = true),
                             VaultContextAction(VaultContextId.Export, container.t("quickNote.export"), filesOnly = true),
+                            VaultContextAction(VaultContextId.Info, container.t("quickNote.info"), filesOnly = true),
                             VaultContextAction(VaultContextId.Delete, container.t("json.vault.delete")),
                             VaultContextAction(VaultContextId.Reveal, container.t("vault.reveal")),
                             VaultContextAction(VaultContextId.Git, container.t("git.action"))
@@ -573,88 +820,185 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                         onContextAction = { entry, id ->
                             when (id) {
                                 VaultContextId.Rename -> {
+                                    if (!prepareQuickNoteVaultContext(container, session, vault, monitor, entry) { session.vaultConflict = it }) {
+                                        refresh()
+                                        return@VaultTreeList
+                                    }
                                     session.dialogMode = "rename"
                                     session.dialogTarget = entry.relativePath
-                                    session.dialogValue = entry.name.substringBeforeLast('.')
+                                    session.dialogValue = if (entry.directory) {
+                                        quickNoteRenameDefault(entry.relativePath, isDirectory = true)
+                                    } else if (entry.relativePath == session.currentFile) {
+                                        quickNoteRenameDefault(entry.relativePath, isDirectory = false, metadataTitle = session.metadata.title)
+                                    } else {
+                                        val title = runCatching { vault.readNote(entry.relativePath).metadata.title }.getOrNull()
+                                        quickNoteRenameDefault(entry.relativePath, isDirectory = false, metadataTitle = title)
+                                    }
                                 }
                                 VaultContextId.Move -> {
+                                    if (!prepareQuickNoteVaultContext(container, session, vault, monitor, entry) { session.vaultConflict = it }) {
+                                        refresh()
+                                        return@VaultTreeList
+                                    }
                                     session.dialogMode = "move"
                                     session.dialogTarget = entry.relativePath
-                                    session.dialogValue = ""
+                                    session.dialogValue = VaultMove.parentDirectory(entry.relativePath)
                                 }
                                 VaultContextId.Duplicate -> {
-                                    runCatching { vault.duplicate(entry.relativePath) }
-                                        .onSuccess { copy ->
-                                            openFile(session, vault, copy.relativePath)
+                                    if (entry.directory) return@VaultTreeList
+                                    if (!prepareQuickNoteVaultContext(container, session, vault, monitor, entry) { session.vaultConflict = it }) {
+                                        refresh()
+                                        return@VaultTreeList
+                                    }
+                                    duplicateQuickNoteEntry(container, session, vault, monitor, entry.relativePath) { session.vaultConflict = it }
+                                        .onSuccess {
                                             session.notice = container.t("quickNote.duplicated")
+                                            container.toastSuccess(container.t("quickNote.duplicated"))
                                         }
                                         .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
                                 }
+                                VaultContextId.Info -> {
+                                    if (entry.directory) return@VaultTreeList
+                                    if (!prepareQuickNoteVaultContext(container, session, vault, monitor, entry) { session.vaultConflict = it }) {
+                                        refresh()
+                                        return@VaultTreeList
+                                    }
+                                    session.documentInfoPath = entry.relativePath
+                                }
                                 VaultContextId.Export -> {
                                     if (entry.directory) return@VaultTreeList
-                                    chooseFile(true)?.let { file ->
-                                        runCatching { vault.exportFile(entry.relativePath, file.toPath()) }
-                                            .onSuccess { session.notice = container.t("json.notice.exported") }
+                                    if (!prepareQuickNoteVaultContext(container, session, vault, monitor, entry) { session.vaultConflict = it }) {
+                                        refresh()
+                                        return@VaultTreeList
+                                    }
+                                    val exportTitle = if (entry.relativePath == session.currentFile) {
+                                        session.metadata.title
+                                    } else {
+                                        runCatching { vault.readNote(entry.relativePath).metadata.title }.getOrNull()
+                                    }
+                                    val defaultName = quickNoteExportDefaultFileName(entry.relativePath, exportTitle)
+                                    chooseFile(container, save = true, defaultFileName = defaultName)?.let { file ->
+                                        runCatching {
+                                            exportQuickNoteVaultEntryToPath(session, vault, entry.relativePath, file.toPath())
+                                        }
+                                            .onSuccess {
+                                                persistToolsExportDirectory(container, file)
+                                                session.notice = container.t("json.notice.exported")
+                                                container.toastSuccess(container.t("json.notice.exported"))
+                                            }
                                             .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
                                     }
                                 }
                                 VaultContextId.Delete -> {
-                                    runCatching { vault.delete(entry.relativePath) }
-                                        .onSuccess {
-                                            if (session.currentFile == entry.relativePath || session.currentFile.startsWith("${entry.relativePath}/")) {
-                                                session.currentFile = ""
-                                                session.savedText = session.editor.text
-                                            }
-                                            session.notice = container.t("quickNote.deleted")
-                                        }
-                                        .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
+                                    if (!prepareQuickNoteVaultContext(container, session, vault, monitor, entry) { session.vaultConflict = it }) {
+                                        refresh()
+                                        return@VaultTreeList
+                                    }
+                                    session.dialogMode = "delete"
+                                    session.dialogTarget = entry.relativePath
                                 }
                                 VaultContextId.Reveal -> container.revealInFileManager(vault.resolve(entry.relativePath))
-                                VaultContextId.Git -> gitOpen = true
+                                VaultContextId.Git -> {
+                                    session.gitDialogOpen = true
+                                    refresh()
+                                }
                             }
                             refresh()
                         }
                     )
+                    }
                 }
-                if (session.currentFile.isNotBlank()) {
+                val vaultFooterPath = session.vaultSelectedPath.ifBlank { session.currentFile }
+                if (vaultFooterPath.isNotBlank()) {
+                    VaultSelectionFooter(
+                        path = vaultFooterPath,
+                        dirty = vaultFooterPath == session.currentFile && quickNoteDirty(session),
+                    )
+                }
+                if (vaultFooterPath.isNotBlank()) {
+                    val footerEntry = vaultItems.find { it.relativePath == vaultFooterPath }
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         MooButton(container.t("quickNote.rename"), onClick = {
+                            val entry = footerEntry ?: VaultEntry(
+                                vaultFooterPath,
+                                vaultFooterPath.substringAfterLast('/'),
+                                false,
+                                0,
+                            )
+                            if (!prepareQuickNoteVaultContext(container, session, vault, monitor, entry) { session.vaultConflict = it }) {
+                                refresh()
+                                return@MooButton
+                            }
                             session.dialogMode = "rename"
-                            session.dialogTarget = session.currentFile
-                            session.dialogValue = session.currentFile.substringAfterLast('/')
+                            session.dialogTarget = vaultFooterPath
+                            session.dialogValue = if (entry.directory) {
+                                quickNoteRenameDefault(vaultFooterPath, isDirectory = true)
+                            } else if (vaultFooterPath == session.currentFile) {
+                                quickNoteRenameDefault(vaultFooterPath, isDirectory = false, metadataTitle = session.metadata.title)
+                            } else {
+                                val title = runCatching { vault.readNote(vaultFooterPath).metadata.title }.getOrNull()
+                                quickNoteRenameDefault(vaultFooterPath, isDirectory = false, metadataTitle = title)
+                            }
                             refresh()
                         })
-                        MooButton(container.t("quickNote.duplicate"), onClick = {
-                            runCatching { vault.duplicate(session.currentFile) }
-                                .onSuccess { copy ->
-                                    openFile(session, vault, copy.relativePath)
-                                    session.notice = container.t("quickNote.duplicated")
+                        if (footerEntry?.directory != true) {
+                            MooButton(container.t("quickNote.duplicate"), onClick = {
+                                val entry = footerEntry ?: VaultEntry(
+                                    vaultFooterPath,
+                                    vaultFooterPath.substringAfterLast('/'),
+                                    false,
+                                    0,
+                                )
+                                if (!prepareQuickNoteVaultContext(container, session, vault, monitor, entry) { session.vaultConflict = it }) {
+                                    refresh()
+                                    return@MooButton
                                 }
-                                .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
-                            refresh()
-                        })
+                                duplicateQuickNoteEntry(container, session, vault, monitor, vaultFooterPath) { session.vaultConflict = it }
+                                    .onSuccess {
+                                        session.notice = container.t("quickNote.duplicated")
+                                        container.toastSuccess(container.t("quickNote.duplicated"))
+                                    }
+                                    .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
+                                refresh()
+                            })
+                        }
                         MooButton(container.t("quickNote.move"), onClick = {
+                            val entry = footerEntry ?: VaultEntry(
+                                vaultFooterPath,
+                                vaultFooterPath.substringAfterLast('/'),
+                                false,
+                                0,
+                            )
+                            if (!prepareQuickNoteVaultContext(container, session, vault, monitor, entry) { session.vaultConflict = it }) {
+                                refresh()
+                                return@MooButton
+                            }
                             session.dialogMode = "move"
-                            session.dialogTarget = session.currentFile
-                            session.dialogValue = ""
+                            session.dialogTarget = vaultFooterPath
+                            session.dialogValue = VaultMove.parentDirectory(vaultFooterPath)
                             refresh()
                         })
                         MooButton(container.t("json.vault.delete"), onClick = {
-                            runCatching { vault.delete(session.currentFile) }
-                                .onSuccess {
-                                    session.currentFile = ""
-                                    session.savedText = session.editor.text
-                                    session.notice = container.t("quickNote.deleted")
-                                }
-                                .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
+                            val entry = footerEntry ?: VaultEntry(
+                                vaultFooterPath,
+                                vaultFooterPath.substringAfterLast('/'),
+                                false,
+                                0,
+                            )
+                            if (!prepareQuickNoteVaultContext(container, session, vault, monitor, entry) { session.vaultConflict = it }) {
+                                refresh()
+                                return@MooButton
+                            }
+                            session.dialogMode = "delete"
+                            session.dialogTarget = vaultFooterPath
                             refresh()
                         })
                     }
                 }
             }
             VerticalPaneHandle(
-                onDelta = { container.setPaneSize(ToolId.QuickNote.id, 0, vaultWidth + it, 2) },
-                onReset = { container.setPaneSize(ToolId.QuickNote.id, 0, 240f, 2) }
+                onDelta = { container.setPaneSize(workspacePaneKey, 0, vaultWidth + it, 2) },
+                onReset = { container.setPaneSize(workspacePaneKey, 0, 240f, 2) }
             )
             }
             Box(Modifier.weight(1f).fillMaxHeight()) {
@@ -662,12 +1006,18 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                 val showPreview = session.viewMode != "edit"
                 val previewText = remember(revision) { session.editor.text }
                 if (showEditor && showPreview) {
-                    Row(Modifier.fillMaxSize()) {
-                        Box(Modifier.weight(1f).fillMaxHeight()) {
-                    QuickNoteEditor(container, session, settings, vault, noteShortcuts)
-                        }
-                        Box(Modifier.width(1.dp).fillMaxHeight().background(colors.border))
-                        Box(Modifier.weight(1f).fillMaxHeight()) {
+                    IoTwoPaneRow(
+                        container = container,
+                        settings = settings,
+                        paneKey = "quick-note-editor-preview",
+                        minLeft = 260f,
+                        minRight = 260f,
+                        defaultLeftFraction = 0.5f,
+                        modifier = Modifier.fillMaxSize(),
+                        left = {
+                            QuickNoteEditor(container, session, settings, vault, noteShortcuts)
+                        },
+                        right = {
                             MarkdownPreviewPane(
                                 markdown = previewText,
                                 vault = vault,
@@ -676,7 +1026,7 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                                 unsafeLabel = container.t("quickNote.image.unsafe")
                             )
                         }
-                    }
+                    )
                 } else if (showPreview) {
                     MarkdownPreviewPane(
                         markdown = previewText,
@@ -691,53 +1041,63 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
             }
             if (showReplace) {
                 VerticalPaneHandle(
-                    onDelta = { container.setPaneSize(ToolId.QuickNote.id, 1, replaceWidth + it, 2) },
-                    onReset = { container.setPaneSize(ToolId.QuickNote.id, 1, 240f, 2) }
+                    onDelta = { container.setPaneSize(workspacePaneKey, 1, replaceWidth + it, 2) },
+                    onReset = { container.setPaneSize(workspacePaneKey, 1, 240f, 2) }
                 )
                 Column(
-                    Modifier.width(replaceWidth.dp).fillMaxHeight().background(colors.surfaceSubtle).padding(10.dp).verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    Modifier.width(replaceWidth.dp).fillMaxHeight().mooToolShell(colors.surfaceSubtle),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
-                    Text(container.t("quickNote.quickReplace"), color = colors.textPrimary, fontSize = 12.sp)
-                    QuickReplaceEngine.actions.forEach { action ->
-                        MooButton(container.t("quickNote.quick.${action.name.replaceFirstChar { it.lowercase() }}"), onClick = {
-                            applyReplace(session, action)
-                            session.notice = container.t("quickNote.quick.${action.name.replaceFirstChar { it.lowercase() }}")
-                            refresh()
-                        })
+                    Text(
+                        container.t("quickNote.quickReplace"),
+                        color = colors.textPrimary,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(start = 11.dp, end = 7.dp, top = 5.dp, bottom = 5.dp)
+                    )
+                    Column(
+                        Modifier.weight(1f).fillMaxWidth().padding(8.dp).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        QuickReplaceEngine.actions.forEach { action ->
+                            MooCompactListButton(container.t("quickNote.quick.${action.name.replaceFirstChar { it.lowercase() }}")) {
+                                applyReplace(session, action)
+                                session.notice = container.t("quickNote.quick.${action.name.replaceFirstChar { it.lowercase() }}")
+                                refresh()
+                            }
+                        }
                     }
                 }
             }
         }
         val (chars, words, lines) = remember(session.editor.revision, revision, tick) { QuickReplaceEngine.stats(session.editor.text) }
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).mooStatusBarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val dirty = session.currentFile.isNotBlank() && session.editor.text != session.savedText
-            Text(
+            val dirty = quickNoteDirty(session)
+            val statusPath = session.currentFile.ifBlank { session.vaultSelectedPath }
+            MooStatusMeta(
                 listOfNotNull(
-                    session.currentFile.ifBlank { container.t("quickNote.select") },
+                    statusPath.ifBlank { container.t("quickNote.select") },
                     if (dirty) container.t("quickNote.unsaved") else if (session.currentFile.isNotBlank()) container.t("quickNote.saved") else null,
-                    if (conflict != null) container.t("vault.conflict.banner") else null,
+                    if (session.vaultConflict != null) container.t("vault.conflict.banner") else null,
                     if (EditorLimits.exceedsLargeDocument(session.editor.text)) container.t("editor.largeDocument") else null,
                     container.t("quickNote.stats", mapOf("chars" to chars.toString(), "words" to words.toString(), "lines" to lines.toString()))
                 ).joinToString(" · "),
-                color = colors.textSecondary,
-                fontSize = 12.sp
+                color = colors.textMuted
             )
             Spacer(Modifier.weight(1f))
-            if (session.error.isNotBlank()) Text(session.error, color = colors.danger, fontSize = 12.sp)
-            else Text(session.notice, color = colors.textSecondary, fontSize = 12.sp)
-            if (detached) Text(" · detached", color = colors.textSecondary, fontSize = 12.sp)
+            if (session.error.isNotBlank()) MooStatusMeta(session.error, color = colors.danger)
+            else if (session.notice.isNotBlank()) MooStatusMeta(session.notice)
+            if (detached) MooStatusMeta(" · detached")
         }
         }
     }
 
     if (session.dialogMode.isNotBlank()) {
-        Dialog(onDismissRequest = { session.dialogMode = ""; session.dialogTarget = ""; refresh() }) {
+        MooOverlay(onDismiss = { session.dialogMode = ""; session.dialogTarget = ""; refresh() }) {
             Column(
-                Modifier.width(420.dp).background(colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+                Modifier.width(420.dp).mooDialogSurface().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
@@ -745,42 +1105,156 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                         "folder" -> container.t("quickNote.dialog.createFolder")
                         "rename" -> container.t("quickNote.dialog.rename")
                         "move" -> container.t("quickNote.dialog.move")
+                        "delete" -> container.t("quickNote.delete")
                         else -> container.t("quickNote.dialog.createNote")
                     },
                     color = colors.textPrimary
                 )
-                MooTextField(session.dialogValue, { session.dialogValue = it; refresh() }, placeholder = container.t("quickNote.dialog.name"))
+                if (session.dialogMode == "delete") {
+                    val deleteName = session.dialogTarget.ifBlank { session.currentFile }
+                    Text(
+                        container.t("quickNote.confirmDelete", mapOf("name" to deleteName)),
+                        color = colors.textSecondary,
+                        fontSize = 13.sp
+                    )
+                } else if (session.dialogMode == "move") {
+                    val moveSource = session.dialogTarget.ifBlank { session.currentFile }
+                    val moveFolderOptions = remember(vaultItems, moveSource) {
+                        vaultMoveFolderOptions(vaultItems, moveSource, container.t("quickNote.dialog.root"))
+                    }
+                    Text(container.t("quickNote.dialog.target"), color = colors.textSecondary, fontSize = 11.sp)
+                    VaultSortMenu(
+                        current = session.dialogValue,
+                        options = moveFolderOptions,
+                        onChange = { session.dialogValue = it; refresh() }
+                    )
+                } else {
+                    Text(container.t("quickNote.dialog.name"), color = colors.textSecondary, fontSize = 11.sp)
+                    MooTextField(session.dialogValue, { session.dialogValue = it; refresh() }, placeholder = container.t("quickNote.dialog.name"))
+                }
+                val dialogPrimaryLabel = when (session.dialogMode) {
+                    "delete" -> container.t("quickNote.delete")
+                    "note", "folder" -> container.t("quickNote.create")
+                    else -> container.t("quickNote.apply")
+                }
+                val dialogCanSubmit = session.dialogMode == "delete" ||
+                    session.dialogMode == "move" ||
+                    session.dialogValue.trim().isNotEmpty()
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MooButton(container.t("common.save"), primary = true, onClick = {
+                    if (session.dialogMode == "delete") {
+                        MooButton(container.t("quickNote.delete"), danger = true, onClick = {
+                            val target = session.dialogTarget.ifBlank { session.currentFile }
+                            if (target.isBlank()) return@MooButton
+                            runCatching { vault.delete(target) }
+                                .onSuccess {
+                                    val afterDelete = vaultPathsAfterDelete(target, session.currentFile, session.vaultSelectedPath)
+                                    session.currentFile = afterDelete.currentFile
+                                    session.vaultSelectedPath = afterDelete.vaultSelectedPath
+                                    if (afterDelete.clearedOpenFile) {
+                                        quickNoteOnEdt { session.editor.setText("", recordUndo = false) }
+                                        session.savedText = ""
+                                        session.metadata = NoteMetadata.defaults("Untitled")
+                                        session.savedMetadata = session.metadata
+                                    }
+                                    session.dialogMode = ""
+                                    session.dialogTarget = ""
+                                    session.error = ""
+                                    session.notice = container.t("quickNote.deleted")
+                                    container.recordVaultActivity(VaultGitCheckpointMessages.DELETE_QUICK_NOTE_ENTRY)
+                                    monitor.rebaselineAfterLocalCrud()
+                                }
+                                .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
+                            refresh()
+                        })
+                        MooButton(container.t("common.cancel"), onClick = { session.dialogMode = ""; session.dialogTarget = ""; refresh() })
+                    } else {
+                    MooButton(
+                        dialogPrimaryLabel,
+                        prominent = true,
+                        enabled = dialogCanSubmit,
+                        onClick = {
                         val name = session.dialogValue.trim()
                         if (name.isNotEmpty() || session.dialogMode == "move") {
+                            val dialogMode = session.dialogMode
+                            val parent = quickNoteVaultImportTargetDirectory(
+                                session.vaultSelectedPath,
+                                session.currentFile,
+                                vaultItems,
+                            )
                             runCatching {
-                                when (session.dialogMode) {
-                                    "folder" -> vault.createDirectory(name)
+                                when (dialogMode) {
+                                    "folder" -> {
+                                        if (!quickNoteVaultSaveIfNeeded(container, session, vault, monitor) { session.vaultConflict = it }) {
+                                            error(session.error.ifBlank { container.t("quickNote.saveFailed") })
+                                        }
+                                        val path = VaultSelectionPath.resolveEntryPath(
+                                            name,
+                                            session.vaultSelectedPath,
+                                            session.currentFile,
+                                            vaultItems,
+                                        )
+                                        vault.createDirectory(path)
+                                        session.vaultSelectedPath = path
+                                        quickNoteOnEdt { session.editor.setText("", recordUndo = false) }
+                                        session.currentFile = ""
+                                        session.savedText = ""
+                                        session.metadata = NoteMetadata.defaults("Untitled")
+                                        session.savedMetadata = session.metadata
+                                    }
                                     "rename" -> {
                                         val target = session.dialogTarget.ifBlank { session.currentFile }
+                                        if (VaultMove.moveAffectsOpenPath(session.currentFile, target) &&
+                                            !quickNoteVaultSaveIfNeeded(container, session, vault, monitor) { session.vaultConflict = it }
+                                        ) {
+                                            error(session.error.ifBlank { container.t("quickNote.saveFailed") })
+                                        }
                                         val next = vault.rename(target, name)
-                                        session.currentFile = VaultMove.retargetAfterMove(session.currentFile, target, next)
+                                        val (file, selected) = VaultMove.retargetVaultPaths(
+                                            session.currentFile,
+                                            session.vaultSelectedPath,
+                                            target,
+                                            next,
+                                        )
+                                        session.currentFile = file
+                                        session.vaultSelectedPath = selected
                                     }
                                     "move" -> {
                                         val target = session.dialogTarget.ifBlank { session.currentFile }
-                                        val next = vault.move(target, name)
-                                        session.currentFile = VaultMove.retargetAfterMove(session.currentFile, target, next)
+                                        if (VaultMove.moveAffectsOpenPath(session.currentFile, target) &&
+                                            !quickNoteVaultSaveIfNeeded(container, session, vault, monitor) { session.vaultConflict = it }
+                                        ) {
+                                            error(session.error.ifBlank { container.t("quickNote.saveFailed") })
+                                        }
+                                        val dest = session.dialogValue.trim()
+                                        val next = vault.move(target, dest)
+                                        val (file, selected) = VaultMove.retargetVaultPaths(
+                                            session.currentFile,
+                                            session.vaultSelectedPath,
+                                            target,
+                                            next,
+                                        )
+                                        session.currentFile = file
+                                        session.vaultSelectedPath = selected
                                     }
                                     else -> {
-                                        saveIfNeeded(container, session, vault, monitor) { conflict = it }
+                                        if (!quickNoteVaultSaveIfNeeded(container, session, vault, monitor) { session.vaultConflict = it }) {
+                                            error(session.error.ifBlank { container.t("quickNote.saveFailed") })
+                                        }
                                         val created = vault.createNote(
-                                            title = name.substringBeforeLast('.'),
+                                            title = name,
+                                            parentPath = parent,
                                             fontName = settings.editor.quickNoteFontName,
                                             fontSize = settings.editor.quickNoteFontSize,
                                             lineWrap = session.wrap
                                         )
-                                        val body = session.editor.text.takeIf { it.isNotBlank() && it != QuickNoteSession.SAMPLE }.orEmpty()
-                                        val saved = if (body.isNotEmpty()) vault.saveNote(created.relativePath, body, created.metadata) else created
-                                        openFile(session, vault, saved.relativePath)
+                                        quickNoteOpenVaultFile(session, vault, created.relativePath)
                                     }
                                 }
                             }.onSuccess {
+                                VaultGitCheckpointMessages.quickNoteDialogMode(dialogMode)?.let {
+                                    container.recordVaultActivity(it)
+                                }
+                                monitor.rebaselineAfterLocalCrud()
                                 session.dialogMode = ""
                                 session.dialogTarget = ""
                                 session.error = ""
@@ -789,67 +1263,63 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                             refresh()
                         }
                     })
-                    MooButton(container.t("common.close"), onClick = { session.dialogMode = ""; session.dialogTarget = ""; refresh() })
+                    MooButton(container.t("common.cancel"), onClick = { session.dialogMode = ""; session.dialogTarget = ""; refresh() })
+                    }
                 }
             }
         }
     }
-    if (gitOpen) {
+    val documentInfoPath = session.documentInfoPath
+    if (documentInfoPath.isNotBlank()) {
+        val infoNote = remember(documentInfoPath, revision, tick) {
+            runCatching { vault.readNote(documentInfoPath) }.getOrNull()
+        }
+        if (infoNote != null) {
+            QuickNoteDocumentInfoDialog(
+                container = container,
+                note = infoNote,
+                onDismiss = { session.documentInfoPath = ""; refresh() },
+            )
+        }
+    }
+    if (session.gitDialogOpen) {
         VaultGitDialog(
             container = container,
             title = container.t("quickNote.git.title"),
             defaultMessage = container.t("quickNote.git.defaultMessage"),
             root = vault.root(),
-            onDismiss = { gitOpen = false },
+            onDismiss = { session.gitDialogOpen = false; gitCountRev++; refresh() },
             onFlush = {
-                if (session.currentFile.isBlank()) {
-                    if (session.editor.text.isNotBlank() && session.editor.text != QuickNoteSession.SAMPLE) {
-                        container.t("git.flush.untitled")
-                    } else {
-                        null
-                    }
-                } else {
-                    saveIfNeeded(container, session, vault, monitor) { conflict = it }
-                    session.error.takeIf { it.isNotBlank() }
-                }
-            }
+                quickNoteGitFlushBeforeAction(container, session, vault, monitor) { session.vaultConflict = it }
+            },
+            onVaultRefresh = {
+                container.notifyQuickNoteVaultTreeChanged()
+                val current = session.currentFile
+                if (current.isBlank()) refresh()
+                else handleQuickNoteVaultChange(container, session, vault, listOf(current), { session.vaultConflict = it }, { refresh() })
+            },
+            onGitStatusChanged = {
+                gitCountRev++
+                refresh()
+            },
         )
     }
-    conflict?.let { pending ->
+    session.vaultConflict?.let { pending ->
         VaultConflictDialog(
             container = container,
             conflict = pending,
             onReload = {
-                if (pending.deleted) {
-                    session.currentFile = ""
-                    session.savedText = session.editor.text
-                } else {
-                    openFile(session, vault, pending.relativePath)
-                }
-                conflict = null
-                session.error = ""
-                session.notice = container.t("vault.conflict.reloaded")
+                applyQuickNoteVaultConflictReload(container, session, vault, pending)
                 refresh()
             },
             onSaveCopy = {
-                val copy = VaultConflictEngine.conflictCopyName(pending.relativePath, System.currentTimeMillis())
-                runCatching { vault.write(copy, pending.editorText) }
-                    .onSuccess {
-                        monitor?.noteOwnWrite(copy, VaultConflictEngine.sha256Text(pending.editorText))
-                        if (pending.deleted) {
-                            session.currentFile = copy
-                            session.savedText = pending.editorText
-                        } else {
-                            openFile(session, vault, pending.relativePath)
-                        }
-                        conflict = null
-                        session.error = ""
-                        session.notice = container.t("vault.conflict.savedCopy", mapOf("path" to copy))
-                    }
-                    .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
+                applyQuickNoteVaultConflictSaveCopy(container, session, vault, pending, monitor)
                 refresh()
             },
-            onKeep = { conflict = null; refresh() }
+            onKeep = {
+                applyQuickNoteVaultConflictKeep(session)
+                refresh()
+            }
         )
     }
     if (session.historyOpen) {
@@ -858,9 +1328,12 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
             toolId = ToolId.QuickNote.id,
             title = container.t("quickNote.history"),
             onRestore = { item ->
-                onEdt { session.editor.setText(item.input, recordUndo = true) }
+                if (!quickNoteVaultSaveIfNeeded(container, session, vault, monitor) { session.vaultConflict = it }) {
+                    refresh()
+                    return@HistoryBrowser
+                }
+                quickNoteOnEdt { session.editor.setText(item.input, recordUndo = true) }
                 session.historyOpen = false
-                session.notice = container.t("json.notice.restored")
                 refresh()
             },
             onDismiss = { session.historyOpen = false; refresh() }
@@ -891,7 +1364,7 @@ private fun QuickNoteEditor(
                 fontName = fontName,
                 fontSize = fontSize,
                 wrap = session.wrap,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().mooEditorFrame(),
                 columnEditing = true,
                 columnDragWithoutAlt = session.columnLatch,
                 lineSpacing = session.metadata.lineSpacing,
@@ -906,6 +1379,7 @@ private fun QuickNoteEditor(
             fontName = fontName,
             fontSize = fontSize,
             wrap = session.wrap,
+            modifier = Modifier.fillMaxSize().mooEditorFrame(),
             columnEditing = true,
             columnDragWithoutAlt = session.columnLatch,
             lineSpacing = session.metadata.lineSpacing,
@@ -925,11 +1399,18 @@ private fun handleDroppedFiles(
     files.forEach { file ->
         val extension = file.extension.lowercase()
         if (extension in NoteAttachmentEngine.extensions) {
-            insertAttachmentBytes(container, session, vault, Files.readAllBytes(file.toPath()), extension)
+            insertAttachmentBytes(
+                container,
+                session,
+                vault,
+                Files.readAllBytes(file.toPath()),
+                extension,
+                VaultGitCheckpointMessages.ADD_QUICK_NOTE_ATTACHMENT,
+            )
         } else {
             val text = runCatching { file.readText(Charsets.UTF_8) }.getOrNull() ?: return@forEach
             val area = session.editor.area
-            onEdt {
+            quickNoteOnEdt {
                 val start = area.selectionStart
                 val end = area.selectionEnd
                 session.editor.replaceRange(start, end, text)
@@ -937,7 +1418,7 @@ private fun handleDroppedFiles(
             session.notice = container.t("quickNote.drop.inserted")
         }
     }
-    container.recordVaultActivity("Update Quick Note")
+    container.recordVaultActivity(VaultGitCheckpointMessages.UPDATE_QUICK_NOTE)
     return true
 }
 
@@ -948,18 +1429,32 @@ private fun pasteClipboardImage(container: AppContainer, session: QuickNoteSessi
         session.notice = ""
         return
     }
-    insertAttachmentBytes(container, session, vault, pngBytes(image), "png")
+    insertAttachmentBytes(
+        container,
+        session,
+        vault,
+        pngBytes(image),
+        "png",
+        VaultGitCheckpointMessages.PASTE_QUICK_NOTE_ATTACHMENT,
+    )
 }
 
 private fun insertImageFile(container: AppContainer, session: QuickNoteSession, vault: NoteVault) {
-    val file = chooseFile(false) ?: return
+    val file = chooseFile(container, save = false) ?: return
     val extension = file.extension
     runCatching {
         check(NoteAttachmentEngine.extensions.contains(extension.lowercase()) || extension.lowercase() == "jpeg") {
             container.t("quickNote.image.unsupported")
         }
         val bytes = Files.readAllBytes(file.toPath())
-        insertAttachmentBytes(container, session, vault, bytes, extension)
+        insertAttachmentBytes(
+            container,
+            session,
+            vault,
+            bytes,
+            extension,
+            VaultGitCheckpointMessages.ADD_QUICK_NOTE_ATTACHMENT,
+        )
     }.onFailure {
         session.error = it.message ?: container.t("quickNote.saveFailed")
         session.notice = ""
@@ -971,10 +1466,12 @@ private fun insertAttachmentBytes(
     session: QuickNoteSession,
     vault: NoteVault,
     bytes: ByteArray,
-    extension: String
+    extension: String,
+    checkpointMessage: String,
 ) {
     runCatching { NoteAttachmentEngine.store(vault, bytes, extension) }
         .onSuccess { stored ->
+            container.recordVaultActivity(checkpointMessage)
             val area = session.editor.area
             val insertion = NoteAttachmentEngine.prepareInsertion(
                 session.editor.text,
@@ -982,7 +1479,7 @@ private fun insertAttachmentBytes(
                 area.selectionEnd,
                 stored.markdown
             )
-            onEdt { session.editor.replaceRange(insertion.start, insertion.end, insertion.text) }
+            quickNoteOnEdt { session.editor.replaceRange(insertion.start, insertion.end, insertion.text) }
             session.error = ""
             session.notice = container.t("quickNote.image.inserted")
         }
@@ -1020,7 +1517,7 @@ private fun applyReplace(session: QuickNoteSession, action: QuickReplaceAction) 
     val area = session.editor.area
     val start = area.selectionStart
     val end = area.selectionEnd
-    onEdt {
+    quickNoteOnEdt {
         if (end > start) {
             val source = session.editor.text.substring(start, end)
             session.editor.replaceRange(start, end, QuickReplaceEngine.run(source, action))
@@ -1030,62 +1527,28 @@ private fun applyReplace(session: QuickNoteSession, action: QuickReplaceAction) 
     }
 }
 
-private fun saveCurrent(
+private fun runQuickNoteVaultImport(
     container: AppContainer,
     session: QuickNoteSession,
     vault: NoteVault,
     monitor: VaultRevisionMonitor?,
-    onConflict: (VaultConflictState) -> Unit
-): Boolean {
-    val name = session.currentFile.ifBlank { "note-${System.currentTimeMillis()}.md" }
-    if (session.currentFile.isNotBlank()) {
-        val disk = runCatching { vault.readOrNull(name) }.getOrNull()
-        val diskBody = disk?.let { NoteFrontmatter.parse(it, name.substringAfterLast('/').substringBeforeLast('.')).content }
-        if (!VaultConflictEngine.canOverwrite(session.savedText, diskBody, session.editor.text)) {
-            onConflict(VaultConflictState(name, session.editor.text, diskBody, disk == null))
-            session.error = container.t("vault.conflict.blocked")
-            return false
-        }
+    vaultItems: List<VaultEntry>,
+    file: File,
+    onConflict: (VaultConflictState) -> Unit,
+): Result<Unit> {
+    if (!quickNoteVaultSaveIfNeeded(container, session, vault, monitor, onConflict)) {
+        return Result.failure(IllegalStateException(container.t("quickNote.saveFailed")))
     }
-    val previous = if (session.currentFile.isNotBlank()) runCatching { vault.readNote(session.currentFile).content }.getOrNull() else null
-    val metadata = session.metadata.copy(
-        title = session.metadata.title.ifBlank { name.substringAfterLast('/').substringBeforeLast('.') },
-        syntax = session.metadata.syntax.ifBlank { NoteFrontmatter.syntaxForExtension(name.substringAfterLast('.')) },
-        lineWrap = session.wrap,
-        fontName = session.metadata.fontName.ifBlank { container.settings.value.editor.quickNoteFontName },
-        fontSize = session.metadata.fontSize.takeIf { it > 0 } ?: container.settings.value.editor.quickNoteFontSize
-    )
-    return runCatching { vault.saveNote(name, session.editor.text, metadata) }
-        .onSuccess { document ->
-            val raw = vault.read(document.relativePath)
-            monitor?.noteOwnWrite(document.relativePath, VaultConflictEngine.sha256Text(raw))
-            session.currentFile = document.relativePath
-            session.savedText = document.content
-            session.metadata = document.metadata
-            session.error = ""
-            session.notice = container.t("quickNote.saved")
-            container.history.save(ToolId.QuickNote.id, document.relativePath, document.relativePath, document.content.take(8_000), "")
-            container.recordVaultActivity("Update Quick Note")
-            previous?.let { old ->
-                val removed = NoteAttachmentEngine.extractPaths(old) - NoteAttachmentEngine.extractPaths(document.content)
-                removed.forEach { path -> runCatching { NoteAttachmentEngine.deleteIfUnreferenced(vault, path) } }
-            }
-        }
-        .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
-        .isSuccess
-}
-
-private fun saveIfNeeded(
-    container: AppContainer,
-    session: QuickNoteSession,
-    vault: NoteVault,
-    monitor: VaultRevisionMonitor?,
-    onConflict: (VaultConflictState) -> Unit
-): Boolean {
-    if (session.currentFile.isNotBlank() && session.editor.text != session.savedText) {
-        return saveCurrent(container, session, vault, monitor, onConflict)
+    val dir = quickNoteVaultImportTargetDirectory(session.vaultSelectedPath, session.currentFile, vaultItems)
+    return runCatching {
+        val relative = importQuickNoteVaultFile(vault, file, dir)
+        persistToolsExportDirectory(container, file)
+        quickNoteOpenVaultFile(session, vault, relative)
+        monitor.rebaselineAfterLocalCrud()
+        container.recordVaultActivity(VaultGitCheckpointMessages.UPDATE_QUICK_NOTE)
+        session.notice = container.t("json.notice.imported")
+        container.toastSuccess(container.t("json.notice.imported"))
     }
-    return session.error.isBlank()
 }
 
 private fun handleQuickNoteVaultChange(
@@ -1097,42 +1560,100 @@ private fun handleQuickNoteVaultChange(
     refresh: () -> Unit
 ) {
     refresh()
-    val current = session.currentFile
-    if (current.isBlank() || current !in paths) return
-    val disk = runCatching { vault.readOrNull(current) }.getOrNull()
-    val diskBody = disk?.let { NoteFrontmatter.parse(it, current.substringAfterLast('/').substringBeforeLast('.')).content }
-    when (VaultConflictEngine.decide(current, current, session.editor.text, session.savedText, diskBody)) {
-        VaultChangeKind.Reload -> {
-            openFile(session, vault, current)
-            session.notice = container.t("vault.conflict.reloaded")
-            refresh()
-        }
-        VaultChangeKind.Deleted -> {
-            session.currentFile = ""
-            session.savedText = session.editor.text
-            session.notice = container.t("vault.conflict.deleted")
-            refresh()
-        }
-        VaultChangeKind.Conflict -> onConflict(VaultConflictState(current, session.editor.text, diskBody, disk == null))
-        VaultChangeKind.Ignored, VaultChangeKind.TreeChanged -> Unit
+    if (quickNoteApplyExternalChange(container, session, vault, paths, onConflict)) {
+        refresh()
     }
 }
 
-private fun openFile(session: QuickNoteSession, vault: NoteVault, relativePath: String) {
-    val note = vault.readNote(relativePath)
-    onEdt { session.editor.setText(note.content, recordUndo = false) }
-    session.currentFile = note.relativePath
-    session.savedText = note.content
-    session.metadata = note.metadata
-    session.wrap = note.metadata.lineWrap
-    session.editor.syntax = DocumentFormatEngine.rstaSyntax(note.metadata.syntax.ifBlank { NoteFrontmatter.syntaxForExtension(relativePath.substringAfterLast('.')) })
-    session.error = ""
+@Composable
+private fun QuickNoteDocumentInfoDialog(
+    container: AppContainer,
+    note: NoteDocument,
+    onDismiss: () -> Unit,
+) {
+    val colors = MooTheme.colors
+    val (chars, words, lines) = remember(note.relativePath, note.content) { QuickReplaceEngine.stats(note.content) }
+    val rows = listOf(
+        container.t("quickNote.path") to note.relativePath,
+        container.t("quickNote.created") to formatQuickNoteTimestamp(note.metadata.createdAt),
+        container.t("quickNote.modified") to formatQuickNoteTimestamp(note.metadata.modifiedAt),
+        container.t("quickNote.lines") to lines.toString(),
+        container.t("quickNote.words") to words.toString(),
+        container.t("quickNote.characters") to chars.toString(),
+    )
+    MooOverlay(onDismiss = onDismiss) {
+        Column(
+            Modifier.width(420.dp).mooDialogSurface().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(container.t("quickNote.info"), color = colors.textPrimary, fontSize = 14.sp)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                rows.forEach { (label, value) ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(label, color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.width(88.dp))
+                        Text(value, color = colors.textPrimary, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MooButton(container.t("common.close"), onClick = onDismiss)
+            }
+        }
+    }
+}
+
+internal fun quickNoteRenameDefault(
+    relativePath: String,
+    isDirectory: Boolean,
+    metadataTitle: String? = null,
+): String {
+    val path = relativePath.trim()
+    if (isDirectory) {
+        val leaf = path.substringAfterLast('/')
+        return if (leaf.isBlank() || leaf == path) path else leaf
+    }
+    return metadataTitle?.trim()?.takeIf { it.isNotEmpty() }
+        ?: path.substringAfterLast('/').substringBeforeLast('.')
+}
+
+internal fun quickNoteMoveFolderOptions(
+    entries: List<VaultEntry>,
+    sourcePath: String,
+    rootLabel: String,
+): List<Pair<String, String>> = vaultMoveFolderOptions(entries, sourcePath, rootLabel)
+
+private fun duplicateQuickNoteEntry(
+    container: AppContainer,
+    session: QuickNoteSession,
+    vault: NoteVault,
+    monitor: VaultRevisionMonitor?,
+    sourcePath: String,
+    onConflict: (VaultConflictState) -> Unit,
+): Result<NoteDocument> {
+    if (!quickNoteVaultSaveIfNeeded(container, session, vault, monitor, onConflict)) {
+        return Result.failure(IllegalStateException(container.t("quickNote.saveFailed")))
+    }
+    return runCatching {
+        vault.duplicate(sourcePath).also { copy ->
+            quickNoteOpenVaultFile(session, vault, copy.relativePath)
+            monitor.rebaselineAfterLocalCrud()
+            container.recordVaultActivity(VaultGitCheckpointMessages.DUPLICATE_QUICK_NOTE)
+        }
+    }
+}
+
+internal fun formatQuickNoteTimestamp(raw: String): String {
+    if (raw.isBlank()) return ""
+    return runCatching {
+        Instant.parse(raw).atZone(ZoneId.systemDefault())
+            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+    }.getOrDefault(raw)
 }
 
 private fun applyListPrefix(container: AppContainer, session: QuickNoteSession, prefix: NoteListEngine.Prefix) {
     val area = session.editor.area
     val result = NoteListEngine.prefixSelectedLines(session.editor.text, area.selectionStart, area.selectionEnd, prefix)
-    onEdt {
+    quickNoteOnEdt {
         session.editor.setText(result.text, recordUndo = true)
         session.editor.select(result.selectionStart, result.selectionEnd)
     }
@@ -1148,7 +1669,7 @@ private fun formatCurrentNote(container: AppContainer, session: QuickNoteSession
         DocumentFormatEngine.format(session.editor.text, syntax, container.settings.value.editor.sqlDialect)
     }.onSuccess { formatted ->
         if (formatted != session.editor.text) {
-            onEdt { session.editor.setText(formatted, recordUndo = true) }
+            quickNoteOnEdt { session.editor.setText(formatted, recordUndo = true) }
         }
         session.notice = container.t("quickNote.formatted")
         session.error = ""
@@ -1171,14 +1692,196 @@ private val NoteSyntaxOptions = listOf(
     "text/sql" to "SQL"
 )
 
-private fun chooseFile(save: Boolean): File? {
-    val dialog = FileDialog(null as Frame?, if (save) "Export" else "Import", if (save) FileDialog.SAVE else FileDialog.LOAD)
-    dialog.isVisible = true
-    val directory = dialog.directory ?: return null
-    val file = dialog.file ?: return null
-    return File(directory, file)
+private val quickNoteVaultDropExtensions = setOf("md", "markdown", "txt")
+
+private fun handleQuickNoteVaultTreeFileDrop(
+    container: AppContainer,
+    session: QuickNoteSession,
+    vault: NoteVault,
+    monitor: VaultRevisionMonitor?,
+    files: List<File>,
+    targetDirectory: String,
+    onConflict: (VaultConflictState) -> Unit,
+    onChanged: () -> Unit,
+): Boolean {
+    val imports = files.filter { it.isFile && it.extension.lowercase() in quickNoteVaultDropExtensions }
+    if (imports.isEmpty()) return false
+    if (!quickNoteVaultSaveIfNeeded(container, session, vault, monitor, onConflict)) {
+        onChanged()
+        return false
+    }
+    var lastRelative: String? = null
+    var importedCount = 0
+    imports.forEach { file ->
+        runCatching {
+            val relative = importQuickNoteVaultFile(vault, file, targetDirectory)
+            lastRelative = relative
+            importedCount++
+        }.onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
+    }
+    if (importedCount == 0) return false
+    monitor.rebaselineAfterLocalCrud()
+    if (importedCount == 1 && lastRelative != null) {
+        quickNoteOpenVaultFile(session, vault, lastRelative!!)
+        container.recordVaultActivity(VaultGitCheckpointMessages.UPDATE_QUICK_NOTE)
+    } else if (importedCount > 1) {
+        container.recordVaultActivity(VaultGitCheckpointMessages.UPDATE_QUICK_NOTE)
+    }
+    session.notice = container.t("json.notice.imported")
+    container.toastSuccess(container.t("json.notice.imported"))
+    onChanged()
+    return true
 }
 
-private fun onEdt(block: () -> Unit) {
-    if (SwingUtilities.isEventDispatchThread()) block() else SwingUtilities.invokeLater(block)
+private fun chooseFile(container: AppContainer, save: Boolean, defaultFileName: String = ""): File? =
+    chooseFileWithExportDirectory(
+        container,
+        save,
+        title = if (save) "Export" else "Import",
+        defaultFileName = defaultFileName,
+    )
+
+private fun quickNoteWorkspacePaneKey(showVault: Boolean, showReplace: Boolean): String {
+    val tree = if (showVault) "tree" else "no-tree"
+    val replace = if (showReplace) "replace" else "no-replace"
+    return "quick-note-$tree-$replace"
 }
+
+private fun quickNoteWorkspacePane(
+    settings: AppSettings,
+    paneKey: String,
+    index: Int,
+    default: Float,
+    min: Float,
+    max: Float
+): Float {
+    if (settings.layout.paneSizes.containsKey(paneKey)) {
+        return settings.layout.pane(paneKey, index, default, min, max)
+    }
+    return settings.layout.pane(ToolId.QuickNote.id, index, default, min, max)
+}
+
+@Composable
+private fun QuickNoteFindBar(
+    container: AppContainer,
+    session: QuickNoteSession,
+    onChanged: () -> Unit,
+) {
+    val matches = FindReplace.findAll(session.editor.text, session.findQuery, session.findOptions)
+    val colors = MooTheme.colors
+    val findFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        findFocus.requestFocus()
+    }
+    fun closeFind() {
+        session.findOpen = false
+        session.findReplacedCount = 0
+        onChanged()
+    }
+    fun jump(forward: Boolean) {
+        if (session.findQuery.isBlank()) return
+        val match = RstaFindNavigation.jump(session.editor, session.findQuery, session.findOptions, forward)
+        if (match == null) {
+            container.toastFindNoMatches()
+        } else {
+            quickNoteOnEdt { session.editor.select(match.start, match.end) }
+        }
+        onChanged()
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .mooFindBarBackground()
+            .horizontalScroll(rememberScrollState())
+            .onFindBarRowKeys(
+                onPrevious = { jump(false) },
+                onNext = { jump(true) },
+                onClose = ::closeFind,
+            )
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        MooTextField(
+            session.findQuery,
+            {
+                session.findQuery = it
+                session.findReplacedCount = 0
+                onChanged()
+            },
+            modifier = Modifier.width(200.dp),
+            placeholder = container.t("quickNote.findPlaceholder"),
+            fieldModifier = Modifier
+                .focusRequester(findFocus)
+                .onFindQueryEnterKey { jump(true) },
+        )
+        MooButton(
+            container.t("find.find"),
+            enabled = session.findQuery.isNotBlank(),
+            onClick = { jump(true) },
+        )
+        MooTextField(
+            session.replaceText,
+            { session.replaceText = it; onChanged() },
+            modifier = Modifier.width(160.dp),
+            placeholder = container.t("quickNote.replacePlaceholder"),
+        )
+        MooButton(container.t("find.matchCase") + ": ${session.findOptions.matchCase}", onClick = {
+            session.findOptions = session.findOptions.copy(matchCase = !session.findOptions.matchCase)
+            session.findReplacedCount = 0
+            onChanged()
+        })
+        MooButton(container.t("find.wholeWord") + ": ${session.findOptions.wholeWord}", onClick = {
+            session.findOptions = session.findOptions.copy(wholeWord = !session.findOptions.wholeWord)
+            session.findReplacedCount = 0
+            onChanged()
+        })
+        MooButton(container.t("find.regex") + ": ${session.findOptions.regex}", onClick = {
+            session.findOptions = session.findOptions.copy(regex = !session.findOptions.regex)
+            session.findReplacedCount = 0
+            onChanged()
+        })
+        Text(
+            "${container.t("find.foundPrefix")} ${matches.size}",
+            color = colors.textSecondary,
+            fontSize = 12.sp,
+        )
+        MooButton(container.t("find.previous"), onClick = { jump(false) })
+        MooButton(container.t("find.next"), onClick = { jump(true) })
+        MooButton(container.t("find.replace"), onClick = {
+            quickNoteOnEdt {
+                if (!RstaFindNavigation.replaceAndSelectNext(session.editor, session.findQuery, session.replaceText, session.findOptions)) {
+                    container.toastFindNoMatches()
+                } else {
+                    session.findReplacedCount += 1
+                    session.notice = quickNoteNoticeOnUserDocumentChange(
+                        session.columnLatch,
+                        container.t("quickNote.columnEdit.hint"),
+                    )
+                }
+                onChanged()
+            }
+        })
+        MooButton(container.t("find.replaceAll"), onClick = {
+            val (next, count) = FindReplace.replaceAll(session.editor.text, session.findQuery, session.replaceText, session.findOptions)
+            if (count == 0) {
+                container.toastFindNoMatches()
+            } else {
+                quickNoteOnEdt { session.editor.setText(next, recordUndo = true) }
+                session.findReplacedCount = count
+                session.notice = quickNoteNoticeOnUserDocumentChange(
+                    session.columnLatch,
+                    container.t("quickNote.columnEdit.hint"),
+                )
+            }
+            onChanged()
+        })
+        Text(
+            "${container.t("find.replacedPrefix")} ${session.findReplacedCount}",
+            color = colors.textSecondary,
+            fontSize = 12.sp,
+        )
+        MooButton(container.t("common.close"), onClick = ::closeFind)
+    }
+}
+

@@ -24,5 +24,5 @@ Compose Desktop 的 `SwingPanel` 是重型组件，会盖住同窗口里的 Comp
 
 ## 受影响范围
 
-- 工具内仍有部分 `Dialog`（图片/HTTP 小对话框等）未全部改为 overlay。
+- 工具内其余 `Dialog` 已由 [DIFF-059](059-tool-dialogs-to-overlay.md) 改为 overlay。
 - 产品主窗 Tab/IME、托盘 TCC、六套 CSS、三平台安装未测。

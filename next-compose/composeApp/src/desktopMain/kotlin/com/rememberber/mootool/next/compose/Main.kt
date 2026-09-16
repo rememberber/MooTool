@@ -2,11 +2,15 @@ package com.rememberber.mootool.next.compose
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -16,11 +20,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.ApplicationScope
-import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
@@ -58,17 +66,34 @@ import com.rememberber.mootool.next.compose.features.ua.UaParseScreen
 import com.rememberber.mootool.next.compose.features.variables.VariablesScreen
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooOverlay
+import com.rememberber.mootool.next.compose.ui.components.MooToastHost
+import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
+import com.rememberber.mootool.next.compose.editor.ImeShortcutGate
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LocalAwtWindow
 import com.rememberber.mootool.next.compose.ui.workbench.WindowBoundsPolicy
 import com.rememberber.mootool.next.compose.ui.workbench.Workbench
+import com.rememberber.mootool.next.compose.ui.workbench.blockedByIme
+import com.rememberber.mootool.next.compose.ai.McpBootstrap
 
-fun main() = application {
+fun main(args: Array<String>) {
+    if (args.contains("--mcp")) {
+        McpBootstrap.run(args)
+        return
+    }
+    application {
+    DisposableEffect(Unit) {
+        ImeShortcutGate.install()
+        onDispose { ImeShortcutGate.uninstall() }
+    }
     val container = remember { AppContainer.create() }
     val settings by container.settings.collectAsState()
     val detached by container.sessionManager.detached.collectAsState()
     val revision by container.sessionManager.revision.collectAsState()
     var visible by remember { mutableStateOf(true) }
     var closeDialog by remember { mutableStateOf(false) }
+    var mainFocused by remember { mutableStateOf(true) }
     val tray = remember { AppTray() }
     val restored = remember {
         WindowBoundsPolicy.clamp(
@@ -149,16 +174,20 @@ fun main() = application {
         )
     }
 
+    fun hideToBackground() {
+        closeDialog = false
+        persistBounds()
+        visible = false
+        if (settings.general.trayEnabled && AppTray.supported()) {
+            tray.sync(true, trayModel())
+        }
+    }
+
     fun handleClose() {
+        if (closeDialog) return
         when (settings.general.closeBehavior) {
             "quit" -> quit()
-            "hide" -> {
-                persistBounds()
-                visible = false
-                if (settings.general.trayEnabled && AppTray.supported()) {
-                    tray.sync(true, trayModel())
-                }
-            }
+            "hide" -> hideToBackground()
             else -> closeDialog = true
         }
     }
@@ -188,16 +217,56 @@ fun main() = application {
                     window.minimumSize = java.awt.Dimension(960, 640)
                     val listener = object : java.awt.event.WindowFocusListener {
                         override fun windowGainedFocus(e: java.awt.event.WindowEvent?) {
+                            mainFocused = true
                             container.setWindowActive(true)
                         }
                         override fun windowLostFocus(e: java.awt.event.WindowEvent?) {
+                            mainFocused = false
                             container.setWindowActive(false)
                         }
                     }
                     window.addWindowFocusListener(listener)
                     onDispose { window.removeWindowFocusListener(listener) }
                 }
-                Workbench(container, showSidebar = true)
+                CompositionLocalProvider(LocalAwtWindow provides window) {
+                Box(
+                    Modifier.fillMaxSize().onPreviewKeyEvent { event ->
+                        if (closeDialog && !event.blockedByIme() && event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
+                            closeDialog = false
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                ) {
+                    Workbench(container, showSidebar = true)
+                    MooToastHost(container, windowFocused = mainFocused)
+                    if (closeDialog) {
+                        MooOverlay(onDismiss = { closeDialog = false }) {
+                            Column(
+                                Modifier.width(420.dp).mooDialogSurface().padding(20.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(
+                                    container.t("app.close.askTitle"),
+                                    color = MooTheme.colors.textPrimary,
+                                    fontSize = 15.sp
+                                )
+                                Text(
+                                    container.t("app.close.askBody"),
+                                    color = MooTheme.colors.textSecondary,
+                                    fontSize = 13.sp
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    MooButton(container.t("app.close.hide"), prominent = true, onClick = ::hideToBackground)
+                                    MooButton(container.t("app.close.quit"), onClick = ::quit)
+                                    MooButton(container.t("app.close.cancel"), onClick = { closeDialog = false })
+                                }
+                            }
+                        }
+                    }
+                }
+                }
             }
         }
 
@@ -351,22 +420,7 @@ fun main() = application {
             }
         }
 
-        if (closeDialog) {
-            DialogWindow(onCloseRequest = { closeDialog = false }, title = container.t("app.close.askTitle")) {
-                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(container.t("app.close.askBody"), fontSize = 13.sp)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        MooButton(container.t("app.close.quit"), primary = true, onClick = ::quit)
-                        MooButton(container.t("app.close.hide"), onClick = {
-                            closeDialog = false
-                            persistBounds()
-                            visible = false
-                        })
-                        MooButton(container.t("app.close.cancel"), onClick = { closeDialog = false })
-                    }
-                }
-            }
-        }
+    }
     }
 }
 
@@ -400,7 +454,23 @@ private fun ApplicationScope.DetachedToolWindow(
             window.toFront()
             window.requestFocus()
         }
-        Themed(container, systemDark, content)
+        Themed(container, systemDark) {
+            var focused by remember { mutableStateOf(window.isActive) }
+            DisposableEffect(window) {
+                val listener = object : java.awt.event.WindowFocusListener {
+                    override fun windowGainedFocus(e: java.awt.event.WindowEvent?) { focused = true }
+                    override fun windowLostFocus(e: java.awt.event.WindowEvent?) { focused = false }
+                }
+                window.addWindowFocusListener(listener)
+                onDispose { window.removeWindowFocusListener(listener) }
+            }
+            CompositionLocalProvider(LocalAwtWindow provides window) {
+                Box(Modifier.fillMaxSize()) {
+                    content()
+                    MooToastHost(container, windowFocused = focused)
+                }
+            }
+        }
     }
 }
 

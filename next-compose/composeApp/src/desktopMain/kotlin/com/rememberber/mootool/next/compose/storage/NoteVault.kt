@@ -28,8 +28,8 @@ class NoteVault(
     private val customRoot: String = ""
 ) {
     fun root(): Path {
-        val configured = customRoot.trim()
-        val path = if (configured.isEmpty()) directories.quickNoteVault else Path.of(configured)
+        val effective = VaultPathConfig.effectiveCustomRoot(customRoot)
+        val path = if (effective.isEmpty()) directories.quickNoteVault else Path.of(effective)
         return path.apply { createDirectories() }
     }
 

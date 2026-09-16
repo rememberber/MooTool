@@ -62,6 +62,11 @@ class VaultGitPullScheduler(
     private var lastPullAt = 0L
     private var running = false
 
+    /** Electron `configure*AutoPull` 重建 interval 时从下一周期重新计时。 */
+    fun resetIntervalClock() {
+        lastPullAt = 0L
+    }
+
     fun evaluate(): Boolean {
         val interval = intervalMilliseconds()
         if (running || !enabled() || interval <= 0L || hasUnsavedEditorChanges()) return false

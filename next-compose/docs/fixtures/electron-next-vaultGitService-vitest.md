@@ -1,0 +1,22 @@
+# Electron `vaultGitService.integration.test.ts` 对照登记
+
+| caseId | sourceProduct | sourceFile | Compose 验证 |
+| --- | --- | --- | --- |
+| init-commit-diff-history | MooTool Next Electron | `next/src/shared/vaultGitService.integration.test.ts` | `GitEngineTest.mirrorsElectronVaultGitInitCommitDiffHistory`（[DIFF-445](../diff/445-git-init-parity-focus-conflict-overlay.md)）；`.DS_Store` 见 DIFF-444 |
+| pull-merge-conflict-resolve | 同上 | 同上（分叉 pull） | `GitEngineTest.pullLeavesMergeConflictWhenHistoriesDiverge`（[DIFF-137](../diff/137-git-pull-merge-conflict.md)） |
+| rebase-continue | Electron 行为 | `VaultGitService` + main | `GitEngineTest.continuesRebaseAfterConflictResolved`（DIFF-135） |
+| merge-abort/continue | 同上 | 同上 | `GitEngineTest.resolvesAndAbortsMergeConflicts` / `continuesMergeAfterConflictResolved`（DIFF-136） |
+| rejects-unsafe-paths | 同上 | `diff({ path })` | `GitEngineTest.fileDiffsMatchesElectronPathRules`（[DIFF-442](../diff/442-git-filediffs-electron-vaultgit-parity.md)） |
+| parent-repo-not-adopted | 同上 | 嵌套 Vault `init` | `GitEngineTest.rejectsParentRepositoryUntilVaultRootIsInitialized`（DIFF-442 加强） |
+| automatic-checkpoint-init/push | 同上 | `automaticCheckpoint` | `GitEngineTest.automaticCheckpointInitializesRepositoryOnFirstUse` / `automaticCheckpointPushesWhenRemoteConfigured` |
+| unicode-paths | 同上 | status/diff/discard/rename | `GitEngineTest.unicodePathsWorkForStatusDiffDiscardAndRename` |
+| stale-index-lock | 同上 | 陈旧 `index.lock` 隔离后提交 | `GitEngineTest.repairsStaleIndexLockAndRetriesCommit`（[DIFF-443](../diff/443-git-index-lock-recovery-concurrency.md)） |
+| recent-index-lock | 同上 | 新锁阻塞提交 | `GitEngineTest.recentIndexLockBlocksCommit` |
+| held-index-lock | 同上 | 陈旧锁被占用不隔离 | `GitEngineTest.doesNotQuarantineIndexLockHeldOpenByThisProcess`（DIFF-444） |
+| commit-during-merge | 同上 | merge 中禁止 commit | `GitEngineTest.rejectsCommitWhileMergeInProgress`（[DIFF-446](../diff/446-git-commit-guard-focus-vault-actions-reload.md)） |
+| commit-message-300 | 同上 | 说明截断 300 | `GitEngineTest.truncatesCommitMessageToThreeHundredCharacters` |
+| pull-during-merge | 同上 | merge 中禁止 pull | `GitEngineTest.pullBlockedWhileMergeInProgress`（[DIFF-447](../diff/447-git-pull-merge-order-conflict-dialog-click.md)）；`GitPullGuardTest.mergeInProgressRejectedBeforeMissingRemoteMessage`（[DIFF-448](../diff/448-vault-conflict-reload-savecopy-git-pull-guard.md)） |
+| concurrent-commits | 同上 | 双 `VaultGitService` 并行 commit | `GitEngineTest.serializesConcurrentCommitsForSameVaultRoot`（两线程两 message，仅一条 `concurrent.txt` 提交，对齐 Electron `serializes Git actions…separate service instances`） |
+| push-non-ff | Electron 行为 | 远程领先时 `push` 失败 | `GitEngineTest.pushFailsWhenRemoteIsAheadWithoutPull`（[DIFF-469](../diff/469-vault-mcp-zod-args-git-push-reject.md)） |
+
+UI：`VaultGitDialog` 冲突行「使用本地/远端」Compose Tab 帧 `142` 见 [DIFF-437](../diff/437-git-conflict-actions-quicknote-copy.md)（非产品主窗）。

@@ -354,7 +354,7 @@ Tab：系统、CPU、内存、存储、网络；结构化字段/表格、刷新�
 | 分类 | 字段/行为 |
 | --- | --- |
 | general | 中文/英文/日文、自动检查/下载更新（真实生效，见 [DIFF-027](diff/027-update-channel-open-installer.md)）、启动最大化、关闭 ask/hide/quit、托盘 |
-| appearance | modern/quiet/hero/smartisan/miui-v5/claude 六风格、system/light/dark、yellow/coral/blue/green/red/purple 六强调色、字体/字号、统一背景。设置页分组/分段/色板见 [DIFF-051](diff/051-settings-chrome-overflow.md)；工作区/侧栏风格底见 [DIFF-052](diff/052-json-inspector-screencapture-chrome.md) |
+| appearance | modern/quiet/hero/smartisan/miui-v5/claude 六风格、system/light/dark、yellow/coral/blue/green/red/purple 六强调色、字体/字号、统一背景。设置页分组/分段/色板见 [DIFF-051](diff/051-settings-chrome-overflow.md)；工作区/侧栏风格底见 [DIFF-052](diff/052-json-inspector-screencapture.md)；modern chrome 与 hover/shadow 见 [DIFF-063](diff/063-style-hover-shadow-inspector.md) |
 | layout | 最近、紧凑、分隔线、隐藏标题、classic/card/grouped、自定义组/隐藏工具、面板尺寸。自定义分组按内置组开关勾选、空组/缺名提示、删除确认，弹层保存才写入，见 [DIFF-053](diff/053-custom-group-switches.md)、[DIFF-055](diff/055-custom-group-dialog.md) |
 | editor | SQL 方言、JSON/随手记字体字号、软换行；适用操作实际读取这些设置 |
 | network | 代理开关/地址/端口/用户名/密码、HTTP/翻译超时 |
@@ -362,7 +362,7 @@ Tab：系统、CPU、内存、存储、网络；结构化字段/表格、刷新�
 | vault | 随手记/JSON 目录、Git 用户名/remote/token、自动提交空闲/失焦秒数、自动 pull 分钟、gitignore 隐藏。Git 对话框与定时器见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)、[DIFF-028](diff/028-git-remote-askpass.md)、[DIFF-029](diff/029-frontmatter-vault-git-import.md) |
 | runtime | Java/Groovy/Python/Node 路径、检测、草稿/参数/工作目录 |
 | tools | QR 尺寸/纠错、随机长度、导出目录、默认翻译器与语言 |
-| shortcuts | 搜索/设置键绑定、冲突检查、完整平台快捷键帮助 |
+| shortcuts | 搜索/设置键绑定、冲突检查、完整平台快捷键帮助。IME 预编辑时快捷键让路见 [DIFF-064](diff/064-ime-shortcut-home-focus.md) |
 | about | Compose 产品名/版本、更新检查/说明/下载校验/打开安装包、许可和帮助。自动安装未做，见 [DIFF-027](diff/027-update-channel-open-installer.md) |
 
 默认值：中文、system、modern、blue、UI 13、编辑器 14、classic、最近隐藏、软换行、关闭 ask、托盘开启（不可用时提示）、HTTP 30000 ms、翻译 15000 ms、QR 300/M、随机长度 16。Vault 自动行为先配置库再生效，不能对未选择目录启动后台 Git。
@@ -372,7 +372,7 @@ Tab：系统、CPU、内存、存储、网络；结构化字段/表格、刷新�
 - 通用历史按工具最多 200 条；支持搜索/详情/恢复输入选项/删除/清空。HTTP 和翻译专用历史单独定义，不误用全库 200 条裁剪。
 - Regex/Cron/颜色收藏真实持久化，命名/分组/查询/恢复/删除按源页面清单实现；HTTP 集合和单词本不混入通用收藏。
 - 历史不得默认存储私钥、密码、认证 Header；保留行为需有产品内明确选择和遮蔽策略，作为 Compose 隐私改进记录。
-- 搜索本地名称/ID/关键词，完整键盘流程；导航隐藏或窗口分离不影响可搜索性。侧栏搜索按钮与命令盘 chrome 见 [DIFF-056](diff/056-command-palette-sidebar-search.md)；应用内遮罩见 [DIFF-057](diff/057-in-app-overlay-dialogs.md)。
+- 搜索本地名称/ID/关键词，完整键盘流程；导航隐藏或窗口分离不影响可搜索性。侧栏搜索按钮与命令盘 chrome 见 [DIFF-056](diff/056-command-palette-sidebar-search.md)；应用内遮罩见 [DIFF-057](diff/057-in-app-overlay-dialogs.md)、[DIFF-059](diff/059-tool-dialogs-to-overlay.md)、[DIFF-060](diff/060-close-overlay-chrome-tokens.md)。
 
 ### A03 桌面、存储、备份、Git、更新
 

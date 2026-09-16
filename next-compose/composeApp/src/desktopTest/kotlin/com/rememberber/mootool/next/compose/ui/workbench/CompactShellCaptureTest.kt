@@ -22,6 +22,7 @@ import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.unit.dp
 import com.rememberber.mootool.next.compose.model.ThemePreference
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooSwitch
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import java.io.File
@@ -39,11 +40,11 @@ class CompactShellCaptureTest {
                 val collapsed = LayoutPolicy.collapseNavigation(960f - 1f, false, false)
                 Column(Modifier.fillMaxSize().background(colors.workspace)) {
                     Row(
-                        Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush())
+                        Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground()
                             .padding(horizontal = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        MooButton("JSON", onClick = {}, primary = true)
+                        MooButton("JSON", onClick = {}, prominent = true)
                         MooSwitch(checked = true, onCheckedChange = {})
                     }
                     Row(Modifier.weight(1f).fillMaxWidth()) {

@@ -44,6 +44,10 @@ class EditorBuffer(
         private set
     private var grouping: CompoundEdit? = null
     private val findHighlights = mutableListOf<Any>()
+    private var suppressUserDocumentChange = 0
+
+    /** 用户直接改文档时触发；[setText] 等批量加载不触发。 */
+    var onUserDocumentChange: (() -> Unit)? = null
 
     init {
         area.document.addUndoableEditListener { event ->
@@ -51,8 +55,8 @@ class EditorBuffer(
             if (group != null) group.addEdit(event.edit) else undoManager.addEdit(event.edit)
         }
         area.document.addDocumentListener(object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent) = markChanged()
-            override fun removeUpdate(e: DocumentEvent) = markChanged()
+            override fun insertUpdate(e: DocumentEvent) = notifyDocumentChanged()
+            override fun removeUpdate(e: DocumentEvent) = notifyDocumentChanged()
             override fun changedUpdate(e: DocumentEvent) = Unit
         })
         columnEdits = ColumnEditBinder(this)
@@ -62,16 +66,21 @@ class EditorBuffer(
     val document: Document get() = area.document
 
     fun setText(value: String, recordUndo: Boolean) {
-        if (!recordUndo) {
-            undoManager.discardAllEdits()
-            area.text = value
-            undoManager.discardAllEdits()
-        } else {
-            atomicDocument {
-                val length = area.document.length
-                if (length > 0) area.document.remove(0, length)
-                area.document.insertString(0, value, null)
+        suppressUserDocumentChange++
+        try {
+            if (!recordUndo) {
+                undoManager.discardAllEdits()
+                area.text = value
+                undoManager.discardAllEdits()
+            } else {
+                atomicDocument {
+                    val length = area.document.length
+                    if (length > 0) area.document.remove(0, length)
+                    area.document.insertString(0, value, null)
+                }
             }
+        } finally {
+            suppressUserDocumentChange--
         }
         markChanged()
     }
@@ -254,6 +263,7 @@ class EditorBuffer(
     fun bindAppShortcuts(shortcuts: EditorAppShortcuts) {
         val menu = java.awt.Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx
         bindStroke(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F, menu), ACTION_FIND, shortcuts.onFind)
+        bindStroke(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, menu), ACTION_FIND, shortcuts.onFind)
         bindStroke(
             javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F, menu or java.awt.event.InputEvent.SHIFT_DOWN_MASK),
             ACTION_FORMAT,
@@ -295,6 +305,11 @@ class EditorBuffer(
                 return original?.importData(support) == true
             }
         }
+    }
+
+    private fun notifyDocumentChanged() {
+        markChanged()
+        if (suppressUserDocumentChange == 0) onUserDocumentChange?.invoke()
     }
 
     private fun markChanged() {

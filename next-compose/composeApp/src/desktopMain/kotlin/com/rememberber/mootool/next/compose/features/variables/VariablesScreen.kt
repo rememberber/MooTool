@@ -4,15 +4,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -23,16 +27,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.EnvDisplayScope
 import com.rememberber.mootool.next.compose.domain.EnvEngine
@@ -44,27 +50,42 @@ import com.rememberber.mootool.next.compose.domain.EnvTab
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.VariablesSession
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooMenu
+import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
+import com.rememberber.mootool.next.compose.ui.components.MooCompactSearch
+import com.rememberber.mootool.next.compose.ui.components.MooGhostButton
+import com.rememberber.mootool.next.compose.ui.components.MooToolTab
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
+import com.rememberber.mootool.next.compose.ui.components.MooOverlay
+import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
+import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.onUserInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.FileDialog
 import java.awt.Frame
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
 import java.io.File
 
 @Composable
 fun VariablesScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.variablesSession() }
+    DismissModalOverlaysOnDispose(container, ToolId.Variables) { session.dismissModalOverlays() }
     val revision by container.sessionManager.revision.collectAsState()
+    val sessionGeneration by container.sessionManager.sessionGeneration.collectAsState()
+    val settings by container.settings.collectAsState()
     val colors = MooTheme.colors
     val scope = rememberCoroutineScope()
-    val config = remember { EnvStoreConfig.production(container.directories) }
+    val config = remember(settings.data.directory) { EnvStoreConfig.production(container.dataDirectories()) }
 
     fun persist() {
         container.sessionManager.bump()
@@ -94,6 +115,9 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
     LaunchedEffect(Unit) {
         if (session.snapshot == null && !session.loading) refresh()
     }
+    LaunchedEffect(settings.data.directory, sessionGeneration) {
+        if (!session.loading) refresh()
+    }
 
     val snapshot = session.snapshot
     val source = when {
@@ -108,16 +132,17 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
     }
     val canEdit = session.tab == EnvTab.Environment
     val canDelete = canEdit && session.scope != EnvDisplayScope.Process
+    var scopeMenuOpen by remember { mutableStateOf(false) }
 
     BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
         val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
         Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("variables.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("variables.title"))
             if (revision < 0) Spacer(Modifier.width(0.dp))
             Spacer(Modifier.weight(1f))
             if (canEdit) {
@@ -128,9 +153,14 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                     session.targetScope = if (session.scope == EnvDisplayScope.System) EnvPersistScope.System else EnvPersistScope.User
                     session.editorOpen = true
                     persist()
-                }, enabled = !session.saving)
+                }, enabled = !session.saving, p5Toolbar = true)
             }
-            MooButton(container.t("common.refresh"), onClick = { refresh() }, enabled = !session.loading && !session.saving)
+            MooButton(
+                container.t("common.refresh"),
+                onClick = { refresh() },
+                enabled = !session.loading && !session.saving,
+                p5Toolbar = true
+            )
             OverflowActionCluster(
                 overflow = overflow,
                 moreLabel = container.t("json.action.overflow"),
@@ -139,7 +169,10 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                         val current = session.snapshot ?: return@OverflowAction
                         val file = chooseSave(container.t("common.export"), "mootool-next-compose-environment.txt") ?: return@OverflowAction
                         runCatching { file.writeText(EnvEngine.formatExport(current)) }
-                            .onSuccess { session.notice = container.t("variables.exported") }
+                            .onSuccess {
+                                session.notice = container.t("variables.exported")
+                                container.toastSuccess(container.t("variables.exported"))
+                            }
                             .onFailure { session.error = it.message ?: container.t("variables.error.generic") }
                         persist()
                     })
@@ -147,31 +180,52 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                 }
             )
         }
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxSize()
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .mooToolShell(p5 = true, endBorder = false)
+        ) {
         Row(
-            Modifier.fillMaxWidth().background(colors.toolbar).padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            Modifier.fillMaxWidth().mooToolbarBackground().padding(start = 10.dp, end = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             EnvTab.entries.forEach { tab ->
-                MooButton(
+                MooToolTab(
                     container.t(if (tab == EnvTab.Environment) "variables.tab.environment" else "variables.tab.runtime"),
-                    primary = session.tab == tab,
+                    selected = session.tab == tab,
                     onClick = { session.tab = tab; persist() }
                 )
             }
             if (session.tab == EnvTab.Environment) {
-                EnvDisplayScope.entries.forEach { item ->
+                Text(container.t("variables.scope"), color = colors.textMuted, fontSize = 10.sp)
+                Box {
                     MooButton(
-                        container.t(scopeKey(item)),
-                        primary = session.scope == item,
-                        onClick = { session.scope = item; persist() }
+                        container.t(scopeKey(session.scope)),
+                        onClick = { scopeMenuOpen = true },
+                        modifier = Modifier.widthIn(min = 130.dp),
+                        dense = true
                     )
+                    MooMenu(expanded = scopeMenuOpen, onDismissRequest = { scopeMenuOpen = false }) {
+                        EnvDisplayScope.entries.forEach { item ->
+                            MooMenuItem(onClick = {
+                                scopeMenuOpen = false
+                                session.scope = item
+                                persist()
+                            }) {
+                                Text(container.t(scopeKey(item)), fontSize = 12.sp)
+                            }
+                        }
+                    }
                 }
             }
-            MooTextField(
+            Spacer(Modifier.weight(1f))
+            MooCompactSearch(
                 session.query,
                 { session.query = it; persist() },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.widthIn(min = 140.dp, max = 260.dp),
                 placeholder = container.t("common.search")
             )
         }
@@ -180,74 +234,106 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
         } else if (session.notice.isNotEmpty()) {
             Text(session.notice, color = colors.textSecondary, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp), fontSize = 12.sp)
         }
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+        when {
+            session.loading && snapshot == null -> Text(container.t("variables.loading"), color = colors.textSecondary, modifier = Modifier.padding(16.dp))
+            entries.isEmpty() -> Text(container.t("variables.empty"), color = colors.textSecondary, modifier = Modifier.padding(16.dp))
+            else -> Column(Modifier.fillMaxSize()) {
+                Row(
+                    Modifier.fillMaxWidth().height(34.dp).background(colors.workspace).padding(horizontal = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        container.t("variables.key"),
+                        color = colors.textMuted,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.weight(0.34f)
+                    )
+                    Text(
+                        container.t("variables.value"),
+                        color = colors.textMuted,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(Modifier.width(116.dp))
+                }
+                Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
+                LazyColumn(Modifier.weight(1f)) {
+                    items(entries, key = { it.key }) { entry ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 36.dp)
+                                .mooFocusClickable(enabled = canEdit) {
+                                    openEditor(session, entry)
+                                    persist()
+                                }
+                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                entry.key,
+                                color = colors.textBody,
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 10.sp,
+                                modifier = Modifier.weight(0.34f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                entry.value,
+                                color = colors.textBody,
+                                fontSize = 11.sp,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Row(Modifier.width(116.dp), horizontalArrangement = Arrangement.End) {
+                                MooGhostButton(container.t("common.action.copy"), onClick = {
+                                    if (container.copyText("${entry.key}=${entry.value}")) {
+                                        session.notice = container.t("json.notice.copied")
+                                    } else {
+                                        session.notice = container.t("json.notice.copyFailed")
+                                    }
+                                    persist()
+                                }, size = 28.dp) {
+                                    Text("⎘", color = colors.textMuted, fontSize = 13.sp)
+                                }
+                                if (canDelete) {
+                                    MooGhostButton(container.t("common.delete"), onClick = {
+                                        session.deleteKey = entry.key
+                                        persist()
+                                    }, size = 28.dp) {
+                                        Text("×", color = colors.textMuted, fontSize = 16.sp)
+                                    }
+                                }
+                            }
+                        }
+                        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
+                    }
+                }
+            }
+        }
+        }
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            Modifier.fillMaxWidth().heightIn(min = 30.dp).mooToolbarBackground().padding(horizontal = 11.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
                 container.t("variables.count", mapOf("count" to entries.size.toString(), "total" to source.size.toString())),
-                color = colors.textSecondary,
-                fontSize = 12.sp
+                color = colors.textMuted,
+                fontSize = 10.sp
             )
-            if (session.tab == EnvTab.Environment) {
-                Text(container.t(scopeHintKey(session.scope)), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.weight(1f).padding(start = 12.dp))
+            val hint = when {
+                session.tab == EnvTab.Environment && snapshot != null ->
+                    container.t(scopeHintKey(session.scope)) + " · " + snapshot.userFile
+                session.tab == EnvTab.Environment -> container.t(scopeHintKey(session.scope))
+                else -> ""
             }
+            Text(hint, color = colors.textMuted, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 12.dp))
         }
-        if (session.tab == EnvTab.Environment && snapshot != null) {
-            Text(
-                container.t(
-                    "variables.pathHint",
-                    mapOf(
-                        "user" to snapshot.userFile,
-                        "system" to snapshot.systemFile,
-                        "profile" to snapshot.shellProfile
-                    )
-                ),
-                color = colors.textSecondary,
-                fontSize = 11.sp,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-            )
-        }
-        when {
-            session.loading && snapshot == null -> Text(container.t("variables.loading"), color = colors.textSecondary, modifier = Modifier.padding(16.dp))
-            entries.isEmpty() -> Text(container.t("variables.empty"), color = colors.textSecondary, modifier = Modifier.padding(16.dp))
-            else -> {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                    Text(container.t("variables.key"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.width(220.dp))
-                    Text(container.t("variables.value"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.weight(1f))
-                }
-                LazyColumn(Modifier.weight(1f).padding(horizontal = 8.dp)) {
-                    items(entries, key = { it.key }) { entry ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable(enabled = canEdit) {
-                                openEditor(session, entry)
-                                persist()
-                            }.padding(horizontal = 8.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(entry.key, color = colors.textPrimary, fontFamily = FontFamily.Monospace, fontSize = 13.sp, modifier = Modifier.width(220.dp), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(entry.value, color = colors.textPrimary, fontSize = 13.sp, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
-                            MooButton(container.t("common.action.copy"), onClick = {
-                                runCatching {
-                                    Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection("${entry.key}=${entry.value}"), null)
-                                    session.notice = container.t("json.notice.copied")
-                                    persist()
-                                }
-                            })
-                            if (canEdit) {
-                                MooButton(container.t("variables.edit"), onClick = { openEditor(session, entry); persist() })
-                            }
-                            if (canDelete) {
-                                MooButton(container.t("common.delete"), onClick = {
-                                    session.deleteKey = entry.key
-                                    persist()
-                                })
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
     }
@@ -255,14 +341,14 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
         EditorDialog(container, session, snapshot, config, ::persist) { refresh() }
     }
     if (session.deleteKey.isNotEmpty()) {
-        Dialog(onDismissRequest = { session.deleteKey = ""; persist() }) {
+        MooOverlay(onDismiss = { session.deleteKey = ""; persist() }) {
             Column(
-                Modifier.width(420.dp).background(colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+                Modifier.width(420.dp).mooDialogSurface().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(container.t("variables.confirmDelete", mapOf("key" to session.deleteKey)), color = colors.textPrimary)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MooButton(container.t("common.delete"), primary = true, onClick = {
+                    MooButton(container.t("common.delete"), danger = true, onClick = {
                         val persistScope = persistScope(session.scope) ?: return@MooButton
                         val key = session.deleteKey
                         session.deleteKey = ""
@@ -277,6 +363,7 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                                     session.lastBackup = it.backupPath.orEmpty()
                                     session.lastDiff = it.diff
                                     session.notice = container.t("variables.deleted")
+                                    container.toastSuccess(container.t("variables.deleted"))
                                     session.error = ""
                                 }.onFailure {
                                     session.error = messageFor(container, it)
@@ -305,16 +392,36 @@ private fun EditorDialog(
     val scope = rememberCoroutineScope()
     val persistScope = if (session.scope == EnvDisplayScope.Process) session.targetScope else persistScope(session.scope) ?: session.targetScope
     val diff = snapshot?.let { EnvEngine.previewDiff(it, persistScope, session.editorKey.trim().ifBlank { "(key)" }, session.editorValue) }.orEmpty()
-    Dialog(onDismissRequest = { session.editorOpen = false; persist() }) {
+    MooOverlay(onDismiss = { session.editorOpen = false; persist() }) {
         Column(
-            Modifier.width(560.dp).background(colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp).verticalScroll(rememberScrollState()),
+            Modifier.width(560.dp).mooDialogSurface().padding(16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(container.t(if (session.editorExisting) "variables.editTitle" else "variables.addTitle"), color = colors.textPrimary)
-            Text(container.t("variables.key"), color = colors.textSecondary, fontSize = 12.sp)
-            MooTextField(session.editorKey, { if (!session.editorExisting) { session.editorKey = it; persist() } }, modifier = Modifier.fillMaxWidth())
-            Text(container.t("variables.value"), color = colors.textSecondary, fontSize = 12.sp)
-            MooTextField(session.editorValue, { session.editorValue = it; persist() }, modifier = Modifier.fillMaxWidth(), singleLine = false)
+            Text(container.t("variables.key"), color = colors.textMuted, fontSize = 10.sp)
+            MooTextField(
+                session.editorKey,
+                {
+                    if (!session.editorExisting) {
+                        session.onUserInput { session.editorKey = it }
+                        persist()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                dense = true
+            )
+            Text(container.t("variables.value"), color = colors.textMuted, fontSize = 10.sp)
+            MooTextField(
+                session.editorValue,
+                {
+                    session.onUserInput { session.editorValue = it }
+                    persist()
+                },
+                modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 120.dp),
+                singleLine = false,
+                dense = true,
+                mono = true
+            )
             if (session.scope == EnvDisplayScope.Process) {
                 Text(container.t("variables.targetScope"), color = colors.textSecondary, fontSize = 12.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -330,13 +437,13 @@ private fun EditorDialog(
                     )
                 }
             }
-            Text(container.t("variables.applyHint"), color = colors.textSecondary, fontSize = 12.sp)
+            Text(container.t("variables.applyHint"), color = colors.textMuted, fontSize = 10.sp)
             if (diff.isNotBlank()) {
                 Text(container.t("variables.diff"), color = colors.textSecondary, fontSize = 12.sp)
                 Text(diff, color = colors.textPrimary, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.save"), primary = true, onClick = {
+                MooButton(container.t("common.save"), prominent = true, onClick = {
                     val key = session.editorKey.trim()
                     if (key.isEmpty() || session.saving) return@MooButton
                     val target = persistScope
@@ -352,6 +459,7 @@ private fun EditorDialog(
                                 session.lastDiff = it.diff
                                 session.editorOpen = false
                                 session.notice = container.t("variables.saved")
+                                container.toastSuccess(container.t("variables.saved"))
                                 session.error = ""
                             }.onFailure {
                                 session.error = messageFor(container, it)

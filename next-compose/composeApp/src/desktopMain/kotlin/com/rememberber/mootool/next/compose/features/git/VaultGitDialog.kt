@@ -16,8 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.border
@@ -39,12 +39,20 @@ import com.rememberber.mootool.next.compose.domain.DiffEngine
 import com.rememberber.mootool.next.compose.domain.GitCommitInfo
 import com.rememberber.mootool.next.compose.domain.GitDiffPreview
 import com.rememberber.mootool.next.compose.domain.GitDiffSelection
+import com.rememberber.mootool.next.compose.domain.GitEditorFlushPolicy
+import com.rememberber.mootool.next.compose.domain.GitVaultFlushAction
 import com.rememberber.mootool.next.compose.domain.GitEngine
 import com.rememberber.mootool.next.compose.domain.GitFileDiff
 import com.rememberber.mootool.next.compose.domain.GitStatus
 import com.rememberber.mootool.next.compose.features.diff.annotateSide
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooMenu
+import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.MooStatusPill
+import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
+import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.rememberPairedScrollStates
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
@@ -60,7 +68,10 @@ fun VaultGitDialog(
     defaultMessage: String,
     root: Path,
     onDismiss: () -> Unit,
-    onFlush: () -> String?
+    onFlush: () -> String?,
+    onVaultRefresh: () -> Unit = {},
+    /** commit/push/pull 等刷新面板 status 后同步工具栏 Git 角标（对齐 Electron `refreshGitChangeCount`）。 */
+    onGitStatusChanged: () -> Unit = {},
 ) {
     val colors = MooTheme.colors
     val settings by container.settings.collectAsState()
@@ -73,228 +84,447 @@ fun VaultGitDialog(
     var selectedDiffPath by remember { mutableStateOf("") }
     var remote by remember { mutableStateOf(settings.vault.gitRemote) }
     var message by remember { mutableStateOf(defaultMessage) }
-    var notice by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(true) }
+    var confirmAbort by remember { mutableStateOf(false) }
+    var confirmDiscardPath by remember { mutableStateOf<String?>(null) }
+
+    fun clearDiffSelection() {
+        selected = ""
+        fileDiffs = emptyList()
+        selectedDiffPath = ""
+    }
 
     fun identity() = GitEngine.identityFrom(settings.vault.gitUsername)
     fun token() = settings.vault.gitToken.trim()
 
+    fun syncRemoteField(gitStatus: GitStatus) {
+        remote = gitStatus.remote.ifBlank { settings.vault.gitRemote }
+    }
+
     fun load() {
         scope.launch {
             busy = true
-            error = ""
-            val flushed = onFlush()
-            if (flushed != null) {
-                error = flushed
+            try {
+                val nextStatus = withContext(Dispatchers.IO) { GitEngine.status(root) }
+                val nextHistory = withContext(Dispatchers.IO) {
+                    if (nextStatus.repository) GitEngine.history(root) else emptyList()
+                }
+                status = nextStatus
+                history = nextHistory
+                syncRemoteField(nextStatus)
+            } catch (error: Exception) {
+                container.toastError(error.message?.ifBlank { null } ?: container.t("json.notice.failed"))
+            } finally {
                 busy = false
-                return@launch
             }
-            val nextStatus = withContext(Dispatchers.IO) { GitEngine.status(root) }
-            val nextHistory = withContext(Dispatchers.IO) {
-                if (nextStatus.repository) GitEngine.history(root) else emptyList()
-            }
-            status = nextStatus
-            history = nextHistory
-            if (nextStatus.remote.isNotBlank()) remote = nextStatus.remote
-            else if (remote.isBlank()) remote = settings.vault.gitRemote
-            busy = false
         }
     }
 
-    fun runAction(afterSuccess: (() -> Unit)? = null, block: () -> com.rememberber.mootool.next.compose.domain.GitActionResult) {
+    fun runAction(
+        workingTree: GitVaultFlushAction? = null,
+        afterSuccess: (() -> Unit)? = null,
+        remoteOverrideAfterReload: String? = null,
+        block: () -> com.rememberber.mootool.next.compose.domain.GitActionResult,
+    ) {
         scope.launch {
             busy = true
-            error = ""
-            notice = ""
-            val flushed = onFlush()
-            if (flushed != null) {
-                error = flushed
+            try {
+                if (GitEditorFlushPolicy.shouldFlushEditor(workingTree)) {
+                    val flushed = onFlush()
+                    if (flushed != null) {
+                        container.toastError(flushed)
+                        return@launch
+                    }
+                }
+                val result = withContext(Dispatchers.IO) { block() }
+                if (result.success) {
+                    container.toastSuccess(container.t("git.done"))
+                    afterSuccess?.invoke()
+                    if (GitEditorFlushPolicy.refreshesVaultAfterSuccess(workingTree)) {
+                        onVaultRefresh()
+                    }
+                } else {
+                    container.toastError(result.message.ifBlank { container.t("json.notice.failed") })
+                    if (workingTree == GitVaultFlushAction.Pull) {
+                        onVaultRefresh()
+                    } else {
+                        return@launch
+                    }
+                }
+                val nextStatus = withContext(Dispatchers.IO) { GitEngine.status(root) }
+                val nextHistory = withContext(Dispatchers.IO) {
+                    if (nextStatus.repository) GitEngine.history(root) else emptyList()
+                }
+                status = nextStatus
+                history = nextHistory
+                syncRemoteField(nextStatus)
+                if (remoteOverrideAfterReload != null) {
+                    remote = remoteOverrideAfterReload
+                }
+                onGitStatusChanged()
+            } catch (error: Exception) {
+                container.toastError(error.message?.ifBlank { null } ?: container.t("json.notice.failed"))
+            } finally {
                 busy = false
-                return@launch
             }
-            val result = withContext(Dispatchers.IO) { block() }
-            if (result.success) {
-                notice = result.message.ifBlank { container.t("git.done") }
-                afterSuccess?.invoke()
-            } else {
-                error = result.message
-            }
-            val nextStatus = withContext(Dispatchers.IO) { GitEngine.status(root) }
-            val nextHistory = withContext(Dispatchers.IO) {
-                if (nextStatus.repository) GitEngine.history(root) else emptyList()
-            }
-            status = nextStatus
-            history = nextHistory
-            if (nextStatus.remote.isNotBlank()) remote = nextStatus.remote
-            busy = false
         }
     }
 
     fun loadFileDiffs(path: String? = null, commit: String? = null) {
         scope.launch {
             busy = true
-            val next = withContext(Dispatchers.IO) {
-                GitEngine.fileDiffs(root, path = path, commit = commit)
+            fileDiffs = emptyList()
+            selectedDiffPath = ""
+            try {
+                val next = withContext(Dispatchers.IO) {
+                    GitEngine.fileDiffs(root, path = path, commit = commit)
+                }
+                fileDiffs = next
+                selectedDiffPath = GitDiffSelection.selected(next, "")?.path.orEmpty()
+            } catch (error: Exception) {
+                container.toastError(error.message?.ifBlank { null } ?: container.t("json.notice.failed"))
+            } finally {
+                busy = false
             }
-            fileDiffs = next
-            selectedDiffPath = GitDiffSelection.selected(next, "")?.path.orEmpty()
-            busy = false
         }
     }
 
     LaunchedEffect(root) { load() }
 
+    confirmDiscardPath?.let { discardPath ->
+        MooOverlay(onDismiss = { confirmDiscardPath = null }) {
+            Column(
+                Modifier.width(480.dp).mooDialogSurface().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    container.t("git.confirmDiscard", mapOf("path" to discardPath)),
+                    color = colors.textPrimary,
+                    fontSize = 13.sp
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MooButton(
+                        container.t("git.discard"),
+                        prominent = true,
+                        danger = true,
+                        p5Toolbar = true,
+                        enabled = !busy,
+                        onClick = {
+                            confirmDiscardPath = null
+                            runAction(
+                                workingTree = GitVaultFlushAction.Discard,
+                                afterSuccess = { clearDiffSelection() }
+                            ) { GitEngine.discard(root, discardPath) }
+                        }
+                    )
+                    MooButton(container.t("common.cancel"), p5Toolbar = true, onClick = { confirmDiscardPath = null })
+                }
+            }
+        }
+    }
+
+    if (confirmAbort) {
+        MooOverlay(onDismiss = { confirmAbort = false }) {
+            Column(
+                Modifier.width(480.dp).mooDialogSurface().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(container.t("git.confirmAbort"), color = colors.textPrimary, fontSize = 13.sp)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MooButton(
+                        container.t("git.abortMerge"),
+                        prominent = true,
+                        danger = true,
+                        p5Toolbar = true,
+                        enabled = !busy,
+                        onClick = {
+                            confirmAbort = false
+                            runAction(
+                                workingTree = GitVaultFlushAction.AbortMerge,
+                                afterSuccess = { clearDiffSelection() }
+                            ) { GitEngine.abortMerge(root) }
+                        }
+                    )
+                    MooButton(container.t("common.cancel"), p5Toolbar = true, onClick = { confirmAbort = false })
+                }
+            }
+        }
+    }
+
     MooOverlay(onDismiss = onDismiss) {
         Column(
-            Modifier.width(1040.dp).height(620.dp)
-                .background(colors.workspace, RoundedCornerShape(12.dp))
-                .border(1.dp, colors.border, RoundedCornerShape(12.dp))
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            Modifier.width(920.dp).height(620.dp).mooDialogSurface().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(title, color = colors.textPrimary, fontSize = 16.sp)
-            Text(root.toAbsolutePath().normalize().toString(), color = colors.textSecondary, fontSize = 11.sp)
-            val summary = when {
-                !status.available -> container.t("git.unavailable")
-                !status.repository -> container.t("git.noRepo")
-                else -> container.t("git.branch", mapOf("branch" to status.branch.ifBlank { "HEAD" }))
-            }
-            Text(summary, color = if (!status.available) colors.danger else colors.textPrimary, fontSize = 13.sp)
-            if (status.repository) {
-                Text(
-                    container.t("git.counts", mapOf("changes" to status.changes.size.toString(), "conflicts" to status.conflicts.toString())),
-                    color = if (status.conflicts > 0 || status.merging) colors.warning else colors.textSecondary,
-                    fontSize = 12.sp
-                )
-            }
-            if (status.version.isNotBlank()) {
-                Text(status.version, color = colors.textSecondary, fontSize = 11.sp)
-            }
-            Text(container.t("git.authHint"), color = colors.textSecondary, fontSize = 12.sp)
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                MooButton(container.t("git.refresh"), enabled = !busy, onClick = { load() })
-                if (!status.repository) {
-                    MooButton(container.t("git.init"), primary = true, enabled = !busy && status.available, onClick = {
-                        runAction { GitEngine.init(root, identity()) }
-                    })
-                }
-                if (status.repository) {
-                    MooButton(
-                        container.t("git.fetch"),
-                        enabled = !busy && status.remote.isNotBlank(),
-                        onClick = { runAction { GitEngine.fetch(root, token = token()) } }
-                    )
-                    MooButton(
-                        container.t("git.pull"),
-                        enabled = !busy && status.remote.isNotBlank() && !status.merging,
-                        onClick = { runAction { GitEngine.pull(root, token = token()) } }
-                    )
-                    MooButton(
-                        container.t("git.push"),
-                        enabled = !busy && status.remote.isNotBlank() && !status.merging,
-                        onClick = { runAction { GitEngine.push(root, token = token()) } }
-                    )
-                }
-                if (status.merging) {
-                    MooButton(container.t("git.abort"), enabled = !busy, onClick = { runAction { GitEngine.abortMerge(root) } })
-                    MooButton(
-                        container.t("git.continue"),
-                        enabled = !busy && status.conflicts == 0,
-                        onClick = { runAction { GitEngine.continueOperation(root, identity()) } }
-                    )
-                }
-                MooButton(container.t("common.close"), onClick = onDismiss)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                MooTextField(remote, { remote = it }, placeholder = container.t("git.remotePlaceholder"), modifier = Modifier.weight(1f))
-                MooButton(container.t("git.saveRemote"), enabled = !busy && status.repository, onClick = {
-                    val nextRemote = remote.trim()
-                    runAction(
-                        afterSuccess = {
-                            container.updateSettings { current -> current.copy(vault = current.vault.copy(gitRemote = nextRemote)) }
+            MooPageTitle(title)
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    when {
+                        !status.repository -> Text(container.t("git.noRepo"), color = colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        else -> {
+                            Text(
+                                container.t("git.branch", mapOf("branch" to status.branch.ifBlank { "HEAD" })),
+                                color = colors.textStrong,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                container.t("git.sync", mapOf("ahead" to status.ahead.toString(), "behind" to status.behind.toString())),
+                                color = colors.textMuted,
+                                fontSize = 11.sp
+                            )
                         }
-                    ) { GitEngine.setRemote(root, nextRemote) }
-                })
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    MooButton(container.t("git.refresh"), p5Toolbar = true, enabled = !busy, onClick = { load() })
+                    if (!status.repository) {
+                        MooButton(
+                            container.t("git.init"),
+                            prominent = true,
+                            p5Toolbar = true,
+                            enabled = !busy && status.available,
+                            onClick = { runAction { GitEngine.init(root, identity()) } }
+                        )
+                    }
+                    if (status.repository) {
+                        MooButton(
+                            container.t("git.fetch"),
+                            p5Toolbar = true,
+                            enabled = !busy && status.remote.isNotBlank(),
+                            onClick = { runAction { GitEngine.fetch(root, token = token()) } }
+                        )
+                        MooButton(
+                            container.t("git.pull"),
+                            p5Toolbar = true,
+                            enabled = !busy && status.remote.isNotBlank() && !status.merging,
+                            onClick = { runAction(workingTree = GitVaultFlushAction.Pull) { GitEngine.pull(root, token = token()) } }
+                        )
+                        MooButton(
+                            container.t("git.push"),
+                            p5Toolbar = true,
+                            enabled = !busy && status.remote.isNotBlank() && !status.merging,
+                            onClick = { runAction(workingTree = GitVaultFlushAction.Push) { GitEngine.push(root, token = token()) } }
+                        )
+                    }
+                    if (status.merging || status.conflicts > 0) {
+                        MooButton(
+                            container.t("git.abortMerge"),
+                            danger = true,
+                            p5Toolbar = true,
+                            enabled = !busy,
+                            onClick = { confirmAbort = true }
+                        )
+                    }
+                    if (status.merging && status.conflicts == 0) {
+                        MooButton(
+                            container.t("git.continue"),
+                            p5Toolbar = true,
+                            enabled = !busy,
+                            onClick = {
+                                runAction(workingTree = GitVaultFlushAction.ContinueOperation) {
+                                    GitEngine.continueOperation(root, identity())
+                                }
+                            }
+                        )
+                    }
+                }
             }
             if (status.available) {
-                Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Column(Modifier.width(280.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            MooButton(
-                                container.t("git.changes") + " ${status.changes.size}",
-                                primary = tab == "changes",
-                                onClick = { tab = "changes"; selected = ""; fileDiffs = emptyList(); selectedDiffPath = "" }
-                            )
-                            MooButton(
-                                container.t("git.history"),
-                                primary = tab == "history",
-                                onClick = { tab = "history"; selected = ""; fileDiffs = emptyList(); selectedDiffPath = "" }
-                            )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(container.t("git.remote"), color = colors.textMuted, fontSize = 11.sp)
+                    MooTextField(remote, { remote = it }, placeholder = container.t("git.remotePlaceholder"), modifier = Modifier.weight(1f))
+                    val remoteTrimmed = remote.trim()
+                    val remoteLabel = if (remoteTrimmed.isNotEmpty()) container.t("git.saveRemote") else container.t("git.removeRemote")
+                    MooButton(
+                        remoteLabel,
+                        p5Toolbar = true,
+                        enabled = !busy && status.repository && (remoteTrimmed.isNotEmpty() || status.remote.isNotBlank()),
+                        onClick = {
+                            val nextRemote = remoteTrimmed
+                            runAction(
+                                remoteOverrideAfterReload = nextRemote,
+                                afterSuccess = {
+                                    container.updateSettings { current ->
+                                        current.copy(vault = current.vault.copy(gitRemote = nextRemote))
+                                    }
+                                },
+                            ) { GitEngine.setRemote(root, nextRemote) }
                         }
-                        if (tab == "changes") {
-                            if (status.changes.isEmpty()) {
-                                Text(container.t("git.emptyChanges"), color = colors.textSecondary, fontSize = 12.sp)
-                            } else {
-                                LazyColumn(Modifier.weight(1f)) {
-                                    items(status.changes, key = { "${it.status}-${it.path}" }) { change ->
+                    )
+                }
+            }
+            if (!status.available) {
+                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Text(container.t("git.unavailable"), color = colors.textMuted, fontSize = 12.sp)
+                }
+            } else if (status.available) {
+                Row(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .height(430.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .border(1.dp, colors.borderSoft, RoundedCornerShape(6.dp))
+                ) {
+                    Column(
+                        Modifier
+                            .width(280.dp)
+                            .fillMaxHeight()
+                            .border(1.dp, colors.borderSoft, RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp))
+                    ) {
+                        GitPanelTabs(
+                            changesLabel = container.t("git.changes") + " ${status.changes.size}",
+                            historyLabel = container.t("git.history"),
+                            tab = tab,
+                            onTab = { next ->
+                                tab = next
+                                selected = ""
+                                fileDiffs = emptyList()
+                                selectedDiffPath = ""
+                            }
+                        )
+                        Column(
+                            Modifier.weight(1f).fillMaxWidth().padding(5.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            if (tab == "changes") {
+                                if (status.changes.isEmpty()) {
+                                    Text(container.t("git.emptyChanges"), color = colors.textMuted, fontSize = 11.sp)
+                                } else {
+                                    LazyColumn(Modifier.weight(1f)) {
+                                        items(status.changes, key = { "${it.status}-${it.path}" }) { change ->
+                                            val selectedRow = change.path == selected
+                                            Row(
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .clip(RoundedCornerShape(5.dp))
+                                                    .then(
+                                                        if (selectedRow) Modifier.background(colors.control) else Modifier
+                                                    )
+                                                    .mooFocusClickable {
+                                                        selected = change.path
+                                                        loadFileDiffs(path = change.path)
+                                                    }
+                                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    change.status,
+                                                    color = colors.accent,
+                                                    fontSize = 10.sp,
+                                                    fontFamily = FontFamily.Monospace
+                                                )
+                                                Text(
+                                                    change.path,
+                                                    color = if (change.conflict) colors.danger else colors.textBody,
+                                                    fontSize = 11.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                if (change.conflict) {
+                                                    Text(container.t("git.conflict"), color = colors.danger, fontSize = 10.sp)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                val selectedChange = status.changes.find { it.path == selected }
+                                if (selectedChange != null && status.repository) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        MooButton(
+                                            container.t("git.discard"),
+                                            danger = true,
+                                            p5Toolbar = true,
+                                            enabled = !busy,
+                                            onClick = { confirmDiscardPath = selectedChange.path }
+                                        )
+                                        if (selectedChange.conflict) {
+                                            MooButton(container.t("git.ours"), p5Toolbar = true, enabled = !busy, onClick = {
+                                                runAction(
+                                                    workingTree = GitVaultFlushAction.ResolveConflict,
+                                                    afterSuccess = { clearDiffSelection() }
+                                                ) { GitEngine.resolveConflict(root, selectedChange.path, "ours") }
+                                            })
+                                            MooButton(container.t("git.theirs"), p5Toolbar = true, enabled = !busy, onClick = {
+                                                runAction(
+                                                    workingTree = GitVaultFlushAction.ResolveConflict,
+                                                    afterSuccess = { clearDiffSelection() }
+                                                ) { GitEngine.resolveConflict(root, selectedChange.path, "theirs") }
+                                            })
+                                        }
+                                    }
+                                }
+                                if (status.repository) {
+                                    Row(
+                                        Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
                                         Text(
-                                            "${change.status} ${change.path}" + if (change.conflict) " · ${container.t("git.conflict")}" else "",
-                                            color = if (change.path == selected) colors.accent else if (change.conflict) colors.danger else colors.textPrimary,
-                                            fontSize = 12.sp,
-                                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).clickable {
-                                                selected = change.path
-                                                loadFileDiffs(path = change.path)
-                                            }.padding(6.dp)
+                                            container.t("git.commitMessage"),
+                                            color = colors.textMuted,
+                                            fontSize = 11.sp,
+                                            modifier = Modifier.width(64.dp)
+                                        )
+                                        MooTextField(
+                                            message,
+                                            { message = it },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        MooButton(
+                                            container.t("git.commit"),
+                                            prominent = true,
+                                            p5Toolbar = true,
+                                            enabled = !busy && status.changes.isNotEmpty() && !status.merging && status.conflicts == 0 && message.trim().isNotEmpty(),
+                                            onClick = {
+                                                runAction(
+                                                    workingTree = GitVaultFlushAction.Commit,
+                                                    afterSuccess = { onVaultRefresh() },
+                                                ) { GitEngine.commit(root, message, identity()) }
+                                            }
                                         )
                                     }
                                 }
-                            }
-                            if (status.repository) {
-                                MooTextField(message, { message = it }, placeholder = container.t("git.commitMessage"), modifier = Modifier.fillMaxWidth())
-                                MooButton(
-                                    container.t("git.commit"),
-                                    primary = true,
-                                    enabled = !busy && status.changes.isNotEmpty() && !status.merging && status.conflicts == 0 && message.trim().isNotEmpty(),
-                                    onClick = { runAction { GitEngine.commit(root, message, identity()) } }
-                                )
-                                val selectedChange = status.changes.find { it.path == selected }
-                                if (selectedChange != null) {
-                                    MooButton(
-                                        container.t("git.discard") + " " + selectedChange.path,
-                                        enabled = !busy,
-                                        onClick = { runAction { GitEngine.discard(root, selectedChange.path) } }
-                                    )
-                                }
-                                if (selectedChange?.conflict == true) {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        MooButton(container.t("git.ours"), enabled = !busy, onClick = {
-                                            runAction { GitEngine.resolveConflict(root, selectedChange.path, "ours") }
-                                        })
-                                        MooButton(container.t("git.theirs"), enabled = !busy, onClick = {
-                                            runAction { GitEngine.resolveConflict(root, selectedChange.path, "theirs") }
-                                        })
-                                    }
-                                }
-                            }
-                        } else {
-                            if (history.isEmpty()) {
-                                Text(container.t("git.emptyHistory"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.weight(1f))
                             } else {
-                                LazyColumn(Modifier.weight(1f)) {
-                                    items(history, key = { it.hash }) { commit ->
-                                        Column(
-                                            Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).clickable {
-                                                selected = commit.hash
-                                                loadFileDiffs(commit = commit.hash)
-                                            }.padding(6.dp)
-                                        ) {
-                                            Text(
-                                                "${commit.shortHash}  ${commit.message}",
-                                                color = if (commit.hash == selected) colors.accent else colors.textPrimary,
-                                                fontSize = 12.sp
-                                            )
-                                            Text("${commit.author} · ${commit.date}", color = colors.textSecondary, fontSize = 11.sp)
+                                if (history.isEmpty()) {
+                                    Text(container.t("git.emptyHistory"), color = colors.textMuted, fontSize = 11.sp)
+                                } else {
+                                    LazyColumn(Modifier.weight(1f)) {
+                                        items(history, key = { it.hash }) { commit ->
+                                            Column(
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .clip(RoundedCornerShape(5.dp))
+                                                    .then(
+                                                        if (commit.hash == selected) Modifier.background(colors.control) else Modifier
+                                                    )
+                                                    .mooFocusClickable {
+                                                        selected = commit.hash
+                                                        loadFileDiffs(commit = commit.hash)
+                                                    }
+                                                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                                            ) {
+                                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                    Text(commit.shortHash, color = colors.accent, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+                                                    Text(
+                                                        commit.message,
+                                                        color = colors.textBody,
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        modifier = Modifier.weight(1f)
+                                                    )
+                                                }
+                                                Text("${commit.author} · ${commit.date}", color = colors.textMuted, fontSize = 10.sp)
+                                            }
                                         }
                                     }
                                 }
@@ -308,13 +538,48 @@ fun VaultGitDialog(
                         onSelectPath = { selectedDiffPath = it },
                         modifier = Modifier.weight(1f).fillMaxHeight()
                     )
-                    }
-            } else {
-                Spacer(Modifier.weight(1f))
+                }
             }
-            if (error.isNotBlank()) Text(error, color = colors.danger, fontSize = 12.sp)
-            else if (notice.isNotBlank()) Text(notice, color = colors.success, fontSize = 12.sp)
-            else if (busy) Text(container.t("git.busy"), color = colors.textSecondary, fontSize = 12.sp)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                MooButton(container.t("common.close"), p5Toolbar = true, onClick = onDismiss)
+            }
+        }
+    }
+}
+
+@Composable
+private fun GitPanelTabs(
+    changesLabel: String,
+    historyLabel: String,
+    tab: String,
+    onTab: (String) -> Unit,
+) {
+    val colors = MooTheme.colors
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(colors.toolbar)
+            .border(1.dp, colors.borderSoft)
+            .padding(5.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        listOf("changes" to changesLabel, "history" to historyLabel).forEach { (id, label) ->
+            val active = tab == id
+            Box(
+                Modifier
+                    .weight(1f)
+                    .height(30.dp)
+                    .clip(RoundedCornerShape(5.dp))
+                    .then(if (active) Modifier.background(colors.control) else Modifier)
+                    .mooFocusClickable { onTab(id) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    label,
+                    color = if (active) colors.textStrong else colors.textMuted,
+                    fontSize = 11.sp
+                )
+            }
         }
     }
 }
@@ -332,8 +597,15 @@ private fun GitFileDiffPane(
     val fileDiff = GitDiffSelection.selected(files, selectedPath)
     var fileMenuOpen by remember { mutableStateOf(false) }
     Column(
-        modifier.background(colors.surfaceSubtle, RoundedCornerShape(8.dp)).padding(8.dp)
+        modifier.background(colors.surfaceSubtle, RoundedCornerShape(8.dp)).padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
+        Text(
+            container.t("git.diff"),
+            color = colors.textStrong,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold
+        )
         if (fileDiff == null) {
             Text(container.t("git.diffEmpty"), color = colors.textSecondary, fontSize = 12.sp)
             return@Column
@@ -343,9 +615,9 @@ private fun GitFileDiffPane(
                 Text(container.t("git.diffFile"), color = colors.textSecondary, fontSize = 11.sp)
                 Box {
                     MooButton(GitDiffSelection.fileLabel(fileDiff), onClick = { fileMenuOpen = true })
-                    DropdownMenu(expanded = fileMenuOpen, onDismissRequest = { fileMenuOpen = false }) {
+                    MooMenu(expanded = fileMenuOpen, onDismissRequest = { fileMenuOpen = false }) {
                         files.forEach { item ->
-                            DropdownMenuItem(onClick = {
+                            MooMenuItem(onClick = {
                                 fileMenuOpen = false
                                 onSelectPath(item.path)
                             }) {

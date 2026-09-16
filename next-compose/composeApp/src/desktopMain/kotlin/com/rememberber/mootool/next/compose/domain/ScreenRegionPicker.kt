@@ -20,6 +20,16 @@ import javax.swing.JWindow
 import javax.swing.SwingUtilities
 
 object ScreenRegionPicker {
+    @Volatile
+    private var dismissActivePicker: (() -> Unit)? = null
+
+    /** 离开工具页或取消流程时关闭区域截图层，避免遮罩跨页残留。 */
+    fun dismissActive() {
+        val dismiss = dismissActivePicker
+        dismissActivePicker = null
+        dismiss?.invoke()
+    }
+
     fun show(
         capture: ScreenCapture,
         hint: String,
@@ -39,10 +49,13 @@ object ScreenRegionPicker {
         fun closeAnd(action: () -> Unit) {
             if (closed) return
             closed = true
+            dismissActivePicker = null
             KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(dispatcher)
             overlays.forEach { it.dispose() }
             action()
         }
+
+        dismissActivePicker = { closeAnd(onCancel) }
 
         fun rect(): ImageCropRect? {
             val from = start ?: return null

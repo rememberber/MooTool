@@ -1,8 +1,10 @@
 package com.rememberber.mootool.next.compose.features.translation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -13,16 +15,17 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -33,10 +36,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.HttpProxyConfig
 import com.rememberber.mootool.next.compose.domain.TranslationEngine
@@ -49,19 +53,32 @@ import com.rememberber.mootool.next.compose.sessions.TranslationSession
 import com.rememberber.mootool.next.compose.storage.TranslationHistoryItem
 import com.rememberber.mootool.next.compose.storage.TranslationWord
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooCompactSearch
+import com.rememberber.mootool.next.compose.ui.components.MooMenu
+import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
+import com.rememberber.mootool.next.compose.ui.components.MooToolTab
+import com.rememberber.mootool.next.compose.ui.components.MooToolTabsRow
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.MooOverlay
+import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
+import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.OnToolLeaveUnlessDetached
+import com.rememberber.mootool.next.compose.ui.workbench.applyUserEditClearingStatusNotice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -70,7 +87,9 @@ import java.util.UUID
 @Composable
 fun TranslationScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.translationSession() }
+    DismissModalOverlaysOnDispose(container, ToolId.Translation) { session.dismissModalOverlays() }
     val revision by container.sessionManager.revision.collectAsState()
+    val sessionGeneration by container.sessionManager.sessionGeneration.collectAsState()
     val settings by container.settings.collectAsState()
     val colors = MooTheme.colors
     val scope = rememberCoroutineScope()
@@ -162,6 +181,11 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
         persist()
     }
 
+    OnToolLeaveUnlessDetached(container, ToolId.Translation) {
+        session.sequence += 1
+        cancelActive()
+    }
+
     LaunchedEffect(session.source, session.autoEnabled, sourceLang, targetLang, provider) {
         val seq = ++session.sequence
         val previous = session.requestId
@@ -188,16 +212,25 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
     LaunchedEffect(session.historyQuery, session.tab, revision) {
         if (session.tab == TranslationTab.History) reloadHistory()
     }
+    LaunchedEffect(settings.data.directory, sessionGeneration) {
+        reloadWords()
+        reloadHistory()
+        if (session.selectedWordId.isNotBlank()) {
+            val ids = container.translations.listWords(session.wordQuery).map { it.id }
+            if (session.selectedWordId !in ids) session.selectedWordId = ""
+        }
+        persist()
+    }
 
     BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
         val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
         Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("translation.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("translation.title"))
             if (revision < 0) Spacer(Modifier.width(0.dp))
             Spacer(Modifier.weight(1f))
             if (session.error.isNotEmpty()) Text(session.error, color = colors.danger, fontSize = 12.sp)
@@ -210,17 +243,22 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
                 }
             )
         }
-        Row(
-            modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxSize()
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .mooToolShell(p5 = true, endBorder = false)
         ) {
+        MooToolTabsRow {
             TranslationTab.entries.forEach { tab ->
-                MooButton(container.t(tabKey(tab)), primary = session.tab == tab, onClick = {
+                MooToolTab(container.t(tabKey(tab)), selected = session.tab == tab, onClick = {
                     session.tab = tab
                     persist()
                 })
             }
         }
+        Box(Modifier.weight(1f).fillMaxWidth()) {
         when (session.tab) {
             TranslationTab.Translate -> TranslatePane(
                 container = container,
@@ -251,7 +289,9 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
                 },
                 onSource = { value ->
                     prepareForRetranslation()
-                    session.source = value.take(TranslationEngine.MAX_TEXT_UNITS)
+                    applyUserEditClearingStatusNotice({ session.notice }, { session.notice = it }) {
+                        session.source = value.take(TranslationEngine.MAX_TEXT_UNITS)
+                    }
                     persist()
                 },
                 onExchange = {
@@ -269,8 +309,11 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
                 },
                 onCopy = {
                     if (session.target.isNotEmpty()) {
-                        Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(session.target), null)
-                        session.notice = container.t("common.copied")
+                        if (container.copyText(session.target)) {
+                            session.notice = container.t("common.copied")
+                        } else {
+                            session.notice = container.t("json.notice.copyFailed")
+                        }
                         persist()
                     }
                 },
@@ -279,6 +322,7 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
                     runCatching {
                         container.translations.saveWord(null, session.source, session.target, sourceLang, targetLang, "")
                         session.notice = container.t("translation.savedWord")
+                        container.toastSuccess(container.t("translation.savedWord"))
                     }.onFailure { session.error = it.message ?: container.t("translation.error.generic") }
                     persist()
                 },
@@ -360,9 +404,13 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
                 }
             )
         }
+        }
+        }
     }
     }
 }
+
+private const val TRANSLATION_EDITOR_PANE_KEY = "translation-editor"
 
 @Composable
 private fun TranslatePane(
@@ -383,32 +431,60 @@ private fun TranslatePane(
     onManual: () -> Unit,
     onChanged: () -> Unit
 ) {
+    val settings by container.settings.collectAsState()
     val colors = MooTheme.colors
     var providerOpen by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            MooButton(container.t("translation.lang.$sourceLang"), onClick = { session.languagePicker = "source"; onChanged() })
-            MooButton(container.t("translation.exchange"), onClick = onExchange)
-            MooButton(container.t("translation.lang.$targetLang"), onClick = { session.languagePicker = "target"; onChanged() })
+    Column(Modifier.fillMaxSize()) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 46.dp).mooToolbarBackground()
+                .padding(horizontal = 10.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            Text(container.t("translation.sourceLanguage"), color = colors.textMuted, fontSize = 10.sp)
+            MooButton(
+                container.t("translation.lang.$sourceLang"),
+                onClick = { session.languagePicker = "source"; onChanged() },
+                modifier = Modifier.widthIn(min = 130.dp),
+                p5Toolbar = true
+            )
+            MooButton(container.t("translation.exchange"), onClick = onExchange, p5Toolbar = true)
+            Text(container.t("translation.targetLanguage"), color = colors.textMuted, fontSize = 10.sp)
+            MooButton(
+                container.t("translation.lang.$targetLang"),
+                onClick = { session.languagePicker = "target"; onChanged() },
+                modifier = Modifier.widthIn(min = 130.dp),
+                p5Toolbar = true
+            )
             Spacer(Modifier.weight(1f))
             Box {
-                MooButton(if (provider == TranslationProvider.Bing) "Bing" else "Google", onClick = { providerOpen = true })
-                DropdownMenu(expanded = providerOpen, onDismissRequest = { providerOpen = false }) {
-                    DropdownMenuItem(onClick = {
+                MooButton(
+                    if (provider == TranslationProvider.Bing) "Bing" else "Google",
+                    onClick = { providerOpen = true },
+                    modifier = Modifier.widthIn(min = 130.dp),
+                    p5Toolbar = true
+                )
+                MooMenu(expanded = providerOpen, onDismissRequest = { providerOpen = false }) {
+                    MooMenuItem(onClick = {
                         providerOpen = false
                         onProvider(TranslationProvider.Google)
                     }) { Text("Google") }
-                    DropdownMenuItem(onClick = {
+                    MooMenuItem(onClick = {
                         providerOpen = false
                         onProvider(TranslationProvider.Bing)
                     }) { Text("Bing") }
                 }
             }
-            MooButton(container.t("translation.auto"), primary = session.autoEnabled, onClick = {
-                session.autoEnabled = !session.autoEnabled
-                onChanged()
-            })
-            MooButton(container.t("translation.now"), primary = true, onClick = onManual)
+            MooButton(
+                container.t("translation.auto"),
+                primary = session.autoEnabled,
+                onClick = {
+                    session.autoEnabled = !session.autoEnabled
+                    onChanged()
+                },
+                p5Toolbar = true
+            )
+            MooButton(container.t("translation.now"), prominent = true, onClick = onManual, p5Toolbar = true)
             OverflowActionCluster(
                 overflow = overflow,
                 moreLabel = container.t("json.action.overflow"),
@@ -419,26 +495,41 @@ private fun TranslatePane(
                 )
             )
         }
-        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
+        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+            val minPane = 280f
+            val paneHandle = 10f
+            val maxSource = (maxWidth.value - paneHandle - minPane).coerceAtLeast(minPane)
+            val defaultSource = (maxWidth.value * 0.5f).coerceIn(minPane, maxSource)
+            val sourceWidth = settings.layout.pane(TRANSLATION_EDITOR_PANE_KEY, 0, defaultSource, minPane, maxSource)
+            Row(Modifier.fillMaxSize()) {
             MooTextField(
                 session.source,
                 onSource,
-                modifier = Modifier.weight(1f).fillMaxHeight(),
+                modifier = Modifier.width(sourceWidth.dp).widthIn(min = 280.dp).fillMaxHeight(),
                 placeholder = container.t("translation.sourcePlaceholder"),
-                singleLine = false
+                singleLine = false,
+                borderless = true
             )
-            Column(Modifier.weight(1f).fillMaxHeight()) {
+            VerticalPaneHandle(
+                onDelta = { container.setPaneSize(TRANSLATION_EDITOR_PANE_KEY, 0, sourceWidth + it, 1) },
+                onReset = { container.setPaneSize(TRANSLATION_EDITOR_PANE_KEY, 0, defaultSource, 1) }
+            )
+            Column(Modifier.weight(1f).widthIn(min = 280.dp).fillMaxHeight()) {
                 SelectionContainer(Modifier.weight(1f).fillMaxWidth()) {
                     MooTextField(
                         if (session.translating) container.t("translation.translating") else session.target,
                         {},
                         modifier = Modifier.fillMaxSize(),
                         placeholder = container.t("translation.targetPlaceholder"),
-                        singleLine = false
+                        singleLine = false,
+                        borderless = true
                     )
                 }
+                Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
                 Row(
-                    Modifier.fillMaxWidth().padding(top = 6.dp),
+                    Modifier.fillMaxWidth().height(34.dp).mooToolbarBackground().padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     val providerLabel = when (session.providerUsed) {
@@ -448,19 +539,20 @@ private fun TranslatePane(
                     }
                     Text(
                         if (providerLabel.isEmpty()) "" else providerLabel + if (session.fallbackUsed) " · ${container.t("translation.fallback")}" else "",
-                        color = colors.textSecondary,
-                        fontSize = 12.sp
+                        color = colors.textMuted,
+                        fontSize = 10.sp
                     )
-                    Text("${session.source.length} / ${TranslationEngine.MAX_TEXT_UNITS}", color = colors.textSecondary, fontSize = 12.sp)
+                    Text("${session.source.length} / ${TranslationEngine.MAX_TEXT_UNITS}", color = colors.textMuted, fontSize = 10.sp)
                 }
+            }
             }
         }
     }
     if (session.languagePicker.isNotEmpty()) {
         val forSource = session.languagePicker == "source"
-        Dialog(onDismissRequest = { session.languagePicker = ""; onChanged() }) {
+        MooOverlay(onDismiss = { session.languagePicker = ""; onChanged() }) {
             Column(
-                Modifier.width(360.dp).height(420.dp).background(colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+                Modifier.width(360.dp).height(420.dp).mooDialogSurface().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
@@ -474,7 +566,7 @@ private fun TranslatePane(
                             color = colors.textPrimary,
                             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp))
                                 .background(if (code == if (forSource) sourceLang else targetLang) colors.selected else colors.workspace)
-                                .clickable {
+                                .mooFocusClickable(shape = RoundedCornerShape(6.dp)) {
                                     if (forSource) onSourceLang(code) else onTargetLang(code)
                                     session.languagePicker = ""
                                     onChanged()
@@ -500,21 +592,26 @@ private fun WordBookPane(
 ) {
     val colors = MooTheme.colors
     Row(Modifier.fillMaxSize()) {
-        val listWidth = container.settings.value.layout.pane(ToolId.Translation.id, 0, 240f, 200f, 320f)
+        val listWidth = container.settings.value.layout.pane(ToolId.Translation.id, 0, 220f, 180f, 320f)
         Column(
-            Modifier.width(listWidth.dp).fillMaxHeight().background(colors.sidebar).padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            Modifier.width(listWidth.dp).fillMaxHeight().background(colors.surfaceSubtle).padding(7.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            MooTextField(session.wordQuery, { session.wordQuery = it; onReload() }, placeholder = container.t("translation.searchWords"))
+            MooCompactSearch(session.wordQuery, { session.wordQuery = it; onReload() }, placeholder = container.t("translation.searchWords"))
             if (words.isEmpty()) {
                 Text(container.t("translation.wordEmpty"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.weight(1f))
             } else {
                 LazyColumn(Modifier.weight(1f)) {
                     items(words, key = { it.id }) { word ->
+                        val interaction = remember(word.id) { MutableInteractionSource() }
+                        val hovered by interaction.collectIsHoveredAsState()
+                        val active = word.id == session.selectedWordId
+                        val shape = RoundedCornerShape(5.dp)
                         Column(
-                            Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp))
-                                .background(if (word.id == session.selectedWordId) colors.selected else colors.sidebar)
-                                .clickable {
+                            Modifier.fillMaxWidth().clip(shape)
+                                .background(if (active || hovered) colors.control else Color.Transparent)
+                                .hoverable(interaction)
+                                .mooFocusClickable(shape = shape) {
                                     session.selectedWordId = word.id
                                     session.wordSource = word.sourceText
                                     session.wordTarget = word.targetText
@@ -525,13 +622,17 @@ private fun WordBookPane(
                                 }
                                 .padding(8.dp)
                         ) {
-                            Text(word.sourceText.ifBlank { "—" }, color = colors.textPrimary, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(word.targetText, color = colors.textSecondary, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            Text(word.sourceText.ifBlank { "—" }, color = colors.textBody, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(word.targetText, color = colors.textMuted, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                Modifier.fillMaxWidth().padding(top = 5.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 MooButton(container.t("common.new"), onClick = {
                     session.selectedWordId = ""
                     session.wordSource = ""
@@ -550,22 +651,28 @@ private fun WordBookPane(
         }
         VerticalPaneHandle(
             onDelta = { container.setPaneSize(ToolId.Translation.id, 0, listWidth + it, 1) },
-            onReset = { container.setPaneSize(ToolId.Translation.id, 0, 240f, 1) }
+            onReset = { container.setPaneSize(ToolId.Translation.id, 0, 220f, 1) }
         )
         Column(
-            Modifier.weight(1f).fillMaxSize().padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            Modifier.weight(1f).fillMaxSize().padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
-            Text(
-                "${container.t("translation.lang.${session.wordSourceLang}")} → ${container.t("translation.lang.${session.wordTargetLang}")}",
-                color = colors.textSecondary,
-                fontSize = 12.sp
-            )
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    val current = words.firstOrNull { it.id == session.selectedWordId }
+            Row(
+                Modifier.fillMaxWidth().height(42.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "${container.t("translation.lang.${session.wordSourceLang}")} → ${container.t("translation.lang.${session.wordTargetLang}")}",
+                    color = colors.textMuted,
+                    fontSize = 11.sp
+                )
+                val current = words.firstOrNull { it.id == session.selectedWordId }
+                Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     MooButton(container.t("translation.apply"), enabled = current != null, onClick = { current?.let(onApply) })
                     MooButton(container.t("translation.retranslate"), enabled = current != null && current.sourceText.isNotBlank(), onClick = { current?.let(onRetranslate) })
                 }
+            }
                 MooTextField(
                     session.wordSource,
                     { session.wordSource = it; onReload() },
@@ -580,8 +687,8 @@ private fun WordBookPane(
                     placeholder = container.t("translation.targetPlaceholder"),
                     singleLine = false
                 )
-                MooTextField(session.wordRemark, { session.wordRemark = it; onReload() }, placeholder = container.t("translation.remark"))
-                MooButton(container.t("common.save"), primary = true, onClick = {
+                MooTextField(session.wordRemark, { session.wordRemark = it; onReload() }, placeholder = container.t("translation.remark"), dense = true)
+                MooButton(container.t("common.save"), prominent = true, onClick = {
                     runCatching {
                         val saved = container.translations.saveWord(
                             session.selectedWordId.ifBlank { null },
@@ -593,20 +700,21 @@ private fun WordBookPane(
                         )
                         session.selectedWordId = saved.id
                         session.notice = container.t("common.save")
+                        container.toastSuccess(container.t("common.save"))
                     }.onFailure { session.error = it.message ?: container.t("translation.error.generic") }
                     onReload()
-                })
+                }, modifier = Modifier.align(Alignment.End))
         }
     }
     if (session.deleteWordConfirm) {
-        Dialog(onDismissRequest = { session.deleteWordConfirm = false; onReload() }) {
+        MooOverlay(onDismiss = { session.deleteWordConfirm = false; onReload() }) {
             Column(
-                Modifier.width(420.dp).background(colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+                Modifier.width(420.dp).mooDialogSurface().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(container.t("translation.confirmDeleteWord"), color = colors.textPrimary)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MooButton(container.t("common.delete"), primary = true, onClick = {
+                    MooButton(container.t("common.delete"), danger = true, onClick = {
                         if (session.selectedWordId.isNotBlank()) container.translations.deleteWord(session.selectedWordId)
                         session.selectedWordId = ""
                         session.wordSource = ""
@@ -632,9 +740,9 @@ private fun HistoryPane(
 ) {
     val colors = MooTheme.colors
     val stamp = remember { DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault()) }
-    Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.fillMaxSize().padding(10.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MooTextField(
+            MooCompactSearch(
                 session.historyQuery,
                 { session.historyQuery = it; onReload() },
                 modifier = Modifier.weight(1f),
@@ -647,23 +755,34 @@ private fun HistoryPane(
             )
         }
         if (items.isEmpty()) {
-            Text(container.t("translation.historyEmpty"), color = colors.textSecondary, fontSize = 12.sp)
+            Text(container.t("translation.historyEmpty"), color = colors.textMuted, fontSize = 11.sp)
         } else {
-            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 items(items, key = { it.id }) { item ->
                     Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).border(1.dp, colors.border, RoundedCornerShape(8.dp)).padding(10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(5.dp)).padding(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.Top
                     ) {
-                        Column(Modifier.weight(1f).clickable { onApply(item) }) {
-                            Text(
-                                "${container.t("translation.lang.${item.sourceLang}")} → ${container.t("translation.lang.${item.targetLang}")}",
-                                color = colors.textPrimary,
-                                fontSize = 12.sp
-                            )
-                            Text("${item.translatorType} · ${stamp.format(Instant.ofEpochMilli(item.createdAt))}", color = colors.textSecondary, fontSize = 11.sp)
-                            Text(item.sourceText, color = colors.textPrimary, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                            Text(item.targetText, color = colors.textSecondary, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Column(Modifier.weight(1f).mooFocusClickable { onApply(item) }, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(
+                                    "${container.t("translation.lang.${item.sourceLang}")} → ${container.t("translation.lang.${item.targetLang}")}",
+                                    color = colors.textBody,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(
+                                    stamp.format(Instant.ofEpochMilli(item.createdAt)),
+                                    color = colors.textMuted,
+                                    fontSize = 9.sp
+                                )
+                            }
+                            Text(item.sourceText, color = colors.textMuted, fontSize = 11.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            Text(item.targetText, color = colors.textMuted, fontSize = 11.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         }
                         MooButton(container.t("common.delete"), onClick = {
                             container.translations.deleteHistory(item.id)
@@ -675,14 +794,14 @@ private fun HistoryPane(
         }
     }
     if (session.clearHistoryConfirm) {
-        Dialog(onDismissRequest = { session.clearHistoryConfirm = false; onReload() }) {
+        MooOverlay(onDismiss = { session.clearHistoryConfirm = false; onReload() }) {
             Column(
-                Modifier.width(420.dp).background(colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+                Modifier.width(420.dp).mooDialogSurface().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(container.t("translation.confirmClearHistory"), color = colors.textPrimary)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MooButton(container.t("translation.clearHistory"), primary = true, onClick = {
+                    MooButton(container.t("translation.clearHistory"), prominent = true, onClick = {
                         container.translations.clearHistory()
                         session.clearHistoryConfirm = false
                         onReload()

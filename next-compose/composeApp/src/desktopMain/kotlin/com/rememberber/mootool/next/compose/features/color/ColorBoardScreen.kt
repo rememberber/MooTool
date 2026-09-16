@@ -3,7 +3,10 @@ package com.rememberber.mootool.next.compose.features.color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -14,16 +17,16 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,15 +39,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.ColorEngine
 import com.rememberber.mootool.next.compose.domain.ColorException
@@ -63,26 +71,47 @@ import com.rememberber.mootool.next.compose.storage.ColorFavoriteFolder
 import com.rememberber.mootool.next.compose.storage.ColorFavoriteItem
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooMenu
+import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
+import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
+import com.rememberber.mootool.next.compose.ui.components.MooOverlay
+import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.CopyFeedbackPolicy
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.onUserInput
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.withContext
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
 import javax.swing.JColorChooser
 import java.awt.Color as AwtColor
 
 @Composable
 fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.colorSession() }
+    var screenPickJob by remember { mutableStateOf<Job?>(null) }
+    DismissModalOverlaysOnDispose(container, ToolId.ColorBoard) {
+        screenPickJob?.cancel()
+        screenPickJob = null
+        session.dismissModalOverlays()
+    }
     val revision by container.sessionManager.revision.collectAsState()
+    val sessionGeneration by container.sessionManager.sessionGeneration.collectAsState()
+    val settings by container.settings.collectAsState()
     var folders by remember { mutableStateOf(emptyList<ColorFavoriteFolder>()) }
     var favoriteItems by remember { mutableStateOf(emptyList<ColorFavoriteItem>()) }
     val colors = MooTheme.colors
@@ -139,17 +168,35 @@ fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
             favoriteItems = container.colorFavorites.items(session.favoriteFolderId)
         }
     }
+    LaunchedEffect(settings.data.directory, sessionGeneration) {
+        if (session.favoritesOpen || session.saveFavoriteOpen) {
+            val defaultFolder = container.colorFavorites.ensureDefaultFolder(container.t("color.theme.default"))
+            folders = container.colorFavorites.folders()
+            if (session.favoriteFolderId.isBlank() || folders.none { it.id == session.favoriteFolderId }) {
+                session.favoriteFolderId = defaultFolder.id
+            }
+            favoriteItems = container.colorFavorites.items(session.favoriteFolderId)
+        }
+        refresh()
+    }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
-    val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+    val contentMaxWidth = maxWidth.value
+    val overflow = LayoutPolicy.overflowToolbar(contentMaxWidth)
+    val minLeft = 240f
+    val minRight = 420f
+    val paneHandle = 10f
+    val maxLeft = (contentMaxWidth - paneHandle - minRight).coerceAtLeast(minLeft)
+    val defaultLeft = (contentMaxWidth * 0.34f).coerceIn(minLeft, maxLeft)
+    val leftWidth = settings.layout.pane(ToolId.ColorBoard.id, 0, defaultLeft, minLeft, maxLeft)
     var moreOpen by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(colors.workspace)) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("color.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("color.title"))
             Spacer(Modifier.weight(1f))
             OverflowActionCluster(
                 overflow = overflow,
@@ -169,11 +216,15 @@ fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
             MooButton(
                 if (session.picking) container.t("common.processing") else container.t("color.picker"),
                 enabled = !session.picking,
-                onClick = { pickScreen(container, session, scope, ::refresh) }
+                p5Toolbar = true,
+                onClick = {
+                    screenPickJob?.cancel()
+                    screenPickJob = pickScreen(container, session, scope, ::refresh)
+                }
             )
-            MooButton(container.t("color.freePick"), onClick = { pickFree(container, session, scope, ::refresh) })
+            MooButton(container.t("color.freePick"), onClick = { pickFree(container, session, scope, ::refresh) }, p5Toolbar = true)
             ColorFormat.entries.forEach { format ->
-                MooButton(formatLabel(format), primary = session.format == format, onClick = {
+                MooButton(formatLabel(format), primary = session.format == format, p5Toolbar = true, onClick = {
                     session.format = format
                     session.code = ColorEngine.formatColor(session.primary, format)
                     refresh()
@@ -181,45 +232,59 @@ fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
             }
             MooTextField(
                 session.code,
-                { session.code = it; session.error = ""; refresh() },
-                modifier = Modifier.width(160.dp),
-                placeholder = container.t("color.code")
+                {
+                    session.onUserInput { session.code = it; session.error = "" }
+                    refresh()
+                },
+                modifier = Modifier.width(136.dp),
+                placeholder = container.t("color.code"),
+                compact = true
             )
-            MooButton(container.t("color.apply"), onClick = { applyCode(container, session, ::refresh) })
+            MooButton(container.t("color.apply"), onClick = { applyCode(container, session, ::refresh) }, p5Toolbar = true)
             if (!overflow) {
                 MooButton(
                     container.t(CopyFeedbackPolicy.buttonKey(session.copyState, "common.action.copy")),
-                    onClick = { copyCode() }
+                    onClick = { copyCode() },
+                    p5Toolbar = true
                 )
-                MooButton(container.t("color.favorite"), onClick = { openFavorite() })
-                MooButton(container.t("color.favorites"), onClick = { openFavorites() })
-                MooButton(container.t("common.action.history"), onClick = { openHistory() })
+                MooButton(container.t("color.favorite"), onClick = { openFavorite() }, p5Toolbar = true)
+                MooButton(container.t("color.favorites"), onClick = { openFavorites() }, p5Toolbar = true)
+                MooButton(container.t("common.action.history"), onClick = { openHistory() }, p5Toolbar = true)
             } else {
                 Box {
-                    MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true })
-                    DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
-                        DropdownMenuItem(onClick = { moreOpen = false; copyCode() }) {
+                    MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true }, p5Toolbar = true)
+                    MooMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
+                        MooMenuItem(onClick = { moreOpen = false; copyCode() }) {
                             Text(container.t(CopyFeedbackPolicy.buttonKey(session.copyState, "common.action.copy")))
                         }
-                        DropdownMenuItem(onClick = { moreOpen = false; openFavorite() }) {
+                        MooMenuItem(onClick = { moreOpen = false; openFavorite() }) {
                             Text(container.t("color.favorite"))
                         }
-                        DropdownMenuItem(onClick = { moreOpen = false; openFavorites() }) {
+                        MooMenuItem(onClick = { moreOpen = false; openFavorites() }) {
                             Text(container.t("color.favorites"))
                         }
-                        DropdownMenuItem(onClick = { moreOpen = false; openHistory() }) {
+                        MooMenuItem(onClick = { moreOpen = false; openHistory() }) {
                             Text(container.t("common.action.history"))
                         }
                     }
                 }
             }
         }
-        Row(Modifier.weight(1f).fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            CurrentPanel(container, session, Modifier.width(280.dp).fillMaxHeight(), ::refresh)
-            PalettePanel(container, session, Modifier.weight(1f).fillMaxHeight(), ::refresh)
+        Row(Modifier.weight(1f).fillMaxWidth()) {
+            CurrentPanel(
+                container,
+                session,
+                Modifier.width(leftWidth.dp).widthIn(min = 240.dp).fillMaxHeight().padding(16.dp),
+                ::refresh
+            )
+            VerticalPaneHandle(
+                onDelta = { container.setPaneSize(ToolId.ColorBoard.id, 0, leftWidth + it, 1) },
+                onReset = { container.setPaneSize(ToolId.ColorBoard.id, 0, defaultLeft, 1) }
+            )
+            PalettePanel(container, session, Modifier.weight(1f).widthIn(min = 420.dp).fillMaxHeight().padding(16.dp), ::refresh)
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).mooStatusBarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -270,28 +335,31 @@ private fun CurrentPanel(
     val text = ColorEngine.bestTextColor(session.primary)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Box(
-            Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(8.dp)).background(session.primary.toCompose()),
-            contentAlignment = Alignment.Center
+            Modifier.fillMaxWidth().heightIn(min = 190.dp).clip(RoundedCornerShape(8.dp))
+                .border(1.dp, ColorEngine.parseColor(text).toCompose().copy(alpha = 0.16f), RoundedCornerShape(8.dp))
+                .background(session.primary.toCompose())
+                .padding(18.dp),
+            contentAlignment = Alignment.BottomStart
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(container.t("color.current"), color = ColorEngine.parseColor(text).toCompose(), fontSize = 12.sp)
-                Text(session.primaryHex, color = ColorEngine.parseColor(text).toCompose(), fontSize = 22.sp)
-                Text(ColorEngine.formatColor(session.primary, ColorFormat.RGB), color = ColorEngine.parseColor(text).toCompose(), fontSize = 12.sp)
+            Column {
+                Text(container.t("color.current"), color = ColorEngine.parseColor(text).toCompose(), fontSize = 11.sp)
+                Text(session.primaryHex, color = ColorEngine.parseColor(text).toCompose(), fontSize = 22.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical = 4.dp))
+                Text(ColorEngine.formatColor(session.primary, ColorFormat.RGB), color = ColorEngine.parseColor(text).toCompose(), fontSize = 11.sp)
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(container.t("color.compare"), color = colors.textSecondary, fontSize = 12.sp)
+            Text(container.t("color.compare"), color = colors.textMuted, fontSize = 11.sp)
             Box(
                 Modifier.size(36.dp).clip(RoundedCornerShape(6.dp)).border(1.dp, colors.border, RoundedCornerShape(6.dp))
                     .background(session.secondary.toCompose())
-                    .clickable { pickFreeSecondary(container, session, onChanged) }
+                    .mooFocusClickable { pickFreeSecondary(container, session, onChanged) }
             )
             Text(session.secondaryHex, color = colors.textPrimary, fontSize = 13.sp)
-            MooButton(container.t("color.operation.swap"), onClick = { swapColors(container, session, onChanged) })
+            MooButton(container.t("color.operation.swap"), onClick = { swapColors(container, session, onChanged) }, p5Toolbar = true)
         }
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             ColorOperation.entries.forEach { operation ->
-                MooButton(container.t(operationKey(operation)), onClick = {
+                MooButton(container.t(operationKey(operation)), p5Toolbar = true, onClick = {
                     runOperation(container, session, operation, onChanged)
                 })
             }
@@ -318,7 +386,7 @@ private fun PalettePanel(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             ColorThemeId.entries.forEach { id ->
-                MooButton(container.t(themeKey(id)), primary = session.theme == id, onClick = {
+                MooButton(container.t(themeKey(id)), primary = session.theme == id, p5Toolbar = true, onClick = {
                     session.theme = id
                     onChanged()
                 })
@@ -351,10 +419,28 @@ private fun PalettePanel(
 @Composable
 private fun ColorChip(hex: String, size: androidx.compose.ui.unit.Dp, onSelect: (Boolean) -> Unit) {
     val rgb = runCatching { ColorEngine.parseColor(hex) }.getOrNull()
+    val colors = MooTheme.colors
+    val interaction = remember(hex) { MutableInteractionSource() }
+    val hovered by interaction.collectIsHoveredAsState()
+    val chipShape = RoundedCornerShape(4.dp)
     Box(
         Modifier.size(size)
-            .clip(RoundedCornerShape(4.dp))
-            .border(1.dp, MooTheme.colors.border, RoundedCornerShape(4.dp))
+            .hoverable(interaction)
+            .drawWithContent {
+                drawContent()
+                if (hovered) {
+                    val pad = 1.dp.toPx()
+                    drawRoundRect(
+                        color = colors.accent,
+                        topLeft = Offset(-pad, -pad),
+                        size = Size(this.size.width + pad * 2, this.size.height + pad * 2),
+                        cornerRadius = CornerRadius(5.dp.toPx(), 5.dp.toPx()),
+                        style = Stroke(width = 2.dp.toPx())
+                    )
+                }
+            }
+            .clip(chipShape)
+            .border(1.dp, colors.textStrong.copy(alpha = 0.12f), chipShape)
             .background(rgb?.toCompose() ?: Color.Transparent)
             .pointerHoverIcon(PointerIcon.Hand)
             .pointerInput(hex) {
@@ -378,9 +464,9 @@ private fun SaveColorFavoriteDialog(
     folders: List<ColorFavoriteFolder>,
     onChanged: () -> Unit
 ) {
-    Dialog(onDismissRequest = { session.saveFavoriteOpen = false; onChanged() }) {
+    MooOverlay(onDismiss = { session.saveFavoriteOpen = false; onChanged() }) {
         Column(
-            Modifier.width(440.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+            Modifier.width(440.dp).mooDialogSurface().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("color.favoriteDialog"), color = MooTheme.colors.textPrimary)
@@ -414,9 +500,10 @@ private fun SaveColorFavoriteDialog(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MooButton(container.t("common.cancel"), onClick = { session.saveFavoriteOpen = false; onChanged() })
-                MooButton(container.t("color.favorite"), primary = true, enabled = session.favoriteFolderId.isNotBlank(), onClick = {
+                MooButton(container.t("color.favorite"), prominent = true, enabled = session.favoriteFolderId.isNotBlank(), onClick = {
                     container.colorFavorites.addItem(session.favoriteFolderId, session.favoriteName, session.primaryHex)
                     session.notice = container.t("favorite.saved")
+                    container.toastSuccess(container.t("favorite.saved"))
                     session.error = ""
                     session.saveFavoriteOpen = false
                     onChanged()
@@ -439,9 +526,9 @@ private fun ColorFavoritesDialog(
         val needle = favoriteQuery.trim()
         needle.isEmpty() || it.name.contains(needle, ignoreCase = true) || it.value.contains(needle, ignoreCase = true)
     }
-    Dialog(onDismissRequest = { session.favoritesOpen = false; onChanged() }) {
+    MooOverlay(onDismiss = { session.favoritesOpen = false; onChanged() }) {
         Column(
-            Modifier.width(560.dp).height(460.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+            Modifier.width(560.dp).height(460.dp).mooDialogSurface().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("color.favorites"), color = MooTheme.colors.textPrimary)
@@ -480,7 +567,7 @@ private fun ColorFavoritesDialog(
                                 Modifier.size(22.dp).clip(RoundedCornerShape(4.dp))
                                     .background(runCatching { ColorEngine.parseColor(item.value).toCompose() }.getOrDefault(Color.Transparent))
                             )
-                            Column(Modifier.weight(1f).padding(horizontal = 8.dp).clickable {
+                            Column(Modifier.weight(1f).padding(horizontal = 8.dp).mooFocusClickable {
                                 selectHex(container, session, item.value, false, container.t("color.favorites"), onChanged)
                                 session.favoritesOpen = false
                                 onChanged()
@@ -491,6 +578,7 @@ private fun ColorFavoritesDialog(
                             MooButton(container.t("common.delete"), onClick = {
                                 container.colorFavorites.deleteItem(item.id)
                                 session.notice = container.t("favorite.deleted")
+                                container.toastSuccess(container.t("favorite.deleted"))
                                 onChanged()
                             })
                         }
@@ -507,15 +595,24 @@ private fun pickScreen(
     session: ColorSession,
     scope: kotlinx.coroutines.CoroutineScope,
     onChanged: () -> Unit
-) {
+): Job {
     session.picking = true
     session.error = ""
     session.notice = container.t("common.processing")
     onChanged()
     val copy = ScreenPickerCopy(container.t("color.pickerOverlayHint"), container.t("color.pickerOverlayKeys"))
-    scope.launch(Dispatchers.Default) {
+    return scope.launch(Dispatchers.Default) {
         val capture = runCatching { ScreenColorSampler.captureAllScreens() }
+        if (!isActive) {
+            session.picking = false
+            return@launch
+        }
         withContext(Dispatchers.Swing) {
+            if (!isActive) {
+                session.picking = false
+                onChanged()
+                return@withContext
+            }
             capture.onSuccess { image ->
                 ScreenColorPicker.show(
                     image,
@@ -717,10 +814,7 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
 
 private fun copyText(value: String, container: AppContainer): String {
     if (value.isEmpty()) return container.t("color.nothingToCopy")
-    return runCatching {
-        Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null)
-        container.t("json.notice.copied")
-    }.getOrElse { container.t("common.copyFailed") }
+    return if (container.copyText(value)) container.t("json.notice.copied") else container.t("common.copyFailed")
 }
 
 private fun formatLabel(format: ColorFormat): String = when (format) {

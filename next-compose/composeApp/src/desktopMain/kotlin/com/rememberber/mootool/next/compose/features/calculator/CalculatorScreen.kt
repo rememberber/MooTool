@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,8 +13,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -35,9 +38,10 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.CalculatorEngine
 import com.rememberber.mootool.next.compose.domain.CalculatorException
@@ -46,18 +50,27 @@ import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.CalculatorSession
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
+import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
+import com.rememberber.mootool.next.compose.ui.workbench.blockedByIme
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.applyUserEditClearingStatusNotice
 
 @Composable
 fun CalculatorScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.calculatorSession() }
+    DismissModalOverlaysOnDispose(container, ToolId.Calculator) { session.dismissModalOverlays() }
     val revision by container.sessionManager.revision.collectAsState()
+    val settings by container.settings.collectAsState()
     val colors = MooTheme.colors
 
     fun refresh() {
@@ -67,14 +80,21 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
 
 
     BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
-        val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+        val contentMaxWidth = maxWidth.value
+        val overflow = LayoutPolicy.overflowToolbar(contentMaxWidth)
+        val minLeft = 360f
+        val minRight = 320f
+        val paneHandle = 10f
+        val maxLeft = (contentMaxWidth - paneHandle - minRight).coerceAtLeast(minLeft)
+        val defaultLeft = (contentMaxWidth * 0.55f).coerceIn(minLeft, maxLeft)
+        val leftWidth = settings.layout.pane(ToolId.Calculator.id, 0, defaultLeft, minLeft, maxLeft)
         Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("calculator.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("calculator.title"))
             Spacer(Modifier.weight(1f))
             OverflowActionCluster(
                 overflow = overflow,
@@ -92,7 +112,7 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
         }
         Row(Modifier.weight(1f).fillMaxWidth()) {
             Column(
-                modifier = Modifier.weight(1.1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(16.dp),
+                modifier = Modifier.width(leftWidth.dp).widthIn(min = 360.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Panel(container.t("calculator.arithmetic")) {
@@ -100,7 +120,7 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.onPreviewKeyEvent { event ->
-                            if (event.type == KeyEventType.KeyDown && event.key == Key.Enter) {
+                            if (!event.blockedByIme() && event.type == KeyEventType.KeyDown && event.key == Key.Enter) {
                                 runCalc(container, session, container.t("calculator.expression"), session.expression) {
                                     CalculatorEngine.evaluateExpression(session.expression)
                                 }
@@ -111,11 +131,16 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                     ) {
                         MooTextField(
                             session.expression,
-                            { session.expression = it; refresh() },
+                            {
+                                applyUserEditClearingStatusNotice({ session.notice }, { session.notice = it }) {
+                                    session.expression = it
+                                }
+                                refresh()
+                            },
                             modifier = Modifier.weight(1f),
                             placeholder = container.t("calculator.expression")
                         )
-                        MooButton("=", primary = true, onClick = {
+                        MooButton("=", prominent = true, p5Toolbar = true, onClick = {
                             runCalc(container, session, container.t("calculator.expression"), session.expression) {
                                 CalculatorEngine.evaluateExpression(session.expression)
                             }
@@ -126,13 +151,13 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                 Panel(container.t("calculator.base")) {
                     LabeledField(container.t("calculator.hex"), session.hex) { session.hex = it; refresh() }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        MooButton("HEX → DEC", onClick = {
+                        MooButton("HEX → DEC", p5Toolbar = true, onClick = {
                             runCalc(container, session, "HEX → DEC", session.hex) {
                                 CalculatorEngine.convertBase(session.hex, 16, 10).also { session.decimal = it }
                             }
                             refresh()
                         })
-                        MooButton("DEC → HEX", onClick = {
+                        MooButton("DEC → HEX", p5Toolbar = true, onClick = {
                             runCalc(container, session, "DEC → HEX", session.decimal) {
                                 CalculatorEngine.convertBase(session.decimal, 10, 16).also { session.hex = it }
                             }
@@ -141,13 +166,13 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                     }
                     LabeledField(container.t("calculator.decimal"), session.decimal) { session.decimal = it; refresh() }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        MooButton("DEC → BIN", onClick = {
+                        MooButton("DEC → BIN", p5Toolbar = true, onClick = {
                             runCalc(container, session, "DEC → BIN", session.decimal) {
                                 CalculatorEngine.convertBase(session.decimal, 10, 2).also { session.binary = it }
                             }
                             refresh()
                         })
-                        MooButton("BIN → DEC", onClick = {
+                        MooButton("BIN → DEC", p5Toolbar = true, onClick = {
                             runCalc(container, session, "BIN → DEC", session.binary) {
                                 CalculatorEngine.convertBase(session.binary, 2, 10).also { session.decimal = it }
                             }
@@ -221,23 +246,57 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                     }
                 )
             }
+            VerticalPaneHandle(
+                onDelta = { container.setPaneSize(ToolId.Calculator.id, 0, leftWidth + it, 1) },
+                onReset = { container.setPaneSize(ToolId.Calculator.id, 0, defaultLeft, 1) }
+            )
             Column(
-                modifier = Modifier.weight(0.9f).fillMaxHeight().background(colors.surfaceSubtle)
-                    .border(1.dp, colors.border).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.weight(1f).widthIn(min = 320.dp).fillMaxHeight().background(colors.surfaceSubtle).padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text(container.t("common.result"), color = colors.textSecondary, fontSize = 12.sp)
-                Text(session.result, color = colors.textPrimary, fontSize = 28.sp)
-                Text(container.t("calculator.history"), color = colors.textSecondary, fontSize = 12.sp)
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(container.t("common.result"), color = colors.textBody, fontSize = 12.sp)
+                Text(
+                    session.result.ifEmpty { "—" },
+                    color = colors.accent,
+                    fontSize = 26.sp,
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(colors.workspace)
+                        .border(1.dp, colors.borderControl, RoundedCornerShape(6.dp))
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                )
+                Text(container.t("calculator.history"), color = colors.textBody, fontSize = 12.sp)
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(MooTheme.dimens.cardRadius))
+                        .background(colors.workspace)
+                        .border(1.dp, colors.borderControl, RoundedCornerShape(MooTheme.dimens.cardRadius))
+                        .padding(14.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
                     session.log.forEach { line ->
-                        Text(line, color = colors.textPrimary, fontSize = 13.sp)
+                        Column(Modifier.fillMaxWidth()) {
+                            Text(
+                                line,
+                                color = colors.textMuted,
+                                fontSize = 10.sp,
+                                fontFamily = FontFamily.Monospace,
+                                lineHeight = 14.sp,
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp)
+                            )
+                            Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
+                        }
                     }
                 }
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).mooStatusBarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -259,7 +318,6 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
             onRestore = { item ->
                 session.expression = item.input
                 session.result = item.output.ifBlank { session.result }
-                session.notice = container.t("json.notice.restored")
                 session.historyOpen = false
                 refresh()
             },
@@ -272,8 +330,8 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
 private fun Panel(title: String, content: @Composable () -> Unit) {
     val colors = MooTheme.colors
     Column(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(colors.surfaceSubtle)
-            .border(1.dp, colors.border, RoundedCornerShape(12.dp)).padding(12.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(MooTheme.dimens.cardRadius)).background(colors.workspace)
+            .border(1.dp, colors.borderControl, RoundedCornerShape(MooTheme.dimens.cardRadius)).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(title, color = colors.textPrimary, fontSize = 14.sp)
@@ -311,7 +369,7 @@ private fun OperationPanel(
                 Text(secondLabel, color = MooTheme.colors.textSecondary, fontSize = 12.sp)
                 MooTextField(second, onSecond, modifier = Modifier.fillMaxWidth())
             }
-            MooButton(action, onClick = onAction)
+            MooButton(action, onClick = onAction, p5Toolbar = true)
         }
     }
 }
@@ -323,12 +381,15 @@ private fun runCalc(container: AppContainer, session: CalculatorSession, summary
             session.result = output
             session.error = ""
             session.notice = summary
+            container.toastSuccess(summary)
             session.log = listOf("$summary: $input = $output") + session.log.take(11)
             container.history.save(ToolId.Calculator.id, summary, summary, input, output)
         }
         .onFailure { error ->
             session.notice = ""
-            session.error = messageFor(container, error)
+            val message = messageFor(container, error)
+            session.error = message
+            container.toastError(message)
         }
 }
 
@@ -346,10 +407,5 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
 }
 
 private fun copyText(value: String, container: AppContainer): String {
-    return try {
-        Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null)
-        container.t("time.notice.copied")
-    } catch (_: Exception) {
-        container.t("json.notice.copyFailed")
-    }
+    return if (container.copyText(value)) container.t("time.notice.copied") else container.t("json.notice.copyFailed")
 }

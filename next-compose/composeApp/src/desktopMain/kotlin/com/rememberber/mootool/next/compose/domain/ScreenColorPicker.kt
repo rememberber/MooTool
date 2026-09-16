@@ -24,6 +24,16 @@ data class ScreenPickerCopy(
 )
 
 object ScreenColorPicker {
+    @Volatile
+    private var dismissActivePicker: (() -> Unit)? = null
+
+    /** 离开工具页或取消流程时关闭全屏取色层，避免遮罩跨页残留。 */
+    fun dismissActive() {
+        val dismiss = dismissActivePicker
+        dismissActivePicker = null
+        dismiss?.invoke()
+    }
+
     fun show(
         capture: ScreenCapture,
         copy: ScreenPickerCopy,
@@ -42,11 +52,14 @@ object ScreenColorPicker {
         fun closeAnd(action: () -> Unit) {
             if (closed) return
             closed = true
+            dismissActivePicker = null
             KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(dispatcher)
             overlays.forEach { it.dispose() }
             preview.dispose()
             action()
         }
+
+        dismissActivePicker = { closeAnd(onCancel) }
 
         dispatcher = KeyEventDispatcher { event ->
             if (!closed && event.id == KeyEvent.KEY_PRESSED && event.keyCode == KeyEvent.VK_ESCAPE) {

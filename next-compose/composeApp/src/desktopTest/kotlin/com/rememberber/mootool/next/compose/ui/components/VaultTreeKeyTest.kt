@@ -26,7 +26,9 @@ class VaultTreeKeyTest {
         val collapsed = mapOf("Work" to false)
         val right = applyVaultTreeKey("right", "Work", tree, collapsed)
         assertEquals(true, right.expanded?.get("Work"))
-        assertNull(applyVaultTreeKey("enter", "Work", tree, expanded).openPath)
+        val enterDir = applyVaultTreeKey("enter", "Work", tree, expanded)
+        assertNull(enterDir.openPath)
+        assertEquals("Work", enterDir.selectPath)
     }
 
     @Test
@@ -35,5 +37,21 @@ class VaultTreeKeyTest {
         assertEquals(listOf("Work", "readme.md"), hidden)
         val shown = visibleVaultEntries(tree, mapOf("Work" to true)).map { it.relativePath }
         assertEquals(listOf("Work", "Work/api.md", "readme.md"), shown)
+    }
+
+    @Test
+    fun expandSelectionOpensAncestorsAndSelectedDirectory() {
+        val items = listOf(
+            VaultEntry("Work", "Work", true, 0),
+            VaultEntry("Work/Nested", "Nested", true, 0),
+            VaultEntry("Work/Nested/note.md", "note.md", false, 1)
+        )
+        val expanded = mutableMapOf("Work" to false, "Work/Nested" to false)
+        expandVaultPathForSelection("Work/Nested", items, expanded)
+        assertEquals(true, expanded["Work"])
+        assertEquals(true, expanded["Work/Nested"])
+        expandVaultPathForSelection("Work/Nested/note.md", items, expanded)
+        assertEquals(true, expanded["Work"])
+        assertEquals(true, expanded["Work/Nested"])
     }
 }

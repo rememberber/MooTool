@@ -247,6 +247,9 @@ class HttpEngineTest {
         assertFalse(spans[0].current)
         assertTrue(spans[1].current)
         assertEquals(8, spans[1].start)
+        val unsetSpans = HttpResponseFind.spans("one two one".length, matches, HttpResponseFind.FIND_INDEX_UNSET)
+        assertEquals(2, unsetSpans.size)
+        assertFalse(unsetSpans.any { it.current })
         assertEquals(emptyList(), HttpResponseFind.spans(3, emptyList(), 0))
     }
 

@@ -15,14 +15,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,13 +40,13 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.DiffEngine
 import com.rememberber.mootool.next.compose.domain.DiffSegment
@@ -59,9 +58,20 @@ import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.DiffSession
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooMenu
+import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
+import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooToolShell
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.rememberPairedScrollStates
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.applyUserEditClearingStatusNotice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -69,14 +79,15 @@ import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.withContext
 import java.awt.FileDialog
 import java.awt.Frame
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
 import java.io.File
 
 @Composable
 fun TextDiffScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.diffSession() }
+    DismissModalOverlaysOnDispose(container, ToolId.TextDiff) { session.dismissModalOverlays() }
     val revision by container.sessionManager.revision.collectAsState()
+    val sessionGeneration by container.sessionManager.sessionGeneration.collectAsState()
+    val settings by container.settings.collectAsState()
     var leftField by remember { mutableStateOf(TextFieldValue(session.left)) }
     var rightField by remember { mutableStateOf(TextFieldValue(session.right)) }
     val colors = MooTheme.colors
@@ -88,7 +99,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
         container.sessionManager.persistDiff()
     }
 
-    LaunchedEffect(session.left, session.right, revision) {
+    LaunchedEffect(session.left, session.right, revision, sessionGeneration) {
         if (leftField.text != session.left) leftField = TextFieldValue(session.left)
         if (rightField.text != session.right) rightField = TextFieldValue(session.right)
     }
@@ -99,27 +110,32 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
     val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+    val minPane = 240f
+    val paneHandle = 10f
+    val maxLeftPane = (maxWidth.value - paneHandle - minPane).coerceAtLeast(minPane)
+    val defaultLeftPane = (maxWidth.value * 0.5f).coerceIn(minPane, maxLeftPane)
+    val leftPaneWidth = settings.layout.pane(ToolId.TextDiff.id, 0, defaultLeftPane, minPane, maxLeftPane)
     Column(Modifier.fillMaxSize().background(colors.workspace)) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(container.t("diff.title"), color = colors.textPrimary, fontSize = 16.sp)
-            MooButton(container.t("diff.compare"), primary = true, onClick = {
+            MooPageTitle(container.t("diff.title"))
+            MooButton(container.t("diff.compare"), prominent = true, p5Toolbar = true, onClick = {
                 runCompare(container, session, saveHistory = true) { refresh() }
             })
             val visible = session.visibleSegments()
-            MooButton(container.t("diff.previous"), enabled = visible.isNotEmpty(), onClick = {
+            MooButton(container.t("diff.previous"), enabled = visible.isNotEmpty(), p5Toolbar = true, onClick = {
                 navigate(session, visible, -1, { leftField = it }, { rightField = it })
                 refresh()
             })
-            MooButton(container.t("diff.next"), enabled = visible.isNotEmpty(), onClick = {
+            MooButton(container.t("diff.next"), enabled = visible.isNotEmpty(), p5Toolbar = true, onClick = {
                 navigate(session, visible, 1, { leftField = it }, { rightField = it })
                 refresh()
             })
             if (!overflow) {
-                MooButton(container.t("common.action.clear"), onClick = {
+                MooButton(container.t("common.action.clear"), p5Toolbar = true, onClick = {
                     session.left = ""
                     session.right = ""
                     session.result = DiffEngine.compare("", "", session.ignoreWhitespace)
@@ -127,7 +143,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                     session.navIndex = -1
                     refresh()
                 })
-                MooButton(container.t("common.action.swap"), onClick = {
+                MooButton(container.t("common.action.swap"), p5Toolbar = true, onClick = {
                     val previousLeft = session.left
                     session.left = session.right
                     session.right = previousLeft
@@ -136,28 +152,38 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                     session.navIndex = -1
                     refresh()
                 })
-                MooButton(container.t("diff.copy"), onClick = {
+                MooButton(container.t("diff.copy"), p5Toolbar = true, onClick = {
                     if (session.result.unified.isEmpty()) {
                         session.notice = container.t("diff.status.noCopy")
                     } else {
-                        copyText(session.result.unified)
+                        container.copyText(session.result.unified)
                         session.notice = container.t("diff.status.copied")
                     }
                     refresh()
                 })
-                MooButton(container.t("diff.importLeft"), onClick = {
-                    readImportedText()?.let { session.left = it; session.notice = ""; refresh() }
+                MooButton(container.t("diff.importLeft"), p5Toolbar = true, onClick = {
+                    readImportedText()?.let {
+                        session.left = it
+                        session.notice = container.t("json.notice.imported")
+                        container.toastSuccess(container.t("json.notice.imported"))
+                        refresh()
+                    }
                 })
-                MooButton(container.t("diff.importRight"), onClick = {
-                    readImportedText()?.let { session.right = it; session.notice = ""; refresh() }
+                MooButton(container.t("diff.importRight"), p5Toolbar = true, onClick = {
+                    readImportedText()?.let {
+                        session.right = it
+                        session.notice = container.t("json.notice.imported")
+                        container.toastSuccess(container.t("json.notice.imported"))
+                        refresh()
+                    }
                 })
             }
             Spacer(Modifier.weight(1f))
             if (overflow) {
                 Box {
-                    MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true })
-                    DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
-                        DropdownMenuItem(onClick = {
+                    MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true }, p5Toolbar = true)
+                    MooMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
+                        MooMenuItem(onClick = {
                             moreOpen = false
                             session.left = ""
                             session.right = ""
@@ -166,7 +192,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                             session.navIndex = -1
                             refresh()
                         }) { Text(container.t("common.action.clear")) }
-                        DropdownMenuItem(onClick = {
+                        MooMenuItem(onClick = {
                             moreOpen = false
                             val previousLeft = session.left
                             session.left = session.right
@@ -176,31 +202,41 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                             session.navIndex = -1
                             refresh()
                         }) { Text(container.t("common.action.swap")) }
-                        DropdownMenuItem(onClick = {
+                        MooMenuItem(onClick = {
                             moreOpen = false
                             if (session.result.unified.isEmpty()) {
                                 session.notice = container.t("diff.status.noCopy")
                             } else {
-                                copyText(session.result.unified)
+                                container.copyText(session.result.unified)
                                 session.notice = container.t("diff.status.copied")
                             }
                             refresh()
                         }) { Text(container.t("diff.copy")) }
-                        DropdownMenuItem(onClick = {
+                        MooMenuItem(onClick = {
                             moreOpen = false
-                            readImportedText()?.let { session.left = it; session.notice = ""; refresh() }
+                            readImportedText()?.let {
+                                session.left = it
+                                session.notice = container.t("json.notice.imported")
+                                container.toastSuccess(container.t("json.notice.imported"))
+                                refresh()
+                            }
                         }) { Text(container.t("diff.importLeft")) }
-                        DropdownMenuItem(onClick = {
+                        MooMenuItem(onClick = {
                             moreOpen = false
-                            readImportedText()?.let { session.right = it; session.notice = ""; refresh() }
+                            readImportedText()?.let {
+                                session.right = it
+                                session.notice = container.t("json.notice.imported")
+                                container.toastSuccess(container.t("json.notice.imported"))
+                                refresh()
+                            }
                         }) { Text(container.t("diff.importRight")) }
-                        DropdownMenuItem(onClick = {
+                        MooMenuItem(onClick = {
                             moreOpen = false
                             session.historyOpen = true
                             refresh()
                         }) { Text(container.t("common.action.history")) }
                         if (!detached) {
-                            DropdownMenuItem(onClick = {
+                            MooMenuItem(onClick = {
                                 moreOpen = false
                                 container.sessionManager.detach(ToolId.TextDiff)
                             }) { Text(container.t("app.tool.detach")) }
@@ -219,67 +255,112 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            MooButton(container.t("diff.ignoreWhitespace"), primary = session.ignoreWhitespace, onClick = {
+            MooButton(container.t("diff.ignoreWhitespace"), primary = session.ignoreWhitespace, p5Toolbar = true, onClick = {
                 session.ignoreWhitespace = !session.ignoreWhitespace
                 session.navIndex = -1
                 refresh()
             })
-            MooButton(container.t("diff.highlightBoth"), primary = session.highlightMode == "both", onClick = {
+            MooButton(container.t("diff.highlightBoth"), primary = session.highlightMode == "both", p5Toolbar = true, onClick = {
                 session.highlightMode = "both"; session.navIndex = -1; refresh()
             })
-            MooButton(container.t("diff.highlightCharacters"), primary = session.highlightMode == "characters", onClick = {
+            MooButton(container.t("diff.highlightCharacters"), primary = session.highlightMode == "characters", p5Toolbar = true, onClick = {
                 session.highlightMode = "characters"; session.navIndex = -1; refresh()
             })
-            MooButton(container.t("diff.highlightLines"), primary = session.highlightMode == "lines", onClick = {
+            MooButton(container.t("diff.highlightLines"), primary = session.highlightMode == "lines", p5Toolbar = true, onClick = {
                 session.highlightMode = "lines"; session.navIndex = -1; refresh()
             })
-            MooButton(container.t("diff.sideBySide"), primary = session.mode == "side", onClick = {
+            MooButton(container.t("diff.sideBySide"), primary = session.mode == "side", p5Toolbar = true, onClick = {
                 session.mode = "side"; refresh()
             })
-            MooButton(container.t("diff.unified"), primary = session.mode == "unified", onClick = {
+            MooButton(container.t("diff.unified"), primary = session.mode == "unified", p5Toolbar = true, onClick = {
                 session.mode = "unified"; refresh()
             })
         }
-        Row(Modifier.weight(1f).padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            DiffEditorPane(
-                title = container.t("diff.left"),
-                value = leftField,
-                onValueChange = {
-                    leftField = it
-                    session.left = it.text
-                    session.navIndex = -1
-                    refresh()
-                },
-                segments = session.visibleSegments(),
-                side = "left",
-                highlightMode = session.highlightMode,
-                scrollState = leftScroll,
-                modifier = Modifier.weight(1f)
-            )
-            DiffEditorPane(
-                title = container.t("diff.right"),
-                value = rightField,
-                onValueChange = {
-                    rightField = it
-                    session.right = it.text
-                    session.navIndex = -1
-                    refresh()
-                },
-                segments = session.visibleSegments(),
-                side = "right",
-                highlightMode = session.highlightMode,
-                scrollState = rightScroll,
-                modifier = Modifier.weight(1f)
-            )
-            if (session.mode == "unified") {
+        Row(Modifier.weight(1f).fillMaxWidth()) {
+            if (session.mode == "side") {
+                DiffEditorPane(
+                    title = container.t("diff.left"),
+                    value = leftField,
+                    onValueChange = {
+                        applyUserEditClearingStatusNotice({ session.notice }, { session.notice = it }) {
+                            leftField = it
+                            session.left = it.text
+                            session.navIndex = -1
+                        }
+                        refresh()
+                    },
+                    segments = session.visibleSegments(),
+                    side = "left",
+                    highlightMode = session.highlightMode,
+                    scrollState = leftScroll,
+                    modifier = Modifier.width(leftPaneWidth.dp).widthIn(min = 240.dp)
+                )
+                VerticalPaneHandle(
+                    onDelta = { container.setPaneSize(ToolId.TextDiff.id, 0, leftPaneWidth + it, 1) },
+                    onReset = { container.setPaneSize(ToolId.TextDiff.id, 0, defaultLeftPane, 1) }
+                )
+                DiffEditorPane(
+                    title = container.t("diff.right"),
+                    value = rightField,
+                    onValueChange = {
+                        applyUserEditClearingStatusNotice({ session.notice }, { session.notice = it }) {
+                            rightField = it
+                            session.right = it.text
+                            session.navIndex = -1
+                        }
+                        refresh()
+                    },
+                    segments = session.visibleSegments(),
+                    side = "right",
+                    highlightMode = session.highlightMode,
+                    scrollState = rightScroll,
+                    modifier = Modifier.weight(1f).widthIn(min = 240.dp)
+                )
+            } else {
+                DiffEditorPane(
+                    title = container.t("diff.left"),
+                    value = leftField,
+                    onValueChange = {
+                        applyUserEditClearingStatusNotice({ session.notice }, { session.notice = it }) {
+                            leftField = it
+                            session.left = it.text
+                            session.navIndex = -1
+                        }
+                        refresh()
+                    },
+                    segments = session.visibleSegments(),
+                    side = "left",
+                    highlightMode = session.highlightMode,
+                    scrollState = leftScroll,
+                    modifier = Modifier.weight(1f)
+                )
+                Box(Modifier.width(1.dp).fillMaxHeight().background(colors.borderSoft))
+                DiffEditorPane(
+                    title = container.t("diff.right"),
+                    value = rightField,
+                    onValueChange = {
+                        applyUserEditClearingStatusNotice({ session.notice }, { session.notice = it }) {
+                            rightField = it
+                            session.right = it.text
+                            session.navIndex = -1
+                        }
+                        refresh()
+                    },
+                    segments = session.visibleSegments(),
+                    side = "right",
+                    highlightMode = session.highlightMode,
+                    scrollState = rightScroll,
+                    modifier = Modifier.weight(1f)
+                )
+                Box(Modifier.width(1.dp).fillMaxHeight().background(colors.borderSoft))
                 UnifiedPane(container.t("diff.unifiedPanel"), session, Modifier.weight(1f))
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).mooStatusBarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(statusText(container, session), color = colors.textSecondary, fontSize = 12.sp)
+            Text(statusText(container, session), color = colors.textMuted, fontSize = 11.sp)
             Spacer(Modifier.weight(1f))
             if (detached) Text("detached", color = colors.textSecondary, fontSize = 12.sp)
         }
@@ -295,7 +376,6 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                 session.left = item.input
                 session.right = item.output
                 session.historyOpen = false
-                session.notice = container.t("json.notice.restored")
                 refresh()
             },
             onDismiss = { session.historyOpen = false; refresh() }
@@ -316,17 +396,17 @@ private fun DiffEditorPane(
 ) {
     val colors = MooTheme.colors
     Column(
-        modifier = modifier.fillMaxHeight().clip(RoundedCornerShape(12.dp))
-            .background(colors.surfaceSubtle).border(1.dp, colors.border, RoundedCornerShape(12.dp)).padding(10.dp)
+        modifier = modifier.fillMaxHeight().padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
     ) {
-        Text(title, color = colors.textSecondary, fontSize = 12.sp)
+        Text(title, color = colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
             textStyle = TextStyle(color = colors.textPrimary, fontSize = 13.sp, fontFamily = FontFamily.Monospace),
             cursorBrush = SolidColor(colors.accent),
             visualTransformation = DiffHighlightTransformation(segments, side, highlightMode, colors.success, colors.danger, colors.accent),
-            modifier = Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp).verticalScroll(scrollState)
+            modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(scrollState)
         )
     }
 }
@@ -335,16 +415,16 @@ private fun DiffEditorPane(
 private fun UnifiedPane(title: String, session: DiffSession, modifier: Modifier) {
     val colors = MooTheme.colors
     Column(
-        modifier.fillMaxHeight().clip(RoundedCornerShape(12.dp))
-            .background(colors.surfaceSubtle).border(1.dp, colors.border, RoundedCornerShape(12.dp)).padding(10.dp)
+        modifier.fillMaxHeight().padding(9.dp, 10.dp, 10.dp, 10.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
     ) {
-        Text(title, color = colors.textSecondary, fontSize = 12.sp)
+        Text(title, color = colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         Text(
             annotateUnified(session.result.unifiedView.text, session.result.unifiedView.lineSpans, session.result.unifiedView.characterSpans, session.highlightMode, colors.success, colors.danger, colors.accent),
             color = colors.textPrimary,
-            fontSize = 13.sp,
+            fontSize = 12.sp,
             fontFamily = FontFamily.Monospace,
-            modifier = Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp).verticalScroll(rememberScrollState())
+            modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
         )
     }
 }
@@ -447,10 +527,6 @@ private fun statusText(container: AppContainer, session: DiffSession): String {
     } else {
         container.t("diff.status.complete", mapOf("count" to visible.size.toString()))
     }
-}
-
-private fun copyText(value: String) {
-    Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null)
 }
 
 private fun readImportedText(): String? {

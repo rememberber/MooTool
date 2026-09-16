@@ -1,5 +1,6 @@
 package com.rememberber.mootool.next.compose.features.runtime
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -10,12 +11,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.border
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -25,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isCtrlPressed
@@ -35,8 +40,8 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
+import com.rememberber.mootool.next.compose.features.settings.SettingsNavCategory
 import com.rememberber.mootool.next.compose.domain.CodeRunEngine
 import com.rememberber.mootool.next.compose.domain.CodeRunErrorCode
 import com.rememberber.mootool.next.compose.domain.CodeRunInput
@@ -44,20 +49,35 @@ import com.rememberber.mootool.next.compose.domain.CodeRunPaths
 import com.rememberber.mootool.next.compose.domain.CodeRunResult
 import com.rememberber.mootool.next.compose.domain.CodeRuntime
 import com.rememberber.mootool.next.compose.domain.CodeRuntimeStatus
+import com.rememberber.mootool.next.compose.editor.EditorAppShortcuts
 import com.rememberber.mootool.next.compose.editor.EditorHost
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.CodeRunSession
-import com.rememberber.mootool.next.compose.ui.components.HorizontalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
+import com.rememberber.mootool.next.compose.ui.components.IoTwoPaneRow
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooToolTab
+import com.rememberber.mootool.next.compose.ui.components.mooToolTabsBackground
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooEditorFrame
+import com.rememberber.mootool.next.compose.ui.components.mooToolShell
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.MooStatusKind
+import com.rememberber.mootool.next.compose.ui.components.MooStatusPill
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.components.rememberFollowTailScroll
-import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.MooOverlay
+import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
+import com.rememberber.mootool.next.compose.ui.workbench.blockedByIme
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.OnToolLeaveUnlessDetached
+import com.rememberber.mootool.next.compose.ui.workbench.clearErrorOnUserEdit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -65,16 +85,21 @@ import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
 import java.util.UUID
+import androidx.compose.ui.text.font.FontWeight
+
+private const val RUNTIME_WORKSPACE_PANE_KEY = "runtime-editor-output"
 
 @Composable
 fun CodeRunScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.codeRunSession() }
+    DismissModalOverlaysOnDispose(container, ToolId.Java) { session.dismissModalOverlays() }
     val revision by container.sessionManager.revision.collectAsState()
     val settings by container.settings.collectAsState()
     val colors = MooTheme.colors
     val scope = rememberCoroutineScope()
     var statuses by remember { mutableStateOf(emptyList<CodeRuntimeStatus>()) }
     val runtime = session.currentRuntime()
+    val editorBuffer = session.editor(runtime)
     val status = statuses.firstOrNull { it.id == runtime }
     val outputScroll = rememberFollowTailScroll(
         contentKey = "${session.stdout.length}:${session.stderr.length}:${session.result?.durationMs}",
@@ -84,6 +109,14 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
     fun persist() {
         container.sessionManager.bump()
         container.sessionManager.persistCodeRun()
+    }
+
+    DisposableEffect(editorBuffer) {
+        editorBuffer.onUserDocumentChange = {
+            session.clearErrorOnUserEdit { }
+            persist()
+        }
+        onDispose { editorBuffer.onUserDocumentChange = null }
     }
 
     fun paths() = settings.runtime.let {
@@ -161,34 +194,60 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                     input.code.take(8_000),
                     listOf(result.stdout, result.stderr).filter { it.isNotBlank() }.joinToString("\n").take(8_000)
                 )
+                if (session.error.isNotEmpty()) {
+                    container.toastError(session.error)
+                } else {
+                    val code = result.exitCode?.toString() ?: "-"
+                    container.toastSuccess(container.t("runtime.exitCode", mapOf("code" to code)))
+                }
                 persist()
             }
         }
     }
 
+    fun cancelRun() {
+        if (session.requestId.isNotBlank()) CodeRunEngine.cancel(session.requestId)
+    }
+
+    fun formatSource() {
+        if (session.running) return
+        runCatching {
+            session.editor(runtime).setText(
+                CodeRunEngine.formatSource(session.editor(runtime).text, runtime),
+                recordUndo = true
+            )
+            persist()
+        }.onFailure {
+            session.error = it.message ?: container.t("runtime.failed")
+            persist()
+        }
+    }
+
+    OnToolLeaveUnlessDetached(container, ToolId.Java) { cancelRun() }
+
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
     Column(
         Modifier.fillMaxSize().background(colors.workspace).onPreviewKeyEvent { event ->
-            if (event.type == KeyEventType.KeyDown && event.key == Key.Enter && (event.isMetaPressed || event.isCtrlPressed)) {
+            if (event.blockedByIme()) false
+            else if (event.type == KeyEventType.KeyDown && event.key == Key.Enter && (event.isMetaPressed || event.isCtrlPressed)) {
                 if (!session.running) run()
                 true
             } else false
         }
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("runtime.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("runtime.title"))
             if (revision < 0) Spacer(Modifier.width(0.dp))
             Spacer(Modifier.weight(1f))
             val available = statuses.count { it.available }
-            Text(
+            MooStatusPill(
                 if (session.detecting) container.t("common.processing") else container.t("runtime.detected", mapOf("count" to available.toString())),
-                color = if (available > 0) colors.textSecondary else colors.danger,
-                fontSize = 12.sp
+                kind = if (available > 0) MooStatusKind.Valid else MooStatusKind.Error
             )
             if (session.error.isNotEmpty()) Text(session.error, color = colors.danger, fontSize = 12.sp)
             OverflowActionCluster(
@@ -201,14 +260,14 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
             )
         }
         Row(
-            modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().mooToolTabsBackground().padding(start = 10.dp, end = 10.dp, top = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             listOf("java", "python", "node").forEach { tab ->
-                MooButton(
+                MooToolTab(
                     container.t("runtime.tab.$tab"),
-                    primary = session.tab == tab,
+                    selected = session.tab == tab,
                     enabled = !session.running,
                     onClick = {
                         session.tab = tab
@@ -220,33 +279,29 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                 )
             }
             if (session.tab == "java") {
-                MooButton(container.t("runtime.mode.java"), primary = session.javaMode == "java", enabled = !session.running, onClick = {
+                MooButton(container.t("runtime.mode.java"), primary = session.javaMode == "java", enabled = !session.running, p5Toolbar = true, onClick = {
                     session.javaMode = "java"; persist()
                 })
-                MooButton(container.t("runtime.mode.groovy"), primary = session.javaMode == "groovy", enabled = !session.running, onClick = {
+                MooButton(container.t("runtime.mode.groovy"), primary = session.javaMode == "groovy", enabled = !session.running, p5Toolbar = true, onClick = {
                     session.javaMode = "groovy"; persist()
                 })
             }
             Spacer(Modifier.weight(1f))
             if (session.running) {
-                MooButton(container.t("runtime.stop"), onClick = {
+                MooButton(container.t("runtime.stop"), p5Toolbar = true, onClick = {
                     if (session.requestId.isNotBlank()) CodeRunEngine.cancel(session.requestId)
                 })
             } else {
-                MooButton(container.t("runtime.run"), primary = true, onClick = { run() })
+                MooButton(container.t("runtime.run"), prominent = true, p5Toolbar = true, onClick = { run() })
             }
             OverflowActionCluster(
                 overflow = overflow,
                 moreLabel = container.t("json.action.overflow"),
+                p5Toolbar = true,
                 actions = listOf(
                     OverflowAction(container.t("runtime.detect"), enabled = !session.detecting && !session.running) { detect() },
                     OverflowAction(container.t("runtime.options")) { session.optionsOpen = true; persist() },
-                    OverflowAction(container.t("runtime.format"), enabled = !session.running) {
-                        runCatching {
-                            session.editor(runtime).setText(CodeRunEngine.formatSource(session.editor(runtime).text, runtime), recordUndo = true)
-                            persist()
-                        }.onFailure { session.error = it.message ?: container.t("runtime.failed"); persist() }
-                    },
+                    OverflowAction(container.t("runtime.format"), enabled = !session.running) { formatSource() },
                     OverflowAction(container.t("runtime.clear")) {
                         session.stdout = ""
                         session.stderr = ""
@@ -257,6 +312,23 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
             )
         }
         Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (status?.available == false) {
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(colors.control).padding(horizontal = 10.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        container.t("runtime.configure", mapOf("name" to CodeRunEngine.displayName(runtime))),
+                        color = colors.textBody,
+                        fontSize = 12.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    MooButton(container.t("runtime.openSettings"), p5Toolbar = true, onClick = {
+                        container.openSettings(categoryId = SettingsNavCategory.Runtime.storageId())
+                    })
+                }
+            }
             Text(
                 status?.let {
                     if (it.available) "${it.command} · ${it.version}" else container.t("runtime.missing", mapOf("name" to CodeRunEngine.displayName(runtime)))
@@ -264,53 +336,49 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                 color = colors.textSecondary,
                 fontSize = 12.sp
             )
-            EditorHost(
-                buffer = session.editor(runtime),
-                dark = MooTheme.dark,
-                fontName = com.rememberber.mootool.next.compose.domain.DocumentFormatEngine.editorFont(settings.editor.jsonFontName),
-                fontSize = settings.editor.jsonFontSize,
-                wrap = settings.editor.softWrap,
-                modifier = Modifier.fillMaxWidth().weight(1f)
-            )
-            val outputHeight = settings.layout.pane(ToolId.Java.id, 0, 220f, 120f, 480f)
-            HorizontalPaneHandle(
-                onDelta = { container.setPaneSize(ToolId.Java.id, 0, outputHeight - it, 1) },
-                onReset = { container.setPaneSize(ToolId.Java.id, 0, 220f, 1) }
-            )
-            SelectionContainer(Modifier.fillMaxWidth().height(outputHeight.dp).background(colors.sidebar, RoundedCornerShape(8.dp)).padding(10.dp)) {
-                val result = session.result
-                val header = when {
-                    session.running -> container.t("runtime.running", mapOf("name" to CodeRunEngine.displayName(runtime)))
-                    result?.timedOut == true -> container.t("runtime.timeout")
-                    result?.cancelled == true -> container.t("runtime.cancelled")
-                    result?.truncated == true -> container.t("runtime.truncated")
-                    result != null && result.exitCode != 0 && result.exitCode != null -> container.t("runtime.failed")
-                    result != null -> container.t("runtime.completed")
-                    else -> container.t("runtime.ready")
+            IoTwoPaneRow(
+                container = container,
+                settings = settings,
+                paneKey = RUNTIME_WORKSPACE_PANE_KEY,
+                minLeft = 300f,
+                minRight = 300f,
+                defaultLeftFraction = 0.5f,
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                left = {
+                    Column(Modifier.fillMaxSize().mooEditorFrame(flatten = true)) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(container.t("runtime.editor"), color = colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                            Text(CodeRunEngine.displayName(runtime), color = colors.textSecondary, fontSize = 11.sp)
+                        }
+                        EditorHost(
+                            buffer = session.editor(runtime),
+                            dark = MooTheme.dark,
+                            fontName = com.rememberber.mootool.next.compose.domain.DocumentFormatEngine.editorFont(settings.editor.jsonFontName),
+                            fontSize = settings.editor.jsonFontSize,
+                            wrap = settings.editor.softWrap,
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            shortcuts = EditorAppShortcuts(
+                                onFormat = { formatSource() },
+                                onSend = { if (!session.running) run() }
+                            )
+                        )
+                    }
+                },
+                right = {
+                    RuntimeOutputPane(container, session, runtime, outputScroll, Modifier.fillMaxSize())
                 }
-                val meta = result?.let {
-                    listOfNotNull(
-                        it.command.takeIf { command -> command.isNotBlank() }?.let { command -> "${container.t("runtime.command")}: $command" },
-                        it.exitCode?.let { code -> container.t("runtime.exitCode", mapOf("code" to code.toString())) },
-                        container.t("runtime.duration", mapOf("duration" to it.durationMs.toString()))
-                    ).joinToString(" · ")
-                }.orEmpty()
-                val body = listOf(session.stdout, session.stderr).filter { it.isNotBlank() }.joinToString("\n")
-                Text(
-                    listOf(header, meta, body).filter { it.isNotBlank() }.joinToString("\n"),
-                    color = colors.textPrimary,
-                    fontSize = 12.sp,
-                    fontFamily = FontFamily.Monospace,
-                    modifier = Modifier.fillMaxSize().verticalScroll(outputScroll)
-                )
-            }
+            )
         }
     }
     }
     if (session.optionsOpen) {
-        Dialog(onDismissRequest = { session.optionsOpen = false; persist() }) {
+        MooOverlay(onDismiss = { session.optionsOpen = false; persist() }) {
             Column(
-                Modifier.width(520.dp).background(colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+                Modifier.width(520.dp).mooDialogSurface().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(container.t("runtime.options"), color = colors.textPrimary)
@@ -326,7 +394,7 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                         modifier = Modifier.weight(1f),
                         placeholder = container.t("runtime.defaultWorkingDirectory")
                     )
-                    MooButton(container.t("runtime.workingDirectory"), onClick = {
+                    MooButton(container.t("runtime.workingDirectory"), p5Toolbar = true, onClick = {
                         val dialog = FileDialog(null as Frame?, container.t("runtime.workingDirectory"), FileDialog.LOAD)
                         dialog.isMultipleMode = false
                         dialog.isVisible = true
@@ -353,6 +421,72 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
             },
             onDismiss = { session.historyOpen = false; persist() }
         )
+    }
+}
+
+@Composable
+private fun RuntimeOutputPane(
+    container: AppContainer,
+    session: CodeRunSession,
+    runtime: CodeRuntime,
+    outputScroll: ScrollState,
+    modifier: Modifier
+) {
+    val colors = MooTheme.colors
+    val result = session.result
+    val header = when {
+        session.running -> container.t("runtime.running", mapOf("name" to CodeRunEngine.displayName(runtime)))
+        result?.timedOut == true -> container.t("runtime.timeout")
+        result?.cancelled == true -> container.t("runtime.cancelled")
+        result?.truncated == true -> container.t("runtime.truncated")
+        result != null && result.exitCode != 0 && result.exitCode != null -> container.t("runtime.failed")
+        result != null -> container.t("runtime.completed")
+        else -> container.t("runtime.ready")
+    }
+    Column(modifier.mooToolShell(colors.sidebar)) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(container.t("runtime.output"), color = colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Text(header, color = colors.textSecondary, fontSize = 11.sp)
+        }
+        SelectionContainer(
+            Modifier.weight(1f).fillMaxWidth().padding(horizontal = 10.dp)
+        ) {
+            val body = listOf(session.stdout, session.stderr).filter { it.isNotBlank() }.joinToString("\n")
+            if (body.isBlank() && !session.running) {
+                Text(container.t("runtime.ready"), color = colors.textMuted, fontSize = 12.sp, modifier = Modifier.fillMaxSize())
+            } else {
+                Text(
+                    body,
+                    color = colors.textPrimary,
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.fillMaxSize().verticalScroll(outputScroll)
+                )
+            }
+        }
+        result?.let {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (it.command.isNotBlank()) {
+                    Text(
+                        "${container.t("runtime.command")}: ${it.command}",
+                        color = colors.textMuted,
+                        fontSize = 10.sp,
+                        maxLines = 1
+                    )
+                }
+                it.exitCode?.let { code ->
+                    Text(container.t("runtime.exitCode", mapOf("code" to code.toString())), color = colors.textMuted, fontSize = 10.sp)
+                }
+                Text(container.t("runtime.duration", mapOf("duration" to it.durationMs.toString())), color = colors.textMuted, fontSize = 10.sp)
+            }
+        }
     }
 }
 

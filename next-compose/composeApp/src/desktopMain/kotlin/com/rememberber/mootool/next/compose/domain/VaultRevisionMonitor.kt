@@ -21,12 +21,21 @@ class VaultRevisionMonitor(
     private val expectedHashes = ConcurrentHashMap<String, String>()
     private val closed = AtomicBoolean(false)
     private val started = AtomicBoolean(false)
+    private val stateLock = Any()
     @Volatile var previous: Map<String, String> = emptyMap()
         private set
     private var worker: Thread? = null
 
     fun noteOwnWrite(relativePath: String, hash: String) {
         expectedHashes[relativePath.replace('\\', '/')] = hash
+    }
+
+    /** 跨产品导入/备份恢复等批量磁盘变更后，避免下一轮轮询把整库当作外部变更（配合 `sessionGeneration`）。 */
+    fun rebaseline() {
+        synchronized(stateLock) {
+            previous = snapshot()
+            expectedHashes.clear()
+        }
     }
 
     fun snapshot(): Map<String, String> {
@@ -50,7 +59,9 @@ class VaultRevisionMonitor(
 
     fun start() {
         check(started.compareAndSet(false, true)) { "VaultRevisionMonitor already started" }
-        previous = snapshot()
+        synchronized(stateLock) {
+            previous = snapshot()
+        }
         worker = Thread(
             {
                 while (!closed.get()) {
@@ -61,17 +72,18 @@ class VaultRevisionMonitor(
                     }
                     if (closed.get()) break
                     val next = snapshot()
-                    val changed = diff(previous, next).filter { path ->
-                        val expected = expectedHashes[path]
-                        val actual = next[path]
-                        if (expected != null && actual == expected) {
-                            expectedHashes.remove(path)
-                            false
-                        } else {
-                            true
-                        }
+                    val changed = synchronized(stateLock) {
+                        diff(previous, next).filter { path ->
+                            val expected = expectedHashes[path]
+                            val actual = next[path]
+                            if (expected != null && actual == expected) {
+                                expectedHashes.remove(path)
+                                false
+                            } else {
+                                true
+                            }
+                        }.also { previous = next }
                     }
-                    previous = next
                     if (changed.isNotEmpty()) onChanged(changed)
                 }
             },

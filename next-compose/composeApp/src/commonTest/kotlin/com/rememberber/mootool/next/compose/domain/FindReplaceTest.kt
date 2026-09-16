@@ -20,4 +20,20 @@ class FindReplaceTest {
         assertEquals("b-b-b", next)
         assertEquals(3, count)
     }
+
+    @Test
+    fun replaceCurrent_prefers_exact_selection_match() {
+        val (next, match) = FindReplace.replaceCurrent(
+            "aa aa",
+            "aa",
+            "XX",
+            FindReplaceOptions(),
+            fromIndex = 2,
+            selectionStart = 0,
+            selectionEnd = 2,
+        )
+        assertEquals("XX aa", next)
+        assertEquals(0, match?.start)
+        assertEquals(2, match?.end)
+    }
 }

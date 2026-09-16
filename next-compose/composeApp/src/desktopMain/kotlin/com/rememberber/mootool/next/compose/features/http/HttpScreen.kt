@@ -1,8 +1,11 @@
 package com.rememberber.mootool.next.compose.features.http
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -14,14 +17,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.Checkbox
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -34,6 +38,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -44,9 +52,11 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.DocumentFormatEngine
 import com.rememberber.mootool.next.compose.domain.FindMatch
@@ -61,31 +71,55 @@ import com.rememberber.mootool.next.compose.domain.HttpRequestTab
 import com.rememberber.mootool.next.compose.domain.HttpResponseFind
 import com.rememberber.mootool.next.compose.domain.HttpResponseResult
 import com.rememberber.mootool.next.compose.domain.HttpResponseTab
+import com.rememberber.mootool.next.compose.domain.HttpTimeoutSettings
 import com.rememberber.mootool.next.compose.editor.EditorAppShortcuts
 import com.rememberber.mootool.next.compose.editor.EditorHost
+import com.rememberber.mootool.next.compose.editor.EditorFindHighlight
+import com.rememberber.mootool.next.compose.editor.onFindBarRowKeys
+import com.rememberber.mootool.next.compose.editor.onFindQueryEnterKey
+import com.rememberber.mootool.next.compose.editor.openFindBarSeedingSelection
+import com.rememberber.mootool.next.compose.editor.RstaFindNavigation
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.HttpSession
+import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
 import com.rememberber.mootool.next.compose.storage.SavedHttpRequest
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.HorizontalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooCompactSearch
+import com.rememberber.mootool.next.compose.ui.components.MooGhostButton
+import com.rememberber.mootool.next.compose.ui.components.MooMenu
+import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
+import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.MooToolTab
+import com.rememberber.mootool.next.compose.ui.components.mooEditorFrame
+import com.rememberber.mootool.next.compose.ui.components.mooToolShell
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooToolTabsBackground
+import com.rememberber.mootool.next.compose.ui.components.mooFindBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.MooOverlay
+import com.rememberber.mootool.next.compose.ui.components.MooTooltip
+import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
+import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.theme.toAwtColor
 import com.rememberber.mootool.next.compose.ui.workbench.CopyFeedbackPolicy
+import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.workbench.OnToolLeaveUnlessDetached
+import com.rememberber.mootool.next.compose.ui.workbench.onUserInput
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
+import com.rememberber.mootool.next.compose.ui.workbench.blockedByIme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.FileDialog
 import java.awt.Frame
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
 import java.io.File
 import java.util.UUID
 import javax.swing.SwingUtilities
@@ -96,6 +130,7 @@ import javax.swing.event.DocumentListener
 fun HttpScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.httpSession() }
     val revision by container.sessionManager.revision.collectAsState()
+    val sessionGeneration by container.sessionManager.sessionGeneration.collectAsState()
     val settings by container.settings.collectAsState()
     val colors = MooTheme.colors
     val scope = rememberCoroutineScope()
@@ -119,11 +154,33 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
         items = container.httpCollections.list(session.query)
     }
 
+    LaunchedEffect(settings.network.requestTimeoutMs) {
+        val fromSettings = HttpTimeoutSettings.clamp(settings.network.requestTimeoutMs)
+        if (session.timeoutMs != fromSettings) {
+            session.timeoutMs = fromSettings
+            persist()
+        }
+    }
+
     LaunchedEffect(session.query, revision) { reload() }
+    LaunchedEffect(settings.data.directory, sessionGeneration) {
+        reload()
+        if (session.selectedId.isNotBlank() && items.none { it.id == session.selectedId }) {
+            session.selectedId = ""
+        }
+        persist()
+    }
     var methodOpen by remember { mutableStateOf(false) }
     var bodyTypeOpen by remember { mutableStateOf(false) }
     var moreOpen by remember { mutableStateOf(false) }
 
+    DisposableEffect(session.bodyEditor) {
+        session.bodyEditor.onUserDocumentChange = {
+            session.onUserInput { }
+            persist()
+        }
+        onDispose { session.bodyEditor.onUserDocumentChange = null }
+    }
     DisposableEffect(session) {
         val listener = object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) {
@@ -139,6 +196,8 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
         session.bodyEditor.document.addDocumentListener(listener)
         onDispose { session.bodyEditor.document.removeDocumentListener(listener) }
     }
+    DismissModalOverlaysOnDispose(container, ToolId.Http) { session.dismissModalOverlays() }
+    EditorFindHighlight.ClearOnDispose(session.responseEditor)
 
     LaunchedEffect(session.copyState, session.copyGeneration) {
         if (session.copyState == CopyFeedbackPolicy.IDLE) return@LaunchedEffect
@@ -148,12 +207,11 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
     }
 
     fun copyResponse(payload: String) {
-        try {
-            Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(payload), null)
+        if (container.copyText(payload)) {
             session.error = ""
             session.notice = container.t("json.notice.copied")
             session.copyState = CopyFeedbackPolicy.afterCopy(true)
-        } catch (_: Exception) {
+        } else {
             session.notice = ""
             session.error = container.t("json.notice.copyFailed")
             session.copyState = CopyFeedbackPolicy.afterCopy(false)
@@ -174,11 +232,14 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
             runCatching { target.writeBytes(bytes) }
                 .onSuccess {
                     session.error = ""
-                    session.notice = container.t("http.responseSaved", mapOf("path" to target.absolutePath))
+                    val savedNotice = container.t("http.responseSaved", mapOf("path" to target.absolutePath))
+                    session.notice = savedNotice
+                    container.toastSuccess(savedNotice)
                 }
                 .onFailure {
                     session.notice = ""
                     session.error = it.message ?: container.t("http.saveFailed")
+                    container.toastError(session.error)
                 }
             persist()
             return
@@ -198,11 +259,14 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
         runCatching { target.writeText(payload) }
             .onSuccess {
                 session.error = ""
-                session.notice = container.t("http.responseSaved", mapOf("path" to target.absolutePath))
+                val savedNotice = container.t("http.responseSaved", mapOf("path" to target.absolutePath))
+                session.notice = savedNotice
+                container.toastSuccess(savedNotice)
             }
             .onFailure {
                 session.notice = ""
                 session.error = it.message ?: container.t("http.saveFailed")
+                container.toastError(session.error)
             }
         persist()
     }
@@ -213,8 +277,14 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
             persist()
             return
         }
-        val timeout = HttpEngine.clampTimeout(session.timeoutMs)
-        session.timeoutMs = timeout
+        val timeoutResult = HttpTimeoutSettings.commit(session.timeoutMs, settings.network.requestTimeoutMs)
+        session.timeoutMs = timeoutResult.sessionMs
+        if (timeoutResult.updateGlobal) {
+            container.updateSettings { current ->
+                current.copy(network = current.network.copy(requestTimeoutMs = timeoutResult.sessionMs))
+            }
+        }
+        val timeout = timeoutResult.sessionMs
         val requestId = "http-${UUID.randomUUID()}"
         session.previousResponse = HttpEngine.usableResponse(session.response, session.previousResponse)
         session.requestId = requestId
@@ -232,6 +302,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                 if (session.requestId != requestId) return@withContext
                 session.sending = false
                 session.response = result
+                session.findIndex = HttpResponseFind.FIND_INDEX_UNSET
                 session.notice = "${result.status} ${result.statusText} · ${result.durationMs} ms"
                 session.error = result.errorCode?.let { messageFor(container, it, result.statusText) }.orEmpty()
                 container.history.save(
@@ -247,16 +318,40 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
         }
     }
 
+    fun cancelInFlightSend() {
+        if (!session.sending || session.requestId.isBlank()) return
+        HttpEngine.cancel(session.requestId)
+        session.sending = false
+        session.requestId = ""
+    }
+
+    fun commitTimeout(andSend: Boolean = false) {
+        val result = HttpTimeoutSettings.commit(session.timeoutMs, settings.network.requestTimeoutMs)
+        session.timeoutMs = result.sessionMs
+        if (result.updateGlobal) {
+            container.updateSettings { current ->
+                current.copy(network = current.network.copy(requestTimeoutMs = result.sessionMs))
+            }
+        }
+        persist()
+        if (andSend && !session.sending) send()
+    }
+
+    OnToolLeaveUnlessDetached(container, ToolId.Http) { cancelInFlightSend() }
+
     BoxWithConstraints(Modifier.fillMaxSize()) {
     val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
     Column(Modifier.fillMaxSize().background(colors.workspace).onPreviewKeyEvent { event ->
-        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+        if (event.type != KeyEventType.KeyDown || event.blockedByIme()) return@onPreviewKeyEvent false
         val meta = event.isMetaPressed || event.isCtrlPressed
         when {
             meta && !event.isShiftPressed && !event.isAltPressed && event.key == Key.F -> {
-                session.findOpen = true
-                persist()
-                true
+                if (!HttpFindShortcutPolicy.shouldOpenResponseFindFromShell(session)) {
+                    false
+                } else {
+                    openHttpResponseFind(session) { persist() }
+                    true
+                }
             }
             meta && event.isShiftPressed && event.key == Key.F && session.requestTab == HttpRequestTab.Body -> {
                 formatBody()
@@ -276,11 +371,11 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
         }
     }) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(container.t("http.title"), color = colors.textPrimary, fontSize = 16.sp)
+            MooPageTitle(container.t("http.title"))
             if (revision < 0) Spacer(Modifier.width(0.dp))
             Spacer(Modifier.weight(1f))
             if (session.error.isNotEmpty()) Text(session.error, color = colors.danger, fontSize = 12.sp)
@@ -295,7 +390,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
             )
         }
         Row(Modifier.fillMaxSize()) {
-            val listWidth = settings.layout.pane(ToolId.Http.id, 0, 240f, 200f, 320f)
+            val listWidth = settings.layout.pane(ToolId.Http.id, 0, 210f, 180f, 320f)
             CollectionPane(container, session, items, {
                 session.loadDraft(it.draft)
                 session.response = if (it.responseBody.isNotEmpty() || it.responseHeaders.isNotEmpty()) {
@@ -311,19 +406,27 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                         cookies = it.responseCookies
                     )
                 } else null
+                session.findIndex = HttpResponseFind.FIND_INDEX_UNSET
                 persist()
             }, { persist(); reload() }, listWidth)
             VerticalPaneHandle(
                 onDelta = { container.setPaneSize(ToolId.Http.id, 0, listWidth + it, 2) },
-                onReset = { container.setPaneSize(ToolId.Http.id, 0, 240f, 2) }
+                onReset = { container.setPaneSize(ToolId.Http.id, 0, 210f, 2) }
             )
-            Column(Modifier.weight(1f).fillMaxHeight().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(12.dp)
+                    .mooToolShell(p5 = true, endBorder = false),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box {
-                        MooButton("${container.t("http.method")}: ${session.method.name}", onClick = { methodOpen = true })
-                        DropdownMenu(expanded = methodOpen, onDismissRequest = { methodOpen = false }) {
+                        MooButton("${container.t("http.method")}: ${session.method.name}", onClick = { methodOpen = true }, p5Toolbar = true)
+                        MooMenu(expanded = methodOpen, onDismissRequest = { methodOpen = false }) {
                             HttpMethod.entries.forEach { method ->
-                                DropdownMenuItem(onClick = {
+                                MooMenuItem(onClick = {
                                     methodOpen = false
                                     session.method = method
                                     persist()
@@ -333,60 +436,120 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                             }
                         }
                     }
-                    MooTextField(session.url, { session.url = it; persist() }, modifier = Modifier.weight(1f), placeholder = "https://api.example.com")
-                    MooTextField(session.timeoutMs.toString(), {
-                        session.timeoutMs = it.toIntOrNull() ?: session.timeoutMs
-                        persist()
-                    }, modifier = Modifier.width(90.dp), placeholder = container.t("http.timeout"))
+                    MooTextField(
+                        session.url,
+                        { session.onUserInput { session.url = it; persist() } },
+                        modifier = Modifier.weight(1f),
+                        placeholder = "https://api.example.com",
+                        dense = true,
+                        fieldModifier = Modifier.onPreviewKeyEvent { event ->
+                            if (event.type != KeyEventType.KeyDown || event.key != Key.Enter) return@onPreviewKeyEvent false
+                            if (event.isMetaPressed || event.isCtrlPressed) return@onPreviewKeyEvent false
+                            if (!session.sending) send()
+                            true
+                        }
+                    )
+                    MooTooltip(container.t("http.timeoutHint")) {
+                        MooTextField(
+                            session.timeoutMs.toString(),
+                            {
+                                session.timeoutMs = it.toIntOrNull() ?: session.timeoutMs
+                                persist()
+                            },
+                            modifier = Modifier.width(90.dp),
+                            placeholder = container.t("http.timeout"),
+                            dense = true,
+                            fieldModifier = Modifier
+                                .onFocusChanged { if (!it.isFocused) commitTimeout() }
+                                .onPreviewKeyEvent { event ->
+                                    if (event.type != KeyEventType.KeyDown || event.key != Key.Enter) return@onPreviewKeyEvent false
+                                    commitTimeout(andSend = true)
+                                    true
+                                }
+                        )
+                    }
                     if (session.sending) {
-                        MooButton(container.t("common.stop"), onClick = {
-                            HttpEngine.cancel(session.requestId)
-                            session.sending = false
-                            session.notice = container.t("http.error.ABORTED")
-                            persist()
-                        })
+                        MooButton(
+                            container.t("common.stop"),
+                            onClick = {
+                                HttpEngine.cancel(session.requestId)
+                                session.sending = false
+                                session.notice = container.t("http.error.ABORTED")
+                                persist()
+                            },
+                            p5Toolbar = true
+                        )
                     } else {
-                        MooButton(container.t("http.send"), primary = true, onClick = { send() })
+                        MooButton(container.t("http.send"), prominent = true, onClick = { send() }, p5Toolbar = true)
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .focusGroup()
+                        .onFocusChanged { session.requestPaneComposeFocused = it.hasFocus },
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().mooToolTabsBackground().padding(start = 10.dp, end = 10.dp, top = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
                     HttpRequestTab.entries.forEach { tab ->
-                        TabChip(container.t("http.tab.${tab.name.lowercase()}"), session.requestTab == tab) {
+                        MooToolTab(container.t("http.tab.${tab.name.lowercase()}"), selected = session.requestTab == tab, onClick = {
                             session.requestTab = tab
-                            persist()
-                        }
-                    }
-                    Spacer(Modifier.weight(1f))
-                    if (session.requestTab == HttpRequestTab.Body) {
-                        MooButton(container.t("http.formatBody"), onClick = {
-                            formatBody()
                             persist()
                         })
                     }
+                    Spacer(Modifier.weight(1f))
                 }
                 Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 when (session.requestTab) {
-                    HttpRequestTab.Params -> PairEditor(container, session.params, { session.params = it; persist() })
-                    HttpRequestTab.Headers -> PairEditor(container, session.headers, { session.headers = it; persist() })
-                    HttpRequestTab.Cookies -> CookieEditor(container, session.cookies, { session.cookies = it; persist() })
+                    HttpRequestTab.Params -> PairEditor(container, session.params, {
+                        session.onUserInput { session.params = it }
+                        persist()
+                    })
+                    HttpRequestTab.Headers -> PairEditor(container, session.headers, {
+                        session.onUserInput { session.headers = it }
+                        persist()
+                    })
+                    HttpRequestTab.Cookies -> CookieEditor(container, session.cookies, {
+                        session.onUserInput { session.cookies = it }
+                        persist()
+                    })
                     HttpRequestTab.Body -> {
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(container.t("http.bodyType"), color = colors.textSecondary, fontSize = 12.sp)
+                        Column(Modifier.fillMaxSize().padding(start = 8.dp, end = 8.dp, bottom = 8.dp)) {
+                        Row(
+                            Modifier.fillMaxWidth().height(37.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(container.t("http.bodyType"), color = colors.textMuted, fontSize = 10.sp)
                             Box {
-                                MooButton(session.bodyType, onClick = { bodyTypeOpen = true })
-                                DropdownMenu(expanded = bodyTypeOpen, onDismissRequest = { bodyTypeOpen = false }) {
+                                MooButton(session.bodyType, onClick = { bodyTypeOpen = true }, p5Toolbar = true)
+                                MooMenu(expanded = bodyTypeOpen, onDismissRequest = { bodyTypeOpen = false }) {
                                     HttpEngine.BODY_TYPES.forEach { type ->
-                                        DropdownMenuItem(onClick = {
+                                        MooMenuItem(onClick = {
                                             bodyTypeOpen = false
                                             session.bodyType = type
                                             session.bodyEditor.applySyntax(HttpEngine.syntaxForMime(type))
                                             persist()
                                         }) {
-                                            Text(type)
+                                            Text(type, fontSize = 12.sp)
                                         }
                                     }
                                 }
                             }
+                            Spacer(Modifier.weight(1f))
+                            MooButton(
+                                container.t("http.formatBody"),
+                                onClick = {
+                                    formatBody()
+                                    persist()
+                                },
+                                p5Toolbar = true
+                            )
                         }
                         EditorHost(
                             buffer = session.bodyEditor,
@@ -394,7 +557,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                             fontName = DocumentFormatEngine.editorFont(settings.editor.jsonFontName),
                             fontSize = settings.editor.jsonFontSize,
                             wrap = settings.editor.softWrap,
-                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            modifier = Modifier.weight(1f).fillMaxWidth().mooEditorFrame(flatten = true),
                             shortcuts = EditorAppShortcuts(
                                 onFormat = {
                                     formatBody()
@@ -403,7 +566,9 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                                 onSend = { send() }
                             )
                         )
+                        }
                     }
+                }
                 }
                 }
                 val responseHeight = settings.layout.pane(ToolId.Http.id, 1, 220f, 120f, 480f)
@@ -419,7 +584,11 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                 } else {
                     emptyList()
                 }
-                val currentIndex = if (matches.isEmpty()) 0 else session.findIndex.coerceIn(0, matches.lastIndex)
+                val currentIndex = when {
+                    matches.isEmpty() -> 0
+                    session.findIndex < 0 -> HttpResponseFind.FIND_INDEX_UNSET
+                    else -> session.findIndex.coerceIn(0, matches.lastIndex)
+                }
                 LaunchedEffect(
                     payload,
                     session.responseTab,
@@ -441,8 +610,10 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                                 colors.selected.toAwtColor(),
                                 colors.accent.copy(alpha = 0.45f).toAwtColor()
                             )
-                            val match = matches[currentIndex]
-                            session.responseEditor.select(match.start, match.end)
+                            if (currentIndex >= 0) {
+                                val match = matches[currentIndex]
+                                session.responseEditor.select(match.start, match.end)
+                            }
                         } else {
                             session.responseEditor.clearMatches()
                         }
@@ -456,24 +627,31 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                         fontSize = 12.sp
                     )
                     HttpResponseTab.entries.forEach { tab ->
-                        TabChip(container.t("http.response.${tab.name.lowercase()}"), session.responseTab == tab) {
+                        MooToolTab(container.t("http.response.${tab.name.lowercase()}"), selected = session.responseTab == tab, onClick = {
                             session.responseTab = tab
+                            session.findIndex = HttpResponseFind.FIND_INDEX_UNSET
                             persist()
-                        }
+                        })
                     }
                     Spacer(Modifier.weight(1f))
                     MooButton(
                         container.t("http.find"),
                         primary = session.findOpen,
                         onClick = {
-                            session.findOpen = !session.findOpen
-                            persist()
-                        }
+                            if (session.findOpen) {
+                                session.findOpen = false
+                                persist()
+                            } else {
+                                openHttpResponseFind(session) { persist() }
+                            }
+                        },
+                        p5Toolbar = true
                     )
                     MooButton(
                         container.t(CopyFeedbackPolicy.buttonKey(session.copyState, "common.action.copy")),
                         enabled = visible != null && !session.sending,
-                        onClick = { copyResponse(payload) }
+                        onClick = { copyResponse(payload) },
+                        p5Toolbar = true
                     )
                     if (!overflow) {
                         MooButton(
@@ -483,13 +661,14 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                                 container.t("http.saveResponse")
                             },
                             enabled = visible != null && !session.sending,
-                            onClick = { saveResponse(visible) }
+                            onClick = { saveResponse(visible) },
+                            p5Toolbar = true
                         )
                     } else {
                         Box {
-                            MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true })
-                            DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
-                                DropdownMenuItem(
+                            MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true }, p5Toolbar = true)
+                            MooMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
+                                MooMenuItem(
                                     onClick = {
                                         moreOpen = false
                                         saveResponse(visible)
@@ -522,26 +701,23 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                     }
                 }
                 val placeholder = container.t("http.responseEmpty")
-                Box(Modifier.weight(1f).fillMaxWidth().border(1.dp, colors.border, RoundedCornerShape(8.dp))) {
+                Box(Modifier.weight(1f).fillMaxWidth().mooEditorFrame(flatten = true)) {
                     EditorHost(
                         buffer = session.responseEditor,
                         dark = MooTheme.dark,
                         fontName = DocumentFormatEngine.editorFont(settings.editor.jsonFontName),
-                        fontSize = settings.editor.jsonFontSize,
+                        fontSize = 11,
                         wrap = settings.editor.softWrap,
                         modifier = Modifier.fillMaxSize(),
                         shortcuts = EditorAppShortcuts(
-                            onFind = {
-                                session.findOpen = true
-                                persist()
-                            }
+                            onFind = { openHttpResponseFind(session) { persist() } }
                         )
                     )
                     if (payload.isEmpty()) {
                         Text(
                             placeholder,
                             color = colors.textSecondary,
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             modifier = Modifier.padding(8.dp)
                         )
                     }
@@ -579,49 +755,80 @@ private fun CollectionPane(
 ) {
     val colors = MooTheme.colors
     Column(
-        Modifier.width(width.dp).fillMaxHeight().background(colors.sidebar).padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        Modifier.width(width.dp).fillMaxHeight().mooToolShell(colors.sidebar, flatten = true)
     ) {
-        MooTextField(session.query, { session.query = it; onChanged() }, placeholder = container.t("common.search"))
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            MooCompactSearch(session.query, { session.query = it; onChanged() }, placeholder = container.t("common.search"), modifier = Modifier.weight(1f))
+        }
         MooButton(container.t("common.new"), onClick = {
             session.loadDraft(HttpEngine.emptyDraft(container.t("http.untitled")))
             session.response = null
             session.previousResponse = null
             onChanged()
-        })
+        }, modifier = Modifier.padding(horizontal = 7.dp))
         if (items.isEmpty()) {
             Text(container.t("http.savedEmpty"), color = colors.textSecondary, fontSize = 12.sp)
         } else {
-            LazyColumn(Modifier.weight(1f)) {
+            LazyColumn(Modifier.weight(1f).padding(5.dp)) {
                 itemsIndexed(items, key = { _, item -> item.id }) { _, item ->
+                    val interaction = remember(item.id) { MutableInteractionSource() }
+                    val hovered by interaction.collectIsHoveredAsState()
+                    val active = item.id == session.selectedId
+                    val shape = RoundedCornerShape(5.dp)
                     Column(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp))
-                            .background(if (item.id == session.selectedId) colors.selected else colors.sidebar)
-                            .clickable { onSelect(item) }.padding(8.dp)
+                        Modifier.fillMaxWidth().clip(shape)
+                            .background(if (active || hovered) colors.control else Color.Transparent)
+                            .hoverable(interaction)
+                            .mooFocusClickable(shape = shape) { onSelect(item) }
+                            .padding(horizontal = 9.dp, vertical = 8.dp)
                     ) {
-                        Text(item.draft.name, color = colors.textPrimary, fontSize = 13.sp)
-                        Text("${item.draft.method.name} ${item.draft.url.ifBlank { container.t("http.noUrl") }}", color = colors.textSecondary, fontSize = 11.sp)
+                        Text(
+                            item.draft.name,
+                            color = colors.textBody,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            "${item.draft.method.name} ${item.draft.url.ifBlank { container.t("http.noUrl") }}",
+                            color = colors.textMuted,
+                            fontSize = 10.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            MooButton(container.t("http.importCurl"), onClick = { session.curlOpen = true; onChanged() })
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 40.dp).padding(horizontal = 7.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.End)
+        ) {
+            MooButton(container.t("http.importCurl"), onClick = { session.curlOpen = true; onChanged() }, p5Toolbar = true)
             MooButton(container.t("http.copyCurl"), onClick = {
-                runCatching {
-                    Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(HttpEngine.toCurl(session.draft())), null)
+                if (container.copyText(HttpEngine.toCurl(session.draft()))) {
                     session.notice = container.t("common.copied")
-                    onChanged()
+                } else {
+                    session.notice = container.t("json.notice.copyFailed")
                 }
-            })
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                onChanged()
+            }, p5Toolbar = true)
             MooButton(container.t("common.save"), onClick = {
                 session.saveName = session.name.ifBlank { container.t("http.untitled") }
                 session.saveOpen = true
                 onChanged()
-            })
-            MooButton(container.t("common.delete"), onClick = { session.deleteConfirm = true; onChanged() }, enabled = session.selectedId.isNotBlank())
+            }, p5Toolbar = true)
+            MooButton(
+                container.t("common.delete"),
+                onClick = { session.deleteConfirm = true; onChanged() },
+                enabled = session.selectedId.isNotBlank(),
+                p5Toolbar = true
+            )
         }
     }
 }
@@ -629,13 +836,15 @@ private fun CollectionPane(
 @Composable
 private fun TabChip(label: String, selected: Boolean, onClick: () -> Unit) {
     val colors = MooTheme.colors
+    val shape = RoundedCornerShape(6.dp)
     Text(
         label,
         color = if (selected) colors.onAccent else colors.textPrimary,
         fontSize = 11.sp,
-        modifier = Modifier.clip(RoundedCornerShape(6.dp))
+        modifier = Modifier
+            .clip(shape)
             .background(if (selected) colors.accent else colors.control)
-            .clickable(onClick = onClick)
+            .mooFocusClickable(shape = shape, onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 4.dp)
     )
 }
@@ -643,57 +852,132 @@ private fun TabChip(label: String, selected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun PairEditor(container: AppContainer, items: List<HttpPair>, onChange: (List<HttpPair>) -> Unit) {
     val colors = MooTheme.colors
-    Column(Modifier.fillMaxWidth().height(180.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        MooButton(container.t("http.addEntry"), onClick = { onChange(items + HttpEngine.pair()) })
+    Column(Modifier.fillMaxWidth().height(200.dp)) {
+        Row(
+            Modifier.fillMaxWidth().height(35.dp).background(colors.workspace).padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Spacer(Modifier.width(22.dp))
+            Text(container.t("http.name"), color = colors.textMuted, fontSize = 10.sp, modifier = Modifier.weight(0.8f))
+            Text(container.t("http.value"), color = colors.textMuted, fontSize = 10.sp, modifier = Modifier.weight(1.2f))
+            Spacer(Modifier.width(30.dp))
+        }
+        androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
         LazyColumn(Modifier.weight(1f)) {
             itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    TabChip(if (item.enabled) "on" else "off", item.enabled) {
-                        onChange(items.toMutableList().also { it[index] = item.copy(enabled = !item.enabled) })
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 35.dp).padding(horizontal = 8.dp, vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Checkbox(
+                        item.enabled,
+                        { checked -> onChange(items.toMutableList().also { it[index] = item.copy(enabled = checked) }) },
+                        modifier = Modifier.size(22.dp)
+                    )
+                    MooTextField(
+                        item.name,
+                        { value -> onChange(items.toMutableList().also { it[index] = item.copy(name = value) }) },
+                        modifier = Modifier.weight(0.8f),
+                        placeholder = container.t("http.name"),
+                        compact = true
+                    )
+                    MooTextField(
+                        item.value,
+                        { value -> onChange(items.toMutableList().also { it[index] = item.copy(value = value) }) },
+                        modifier = Modifier.weight(1.2f),
+                        placeholder = container.t("http.value"),
+                        compact = true
+                    )
+                    MooGhostButton(container.t("common.delete"), onClick = { onChange(items.filterNot { it.id == item.id }) }, size = 28.dp) {
+                        Text("×", color = colors.textMuted, fontSize = 16.sp)
                     }
-                    MooTextField(item.name, { value -> onChange(items.toMutableList().also { it[index] = item.copy(name = value) }) }, modifier = Modifier.weight(1f), placeholder = container.t("http.name"))
-                    MooTextField(item.value, { value -> onChange(items.toMutableList().also { it[index] = item.copy(value = value) }) }, modifier = Modifier.weight(1f), placeholder = container.t("http.value"))
-                    MooButton(container.t("common.delete"), onClick = { onChange(items.filterNot { it.id == item.id }) })
                 }
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
             }
         }
-        Text(container.t("http.duplicateHint"), color = colors.textSecondary, fontSize = 11.sp)
+        Text(
+            container.t("http.addEntry"),
+            color = colors.textMuted,
+            fontSize = 11.sp,
+            modifier = Modifier
+                .padding(12.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(colors.control)
+                .mooFocusClickable(shape = RoundedCornerShape(6.dp)) { onChange(items + HttpEngine.pair()) }
+                .padding(horizontal = 10.dp, vertical = 7.dp)
+        )
+        Text(container.t("http.duplicateHint"), color = colors.textSecondary, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
     }
 }
 
 @Composable
 private fun CookieEditor(container: AppContainer, items: List<HttpCookie>, onChange: (List<HttpCookie>) -> Unit) {
-    Column(Modifier.fillMaxWidth().height(180.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        MooButton(container.t("http.addEntry"), onClick = { onChange(items + HttpEngine.cookie()) })
+    val colors = MooTheme.colors
+    Column(Modifier.fillMaxWidth().height(200.dp)) {
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).height(35.dp).background(colors.workspace).padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Spacer(Modifier.width(22.dp))
+            Text(container.t("http.name"), color = colors.textMuted, fontSize = 10.sp, modifier = Modifier.width(100.dp))
+            Text(container.t("http.value"), color = colors.textMuted, fontSize = 10.sp, modifier = Modifier.width(130.dp))
+            Text(container.t("http.domain"), color = colors.textMuted, fontSize = 10.sp, modifier = Modifier.width(100.dp))
+            Text(container.t("http.path"), color = colors.textMuted, fontSize = 10.sp, modifier = Modifier.width(80.dp))
+            Text(container.t("http.expires"), color = colors.textMuted, fontSize = 10.sp, modifier = Modifier.width(110.dp))
+            Spacer(Modifier.width(30.dp))
+        }
+        androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
         LazyColumn(Modifier.weight(1f)) {
             itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    TabChip(if (item.enabled) "on" else "off", item.enabled) {
-                        onChange(items.toMutableList().also { it[index] = item.copy(enabled = !item.enabled) })
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()).heightIn(min = 35.dp).padding(horizontal = 8.dp, vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Checkbox(
+                        item.enabled,
+                        { checked -> onChange(items.toMutableList().also { it[index] = item.copy(enabled = checked) }) },
+                        modifier = Modifier.size(22.dp)
+                    )
+                    MooTextField(item.name, { value -> onChange(items.toMutableList().also { it[index] = item.copy(name = value) }) }, modifier = Modifier.width(100.dp), placeholder = container.t("http.name"), compact = true)
+                    MooTextField(item.value, { value -> onChange(items.toMutableList().also { it[index] = item.copy(value = value) }) }, modifier = Modifier.width(130.dp), placeholder = container.t("http.value"), compact = true)
+                    MooTextField(item.domain, { value -> onChange(items.toMutableList().also { it[index] = item.copy(domain = value) }) }, modifier = Modifier.width(100.dp), placeholder = container.t("http.domain"), compact = true)
+                    MooTextField(item.path, { value -> onChange(items.toMutableList().also { it[index] = item.copy(path = value) }) }, modifier = Modifier.width(80.dp), placeholder = container.t("http.path"), compact = true)
+                    MooTextField(item.expires, { value -> onChange(items.toMutableList().also { it[index] = item.copy(expires = value) }) }, modifier = Modifier.width(110.dp), placeholder = container.t("http.expires"), compact = true)
+                    MooGhostButton(container.t("common.delete"), onClick = { onChange(items.filterNot { it.id == item.id }) }, size = 28.dp) {
+                        Text("×", color = colors.textMuted, fontSize = 16.sp)
                     }
-                    MooTextField(item.name, { value -> onChange(items.toMutableList().also { it[index] = item.copy(name = value) }) }, modifier = Modifier.width(90.dp), placeholder = container.t("http.name"))
-                    MooTextField(item.value, { value -> onChange(items.toMutableList().also { it[index] = item.copy(value = value) }) }, modifier = Modifier.width(90.dp), placeholder = container.t("http.value"))
-                    MooTextField(item.domain, { value -> onChange(items.toMutableList().also { it[index] = item.copy(domain = value) }) }, modifier = Modifier.width(80.dp), placeholder = container.t("http.domain"))
-                    MooTextField(item.path, { value -> onChange(items.toMutableList().also { it[index] = item.copy(path = value) }) }, modifier = Modifier.width(70.dp), placeholder = container.t("http.path"))
-                    MooTextField(item.expires, { value -> onChange(items.toMutableList().also { it[index] = item.copy(expires = value) }) }, modifier = Modifier.width(80.dp), placeholder = container.t("http.expires"))
-                    MooButton(container.t("common.delete"), onClick = { onChange(items.filterNot { it.id == item.id }) })
                 }
             }
         }
+        Text(
+            container.t("http.addEntry"),
+            color = colors.textMuted,
+            fontSize = 11.sp,
+            modifier = Modifier
+                .padding(12.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(colors.control)
+                .mooFocusClickable(shape = RoundedCornerShape(6.dp)) { onChange(items + HttpEngine.cookie()) }
+                .padding(horizontal = 10.dp, vertical = 7.dp)
+        )
     }
 }
 
 @Composable
 private fun CurlDialog(container: AppContainer, session: HttpSession, onChanged: () -> Unit) {
-    Dialog(onDismissRequest = { session.curlOpen = false; onChanged() }) {
+    MooOverlay(onDismiss = { session.curlOpen = false; onChanged() }) {
         Column(
-            Modifier.width(560.dp).height(320.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+            Modifier.width(560.dp).height(320.dp).mooDialogSurface().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("http.curlPrompt"), color = MooTheme.colors.textPrimary)
             MooTextField(session.curlValue, { session.curlValue = it; onChanged() }, modifier = Modifier.weight(1f).fillMaxWidth(), singleLine = false)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("http.importCurl"), primary = true, onClick = {
+                MooButton(container.t("http.importCurl"), prominent = true, onClick = {
                     runCatching { HttpEngine.parseCurl(session.curlValue) }
                         .onSuccess {
                             session.loadDraft(it)
@@ -713,21 +997,22 @@ private fun CurlDialog(container: AppContainer, session: HttpSession, onChanged:
 
 @Composable
 private fun SaveDialog(container: AppContainer, session: HttpSession, onChanged: () -> Unit) {
-    Dialog(onDismissRequest = { session.saveOpen = false; onChanged() }) {
+    MooOverlay(onDismiss = { session.saveOpen = false; onChanged() }) {
         Column(
-            Modifier.width(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+            Modifier.width(420.dp).mooDialogSurface().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("http.saveName"), color = MooTheme.colors.textPrimary)
             MooTextField(session.saveName, { session.saveName = it; onChanged() })
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.save"), primary = true, onClick = {
+                MooButton(container.t("common.save"), prominent = true, onClick = {
                     val name = session.saveName.trim()
                     if (name.isEmpty()) return@MooButton
                     val saved = container.httpCollections.save(session.draft().copy(name = name), session.response)
                     session.loadDraft(saved.draft)
                     session.saveOpen = false
                     session.notice = container.t("common.save")
+                    container.toastSuccess(container.t("common.save"))
                     onChanged()
                 })
                 MooButton(container.t("common.cancel"), onClick = { session.saveOpen = false; onChanged() })
@@ -738,14 +1023,14 @@ private fun SaveDialog(container: AppContainer, session: HttpSession, onChanged:
 
 @Composable
 private fun DeleteDialog(container: AppContainer, session: HttpSession, onChanged: () -> Unit) {
-    Dialog(onDismissRequest = { session.deleteConfirm = false; onChanged() }) {
+    MooOverlay(onDismiss = { session.deleteConfirm = false; onChanged() }) {
         Column(
-            Modifier.width(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+            Modifier.width(420.dp).mooDialogSurface().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("http.confirmDelete"), color = MooTheme.colors.textPrimary)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.delete"), primary = true, onClick = {
+                MooButton(container.t("common.delete"), danger = true, onClick = {
                     if (session.selectedId.isNotBlank()) container.httpCollections.delete(session.selectedId)
                     session.loadDraft(HttpEngine.emptyDraft(container.t("http.untitled")))
                     session.response = null
@@ -766,8 +1051,43 @@ private fun HttpFindBar(
     currentIndex: Int,
     onChanged: () -> Unit
 ) {
+    val findFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        findFocus.requestFocus()
+    }
+    fun step(forward: Boolean) {
+        if (session.findQuery.isBlank()) return
+        if (matches.isEmpty()) {
+            container.toastFindNoMatches()
+            return
+        }
+        onEdt {
+            val match = RstaFindNavigation.jump(session.responseEditor, session.findQuery, session.findOptions, forward)
+            if (match == null) {
+                container.toastFindNoMatches()
+            } else {
+                val idx = matches.indexOfFirst { it.start == match.start && it.end == match.end }
+                if (idx >= 0) session.findIndex = idx
+            }
+            onChanged()
+        }
+    }
+    fun closeFind() {
+        session.findOpen = false
+        session.findIndex = HttpResponseFind.FIND_INDEX_UNSET
+        onChanged()
+    }
     Row(
-        modifier = Modifier.fillMaxWidth().background(MooTheme.colors.surfaceSubtle).horizontalScroll(rememberScrollState()).padding(6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .mooFindBarBackground()
+            .onFindBarRowKeys(
+                onPrevious = { step(false) },
+                onNext = { step(true) },
+                onClose = ::closeFind,
+            )
+            .horizontalScroll(rememberScrollState())
+            .padding(6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
@@ -775,40 +1095,53 @@ private fun HttpFindBar(
             session.findQuery,
             {
                 session.findQuery = it
-                session.findIndex = 0
+                session.findIndex = HttpResponseFind.FIND_INDEX_UNSET
                 onChanged()
             },
             modifier = Modifier.width(220.dp),
-            placeholder = container.t("http.findPlaceholder")
+            placeholder = container.t("http.findPlaceholder"),
+            fieldModifier = Modifier
+                .focusRequester(findFocus)
+                .onFindQueryEnterKey { step(true) },
+        )
+        MooButton(
+            container.t("find.find"),
+            enabled = session.findQuery.isNotBlank(),
+            onClick = { step(true) },
         )
         MooButton(container.t("find.matchCase") + ": ${session.findOptions.matchCase}", onClick = {
             session.findOptions = session.findOptions.copy(matchCase = !session.findOptions.matchCase)
-            session.findIndex = 0
+            session.findIndex = HttpResponseFind.FIND_INDEX_UNSET
             onChanged()
         })
         MooButton(container.t("find.wholeWord") + ": ${session.findOptions.wholeWord}", onClick = {
             session.findOptions = session.findOptions.copy(wholeWord = !session.findOptions.wholeWord)
-            session.findIndex = 0
+            session.findIndex = HttpResponseFind.FIND_INDEX_UNSET
             onChanged()
         })
         MooButton(container.t("find.regex") + ": ${session.findOptions.regex}", onClick = {
             session.findOptions = session.findOptions.copy(regex = !session.findOptions.regex)
-            session.findIndex = 0
+            session.findIndex = HttpResponseFind.FIND_INDEX_UNSET
             onChanged()
         })
-        Text(container.t("json.find.matches", mapOf("count" to matches.size.toString())), color = MooTheme.colors.textSecondary, fontSize = 12.sp)
-        MooButton(container.t("find.previous"), onClick = {
-            session.findIndex = HttpResponseFind.nextIndex(matches.size, currentIndex, forward = false)
-            onChanged()
-        })
-        MooButton(container.t("find.next"), onClick = {
-            session.findIndex = HttpResponseFind.nextIndex(matches.size, currentIndex, forward = true)
-            onChanged()
-        })
-        MooButton(container.t("common.close"), onClick = {
-            session.findOpen = false
-            onChanged()
-        })
+        Text(
+            "${container.t("find.foundPrefix")} ${matches.size}",
+            color = MooTheme.colors.textSecondary,
+            fontSize = 12.sp,
+        )
+        MooButton(container.t("find.previous"), onClick = { step(false) })
+        MooButton(container.t("find.next"), onClick = { step(true) })
+        MooButton(container.t("common.close"), onClick = ::closeFind)
+    }
+}
+
+/** 对齐 Electron `HttpTool.openFind`：响应编辑器选区预填查找框（仅响应区，不含请求 pane）。 */
+private fun openHttpResponseFind(session: HttpSession, onChanged: () -> Unit) {
+    openFindBarSeedingSelection(session.responseEditor) { selected ->
+        selected?.let { session.findQuery = it }
+        session.findOpen = true
+        session.findIndex = HttpResponseFind.FIND_INDEX_UNSET
+        onChanged()
     }
 }
 

@@ -86,6 +86,39 @@ class ColorFavoriteStore(
         save(current.copy(items = current.items.filterNot { it.id == id }))
     }
 
+    fun mergeImport(folderTitle: String, name: String, value: String): Boolean {
+        val trimmedValue = value.trim()
+        if (trimmedValue.isEmpty()) return false
+        val folder = folderTitle.trim().ifBlank { "默认收藏夹" }
+        val itemName = name.trim().ifBlank { trimmedValue }
+        var data = load()
+        var folderId = data.folders.find { it.title == folder }?.id
+        if (folderId == null) {
+            val created = ColorFavoriteFolder(id = UUID.randomUUID().toString(), title = folder)
+            data = data.copy(folders = data.folders + created)
+            folderId = created.id
+        }
+        if (data.items.any { it.folderId == folderId && it.name == itemName && it.value == trimmedValue }) {
+            return false
+        }
+        val item = ColorFavoriteItem(
+            id = UUID.randomUUID().toString(),
+            folderId = folderId,
+            name = itemName,
+            value = trimmedValue
+        )
+        save(data.copy(items = data.items + item))
+        return true
+    }
+
+    fun mergeImportAll(items: List<Triple<String, String, String>>): Int {
+        var count = 0
+        items.forEach { (folder, name, value) ->
+            if (mergeImport(folder, name, value)) count += 1
+        }
+        return count
+    }
+
     private fun load(): ColorFavoriteFile {
         if (!file.exists()) return ColorFavoriteFile()
         return runCatching { json.decodeFromString<ColorFavoriteFile>(file.readText()) }.getOrDefault(ColorFavoriteFile())

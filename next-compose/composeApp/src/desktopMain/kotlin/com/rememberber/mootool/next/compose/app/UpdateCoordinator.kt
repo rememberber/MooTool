@@ -1,5 +1,7 @@
 package com.rememberber.mootool.next.compose.app
 
+import com.rememberber.mootool.next.compose.domain.UpdateAutoDownloadTrigger
+import com.rememberber.mootool.next.compose.domain.UpdateCheckSurfacing
 import com.rememberber.mootool.next.compose.domain.UpdateBytesFetcher
 import com.rememberber.mootool.next.compose.domain.UpdateCancelled
 import com.rememberber.mootool.next.compose.domain.UpdateCheckResult
@@ -47,33 +49,62 @@ class UpdateCoordinator(
     private val downloader = UpdateDownloader(cacheRoot.resolve("updates"), bytesFetcher)
     private val job = AtomicReference<Job?>(null)
 
-    fun check(currentVersion: String = ProductIdentity.VERSION, autoDownload: Boolean = false) {
+    fun check(
+        currentVersion: String = ProductIdentity.VERSION,
+        autoDownload: Boolean = false,
+        automatic: Boolean = false,
+    ) {
         replaceJob {
-            _state.value = _state.value.copy(busy = true, error = "", message = "", status = "checking")
+            if (!automatic) {
+                _state.value = _state.value.copy(busy = true, error = "", message = "", status = "checking")
+            }
             runCatching {
                 withContext(Dispatchers.IO) {
                     UpdateEngine.fetchAndCheck(currentVersion, UpdateEngine.detectIdentity(), feedUrl, textFetcher)
                 }
             }.onSuccess { result ->
                 val ready = result.download?.let { downloader.readyFile(it) }
-                _state.value = UpdateUiState(
-                    busy = false,
-                    status = result.status.name.lowercase(),
-                    message = result.message,
-                    result = result,
-                    downloaded = ready
-                )
+                if (UpdateCheckSurfacing.shouldApplyUiResult(automatic, result.status)) {
+                    _state.value = UpdateUiState(
+                        busy = false,
+                        status = result.status.name.lowercase(),
+                        message = result.message,
+                        result = result,
+                        downloaded = ready
+                    )
+                }
                 if (autoDownload && result.status == UpdateCheckStatus.Available && result.download != null && ready == null) {
                     performDownload()
                 }
             }.onFailure { error ->
-                _state.value = _state.value.copy(busy = false, status = "error", error = error.message ?: "Update check failed")
+                if (UpdateCheckSurfacing.shouldApplyUiError(automatic)) {
+                    _state.value = _state.value.copy(busy = false, status = "error", error = error.message ?: "Update check failed")
+                }
             }
         }
     }
 
     fun download() {
         replaceJob { performDownload() }
+    }
+
+    /** 设置里打开「自动下载」时，若上次检查已是 Available 则立即下载（Electron `setAutoDownload`）。 */
+    fun applyAutoDownloadSetting(enabled: Boolean) {
+        if (!enabled) return
+        val current = _state.value
+        val pack = current.result?.download
+        val installerReady = pack?.let { downloader.readyFile(it) } != null || current.downloaded != null
+        if (
+            UpdateAutoDownloadTrigger.shouldStartDownload(
+                autoDownloadEnabled = true,
+                busy = current.busy,
+                checkStatus = current.result?.status,
+                hasDownloadPack = pack != null,
+                installerReady = installerReady,
+            )
+        ) {
+            download()
+        }
     }
 
     private suspend fun performDownload() {

@@ -52,6 +52,7 @@ class ColumnEditBinder(private val buffer: EditorBuffer) {
 
     private val mouse = object : MouseAdapter() {
         override fun mousePressed(event: MouseEvent) {
+            area.requestFocusInWindow()
             if (!enabled) return
             if (columnGesture(event)) {
                 event.consume()
@@ -59,6 +60,7 @@ class ColumnEditBinder(private val buffer: EditorBuffer) {
                 selection = ColumnRange(point.line, point.line, point.column, point.column)
                 refreshHighlight()
                 javax.swing.SwingUtilities.invokeLater {
+                    area.requestFocusInWindow()
                     runCatching {
                         val offset = area.viewToModel2D(Point2D.Double(event.x.toDouble(), event.y.toDouble())).coerceAtLeast(0)
                         area.caretPosition = offset
@@ -89,7 +91,10 @@ class ColumnEditBinder(private val buffer: EditorBuffer) {
         }
 
         override fun mouseReleased(event: MouseEvent) {
-            if (selection != null && (event.isAltDown || dragWithoutAlt)) event.consume()
+            if (selection != null && (event.isAltDown || dragWithoutAlt)) {
+                event.consume()
+                area.requestFocusInWindow()
+            }
         }
     }
 
@@ -175,6 +180,7 @@ class ColumnEditBinder(private val buffer: EditorBuffer) {
 
     private val ime = object : InputMethodListener {
         override fun inputMethodTextChanged(event: InputMethodEvent) {
+            ImeShortcutGate.onInputMethodEvent(event)
             val text = event.text
             val committed = event.committedCharacterCount
             composing = text != null && (text.endIndex - text.beginIndex) > committed
