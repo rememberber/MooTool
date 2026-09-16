@@ -40,14 +40,14 @@ struct QRTool: View {
     private func generate() {
         do {
             let bytes = Data(draft.input.utf8)
-            guard !bytes.isEmpty, bytes.count <= 2953 else { throw ToolError("二维码内容为空或超过容量。") }
+            guard !bytes.isEmpty, bytes.count <= 2953 else { throw ToolError(loc("qr.error.emptyOrCapacity")) }
             let filter = CIFilter.qrCodeGenerator(); filter.message = bytes; filter.correctionLevel = draft.mode
-            guard let output = filter.outputImage else { throw ToolError("内容超过当前纠错级别的二维码容量。") }
+            guard let output = filter.outputImage else { throw ToolError(loc("qr.error.overCapacity")) }
             let scaled = output.transformed(by: CGAffineTransform(scaleX: 8, y: 8))
-            guard let cg = CIContext().createCGImage(scaled, from: scaled.extent) else { throw ToolError("二维码生成失败。") }
+            guard let cg = CIContext().createCGImage(scaled, from: scaled.extent) else { throw ToolError(loc("qr.error.generateFailed")) }
             // Include the four-module quiet zone in the exported image, not only in the preview.
             let size = cg.width + 64
-            guard let context = CGContext(data: nil, width: size, height: size, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { throw ToolError("无法创建图片。") }
+            guard let context = CGContext(data: nil, width: size, height: size, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { throw ToolError(loc("qr.error.createImage")) }
             context.setFillColor(NSColor.white.cgColor); context.fill(CGRect(x: 0, y: 0, width: size, height: size)); context.interpolationQuality = .none
             context.draw(cg, in: CGRect(x: 32, y: 32, width: cg.width, height: cg.height))
             let rendered = context.makeImage()!
@@ -59,6 +59,7 @@ struct QRTool: View {
     }
     private func recognize(_ url: URL) {
         draft.busy = true; draft.error = nil
+        let lang = language
         Task {
             defer { draft.busy = false }
             do {
@@ -67,7 +68,7 @@ struct QRTool: View {
                     try VNImageRequestHandler(url: url).perform([request])
                     return (request.results ?? []).compactMap(\.payloadStringValue)
                 }.value
-                guard !texts.isEmpty else { throw ToolError("图片中没有识别到二维码。") }
+                guard !texts.isEmpty else { throw ToolError(AppLocalization.string("qr.error.noBarcode", language: lang)) }
                 draft.output = texts.joined(separator: "\n\n")
                 draft.status = locf("qr.status.found", texts.count)
             } catch { draft.error = error.localizedDescription }
@@ -148,7 +149,7 @@ struct ImageTool: View {
                 let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
                 Task {
                     defer { try? FileManager.default.removeItem(at: url) }
-                    do { _ = try await ProcessRunner.run(executable: "/usr/sbin/screencapture", arguments: ["-i", "-x", url.path], timeout: 120); if FileManager.default.fileExists(atPath: url.path) { load(url) } } catch { draft.error = error.localizedDescription }
+                    do { _ = try await ProcessRunner.run(executable: "/usr/sbin/screencapture", arguments: ["-i", "-x", url.path], timeout: 120); if FileManager.default.fileExists(atPath: url.path) { load(url) } else { draft.error = loc("image.error.screenshotFailed") } } catch { draft.error = loc("image.error.screenshotFailed") }
                 }
             }
             Picker(loc("image.format"), selection: $draft.mode) { Text("PNG").tag("PNG"); Text("JPEG").tag("JPEG"); Text("TIFF").tag("TIFF") }.frame(width: 135)
@@ -206,7 +207,7 @@ struct ImageTool: View {
         do {
             guard let source = CGImageSourceCreateWithURL(url as CFURL, nil), let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
                   let w = properties[kCGImagePropertyPixelWidth] as? Int, let h = properties[kCGImagePropertyPixelHeight] as? Int, Double(w) * Double(h) <= 80_000_000,
-                  let cg = CGImageSourceCreateImageAtIndex(source, 0, nil) else { throw ToolError("无法读取图片，或图片超过 8000 万像素。") }
+                  let cg = CGImageSourceCreateImageAtIndex(source, 0, nil) else { throw ToolError(loc("image.error.load")) }
             original = cg; preview = NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height)); width = String(cg.width)
             sourcePath = url.path
             draft.status = "\(url.lastPathComponent) · \(cg.width) × \(cg.height) px"; draft.error = nil
@@ -216,10 +217,10 @@ struct ImageTool: View {
     private func export() {
         guard let original else { return }
         do {
-            guard let w = Int(width), (1...16_384).contains(w) else { throw ToolError("导出宽度需为 1–16384 像素。") }
+            guard let w = Int(width), (1...16_384).contains(w) else { throw ToolError(loc("image.error.exportWidth")) }
             let h = max(1, Int(Double(w) * Double(original.height) / Double(original.width)))
-            guard Double(w) * Double(h) <= 80_000_000 else { throw ToolError("导出图片超过 8000 万像素。") }
-            guard let context = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { throw ToolError("无法创建图片画布。") }
+            guard Double(w) * Double(h) <= 80_000_000 else { throw ToolError(loc("image.error.exportTooLarge")) }
+            guard let context = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { throw ToolError(loc("image.error.canvas")) }
             if draft.mode == "JPEG" { context.setFillColor(NSColor.white.cgColor); context.fill(CGRect(x: 0, y: 0, width: w, height: h)) }
             context.interpolationQuality = .high; context.draw(original, in: CGRect(x: 0, y: 0, width: w, height: h))
             if !watermark.isEmpty {
@@ -229,7 +230,7 @@ struct ImageTool: View {
                 (watermark as NSString).draw(at: NSPoint(x: CGFloat(w) * 0.035, y: CGFloat(h) * 0.04), withAttributes: [.font: font, .foregroundColor: NSColor.white, .shadow: shadow])
                 NSGraphicsContext.restoreGraphicsState()
             }
-            guard let cg = context.makeImage(), let data = NSBitmapImageRep(cgImage: cg).representation(using: draft.mode == "JPEG" ? .jpeg : draft.mode == "TIFF" ? .tiff : .png, properties: [.compressionFactor: quality]) else { throw ToolError("图片导出失败。") }
+            guard let cg = context.makeImage(), let data = NSBitmapImageRep(cgImage: cg).representation(using: draft.mode == "JPEG" ? .jpeg : draft.mode == "TIFF" ? .tiff : .png, properties: [.compressionFactor: quality]) else { throw ToolError(loc("image.error.exportFailed")) }
             FilePanels.save(data, name: "MooTool-image." + (draft.mode == "JPEG" ? "jpg" : draft.mode.lowercased()))
         } catch { draft.error = error.localizedDescription }
     }
@@ -305,7 +306,7 @@ struct PDFTool: View {
         do {
             var loaded: [PDFDocument] = []
             for url in urls {
-                guard let document = PDFDocument(url: url), !document.isLocked, document.pageCount > 0 else { throw ToolError("无法读取 \(url.lastPathComponent)，或文件需要密码。") }; loaded.append(document)
+                guard let document = PDFDocument(url: url), !document.isLocked, document.pageCount > 0 else { throw ToolError(String(format: loc("pdf.error.load"), url.lastPathComponent)) }; loaded.append(document)
             }
             files += urls; documents += loaded; rebuild(); draft.error = nil
             if persist { persistMedia() }
@@ -322,8 +323,20 @@ struct PDFTool: View {
         guard let combined else { return }
         do {
             let result = PDFDocument()
-            for index in try DeveloperServices.pageIndices(draft.option, count: combined.pageCount) { if let page = combined.page(at: index)?.copy() as? PDFPage { result.insert(page, at: result.pageCount) } }
-            guard let data = result.dataRepresentation() else { throw ToolError("PDF 导出失败。") }; FilePanels.save(data, name: "MooTool-document.pdf")
+            for index in try pageIndices(draft.option, count: combined.pageCount) { if let page = combined.page(at: index)?.copy() as? PDFPage { result.insert(page, at: result.pageCount) } }
+            guard let data = result.dataRepresentation() else { throw ToolError(loc("pdf.error.exportFailed")) }; FilePanels.save(data, name: "MooTool-document.pdf")
         } catch { draft.error = error.localizedDescription }
+    }
+    private func pageIndices(_ text: String, count: Int) throws -> [Int] {
+        if text.trimmingCharacters(in: .whitespaces).isEmpty { return Array(0..<count) }
+        var result: [Int] = []
+        for part in text.split(separator: ",", omittingEmptySubsequences: false) {
+            let bounds = part.trimmingCharacters(in: .whitespaces).split(separator: "-", omittingEmptySubsequences: false)
+            guard (1...2).contains(bounds.count), let start = Int(bounds[0]), let end = Int(bounds.last!), start > 0, end >= start, end <= count else {
+                throw ToolError(locf("pdf.error.pageRange", count))
+            }
+            result += (start...end).map { $0 - 1 }
+        }
+        return result
     }
 }
