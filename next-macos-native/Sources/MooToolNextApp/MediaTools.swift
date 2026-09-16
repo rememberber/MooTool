@@ -11,20 +11,27 @@ struct QRTool: View {
     @Environment(\.appLanguage) private var language
     @State private var image: NSImage?
     @State private var png: Data?
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+    private func locf(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: AppLocalization.string(key, language: language), arguments: arguments)
+    }
     var body: some View {
         ToolPage(tool: Catalog.tool("qrCode"), draft: draft) {
             PrimaryButton(title: AppLocalization.string("tool.generateQr", language: language), symbol: "qrcode", action: generate)
-            Picker("纠错", selection: $draft.mode) { ForEach(["L", "M", "Q", "H"], id: \.self) { Text($0) } }.frame(width: 120)
-            Button("保存 PNG") { if let png { FilePanels.save(png, name: "qrcode.png") } }.disabled(png == nil)
-            Button("识别图片…") { FilePanels.open(types: [.image]) { recognize($0[0]) } }
+            Picker(loc("qr.correction"), selection: $draft.mode) { ForEach(["L", "M", "Q", "H"], id: \.self) { Text($0) } }.frame(width: 120)
+            Button(loc("qr.savePng")) { if let png { FilePanels.save(png, name: "qrcode.png") } }.disabled(png == nil)
+            Button(loc("qr.recognizeImage")) { FilePanels.open(types: [.image]) { recognize($0[0]) } }
         } content: {
             PersistedHSplit(toolID: "qrCode", defaultLeading: 360, minLeading: 260, maxLeading: 640) {
-                VStack(spacing: 12) { EditorPane(title: "内容", text: $draft.input); if !draft.output.isEmpty { EditorPane(title: "识别结果", text: $draft.output, editable: false) } }
+                VStack(spacing: 12) {
+                    EditorPane(title: loc("tool.input"), text: $draft.input)
+                    if !draft.output.isEmpty { EditorPane(title: loc("qr.recognizeResult"), text: $draft.output, editable: false) }
+                }
             } trailing: {
                 VStack(spacing: 18) {
                     Spacer()
                     if let image { Image(nsImage: image).interpolation(.none).resizable().scaledToFit().frame(maxWidth: 320, maxHeight: 320).padding(24).background(.white, in: RoundedRectangle(cornerRadius: 16)) }
-                    else { ContentUnavailableView("生成你的二维码", systemImage: "qrcode", description: Text("支持文本、网址和 Wi-Fi 配置信息")) }
+                    else { ContentUnavailableView(loc("qr.empty.title"), systemImage: "qrcode", description: Text(loc("qr.empty.description"))) }
                     Spacer()
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -45,7 +52,9 @@ struct QRTool: View {
             context.draw(cg, in: CGRect(x: 32, y: 32, width: cg.width, height: cg.height))
             let rendered = context.makeImage()!
             png = NSBitmapImageRep(cgImage: rendered).representation(using: .png, properties: [:])
-            image = NSImage(cgImage: rendered, size: NSSize(width: size, height: size)); draft.error = nil; draft.status = "\(bytes.count) bytes · 纠错 \(draft.mode)"
+            image = NSImage(cgImage: rendered, size: NSSize(width: size, height: size))
+            draft.error = nil
+            draft.status = locf("qr.status.bytes", bytes.count, draft.mode)
         } catch { draft.error = error.localizedDescription; image = nil; png = nil }
     }
     private func recognize(_ url: URL) {
@@ -59,7 +68,8 @@ struct QRTool: View {
                     return (request.results ?? []).compactMap(\.payloadStringValue)
                 }.value
                 guard !texts.isEmpty else { throw ToolError("图片中没有识别到二维码。") }
-                draft.output = texts.joined(separator: "\n\n"); draft.status = "识别到 \(texts.count) 个二维码"
+                draft.output = texts.joined(separator: "\n\n")
+                draft.status = locf("qr.status.found", texts.count)
             } catch { draft.error = error.localizedDescription }
         }
     }
@@ -124,6 +134,7 @@ struct ImageTool: View {
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
     @Environment(\.appLanguage) private var language
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
     @State private var original: CGImage?
     @State private var preview: NSImage?
     @State private var sourcePath = ""
@@ -133,33 +144,33 @@ struct ImageTool: View {
     var body: some View {
         ToolPage(tool: Catalog.tool("image"), draft: draft) {
             PrimaryButton(title: AppLocalization.string("tool.openImage", language: language), symbol: "folder") { FilePanels.open(types: [.image]) { load($0[0]) } }
-            Button("截图") {
+            Button(loc("image.screenshot")) {
                 let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
                 Task {
                     defer { try? FileManager.default.removeItem(at: url) }
                     do { _ = try await ProcessRunner.run(executable: "/usr/sbin/screencapture", arguments: ["-i", "-x", url.path], timeout: 120); if FileManager.default.fileExists(atPath: url.path) { load(url) } } catch { draft.error = error.localizedDescription }
                 }
             }
-            Picker("格式", selection: $draft.mode) { Text("PNG").tag("PNG"); Text("JPEG").tag("JPEG"); Text("TIFF").tag("TIFF") }.frame(width: 135)
-            TextField("宽度 px", text: $width).textFieldStyle(.roundedBorder).frame(width: 90).onChange(of: width) { persistMedia() }
-            Button("导出", action: export).disabled(original == nil)
+            Picker(loc("image.format"), selection: $draft.mode) { Text("PNG").tag("PNG"); Text("JPEG").tag("JPEG"); Text("TIFF").tag("TIFF") }.frame(width: 135)
+            TextField(loc("image.widthPlaceholder"), text: $width).textFieldStyle(.roundedBorder).frame(width: 90).onChange(of: width) { persistMedia() }
+            Button(loc("image.export"), action: export).disabled(original == nil)
         } content: {
             PersistedHSplit(toolID: "image", defaultLeading: 360, minLeading: 240, maxLeading: 720) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12).fill(.quaternary.opacity(0.3))
                     if let preview { Image(nsImage: preview).resizable().scaledToFit().padding(24) }
-                    else { ContentUnavailableView("拖入一张图片", systemImage: "photo.on.rectangle.angled", description: Text("支持 PNG、JPEG、HEIC、TIFF 等系统图像格式")) }
+                    else { ContentUnavailableView(loc("image.empty.title"), systemImage: "photo.on.rectangle.angled", description: Text(loc("image.empty.description"))) }
                 }.frame(maxWidth: .infinity, maxHeight: .infinity).dropDestination(for: URL.self) { urls, _ in if let url = urls.first { load(url); return true }; return false }
             } trailing: {
                 VStack(alignment: .leading, spacing: 14) {
-                    GroupBox("导出") {
+                    GroupBox(loc("image.exportGroup")) {
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
-                                Text("质量").font(.caption)
+                                Text(loc("image.quality")).font(.caption)
                                 Slider(value: $quality, in: 0.1...1).disabled(draft.mode != "JPEG").onChange(of: quality) { persistMedia() }
                                 Text("\(Int(quality * 100))%").font(.caption).monospacedDigit().frame(width: 36, alignment: .trailing)
                             }
-                            TextField("文字水印（可选）", text: $watermark).textFieldStyle(.roundedBorder).onChange(of: watermark) { persistMedia() }
+                            TextField(loc("image.watermarkPlaceholder"), text: $watermark).textFieldStyle(.roundedBorder).onChange(of: watermark) { persistMedia() }
                         }.padding(4)
                     }
                     if !draft.status.isEmpty {
