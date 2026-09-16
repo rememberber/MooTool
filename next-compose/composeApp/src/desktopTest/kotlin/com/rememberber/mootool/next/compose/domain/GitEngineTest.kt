@@ -276,6 +276,60 @@ class GitEngineTest {
     }
 
     @Test
+    fun fetchUpdatesBehindWithoutPullingWorkingTree() {
+        assumeGit()
+        val bare = Files.createTempDirectory("mootool-compose-git-fetch-bare-")
+        val upstream = Files.createTempDirectory("mootool-compose-git-fetch-up-")
+        val client = Files.createTempDirectory("mootool-compose-git-fetch-client-")
+        try {
+            val identity = GitIdentity("Test User", "test@local")
+            git(bare, "init", "--bare")
+            val url = bare.toAbsolutePath().toUri().toString()
+            git(upstream, "clone", url, ".")
+            upstream.resolve("v1.txt").writeText("v1\n")
+            git(upstream, "add", "--all")
+            git(upstream, "commit", "-m", "V1")
+            assertTrue(GitEngine.push(upstream, isolateConfig = true).success)
+            git(client, "clone", url, ".")
+            assertTrue(Files.exists(client.resolve("v1.txt")))
+            upstream.resolve("v2.txt").writeText("v2\n")
+            git(upstream, "add", "--all")
+            git(upstream, "commit", "-m", "V2")
+            assertTrue(GitEngine.push(upstream, isolateConfig = true).success)
+            assertFalse(Files.exists(client.resolve("v2.txt")))
+            val beforeFetch = GitEngine.status(client, isolateConfig = true)
+            assertEquals(0, beforeFetch.behind, "tracking ref stale until fetch")
+            val fetched = GitEngine.fetch(client, isolateConfig = true)
+            assertTrue(fetched.success, fetched.message)
+            val afterFetch = GitEngine.status(client, isolateConfig = true)
+            assertTrue(afterFetch.behind >= 1, "branch=${afterFetch.branch} behind=${afterFetch.behind}")
+            assertFalse(Files.exists(client.resolve("v2.txt")))
+            val pulled = GitEngine.pull(client, isolateConfig = true)
+            assertTrue(pulled.success, pulled.message)
+            assertTrue(Files.exists(client.resolve("v2.txt")))
+        } finally {
+            bare.toFile().deleteRecursively()
+            upstream.toFile().deleteRecursively()
+            client.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun fetchFailsWhenRemoteIsNotConfigured() {
+        assumeGit()
+        val root = Files.createTempDirectory("mootool-compose-git-fetch-noremote-")
+        try {
+            val identity = GitIdentity("Test User", "test@local")
+            assertTrue(GitEngine.init(root, identity, isolateConfig = true).success)
+            val result = GitEngine.fetch(root, isolateConfig = true)
+            assertFalse(result.success)
+            assertTrue(result.message.contains("remote", ignoreCase = true), result.message)
+        } finally {
+            root.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun discardsChangesAndPushesToLocalRemote() {
         assumeGit()
         val work = Files.createTempDirectory("mootool-compose-git-work-")
@@ -623,6 +677,44 @@ class GitEngineTest {
             } finally {
                 bare.toFile().deleteRecursively()
             }
+        } finally {
+            root.toFile().deleteRecursively()
+        }
+    }
+
+    /** 对照 Electron `vaultGitService.integration.test.ts`「removes a configured remote when an empty URL is saved」。 */
+    @Test
+    fun configureRemoteRemoveClearsOriginFromStatus() {
+        assumeGit()
+        val root = Files.createTempDirectory("mootool-compose-git-remote-remove-")
+        val bare = Files.createTempDirectory("mootool-compose-git-remote-remove-bare-")
+        try {
+            val identity = GitIdentity("Test User", "test@local")
+            git(bare, "init", "--bare")
+            val url = bare.toAbsolutePath().toUri().toString()
+            assertTrue(GitEngine.init(root, identity, isolateConfig = true).success)
+            assertTrue(GitEngine.setRemote(root, url, isolateConfig = true).success)
+            assertTrue(GitEngine.status(root, isolateConfig = true).remote.isNotBlank())
+            val removed = GitEngine.setRemote(root, "", isolateConfig = true)
+            assertTrue(removed.success, removed.message)
+            assertEquals("", GitEngine.status(root, isolateConfig = true).remote)
+        } finally {
+            bare.toFile().deleteRecursively()
+            root.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun configureRemoteRemoveWhenAlreadyRemovedIsIdempotent() {
+        assumeGit()
+        val root = Files.createTempDirectory("mootool-compose-git-remote-remove-twice-")
+        try {
+            val identity = GitIdentity("Test User", "test@local")
+            assertTrue(GitEngine.init(root, identity, isolateConfig = true).success)
+            assertEquals("", GitEngine.status(root, isolateConfig = true).remote)
+            val removed = GitEngine.setRemote(root, "", isolateConfig = true)
+            assertTrue(removed.success, removed.message)
+            assertEquals("Remote is already removed", removed.message)
         } finally {
             root.toFile().deleteRecursively()
         }

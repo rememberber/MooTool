@@ -18,5 +18,7 @@
 | pull-during-merge | 同上 | merge 中禁止 pull | `GitEngineTest.pullBlockedWhileMergeInProgress`（[DIFF-447](../diff/447-git-pull-merge-order-conflict-dialog-click.md)）；`GitPullGuardTest.mergeInProgressRejectedBeforeMissingRemoteMessage`（[DIFF-448](../diff/448-vault-conflict-reload-savecopy-git-pull-guard.md)） |
 | concurrent-commits | 同上 | 双 `VaultGitService` 并行 commit | `GitEngineTest.serializesConcurrentCommitsForSameVaultRoot`（两线程两 message，仅一条 `concurrent.txt` 提交，对齐 Electron `serializes Git actions…separate service instances`） |
 | push-non-ff | Electron 行为 | 远程领先时 `push` 失败 | `GitEngineTest.pushFailsWhenRemoteIsAheadWithoutPull`（[DIFF-469](../diff/469-vault-mcp-zod-args-git-push-reject.md)） |
+| fetch-prune-behind | 同上 | `fetch` action | `GitEngineTest.fetchUpdatesBehindWithoutPullingWorkingTree` / `fetchFailsWhenRemoteIsNotConfigured`（[DIFF-474](../diff/474-git-fetch-prune-behind-parity.md)） |
+| configure-remote-remove | 同上 | 空 URL 删除 origin | `GitEngineTest.configureRemoteRemoveClearsOriginFromStatus` / `configureRemoteRemoveWhenAlreadyRemovedIsIdempotent`（[DIFF-475](../diff/475-git-configure-remote-remove-parity.md)） |
 
 UI：`VaultGitDialog` 冲突行「使用本地/远端」Compose Tab 帧 `142` 见 [DIFF-437](../diff/437-git-conflict-actions-quicknote-copy.md)（非产品主窗）。
