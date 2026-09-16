@@ -35,6 +35,7 @@ struct TextTool: View {
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
     @State private var regexFlags = ""
+    @State private var favoritesOpen = false
     private var tool: Tool { Catalog.tool(id) }
     var body: some View {
         ToolPage(tool: tool, draft: draft, showsHeading: id != "json") {
@@ -67,6 +68,11 @@ struct TextTool: View {
                 }
             }
         }.onAppear { if !modes.isEmpty && !modes.contains(draft.mode) { draft.mode = modes[0] }; if id == "timeConvert" && draft.option.isEmpty { draft.option = TimeZone.current.identifier } }
+        .sheet(isPresented: $favoritesOpen) {
+            ToolFavoritesSheet(kind: .regex, currentValue: draft.secondary) { pattern in
+                draft.secondary = pattern
+            }.environment(store)
+        }
     }
     private var inputTitle: String {
         if id == "variables" { return "运行变量 · KEY=value（仅用于原生版代码运行）" }
@@ -115,7 +121,10 @@ struct TextTool: View {
         case "cron":
             PrimaryButton(title: "预览执行时间", symbol: "calendar") { execute() }
             Menu("常用表达式") { ForEach(["*/5 * * * *", "0 9 * * 1-5", "0 0 1 * *"], id: \.self) { expression in Button(expression) { draft.input = expression; execute() } } }
-        default: PrimaryButton(title: id == "regex" ? draft.mode : "运行") { execute() }
+        case "regex":
+            PrimaryButton(title: draft.mode) { execute() }
+            Button("收藏", systemImage: "star") { favoritesOpen = true }
+        default: PrimaryButton(title: "运行") { execute() }
         }
         Button("示例") { draft.input = example; if id == "regex" { draft.secondary = #"([\w.]+)@([\w.]+)"# }; if id == "textDiff" { draft.secondary = "MooTool\nNative for macOS\nHello, SwiftUI" } }
         Spacer(minLength: 0)

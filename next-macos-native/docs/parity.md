@@ -28,7 +28,7 @@
 | 留言板 | 预设文案（含主题色）、字号、左/居中对齐、前景/背景、草稿持久化、自适应预览、独立全屏窗口、Esc 退出、展示时阻止显示器休眠 | 与 Electron 一致的完整主题面板、字号百分比自适应算法与入场动画 |
 | 翻译 | 与 Electron 相同的「翻译 / 词库 / 历史」标签；macOS 15+ 系统 Translation、分栏原文/译文（`translation`）与词库分栏（`translation-words`）；词条写入 `workspace.json`；系统词典入口 | 第三方翻译供应商；macOS 14 无系统 Translation，仍可使用词库/历史与词典；可从 SQLite 合并词条与翻译历史 |
 | 计算器 | 运算优先级、幂、科学计数、常用函数、常量、64 位进制转换 | 任意精度、单位换算；三角函数使用弧度 |
-| 调色板 | 系统 ColorPicker、屏幕取色、HEX/RGB/HSL/SwiftUI、颜色收藏 | 全部色彩空间和 Electron 的配色功能 |
+| 调色板 | 系统 ColorPicker、屏幕取色、HEX/RGB/HSL/SwiftUI；颜色/正则/Cron **收藏**（`toolFavorites`，与 Electron 收藏夹语义一致） | 全部色彩空间和 Electron 的配色功能；收藏夹分组 UI 较简 |
 | 图片工具 | 拖放、预览、可拖动分栏（预览 / 导出选项）、比例缩放、PNG/JPEG/TIFF、JPEG 质量、文字水印、系统截图；分栏宽度写入 `workspace.json` | 批处理、多图库列表、矢量化、复杂编辑；导出新位图，不保留原 EXIF/色彩配置/动画帧 |
 | PDF | PDFKit 预览、多文件排序合并、页码提取、文本提取和导出 | OCR、密码处理、复杂压缩/水印；重建页面不保留原文档的书签和签名 |
 | 系统信息 | OS、CPU 核数、内存、运行时间、磁盘、system_profiler 详细信息 | 持续传感器监控和 Electron 全部硬件指标 |
@@ -39,7 +39,7 @@
 
 文档与文件夹通过稳定标识关联，移动或重命名不会改变打开的文档；失败的批量导入不会部分写入。删除活动文档时保留当前内容为草稿。编辑器状态使用 UTF-16 选择范围及滚动位置；切换文档时清理当前视图的撤销栈，重启不保留撤销历史。
 
-尚未覆盖多语言界面、托盘/可自定义全局快捷键、自动更新、Java/Electron 文档库与 SQLite **全量**迁移（随手记/JSON 文档、工具历史、收藏、翻译词条等）。设置中提供与 Electron 同类的**快捷键说明**（固定 ⌘K / ⌘, 等，不可编辑）。**已实现**：设置「数据迁移」从 Electron `mootool-next.json` 合并工作台布局（侧栏、自定义分组、隐藏工具、`layoutPaneSizes` 映射）、HTTP 代理、编辑器字号/换行与文档库 Git 自动检查点/Pull 间隔；并检测 `~/.MooTool` 下 Java 版 SQLite。**HTTP 集合/历史、Host 配置、翻译词条/历史**可从 Electron `MooToolNext.db` 或 Java 版兼容 SQLite 表合并导入（设置 → 数据迁移）；其余 SQLite 数据仍建议 Compose 迁移或文档库批量导入。Compose 中全部 pane 键名与三栏子面板的逐项恢复仍可能有差异。已实现 **显示最近使用**（`showRecent`，默认关闭，与 Compose `layout.showRecent` 一致）、**侧栏宽度**（`sidebarWidth`，185–300 pt 可拖动，双击恢复默认，与 Compose `layout.sidebarWidth` 同语义）、**仅显示导航图标**（`hideNavigationTitles`）、**按工具隐藏侧栏入口**（`hiddenNavigationToolIds`）与 **主要双栏宽度**（`layoutPaneSizes`：HTTP、Host、文本对比、JSON 编辑器/检查器/树、格式化文件双栏、JSON/随手记文档库树、随手记编辑/预览（`quick-note-editor-preview`）与快速替换侧栏（`quick-note-no-tree-replace`）、**设置页分类侧栏**（`settings-page`）、翻译、网络诊断、Cron、代码运行、编码/配置/正则/Protobuf 等输入结果栏、加密对称与非对称分栏、二维码、调色板、**图片预览/选项**、PDF 列表/预览、计算器等，与 Compose `LayoutSettings.paneSizes` 同语义），均写入 `workspace.json`。留言板字号/颜色/对齐写入工具草稿；随手记快速替换在点击面板按钮时保留选区（与 Electron「有选区处理选区」一致）。当前界面为中文。图片/PDF 的已打开文件路径、导出选项与 PDF 文本预览开关写入工具草稿 `media`，重启后若原文件仍在磁盘则自动恢复（不含 Electron 多图资源库）。
+尚未覆盖多语言界面、托盘/可自定义全局快捷键、自动更新、Java/Electron 文档库与 SQLite **全量**迁移（随手记/JSON 文档、通用工具历史 `t_func_history` 等）。设置中提供与 Electron 同类的**快捷键说明**（固定 ⌘K / ⌘, 等，不可编辑）。**已实现**：设置「数据迁移」从 Electron `mootool-next.json` 合并工作台布局（侧栏、自定义分组、隐藏工具、`layoutPaneSizes` 映射）、HTTP 代理、编辑器字号/换行与文档库 Git 自动检查点/Pull 间隔；并检测 `~/.MooTool` 下 Java 版 SQLite。**HTTP 集合/历史、Host 配置、翻译词条/历史、颜色/正则/Cron 收藏**（`t_next_favorite` 或 Java `t_favorite_*`）可从 SQLite 合并导入（设置 → 数据迁移）；其余 SQLite 数据仍建议 Compose 迁移或文档库批量导入。Compose 中全部 pane 键名与三栏子面板的逐项恢复仍可能有差异。已实现 **显示最近使用**（`showRecent`，默认关闭，与 Compose `layout.showRecent` 一致）、**侧栏宽度**（`sidebarWidth`，185–300 pt 可拖动，双击恢复默认，与 Compose `layout.sidebarWidth` 同语义）、**仅显示导航图标**（`hideNavigationTitles`）、**按工具隐藏侧栏入口**（`hiddenNavigationToolIds`）与 **主要双栏宽度**（`layoutPaneSizes`：HTTP、Host、文本对比、JSON 编辑器/检查器/树、格式化文件双栏、JSON/随手记文档库树、随手记编辑/预览（`quick-note-editor-preview`）与快速替换侧栏（`quick-note-no-tree-replace`）、**设置页分类侧栏**（`settings-page`）、翻译、网络诊断、Cron、代码运行、编码/配置/正则/Protobuf 等输入结果栏、加密对称与非对称分栏、二维码、调色板、**图片预览/选项**、PDF 列表/预览、计算器等，与 Compose `LayoutSettings.paneSizes` 同语义），均写入 `workspace.json`。留言板字号/颜色/对齐写入工具草稿；随手记快速替换在点击面板按钮时保留选区（与 Electron「有选区处理选区」一致）。当前界面为中文。图片/PDF 的已打开文件路径、导出选项与 PDF 文本预览开关写入工具草稿 `media`，重启后若原文件仍在磁盘则自动恢复（不含 Electron 多图资源库）。
 
 ## 验证口径
 

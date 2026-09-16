@@ -1052,6 +1052,27 @@ final class CoreTests: XCTestCase {
         state.translationWords = words
         XCTAssertEqual(try WorkspaceRepository.decode(WorkspaceRepository.encode(state)).translationWords?.first?.sourceText, "hello")
         try? FileManager.default.removeItem(at: translationDB)
+        let favoriteDB = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-favorite-\(UUID().uuidString).db")
+        let favoriteSQL = """
+        CREATE TABLE t_next_favorite_folder (id INTEGER PRIMARY KEY, kind TEXT, title TEXT, create_time TEXT);
+        INSERT INTO t_next_favorite_folder VALUES (1, 'regex', 'Work', '2024-01-01');
+        CREATE TABLE t_next_favorite (id INTEGER PRIMARY KEY, kind TEXT, folder_id INTEGER, name TEXT, value TEXT, description TEXT, create_time TEXT, UNIQUE(kind, folder_id, name));
+        INSERT INTO t_next_favorite VALUES (1, 'regex', 1, 'Digits', '[0-9]+', '', '2024-01-01');
+        """
+        let favoriteProcess = Process()
+        favoriteProcess.executableURL = URL(fileURLWithPath: "/usr/bin/sqlite3")
+        favoriteProcess.arguments = [favoriteDB.path]
+        let favoritePipe = Pipe()
+        favoriteProcess.standardInput = favoritePipe
+        try favoriteProcess.run()
+        favoritePipe.fileHandleForWriting.write(Data(favoriteSQL.utf8))
+        favoritePipe.fileHandleForWriting.closeFile()
+        favoriteProcess.waitUntilExit()
+        let favorites = try ElectronFavoriteImport.loadFavorites(at: favoriteDB)
+        XCTAssertEqual(favorites.first?.kind, .regex)
+        state.toolFavorites = favorites
+        XCTAssertEqual(try WorkspaceRepository.decode(WorkspaceRepository.encode(state)).toolFavorites?.first?.value, "[0-9]+")
+        try? FileManager.default.removeItem(at: favoriteDB)
     }
     func testHTTPRedirectPolicyAndSessionIsolation() async throws {
         let fixture = try HTTPFixture()

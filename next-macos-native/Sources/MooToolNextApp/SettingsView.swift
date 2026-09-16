@@ -132,7 +132,7 @@ struct SettingsView: View {
         case .migration:
             Section("数据迁移") {
                 Button("从 Electron 导入工作台设置…") { migrationOpen = true }
-                Text("合并 Electron 工作台与代理/编辑器偏好；SQLite 可合并 HTTP/Host/翻译词条与历史。不包含笔记/JSON 文档或颜色/正则/Cron 收藏。").font(.caption).foregroundStyle(.secondary)
+                Text("合并 Electron 工作台与代理/编辑器偏好；SQLite 可合并 HTTP/Host/翻译/收藏等表。不包含笔记/JSON 文档正文。").font(.caption).foregroundStyle(.secondary)
             }
         case .shortcuts:
             Section("常用快捷键") {

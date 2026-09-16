@@ -27,10 +27,13 @@ struct MigrationSettingsPanel: View {
     @State private var hostProfileCount = 0
     @State private var translationWordCount = 0
     @State private var translationHistoryCount = 0
+    @State private var favoriteColorCount = 0
+    @State private var favoriteRegexCount = 0
+    @State private var favoriteCronCount = 0
     @State private var confirmHttpImport = false
     private var knownToolIDs: Set<String> { Set(Catalog.tools.map(\.id)) }
     private var importableSqliteCount: Int {
-        (httpPreview?.requestCount ?? 0) + (httpPreview?.historyCount ?? 0) + hostProfileCount + translationWordCount + translationHistoryCount
+        (httpPreview?.requestCount ?? 0) + (httpPreview?.historyCount ?? 0) + hostProfileCount + translationWordCount + translationHistoryCount + favoriteColorCount + favoriteRegexCount + favoriteCronCount
     }
 
     var body: some View {
@@ -89,6 +92,7 @@ struct MigrationSettingsPanel: View {
                     LabeledContent("可导入 Host", value: "\(hostProfileCount)")
                     LabeledContent("可导入翻译词条", value: "\(translationWordCount)")
                     LabeledContent("可导入翻译历史", value: "\(translationHistoryCount)")
+                    LabeledContent("可导入颜色/正则/Cron 收藏", value: "\(favoriteColorCount)/\(favoriteRegexCount)/\(favoriteCronCount)")
                     ForEach(httpPreview.warnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
                 }
             }
@@ -141,12 +145,19 @@ struct MigrationSettingsPanel: View {
             let translation = try ElectronTranslationImport.preview(at: url)
             translationWordCount = translation.wordCount
             translationHistoryCount = translation.historyCount
+            let favorites = try ElectronFavoriteImport.preview(at: url)
+            favoriteColorCount = favorites.colorCount
+            favoriteRegexCount = favorites.regexCount
+            favoriteCronCount = favorites.cronCount
             error = nil
         } catch {
             httpPreview = nil
             hostProfileCount = 0
             translationWordCount = 0
             translationHistoryCount = 0
+            favoriteColorCount = 0
+            favoriteRegexCount = 0
+            favoriteCronCount = 0
             self.error = error.localizedDescription
         }
     }
@@ -174,8 +185,11 @@ struct MigrationSettingsPanel: View {
             let favorites = mergedHistory.filter(\.favorite)
             let ordinary = Array(mergedHistory.filter { !$0.favorite }.prefix(100))
             store.history = (favorites + ordinary).sorted { $0.date > $1.date }
+            let favoriteItems = try ElectronFavoriteImport.loadFavorites(at: url)
+            let favoriteResult = ElectronFavoriteImport.merge(importing: favoriteItems, into: store.toolFavorites)
+            store.toolFavorites = favoriteResult.merged
             store.saveNow()
-            notice = "请求 +\(result.added)；HTTP 历史 +\(historyResult.added)；Host +\(hostResult.added)；词条 +\(wordResult.added)；翻译历史 +\(translationHistoryResult.added)。"
+            notice = "请求 +\(result.added)；HTTP 历史 +\(historyResult.added)；Host +\(hostResult.added)；词条 +\(wordResult.added)；翻译历史 +\(translationHistoryResult.added)；收藏 +\(favoriteResult.added)。"
             httpPreview = try ElectronHttpImport.preview(at: url, collection: collection)
             error = nil
         } catch {

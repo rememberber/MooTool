@@ -66,6 +66,7 @@ public struct WorkspaceSnapshot: Codable, Equatable {
     public var httpRequests: [SavedHTTPRequest]?
     public var hostProfiles: [SavedHostProfile]?
     public var translationWords: [SavedTranslationWord]?
+    public var toolFavorites: [SavedToolFavorite]?
     public var folders: [DocumentFolder]?
     public var vaultPreferences: [String: VaultPreferences]?
     public var scratchDrafts: [String: DraftRecord]?
@@ -94,6 +95,9 @@ public struct WorkspaceSnapshot: Codable, Equatable {
         for word in translationWords ?? [] { try word.validate() }
         guard (translationWords ?? []).count <= 5_000,
               Set((translationWords ?? []).map(\.id)).count == (translationWords ?? []).count else { throw ToolError("翻译词条无效或重复。") }
+        for favorite in toolFavorites ?? [] { try favorite.validate() }
+        guard (toolFavorites ?? []).count <= 2_000,
+              Set((toolFavorites ?? []).map(\.id)).count == (toolFavorites ?? []).count else { throw ToolError("工具收藏无效或重复。") }
         for draft in Array(drafts.values) + history.map(\.draft) + (httpRequests ?? []).map(\.draft) + Array((scratchDrafts ?? [:]).values) {
             try draft.noteOptions?.validate(); try draft.noteWorkspace?.validate()
             try draft.messageBoard?.validate()

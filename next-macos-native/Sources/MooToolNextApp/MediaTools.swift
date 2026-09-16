@@ -69,13 +69,14 @@ struct ColorTool: View {
     @Environment(AppStore.self) private var store
     @State private var color = Color(red: 0.31, green: 0.51, blue: 0.80)
     @State private var sampler: NSColorSampler?
+    @State private var favoritesOpen = false
     var body: some View {
         ToolPage(tool: Catalog.tool("colorBoard"), draft: draft) {
             ColorPicker("选择颜色", selection: $color, supportsOpacity: false).frame(width: 160)
             Button("屏幕取色") { let sampler = NSColorSampler(); self.sampler = sampler; sampler.show { if let value = $0 { color = Color(nsColor: value); update() }; self.sampler = nil } }
             TextField("#4F83CC", text: $draft.input).textFieldStyle(.roundedBorder).frame(width: 120).onSubmit(parse)
             Button("应用 HEX", action: parse)
-            Button("收藏颜色") { store.record("colorBoard"); if let index = store.history.firstIndex(where: { $0.toolID == "colorBoard" }) { store.history[index].favorite = true; store.scheduleSave() } }
+            Button("收藏", systemImage: "star") { favoritesOpen = true }
         } content: {
             PersistedHSplit(toolID: "colorBoard", defaultLeading: 320, minLeading: 220, maxLeading: 560) {
                 RoundedRectangle(cornerRadius: 18).fill(color).overlay {
@@ -85,6 +86,12 @@ struct ColorTool: View {
                 EditorPane(title: "颜色值", text: $draft.output, editable: false)
             }
         }.onChange(of: color) { update() }.onAppear { if draft.input.isEmpty { update() } else { parse() } }
+        .sheet(isPresented: $favoritesOpen) {
+            ToolFavoritesSheet(kind: .color, currentValue: draft.input) { hex in
+                draft.input = hex
+                parse()
+            }.environment(store)
+        }
     }
     private var contrastColor: Color {
         let c = NSColor(color).usingColorSpace(.sRGB) ?? .black

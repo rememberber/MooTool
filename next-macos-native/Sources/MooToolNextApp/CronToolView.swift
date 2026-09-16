@@ -5,6 +5,7 @@ struct CronToolView: View {
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
     @State private var fields = CronFieldDraft()
+    @State private var favoritesOpen = false
     private let zones = Array(Set([TimeZone.current.identifier, "UTC", "Asia/Shanghai", "Asia/Tokyo", "Europe/London", "America/New_York"])).sorted()
     var body: some View {
         ToolPage(tool: Catalog.tool("cron"), draft: draft) {
@@ -18,6 +19,7 @@ struct CronToolView: View {
                 ForEach(zones, id: \.self) { Text($0) }
             }.frame(width: 220)
             Button("示例") { apply("0 */15 * * * ?") }
+            Button("收藏", systemImage: "star") { favoritesOpen = true }
             Spacer(minLength: 0)
             Button { draft.input = ""; draft.output = ""; draft.error = nil } label: { Image(systemName: "trash") }.help("清空")
         } content: {
@@ -47,6 +49,11 @@ struct CronToolView: View {
         }.onAppear {
             if draft.option.isEmpty { draft.option = TimeZone.current.identifier }
             if draft.input.isEmpty { apply("0 */15 * * * ?") } else { syncFields(from: draft.input) }
+        }
+        .sheet(isPresented: $favoritesOpen) {
+            ToolFavoritesSheet(kind: .cron, currentValue: draft.input) { expression in
+                apply(expression)
+            }.environment(store)
         }
     }
     private func grid(_ title: String, _ value: Binding<String>) -> some View {
