@@ -51,9 +51,14 @@ struct MigrationSettingsPanel: View {
         (httpPreview?.requestCount ?? 0) + (httpPreview?.historyCount ?? 0) + hostProfileCount + translationWordCount + translationHistoryCount + favoriteColorCount + favoriteRegexCount + favoriteCronCount + funcHistoryCount + funcContentCount + vaultQuickNoteCount + vaultJsonCount
     }
 
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+    private func locf(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: AppLocalization.string(key, language: language), arguments: arguments)
+    }
+
     var body: some View {
         Form {
-            Text("从 next Electron 的 `mootool-next.json` 合并工作台布局、HTTP 代理、编辑器与文档库 Git 设置；并可从 Electron 磁盘目录 `quick-notes` / `json-vault` 导入文档与 `attachments/` 图片。SQLite 可合并 HTTP/Host/翻译/历史/草稿及表内文档正文；不含加密密钥。")
+            Text(loc("migration.intro"))
                 .font(.caption).foregroundStyle(.secondary).padding(.vertical, 4)
             HStack {
                 TextField(AppLocalization.string("migration.electronStorePath", language: language), text: $storePath)
@@ -70,25 +75,25 @@ struct MigrationSettingsPanel: View {
             if let error { Text(error).foregroundStyle(.red).font(.caption) }
             if let notice { Text(notice).foregroundStyle(.secondary).font(.caption) }
             if let preview {
-                LabeledContent("自定义分组", value: "\(preview.customGroupCount)")
-                LabeledContent("隐藏侧栏工具", value: "\(preview.hiddenToolCount)")
-                LabeledContent("分栏键", value: "\(preview.paneKeyCount)")
+                LabeledContent(loc("migration.preview.customGroups"), value: "\(preview.customGroupCount)")
+                LabeledContent(loc("migration.preview.hiddenTools"), value: "\(preview.hiddenToolCount)")
+                LabeledContent(loc("migration.preview.paneKeys"), value: "\(preview.paneKeyCount)")
                 ForEach(preview.warnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
             }
             if let vaultFolderPreview {
-                LabeledContent("磁盘随手记", value: "\(vaultFolderPreview.quickNoteFileCount)")
-                LabeledContent("磁盘 JSON", value: "\(vaultFolderPreview.jsonFileCount)")
-                LabeledContent("磁盘图片", value: "\(vaultFolderPreview.attachmentFileCount)")
+                LabeledContent(loc("migration.preview.diskQuickNotes"), value: "\(vaultFolderPreview.quickNoteFileCount)")
+                LabeledContent(loc("migration.preview.diskJson"), value: "\(vaultFolderPreview.jsonFileCount)")
+                LabeledContent(loc("migration.preview.diskImages"), value: "\(vaultFolderPreview.attachmentFileCount)")
                 ForEach(vaultFolderPreview.warnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
             }
             Divider()
             Section(AppLocalization.string("migration.section.java", language: language)) {
                 let root = LegacyJavaDataPaths.defaultDirectory
-                LabeledContent("默认目录", value: root.path)
+                LabeledContent(loc("migration.java.defaultDir"), value: root.path)
                 if LegacyJavaDataPaths.hasLegacyInstall(at: root) {
-                    Text("可从 `quick-notes` / `json-beauty` 磁盘目录或 SQLite 合并数据；完整遗留迁移服务仍以 Compose/Electron 为准。").font(.caption).foregroundStyle(.secondary)
+                    Text(loc("migration.java.hintFound")).font(.caption).foregroundStyle(.secondary)
                 } else {
-                    Text("未在默认目录找到 Java 版数据库。若数据在其他位置，请用 Compose 迁移或手动复制文件到文档库。").font(.caption).foregroundStyle(.secondary)
+                    Text(loc("migration.java.hintMissing")).font(.caption).foregroundStyle(.secondary)
                 }
                 HStack {
                     Button(AppLocalization.string("migration.scanJavaVaultDisk", language: language)) { scanJavaVaultFolders() }
@@ -96,9 +101,9 @@ struct MigrationSettingsPanel: View {
                         .disabled(busy || javaVaultImportableCount == 0)
                 }
                 if let javaVaultFolderPreview {
-                    LabeledContent("Java 磁盘随手记", value: "\(javaVaultFolderPreview.quickNoteFileCount)")
-                    LabeledContent("Java 磁盘 JSON", value: "\(javaVaultFolderPreview.jsonFileCount)")
-                    LabeledContent("Java 磁盘图片", value: "\(javaVaultFolderPreview.attachmentFileCount)")
+                    LabeledContent(loc("migration.preview.javaQuickNotes"), value: "\(javaVaultFolderPreview.quickNoteFileCount)")
+                    LabeledContent(loc("migration.preview.javaJson"), value: "\(javaVaultFolderPreview.jsonFileCount)")
+                    LabeledContent(loc("migration.preview.javaImages"), value: "\(javaVaultFolderPreview.attachmentFileCount)")
                     ForEach(javaVaultFolderPreview.warnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
                 }
                 Button(AppLocalization.string("migration.openFinder", language: language)) { NSWorkspace.shared.open(root) }
@@ -109,7 +114,7 @@ struct MigrationSettingsPanel: View {
             }
             Divider()
             Section(AppLocalization.string("migration.section.sqlite", language: language)) {
-                Text("从 Electron/Java SQLite 合并 HTTP、Host、翻译、历史、草稿与文档库正文（`t_quick_note` / `t_json_beauty`）；重复标题+正文会跳过。").font(.caption).foregroundStyle(.secondary)
+                Text(loc("migration.sqlite.hint")).font(.caption).foregroundStyle(.secondary)
                 HStack {
                     TextField(AppLocalization.string("migration.sqlitePath", language: language), text: $httpDatabasePath)
                     Button(AppLocalization.string("migration.choose", language: language)) { chooseDatabase() }
@@ -120,16 +125,16 @@ struct MigrationSettingsPanel: View {
                         .disabled(busy || importableSqliteCount == 0)
                 }
                 if let httpPreview {
-                    LabeledContent("可导入请求", value: "\(httpPreview.requestCount)")
-                    LabeledContent("可导入历史", value: "\(httpPreview.historyCount)")
-                    LabeledContent("可导入 Host", value: "\(hostProfileCount)")
-                    LabeledContent("可导入翻译词条", value: "\(translationWordCount)")
-                    LabeledContent("可导入翻译历史", value: "\(translationHistoryCount)")
-                    LabeledContent("可导入颜色/正则/Cron 收藏", value: "\(favoriteColorCount)/\(favoriteRegexCount)/\(favoriteCronCount)")
-                    LabeledContent("可导入通用工具历史", value: "\(funcHistoryCount)")
-                    LabeledContent("可导入工具草稿", value: "\(funcContentCount)")
-                    LabeledContent("可导入随手记文档", value: "\(vaultQuickNoteCount)")
-                    LabeledContent("可导入 JSON 文档", value: "\(vaultJsonCount)")
+                    LabeledContent(loc("migration.count.requests"), value: "\(httpPreview.requestCount)")
+                    LabeledContent(loc("migration.count.httpHistory"), value: "\(httpPreview.historyCount)")
+                    LabeledContent(loc("migration.count.host"), value: "\(hostProfileCount)")
+                    LabeledContent(loc("migration.count.translationWords"), value: "\(translationWordCount)")
+                    LabeledContent(loc("migration.count.translationHistory"), value: "\(translationHistoryCount)")
+                    LabeledContent(loc("migration.count.favorites"), value: "\(favoriteColorCount)/\(favoriteRegexCount)/\(favoriteCronCount)")
+                    LabeledContent(loc("migration.count.funcHistory"), value: "\(funcHistoryCount)")
+                    LabeledContent(loc("migration.count.drafts"), value: "\(funcContentCount)")
+                    LabeledContent(loc("migration.count.quickNotes"), value: "\(vaultQuickNoteCount)")
+                    LabeledContent(loc("migration.count.jsonDocs"), value: "\(vaultJsonCount)")
                     ForEach(httpPreview.warnings + vaultImportWarnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
                 }
             }
@@ -142,25 +147,25 @@ struct MigrationSettingsPanel: View {
             }
             scanJavaVaultFolders()
         }
-        .confirmationDialog("导入 Electron 设置？", isPresented: $confirmImport) {
-            Button(AppLocalization.string("migration.mergeIntoWorkspace", language: language)) { importSettings() }
+        .confirmationDialog(loc("migration.confirm.settings.title"), isPresented: $confirmImport) {
+            Button(loc("migration.mergeIntoWorkspace")) { importSettings() }
         } message: {
-            Text("将覆盖匹配的工作台字段，并写入 HTTP 代理与编辑器偏好。导入前会自动保存当前工作区。")
+            Text(loc("migration.confirm.settings.message"))
         }
-        .confirmationDialog("导入 HTTP 请求集合？", isPresented: $confirmHttpImport) {
-            Button(AppLocalization.string("migration.mergeIntoWorkspace", language: language)) { importHttp(from: URL(fileURLWithPath: httpDatabasePath)) }
+        .confirmationDialog(loc("migration.confirm.http.title"), isPresented: $confirmHttpImport) {
+            Button(loc("migration.mergeIntoWorkspace")) { importHttp(from: URL(fileURLWithPath: httpDatabasePath)) }
         } message: {
-            Text("将合并 HTTP 集合、各工具历史（含 t_func_history）与 Host/翻译/收藏；重复项会跳过。")
+            Text(loc("migration.confirm.http.message"))
         }
-        .confirmationDialog("导入 Electron 磁盘文档库？", isPresented: $confirmVaultFolderImport) {
-            Button(AppLocalization.string("migration.mergeIntoWorkspace", language: language)) { importVaultFolders() }
+        .confirmationDialog(loc("migration.confirm.electronVault.title"), isPresented: $confirmVaultFolderImport) {
+            Button(loc("migration.mergeIntoWorkspace")) { importVaultFolders() }
         } message: {
-            Text("从 Electron 的 quick-notes 与 json-vault 目录复制文本文件；随手记正文中的 attachments/ 图片会转为原生附件。重复标题+正文会跳过。")
+            Text(loc("migration.confirm.electronVault.message"))
         }
-        .confirmationDialog("导入 Java 磁盘文档库？", isPresented: $confirmJavaVaultFolderImport) {
-            Button(AppLocalization.string("migration.mergeIntoWorkspace", language: language)) { importJavaVaultFolders() }
+        .confirmationDialog(loc("migration.confirm.javaVault.title"), isPresented: $confirmJavaVaultFolderImport) {
+            Button(loc("migration.mergeIntoWorkspace")) { importJavaVaultFolders() }
         } message: {
-            Text("从 Java 版 `quick-notes` 与 `json-beauty` 目录合并文本与 attachments/ 图片；重复标题+正文会跳过。")
+            Text(loc("migration.confirm.javaVault.message"))
         }
     }
 
@@ -178,7 +183,7 @@ struct MigrationSettingsPanel: View {
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
         panel.allowedContentTypes = [UTType(filenameExtension: "db") ?? .data, .database]
-        panel.prompt = "选择"
+        panel.prompt = loc("migration.panel.promptChoose")
         if !httpDatabasePath.isEmpty { panel.directoryURL = URL(fileURLWithPath: httpDatabasePath).deletingLastPathComponent() }
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
@@ -188,7 +193,7 @@ struct MigrationSettingsPanel: View {
     }
 
     private func httpCollection(for url: URL) -> String {
-        url.path.contains(".MooTool") ? "Java 导入" : ElectronHttpImport.defaultCollection
+        url.path.contains(".MooTool") ? loc("migration.collection.java") : ElectronHttpImport.defaultCollection
     }
 
     private func scanHttp() {
@@ -283,7 +288,12 @@ struct MigrationSettingsPanel: View {
             }
             store.saveNow()
             NotificationCenter.default.post(name: .menuBarTrayRefresh, object: nil)
-            notice = "请求 +\(result.added)；HTTP 历史 +\(historyResult.added)；工具历史 +\(funcHistoryResult.added)；草稿回写 \(draftApply.applied)；随手记 +\(vaultNoteAdded)；JSON +\(vaultJsonAdded)；Host +\(hostResult.added)；词条 +\(wordResult.added)；翻译历史 +\(translationHistoryResult.added)；收藏 +\(favoriteResult.added)。"
+            notice = locf(
+                "migration.notice.sqliteImport",
+                result.added, historyResult.added, funcHistoryResult.added, draftApply.applied,
+                vaultNoteAdded, vaultJsonAdded, hostResult.added, wordResult.added,
+                translationHistoryResult.added, favoriteResult.added
+            )
             httpPreview = try ElectronHttpImport.preview(at: url, collection: collection)
             error = nil
         } catch {
@@ -297,7 +307,7 @@ struct MigrationSettingsPanel: View {
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
         panel.allowedContentTypes = [.json]
-        panel.prompt = "选择"
+        panel.prompt = loc("migration.panel.promptChoose")
         if !storePath.isEmpty { panel.directoryURL = URL(fileURLWithPath: storePath).deletingLastPathComponent() }
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
@@ -386,7 +396,7 @@ struct MigrationSettingsPanel: View {
         let jsonItems = ElectronVaultFolderImport.filterNewJson(try ElectronVaultFolderImport.loadJsonItems(at: jsonRoot), existing: store.documents)
         let vaultJsonAdded = jsonItems.isEmpty ? 0 : try store.importVaultDocuments(jsonItems, toolID: "json", parent: nil).count
         store.saveNow()
-        notice = "\(label) 磁盘文档库：随手记 +\(vaultNoteAdded)，JSON +\(vaultJsonAdded)，图片附件 +\(attachmentPayloads.count)。"
+        notice = locf("migration.notice.vaultImport", label, vaultNoteAdded, vaultJsonAdded, attachmentPayloads.count)
         error = nil
     }
 
@@ -421,7 +431,7 @@ struct MigrationSettingsPanel: View {
             if let value = patch.shortcutSettings { nativeDefaults.set(value, forKey: "shortcuts.settings") }
             store.saveNow()
             NotificationCenter.default.post(name: .menuBarTrayRefresh, object: nil)
-            notice = "已合并 Electron 工作台与网络/编辑器偏好。"
+            notice = loc("migration.notice.settingsMerged")
             preview = try ElectronStoreImport.preview(at: url, knownToolIDs: knownToolIDs, currentPaneSizes: store.layoutPaneSizes)
         } catch {
             self.error = error.localizedDescription

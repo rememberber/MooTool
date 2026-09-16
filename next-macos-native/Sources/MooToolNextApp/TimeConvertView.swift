@@ -13,10 +13,15 @@ struct TimeConvertView: View {
     private var unit: TimeConversion.TimestampUnit { draft.mode == "millisecond" ? .millisecond : .second }
     private var zones: [String] { TimeConversion.timezones(including: TimeZone.current.identifier) }
 
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+    private func locf(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: AppLocalization.string(key, language: language), arguments: arguments)
+    }
+
     var body: some View {
         ToolPage(tool: Catalog.tool("timeConvert"), draft: draft) {
             Button { historyOpen = true } label: { Label(AppLocalization.string("workbench.history", language: language), systemImage: "clock.arrow.circlepath") }
-            Button { clockOpen = true } label: { Label(AppLocalization.string("tool.bigClock", language: language), systemImage: "arrow.up.left.and.arrow.down.right") }
+            Button { clockOpen = true } label: { Label(loc("tool.bigClock"), systemImage: "arrow.up.left.and.arrow.down.right") }
             Spacer(minLength: 0)
         } content: {
             ScrollView {
@@ -29,17 +34,17 @@ struct TimeConvertView: View {
         }
         .onReceive(timer) { now = $0 }
         .onAppear(perform: bootstrap)
-        .sheet(isPresented: $historyOpen) { HistoryView(toolID: "timeConvert").environment(store) }
+        .sheet(isPresented: $historyOpen) { HistoryView(toolID: "timeConvert").environment(store).environment(\.appLanguage, language) }
         .sheet(isPresented: $clockOpen) { TimeClockSheet(zone: zone, now: now) { clockOpen = false } }
     }
 
     private var currentBand: some View {
         let timestamp = String(Int64(now.timeIntervalSince1970))
         let local = TimeConversion.formatLocalTime(date: now, zone: zone)
-        return GroupBox("当前时间") {
+        return GroupBox(loc("timeConvert.currentTime")) {
             VStack(alignment: .leading, spacing: 12) {
-                timeValueRow(label: "时间戳（秒）", value: timestamp)
-                timeValueRow(label: "本地时间 · \(zone)", value: local)
+                timeValueRow(label: loc("timeConvert.timestampSeconds"), value: timestamp)
+                timeValueRow(label: locf("timeConvert.localTimeZone", zone), value: local)
                 Text(TimeConversion.formatTimezoneLabel(zone: zone, date: now))
                     .font(.caption).foregroundStyle(.secondary)
             }.padding(4)
@@ -47,9 +52,9 @@ struct TimeConvertView: View {
     }
 
     private var zoneBand: some View {
-        GroupBox("时区") {
+        GroupBox(loc("timeConvert.timezone")) {
             VStack(alignment: .leading, spacing: 10) {
-                Picker("时区", selection: Binding(get: { zone }, set: { draft.option = $0; refreshLocalFromNow() })) {
+                Picker(loc("timeConvert.timezone"), selection: Binding(get: { zone }, set: { draft.option = $0; refreshLocalFromNow() })) {
                     ForEach(zones, id: \.self) { Text(TimeConversion.formatTimezoneLabel(zone: $0, date: now)).tag($0) }
                 }
                 HStack(spacing: 8) {
@@ -68,40 +73,40 @@ struct TimeConvertView: View {
     }
 
     private var converterBand: some View {
-        GroupBox("转换") {
+        GroupBox(loc("timeConvert.convert")) {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("时间戳").font(.subheadline).foregroundStyle(.secondary)
+                    Text(loc("timeConvert.timestamp")).font(.subheadline).foregroundStyle(.secondary)
                     HStack {
                         TextField("1700000000", text: $draft.input)
                             .textFieldStyle(.roundedBorder)
                             .font(.system(.body, design: .monospaced))
                             .onSubmit(convertToLocal)
-                        Picker("单位", selection: Binding(get: { unit.rawValue }, set: { draft.mode = $0 })) {
-                            Text("秒").tag("second")
-                            Text("毫秒").tag("millisecond")
-                        }.frame(width: 88)
-                        Button { copy(draft.input) } label: { Image(systemName: "doc.on.doc") }.help("复制")
+                        Picker(loc("timeConvert.unit"), selection: Binding(get: { unit.rawValue }, set: { draft.mode = $0 })) {
+                            Text(loc("timeConvert.unitSecond")).tag("second")
+                            Text(loc("timeConvert.unitMillisecond")).tag("millisecond")
+                        }.frame(width: 120)
+                        Button { copy(draft.input) } label: { Image(systemName: "doc.on.doc") }.help(loc("timeConvert.copy"))
                     }
                 }
                 HStack(spacing: 12) {
-                    Button { convertToLocal() } label: { Label("转为本地时间", systemImage: "arrow.down") }
-                    Button { convertToTimestamp() } label: { Label("转为时间戳", systemImage: "arrow.up") }
+                    Button { convertToLocal() } label: { Label(loc("timeConvert.toLocal"), systemImage: "arrow.down") }
+                    Button { convertToTimestamp() } label: { Label(loc("timeConvert.toTimestamp"), systemImage: "arrow.up") }
                 }
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("本地时间 · \(zone)").font(.subheadline).foregroundStyle(.secondary)
+                    Text(locf("timeConvert.localTimeZone", zone)).font(.subheadline).foregroundStyle(.secondary)
                     HStack {
                         TextField("yyyy-MM-dd HH:mm:ss", text: $draft.secondary)
                             .textFieldStyle(.roundedBorder)
                             .font(.system(.body, design: .monospaced))
                             .onSubmit(convertToTimestamp)
                         Text("yyyy-MM-dd HH:mm:ss").font(.caption).foregroundStyle(.tertiary)
-                        Button { copy(draft.secondary) } label: { Image(systemName: "doc.on.doc") }.help("复制")
+                        Button { copy(draft.secondary) } label: { Image(systemName: "doc.on.doc") }.help(loc("timeConvert.copy"))
                     }
                 }
-                Text("仍可在输入框使用 ISO 8601 或混合格式，通过下方「详细解析」查看秒/毫秒与 UTC。")
+                Text(loc("timeConvert.isoHint"))
                     .font(.caption).foregroundStyle(.secondary)
-                Button("详细解析（当前时间戳输入）") { parseDetail() }
+                Button(loc("timeConvert.parseDetail")) { parseDetail() }
                 if !draft.output.isEmpty {
                     Text(draft.output).font(.system(.callout, design: .monospaced)).textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -120,7 +125,7 @@ struct TimeConvertView: View {
                 Text(value).font(.system(.title3, design: .monospaced)).textSelection(.enabled)
             }
             Spacer()
-            Button { copy(value) } label: { Image(systemName: "doc.on.doc") }.help("复制")
+            Button { copy(value) } label: { Image(systemName: "doc.on.doc") }.help(loc("timeConvert.copy"))
         }
     }
 
@@ -136,13 +141,17 @@ struct TimeConvertView: View {
         draft.secondary = TimeConversion.formatLocalTime(date: now, zone: zone)
     }
 
+    private func unitLabel() -> String {
+        unit == .second ? loc("timeConvert.unitSecond") : loc("timeConvert.unitMillisecond")
+    }
+
     private func convertToLocal() {
         do {
             let result = try TimeConversion.timestampToLocal(draft.input, unit: unit, zone: zone)
             draft.secondary = result.localTime
             draft.mode = result.unit.rawValue
             draft.error = nil
-            draft.status = "已转为 \(zone) 本地时间"
+            draft.status = locf("timeConvert.statusToLocal", zone)
             store.record("timeConvert")
         } catch {
             draft.error = error.localizedDescription
@@ -153,7 +162,7 @@ struct TimeConvertView: View {
         do {
             draft.input = try TimeConversion.localToTimestamp(draft.secondary, unit: unit, zone: zone)
             draft.error = nil
-            draft.status = "已转为时间戳（\(unit == .second ? "秒" : "毫秒")）"
+            draft.status = locf("timeConvert.statusToTimestamp", unitLabel())
             store.record("timeConvert")
         } catch {
             draft.error = error.localizedDescription
@@ -164,7 +173,7 @@ struct TimeConvertView: View {
         do {
             draft.output = try DeveloperServices.timestamp(draft.input, zone: zone)
             draft.error = nil
-            draft.status = "已生成详细解析"
+            draft.status = loc("timeConvert.statusParsed")
         } catch {
             draft.error = error.localizedDescription
         }
@@ -172,7 +181,7 @@ struct TimeConvertView: View {
 
     private func copy(_ text: String) {
         FilePanels.copy(text)
-        draft.status = "已复制"
+        draft.status = loc("timeConvert.statusCopied")
         draft.error = nil
     }
 }

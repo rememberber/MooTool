@@ -309,6 +309,12 @@ struct HistoryView: View {
                                     .lineLimit(2).font(.system(.body, design: .monospaced))
                                 Text("\(options.type.title) · \(options.tab == .file ? "文件" : "文本") · \(item.date.formatted())")
                                     .font(.caption).foregroundStyle(.secondary)
+                            } else if toolID == "timeConvert" {
+                                Text(item.draft.input).lineLimit(1).font(.system(.body, design: .monospaced))
+                                let unitKey = item.draft.mode == "millisecond" ? "timeConvert.unitMillisecond" : "timeConvert.unitSecond"
+                                let unit = AppLocalization.string(unitKey, language: language)
+                                Text("\(item.draft.secondary) · \(unit) · \(item.date.formatted())")
+                                    .font(.caption).foregroundStyle(.secondary)
                             } else {
                                 Text(item.draft.input.isEmpty ? item.draft.output : item.draft.input).lineLimit(2).font(.system(.body, design: .monospaced))
                                 Text(item.date.formatted()).font(.caption).foregroundStyle(.secondary)
