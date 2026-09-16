@@ -14,7 +14,7 @@
 ## 范围说明
 
 - **0.8.0** 重点：文本对比工作区、工作台分栏/迁移、加密/Host/翻译/收藏、SQLite 历史与 `t_func_content` 草稿、菜单栏托盘、**关闭主窗口**（`general.closeBehavior` 询问/隐藏/退出）。
-- 仍按 [parity.md](parity.md) 列为边界：工具面板全文 i18n、可编辑全局快捷键、安装包后台下载/静默安装、Java `~/.MooTool` 一键镜像、Monaco 级编辑装饰等。
+- 仍按 [parity.md](parity.md) 列为边界：工具面板全文 i18n、可编辑全局快捷键、安装包后台下载/静默安装、Compose 级遗留迁移一键镜像、Monaco 级编辑装饰等（Java/Electron **磁盘目录**合并导入已支持）。
 - 侧栏/搜索/工具名三语、`general.language`、GitHub API 更新检查、Electron 磁盘文档库导入合入后：**check-core 59 组 0 失败**。
 - ToolPage/EditorPane 三语与 `autoDownloadUpdates` 静默打开下载页后：**smoke 全绿**（约 9.4 min，2026-09-16）。
 - Java `quick-notes` / `json-beauty` 磁盘导入合入后：**smoke 全绿**（约 8.3 min，2026-09-16）；**check-core** 仍 59/0。

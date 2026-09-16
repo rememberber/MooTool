@@ -74,7 +74,7 @@ struct Workbench: View {
                 }
         }.frame(minWidth: 940, minHeight: 630)
             .sheet(isPresented: $store.searchPresented) { CommandPalette().environment(store).environment(\.appLanguage, language) }
-            .sheet(isPresented: $store.historyPresented) { HistoryView(toolID: store.selected).environment(store) }
+            .sheet(isPresented: $store.historyPresented) { HistoryView(toolID: store.selected).environment(store).environment(\.appLanguage, language) }
             .alert(AppLocalization.string("workbench.alert.title", language: language), isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) { Button(AppLocalization.string("workbench.alert.ok", language: language)) { store.error = nil } } message: { Text(store.error ?? "") }
     }
     private func navigationVisible(_ id: String) -> Bool {

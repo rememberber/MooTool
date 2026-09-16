@@ -68,23 +68,24 @@ struct QRTool: View {
 struct ColorTool: View {
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @State private var color = Color(red: 0.31, green: 0.51, blue: 0.80)
     @State private var sampler: NSColorSampler?
     @State private var favoritesOpen = false
     var body: some View {
         ToolPage(tool: Catalog.tool("colorBoard"), draft: draft) {
-            ColorPicker("选择颜色", selection: $color, supportsOpacity: false).frame(width: 160)
-            Button("屏幕取色") { let sampler = NSColorSampler(); self.sampler = sampler; sampler.show { if let value = $0 { color = Color(nsColor: value); update() }; self.sampler = nil } }
+            ColorPicker(AppLocalization.string("color.choose", language: language), selection: $color, supportsOpacity: false).frame(width: 160)
+            Button(AppLocalization.string("color.screenPick", language: language)) { let sampler = NSColorSampler(); self.sampler = sampler; sampler.show { if let value = $0 { color = Color(nsColor: value); update() }; self.sampler = nil } }
             TextField("#4F83CC", text: $draft.input).textFieldStyle(.roundedBorder).frame(width: 120).onSubmit(parse)
-            Button("应用 HEX", action: parse)
-            Button("收藏", systemImage: "star") { favoritesOpen = true }
+            Button(AppLocalization.string("color.applyHex", language: language), action: parse)
+            Button(AppLocalization.string("tool.favorites", language: language), systemImage: "star") { favoritesOpen = true }
         } content: {
             PersistedHSplit(toolID: "colorBoard", defaultLeading: 320, minLeading: 220, maxLeading: 560) {
                 RoundedRectangle(cornerRadius: 18).fill(color).overlay {
                     VStack(spacing: 10) { Text(draft.input.uppercased()).font(.system(size: 34, weight: .medium, design: .monospaced)); Text("MooTool Color").font(.title3) }.foregroundStyle(contrastColor)
                 }.padding(24)
             } trailing: {
-                EditorPane(title: "颜色值", text: $draft.output, editable: false)
+                EditorPane(title: AppLocalization.string("color.values", language: language), text: $draft.output, editable: false)
             }
         }.onChange(of: color) { update() }.onAppear { if draft.input.isEmpty { update() } else { parse() } }
         .sheet(isPresented: $favoritesOpen) {

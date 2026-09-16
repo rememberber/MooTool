@@ -43,13 +43,14 @@ final class MenuBarTray {
     }
 
     private func buildMenu() -> NSMenu {
+        let language = AppLanguage.normalized(nativeDefaults.string(forKey: "general.language"))
         let menu = NSMenu()
-        menu.addItem(actionItem("打开 MooTool", #selector(openMain)))
-        menu.addItem(actionItem("设置…", #selector(openSettings)))
+        menu.addItem(actionItem(AppLocalization.string("tray.open", language: language), #selector(openMain)))
+        menu.addItem(actionItem(AppLocalization.string("tray.settings", language: language), #selector(openSettings)))
         menu.addItem(.separator())
-        menu.addItem(actionItem("屏幕取色", #selector(pickColor)))
-        menu.addItem(actionItem("区域截图", #selector(captureScreenshot)))
-        menu.addItem(actionItem("翻译", #selector(openTranslation)))
+        menu.addItem(actionItem(AppLocalization.string("tray.pickColor", language: language), #selector(pickColor)))
+        menu.addItem(actionItem(AppLocalization.string("tray.screenshot", language: language), #selector(captureScreenshot)))
+        menu.addItem(actionItem(AppLocalization.string("tray.translate", language: language), #selector(openTranslation)))
         if let store, !store.hostProfiles.isEmpty {
             menu.addItem(.separator())
             for profile in store.hostProfiles {
@@ -61,7 +62,7 @@ final class MenuBarTray {
             }
         }
         menu.addItem(.separator())
-        menu.addItem(actionItem("退出 MooTool", #selector(quit)))
+        menu.addItem(actionItem(AppLocalization.string("tray.quit", language: language), #selector(quit)))
         return menu
     }
 
