@@ -33,6 +33,39 @@ class VaultTreeTest {
         assertEquals(false, map["Work/nested"])
     }
 
+    /** 对照 Electron `vaultTreeExpand.test.ts`。 */
+    @Test
+    fun vaultAncestorDirectoryPaths_matchesElectron() {
+        assertEquals(listOf("work", "work/nested"), vaultAncestorDirectoryPaths("work/nested/note.txt"))
+        assertTrue(vaultAncestorDirectoryPaths("solo.txt").isEmpty())
+    }
+
+    @Test
+    fun vaultTreeExpandForMode_collapseAll_keepsSelectedAncestors() {
+        val items = listOf(
+            VaultEntry("work", "work", true, 0),
+            VaultEntry("work/nested", "nested", true, 0),
+            VaultEntry("solo.txt", "solo.txt", false, 0),
+        )
+        val collapsed = vaultTreeExpandForMode("collapseAll", items, "work/nested/note.txt")
+        assertEquals(mapOf("work" to true, "work/nested" to true), collapsed)
+        val emptySelection = vaultTreeExpandForMode("collapseAll", items, "")
+        assertEquals(mapOf("work" to false, "work/nested" to false), emptySelection)
+        val expandAll = vaultTreeExpandForMode("expandAll", items, "work/nested/note.txt")
+        assertEquals(mapOf("work" to true, "work/nested" to true), expandAll)
+    }
+
+    @Test
+    fun expandVaultPathForSelection_ensuresAncestorsStayExpanded() {
+        val items = listOf(
+            VaultEntry("work", "work", true, 0),
+            VaultEntry("work/nested", "nested", true, 0),
+        )
+        val expanded = mutableMapOf("work" to true)
+        expandVaultPathForSelection("work/nested/note.txt", items, expanded)
+        assertEquals(mapOf("work" to true, "work/nested" to true), expanded)
+    }
+
     @Test
     fun contextMenuHidesFileOnlyActionsOnDirectories() {
         val actions = listOf(

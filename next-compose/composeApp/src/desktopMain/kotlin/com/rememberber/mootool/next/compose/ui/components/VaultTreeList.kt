@@ -96,18 +96,7 @@ data class VaultTreeKeyResult(
     val selectPath: String? = null,
 )
 
-/** Expand ancestor directories so [selectedPath] is visible (Electron vault `expanded` after create/select). */
-fun vaultTreeExpandForMode(expandMode: String, items: List<VaultEntry>): Map<String, Boolean> {
-    val directories = items.filter { it.directory }.map { it.relativePath }
-    return directories.associateWith { path ->
-        when (expandMode) {
-            "collapseAll" -> false
-            "expandAll" -> true
-            else -> !path.contains('/')
-        }
-    }
-}
-
+/** Expand ancestor directories so [selectedPath] is visible (Electron `ensureAncestorsExpanded`). */
 fun expandVaultPathForSelection(
     selectedPath: String,
     items: List<VaultEntry>,
@@ -115,10 +104,8 @@ fun expandVaultPathForSelection(
 ) {
     if (selectedPath.isBlank()) return
     val directories = items.filter { it.directory }.map { it.relativePath }.toSet()
-    var segment = ""
-    for (part in selectedPath.split('/').filter { it.isNotEmpty() }.dropLast(1)) {
-        segment = if (segment.isEmpty()) part else "$segment/$part"
-        if (segment in directories) expanded[segment] = true
+    for (path in vaultAncestorDirectoryPaths(selectedPath)) {
+        if (path in directories) expanded[path] = true
     }
     if (selectedPath in directories) expanded[selectedPath] = true
 }
@@ -258,12 +245,12 @@ fun VaultTreeList(
         if (items.isEmpty()) return@LaunchedEffect
         if (treeExpanded.isEmpty()) {
             lastExpandMode = expandMode
-            onTreeExpandedChange(vaultTreeExpandForMode(expandMode, items))
+            onTreeExpandedChange(vaultTreeExpandForMode(expandMode, items, selectedPath))
             return@LaunchedEffect
         }
         if (lastExpandMode != expandMode) {
             lastExpandMode = expandMode
-            onTreeExpandedChange(vaultTreeExpandForMode(expandMode, items))
+            onTreeExpandedChange(vaultTreeExpandForMode(expandMode, items, selectedPath))
         }
     }
     androidx.compose.runtime.LaunchedEffect(selectedPath, items) {
