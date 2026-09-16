@@ -157,11 +157,11 @@ struct SettingsView: View {
             Section(SettingsCategory.shortcuts.title(language: language)) {
                 shortcutRow(AppLocalization.string("settings.shortcut.search", language: language), ElectronShortcutFormat.display(shortcutSearch))
                 shortcutRow(AppLocalization.string("settings.shortcut.settings", language: language), ElectronShortcutFormat.display(shortcutSettings))
-                shortcutRow("JSON / 随手记保存", "⌘S")
-                shortcutRow("JSON 格式化", "⌘↩")
-                shortcutRow("文本对比比较", "⌘↩")
-                shortcutRow("格式化工具", "⌘⇧F")
-                shortcutRow("查找替换", "⌘F")
+                shortcutRow(AppLocalization.string("settings.shortcut.saveVault", language: language), "⌘S")
+                shortcutRow(AppLocalization.string("settings.shortcut.formatJson", language: language), "⌘↩")
+                shortcutRow(AppLocalization.string("settings.shortcut.compareDiff", language: language), "⌘↩")
+                shortcutRow(AppLocalization.string("settings.shortcut.formatTool", language: language), "⌘⇧F")
+                shortcutRow(AppLocalization.string("settings.shortcut.findReplace", language: language), "⌘F")
                 Text("与 Electron 设置页相同：只读展示主要快捷键（可从 Electron 设置迁移）；不提供自定义绑定或托盘全局热键。").font(.caption).foregroundStyle(.secondary)
             }
         case .backup:
