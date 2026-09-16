@@ -89,16 +89,36 @@ struct BoardDisplay: View {
 
 struct TranslationTool: View {
     @Bindable var draft: ToolDraft
+    @State private var tab = "translate"
     var body: some View {
-        if #available(macOS 15, *) { ModernTranslationTool(draft: draft) }
-        else {
-            ToolPage(tool: Catalog.tool("translation"), draft: draft) {
-                Button("在系统词典中查找") { openDictionary(draft.input) }
-            } content: {
-                VStack(alignment: .leading, spacing: 15) {
-                    Text("自动翻译需要 macOS 15 或更高版本。当前系统可选中文本，使用右键菜单的翻译/查询服务，或打开系统词典。").font(.callout).foregroundStyle(.secondary)
-                    EditorPane(title: "原文", text: $draft.input)
+        VStack(spacing: 0) {
+            Picker("翻译视图", selection: $tab) {
+                Text("翻译").tag("translate")
+                Text("词库").tag("words")
+                Text("历史").tag("history")
+            }.pickerStyle(.segmented).padding(.horizontal, 16).padding(.top, 8)
+            Group {
+                switch tab {
+                case "words": TranslationWordBook(draft: draft)
+                case "history": TranslationHistoryPane(draft: draft)
+                default:
+                    if #available(macOS 15, *) { ModernTranslationTool(draft: draft) }
+                    else { LegacyTranslationTool(draft: draft) }
                 }
+            }.frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+}
+
+private struct LegacyTranslationTool: View {
+    @Bindable var draft: ToolDraft
+    var body: some View {
+        ToolPage(tool: Catalog.tool("translation"), draft: draft) {
+            Button("在系统词典中查找") { openDictionary(draft.input) }
+        } content: {
+            VStack(alignment: .leading, spacing: 15) {
+                Text("自动翻译需要 macOS 15 或更高版本。当前系统可选中文本，使用右键菜单的翻译/查询服务，或打开系统词典。").font(.callout).foregroundStyle(.secondary)
+                EditorPane(title: "原文", text: $draft.input)
             }
         }
     }
@@ -129,6 +149,8 @@ private struct ModernTranslationTool: View {
                 do {
                     let response = try await session.translate(draft.input)
                     draft.output = response.targetText
+                    if draft.option.isEmpty { draft.option = "auto" }
+                    store.record("translation")
                 } catch { draft.error = error.localizedDescription }
             }
     }

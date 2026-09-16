@@ -25,12 +25,17 @@ struct MigrationSettingsPanel: View {
     @State private var httpDatabasePath = ElectronDataPaths.defaultDatabaseURL.path
     @State private var httpPreview: ElectronHttpImportPreview?
     @State private var hostProfileCount = 0
+    @State private var translationWordCount = 0
+    @State private var translationHistoryCount = 0
     @State private var confirmHttpImport = false
     private var knownToolIDs: Set<String> { Set(Catalog.tools.map(\.id)) }
+    private var importableSqliteCount: Int {
+        (httpPreview?.requestCount ?? 0) + (httpPreview?.historyCount ?? 0) + hostProfileCount + translationWordCount + translationHistoryCount
+    }
 
     var body: some View {
         Form {
-            Text("从 next Electron 的 `mootool-next.json` 合并工作台布局（侧栏、自定义分组、分栏宽度）、HTTP 代理、编辑器字号/换行与文档库 Git 自动检查点。不会导入文档正文、HTTP 集合或加密密钥。")
+            Text("从 next Electron 的 `mootool-next.json` 合并工作台布局、HTTP 代理、编辑器与文档库 Git 设置。SQLite 区域可合并 HTTP/Host/翻译等表，不会导入笔记/JSON 文档或加密密钥。")
                 .font(.caption).foregroundStyle(.secondary).padding(.vertical, 4)
             HStack {
                 TextField("Electron 数据文件", text: $storePath)
@@ -68,7 +73,7 @@ struct MigrationSettingsPanel: View {
             }
             Divider()
             Section("HTTP 请求集合（SQLite）") {
-                Text("从 Electron `MooToolNext.db` 合并 HTTP 集合/历史（`t_msg_http`、`t_http_request_history`）与 Host 配置（`t_host`）；重复项会跳过。").font(.caption).foregroundStyle(.secondary)
+                Text("从 Electron `MooToolNext.db` 合并 HTTP、Host、翻译词条/历史等 SQLite 表；重复项会跳过。").font(.caption).foregroundStyle(.secondary)
                 HStack {
                     TextField("SQLite 数据库", text: $httpDatabasePath)
                     Button("选择…") { chooseDatabase() }
@@ -76,12 +81,14 @@ struct MigrationSettingsPanel: View {
                 HStack {
                     Button("扫描") { scanHttp() }.disabled(busy || httpDatabasePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     Button("合并导入…") { confirmHttpImport = true }
-                        .disabled(busy || ((httpPreview?.requestCount ?? 0) + (httpPreview?.historyCount ?? 0) + hostProfileCount == 0))
+                        .disabled(busy || importableSqliteCount == 0)
                 }
                 if let httpPreview {
                     LabeledContent("可导入请求", value: "\(httpPreview.requestCount)")
                     LabeledContent("可导入历史", value: "\(httpPreview.historyCount)")
                     LabeledContent("可导入 Host", value: "\(hostProfileCount)")
+                    LabeledContent("可导入翻译词条", value: "\(translationWordCount)")
+                    LabeledContent("可导入翻译历史", value: "\(translationHistoryCount)")
                     ForEach(httpPreview.warnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
                 }
             }
@@ -131,10 +138,15 @@ struct MigrationSettingsPanel: View {
             let url = URL(fileURLWithPath: httpDatabasePath.trimmingCharacters(in: .whitespacesAndNewlines))
             httpPreview = try ElectronHttpImport.preview(at: url, collection: httpCollection(for: url))
             hostProfileCount = try ElectronHostImport.preview(at: url).profileCount
+            let translation = try ElectronTranslationImport.preview(at: url)
+            translationWordCount = translation.wordCount
+            translationHistoryCount = translation.historyCount
             error = nil
         } catch {
             httpPreview = nil
             hostProfileCount = 0
+            translationWordCount = 0
+            translationHistoryCount = 0
             self.error = error.localizedDescription
         }
     }
@@ -149,15 +161,21 @@ struct MigrationSettingsPanel: View {
             store.httpRequests = result.merged
             let historyItems = try ElectronHttpImport.loadHttpHistory(at: url)
             let historyResult = ElectronHttpImport.mergeHistory(importing: historyItems, into: store.history)
-            store.history = historyResult.merged
-            let favorites = store.history.filter(\.favorite)
-            let ordinary = Array(store.history.filter { !$0.favorite }.prefix(100))
-            store.history = (favorites + ordinary).sorted { $0.date > $1.date }
+            var mergedHistory = historyResult.merged
             let hostItems = try ElectronHostImport.loadProfiles(at: url)
             let hostResult = ElectronHostImport.merge(importing: hostItems, into: store.hostProfiles)
             store.hostProfiles = hostResult.merged
+            let translationWords = try ElectronTranslationImport.loadWords(at: url)
+            let wordResult = ElectronTranslationImport.mergeWords(importing: translationWords, into: store.translationWords)
+            store.translationWords = wordResult.merged
+            let translationHistory = try ElectronTranslationImport.loadHistory(at: url)
+            let translationHistoryResult = ElectronHttpImport.mergeHistory(importing: translationHistory, into: mergedHistory)
+            mergedHistory = translationHistoryResult.merged
+            let favorites = mergedHistory.filter(\.favorite)
+            let ordinary = Array(mergedHistory.filter { !$0.favorite }.prefix(100))
+            store.history = (favorites + ordinary).sorted { $0.date > $1.date }
             store.saveNow()
-            notice = "请求 +\(result.added)（跳过 \(result.skipped)）；历史 +\(historyResult.added)（跳过 \(historyResult.skipped)）；Host +\(hostResult.added)（跳过 \(hostResult.skipped)）。"
+            notice = "请求 +\(result.added)；HTTP 历史 +\(historyResult.added)；Host +\(hostResult.added)；词条 +\(wordResult.added)；翻译历史 +\(translationHistoryResult.added)。"
             httpPreview = try ElectronHttpImport.preview(at: url, collection: collection)
             error = nil
         } catch {

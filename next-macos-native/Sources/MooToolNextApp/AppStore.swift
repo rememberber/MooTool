@@ -90,6 +90,7 @@ final class AppStore {
     var history: [HistoryRecord] = []
     var httpRequests: [SavedHTTPRequest] = []
     var hostProfiles: [SavedHostProfile] = []
+    var translationWords: [SavedTranslationWord] = []
     var searchPresented = false
     var historyPresented = false
     var error: String?
@@ -184,6 +185,7 @@ final class AppStore {
         value.scratchDrafts = scratchDrafts
         value.noteAttachments = noteAttachments.isEmpty ? nil : noteAttachments
         value.history = history; value.httpRequests = httpRequests; value.hostProfiles = hostProfiles.isEmpty ? nil : hostProfiles
+        value.translationWords = translationWords.isEmpty ? nil : translationWords
         value.drafts = drafts.mapValues(\.record); return value
     }
     func restore(_ value: WorkspaceSnapshot) {
@@ -198,6 +200,7 @@ final class AppStore {
         layoutPaneSizes = value.layoutPaneSizes
         documents = value.documents; history = value.history; httpRequests = value.httpRequests ?? []
         hostProfiles = value.hostProfiles ?? []
+        translationWords = value.translationWords ?? []
         folders = value.folders ?? []; vaultPreferences = value.vaultPreferences ?? [:]
         scratchDrafts = value.scratchDrafts ?? [:]
         noteAttachments = value.noteAttachments ?? []; attachmentGeneration += 1

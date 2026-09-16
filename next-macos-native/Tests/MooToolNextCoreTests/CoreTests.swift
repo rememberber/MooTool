@@ -1029,6 +1029,29 @@ final class CoreTests: XCTestCase {
         state.hostProfiles = hosts
         XCTAssertEqual(try WorkspaceRepository.decode(WorkspaceRepository.encode(state)).hostProfiles?.count, 1)
         try? FileManager.default.removeItem(at: hostDB)
+        let translationDB = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-translation-\(UUID().uuidString).db")
+        let translationSQL = """
+        CREATE TABLE t_translation_word (id INTEGER PRIMARY KEY, source_text TEXT, target_text TEXT, source_lang TEXT, target_lang TEXT, remark TEXT, create_time TEXT, modified_time TEXT);
+        INSERT INTO t_translation_word VALUES (1, 'hello', '你好', 'en', 'zh-CN', '', '2024-01-01', '2024-01-02');
+        CREATE TABLE t_translation_history (id INTEGER PRIMARY KEY, source_text TEXT, target_text TEXT, source_lang TEXT, target_lang TEXT, translator_type TEXT, create_time TEXT);
+        INSERT INTO t_translation_history VALUES (1, 'world', '世界', 'en', 'zh-CN', 'SYSTEM', '2024-03-01T10:00:00');
+        """
+        let translationProcess = Process()
+        translationProcess.executableURL = URL(fileURLWithPath: "/usr/bin/sqlite3")
+        translationProcess.arguments = [translationDB.path]
+        let translationPipe = Pipe()
+        translationProcess.standardInput = translationPipe
+        try translationProcess.run()
+        translationPipe.fileHandleForWriting.write(Data(translationSQL.utf8))
+        translationPipe.fileHandleForWriting.closeFile()
+        translationProcess.waitUntilExit()
+        let words = try ElectronTranslationImport.loadWords(at: translationDB)
+        XCTAssertEqual(words.first?.targetLang, "zh-Hans")
+        let translationHistory = try ElectronTranslationImport.loadHistory(at: translationDB)
+        XCTAssertEqual(translationHistory.first?.toolID, "translation")
+        state.translationWords = words
+        XCTAssertEqual(try WorkspaceRepository.decode(WorkspaceRepository.encode(state)).translationWords?.first?.sourceText, "hello")
+        try? FileManager.default.removeItem(at: translationDB)
     }
     func testHTTPRedirectPolicyAndSessionIsolation() async throws {
         let fixture = try HTTPFixture()

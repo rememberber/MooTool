@@ -65,6 +65,7 @@ public struct WorkspaceSnapshot: Codable, Equatable {
     public var history: [HistoryRecord] = []
     public var httpRequests: [SavedHTTPRequest]?
     public var hostProfiles: [SavedHostProfile]?
+    public var translationWords: [SavedTranslationWord]?
     public var folders: [DocumentFolder]?
     public var vaultPreferences: [String: VaultPreferences]?
     public var scratchDrafts: [String: DraftRecord]?
@@ -90,6 +91,9 @@ public struct WorkspaceSnapshot: Codable, Equatable {
               Set((hostProfiles ?? []).map(\.id)).count == (hostProfiles ?? []).count else { throw ToolError("备份包含重复记录。") }
         for profile in hostProfiles ?? [] { try profile.validate() }
         guard (hostProfiles ?? []).count <= 200 else { throw ToolError("Host 配置数量过多。") }
+        for word in translationWords ?? [] { try word.validate() }
+        guard (translationWords ?? []).count <= 5_000,
+              Set((translationWords ?? []).map(\.id)).count == (translationWords ?? []).count else { throw ToolError("翻译词条无效或重复。") }
         for draft in Array(drafts.values) + history.map(\.draft) + (httpRequests ?? []).map(\.draft) + Array((scratchDrafts ?? [:]).values) {
             try draft.noteOptions?.validate(); try draft.noteWorkspace?.validate()
             try draft.messageBoard?.validate()
