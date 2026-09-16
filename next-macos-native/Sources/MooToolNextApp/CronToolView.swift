@@ -68,10 +68,10 @@ struct CronToolView: View {
         }
     }
     private func rebuildExpression() {
-        if let expression = try? fields.build() { draft.input = expression }
+        if let expression = try? fields.build(language: language) { draft.input = expression }
     }
     private func syncFields(from expression: String) {
-        if let next = try? CronFieldDraft.split(expression) { fields = next }
+        if let next = try? CronFieldDraft.split(expression, language: language) { fields = next }
     }
     private func apply(_ expression: String) {
         draft.input = expression
@@ -86,7 +86,7 @@ struct CronToolView: View {
         let lang = language
         store.run("cron") { d in
             let zone = TimeZone(identifier: d.option) ?? .current
-            let runs = try CronExpression(d.input).next(after: Date(), count: 10, timeZone: zone)
+            let runs = try CronExpression(d.input, language: lang).next(after: Date(), count: 10, timeZone: zone, language: lang)
             let formatter = DateFormatter()
             formatter.locale = lang.locale
             formatter.timeZone = zone

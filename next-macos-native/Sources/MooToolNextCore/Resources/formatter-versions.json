@@ -1,5 +1,5 @@
 {
-  "bundleSHA256": "0a5d7cab634a27858b867708eefc4fb4c030f612756ba1b6d06f6b45d66dfa67",
+  "bundleSHA256": "4e5cadb28ebfbdcfbb1d2a2f6e01388bd810698053af80bf7a1eeb349dbbcf86",
   "packages": [
     {
       "name": "@prettier/plugin-xml",

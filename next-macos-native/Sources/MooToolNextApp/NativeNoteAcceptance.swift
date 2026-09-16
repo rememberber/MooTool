@@ -74,7 +74,9 @@ import MooToolNextCore
         throw ToolError("Markdown 预览未就绪。")
     }
     static func waitForFind(_ window: NSWindow, count: Int) async throws {
-        for _ in 0..<60 {
+        window.contentView?.layoutSubtreeIfNeeded()
+        for _ in 0..<120 {
+            window.contentView?.layoutSubtreeIfNeeded()
             if NativeJSONAcceptance.allViews(window).contains(where: { $0.identifier?.rawValue == "json.acceptance.note.find.count.\(count)" }) { return }
             try await Task.sleep(for: .milliseconds(100))
         }

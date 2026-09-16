@@ -50,10 +50,14 @@ public enum TextDiffEngine {
         var target: [T]
         var kind: TextDiffKind { source.isEmpty ? .insert : target.isEmpty ? .delete : .change }
     }
-    public static func compare(_ left: String, _ right: String, ignoreWhitespace: Bool = false) throws -> TextDiffResult {
-        guard left.utf16.count + right.utf16.count <= 500_000 else { throw ToolError("对比文本总长度请控制在 50 万字符以内。") }
+    public static func compare(_ left: String, _ right: String, ignoreWhitespace: Bool = false, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> TextDiffResult {
+        guard left.utf16.count + right.utf16.count <= 500_000 else {
+            throw ToolError(AppLocalization.string("textDiff.error.totalLength", language: language))
+        }
         let leftLines = splitLines(left), rightLines = splitLines(right)
-        guard leftLines.count * rightLines.count <= 10_000_000 else { throw ToolError("对比行数过多，请缩小输入。") }
+        guard leftLines.count * rightLines.count <= 10_000_000 else {
+            throw ToolError(AppLocalization.string("textDiff.error.tooManyLines", language: language))
+        }
         let deltas = patch(leftLines, rightLines)
         let leftStarts = lineStarts(left), rightStarts = lineStarts(right)
         var segments: [TextDiffSegment] = []

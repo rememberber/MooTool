@@ -208,9 +208,11 @@ struct TextDiffWorkspace: View {
             .background(Color(nsColor: .windowBackgroundColor))
     }
     private func calculate(recordHistory: Bool) async {
-        let left = draft.input, right = draft.secondary, ignore = options.ignoreWhitespace
+        let left = draft.input, right = draft.secondary, ignore = options.ignoreWhitespace, lang = language
         do {
-            let value = try await Task.detached(priority: .userInitiated) { try TextDiffEngine.compare(left, right, ignoreWhitespace: ignore) }.value
+            let value = try await Task.detached(priority: .userInitiated) {
+                try TextDiffEngine.compare(left, right, ignoreWhitespace: ignore, language: lang)
+            }.value
             guard !Task.isCancelled, draft.input == left, draft.secondary == right, options.ignoreWhitespace == ignore else { return }
             comparison = value; draft.output = value.unified; draft.error = nil; navigation = -1
             let count = options.highlight == .characters ? value.segments.filter { !$0.wholeLine }.count : value.segments.count

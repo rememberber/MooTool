@@ -235,7 +235,7 @@ private struct CurlImportSheet: View {
         VStack(alignment: .leading, spacing: 16) {
             Text(loc("http.importCurl")).font(.title2.bold())
             Text(loc("http.curlImport.help")).foregroundStyle(.secondary)
-            EditorPane(title: "cURL", text: $command)
+            EditorPane(title: loc("http.curlEditor"), text: $command)
             if let error { Text(error).font(.caption).foregroundStyle(.red).textSelection(.enabled) }
             HStack { Button(loc("common.cancel")) { dismiss() }.keyboardShortcut(.cancelAction); Spacer(); Button(loc("tool.import")) { do { let value = try CurlCommand.parse(command); onImport(value); dismiss() } catch { self.error = error.localizedDescription } }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).disabled(command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
         }.padding(24).frame(width: 660, height: 460)

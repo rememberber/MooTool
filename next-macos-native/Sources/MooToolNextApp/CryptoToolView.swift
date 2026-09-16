@@ -239,10 +239,10 @@ struct CryptoToolView: View {
         let algorithm = symmetricAlgorithms.contains(draft.option) ? draft.option : "AES-GCM"
         if algorithm == "AES-GCM" {
             if encrypt {
-                store.run("crypto") { d in try TextServices.digest(d.input, algorithm: "AES-GCM 加密", key: d.secondary) }
+                store.run("crypto") { d in try TextServices.digest(d.input, algorithm: "AES-GCM 加密", key: d.secondary, language: language) }
             } else {
                 let cipher = draft.output.isEmpty ? draft.input : draft.output
-                store.run("crypto") { d in try TextServices.digest(cipher, algorithm: "AES-GCM 解密", key: d.secondary) }
+                store.run("crypto") { d in try TextServices.digest(cipher, algorithm: "AES-GCM 解密", key: d.secondary, language: language) }
                 Task { @MainActor in
                     await waitForCryptoRun()
                     if !draft.output.isEmpty { draft.input = draft.output }
@@ -329,7 +329,7 @@ struct CryptoToolView: View {
 
     private func digestText() {
         let algorithm = digestAlgorithm.wrappedValue
-        store.run("crypto") { d in try TextServices.digest(d.input, algorithm: algorithm, key: d.secondary) }
+        store.run("crypto") { d in try TextServices.digest(d.input, algorithm: algorithm, key: d.secondary, language: language) }
         digestFileName = ""
     }
 
@@ -343,7 +343,7 @@ struct CryptoToolView: View {
                 let text = String(decoding: data, as: UTF8.self)
                 draft.input = text
                 digestFileName = url.lastPathComponent
-                store.run("crypto") { d in try TextServices.digest(String(decoding: data, as: UTF8.self), algorithm: algorithm, key: d.secondary) }
+                store.run("crypto") { d in try TextServices.digest(String(decoding: data, as: UTF8.self), algorithm: algorithm, key: d.secondary, language: language) }
             } catch { draft.error = error.localizedDescription }
         }
     }
@@ -351,10 +351,10 @@ struct CryptoToolView: View {
     private func baseCodec(encode: Bool) {
         let format = baseAlgorithm.wrappedValue
         if encode {
-            store.run("crypto") { d in try TextServices.encode(d.input, format: format, decode: false) }
+            store.run("crypto") { d in try TextServices.encode(d.input, format: format, decode: false, language: language) }
         } else {
             let cipher = draft.output.isEmpty ? draft.input : draft.output
-            store.run("crypto") { _ in try TextServices.encode(cipher, format: format, decode: true) }
+            store.run("crypto") { _ in try TextServices.encode(cipher, format: format, decode: true, language: language) }
             Task { @MainActor in
                 await waitForCryptoRun()
                 if !draft.output.isEmpty { draft.input = draft.output }
@@ -368,13 +368,13 @@ struct CryptoToolView: View {
         let length = max(1, min(4096, randomLength))
         switch kind {
         case .uuid:
-            store.run("crypto") { _ in try TextServices.digest("", algorithm: "UUID") }
+            store.run("crypto") { _ in try TextServices.digest("", algorithm: "UUID", language: language) }
             Task { @MainActor in
                 for _ in 0..<20 where draft.busy { try? await Task.sleep(for: .milliseconds(50)) }
                 randomUUID = draft.output
             }
         case .bytes32:
-            store.run("crypto") { _ in try TextServices.digest("", algorithm: "随机 32 字节") }
+            store.run("crypto") { _ in try TextServices.digest("", algorithm: "随机 32 字节", language: language) }
             Task { @MainActor in
                 for _ in 0..<20 where draft.busy { try? await Task.sleep(for: .milliseconds(50)) }
             }

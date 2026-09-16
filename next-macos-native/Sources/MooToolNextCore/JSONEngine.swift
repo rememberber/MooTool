@@ -18,6 +18,7 @@ public struct JSONEngineRequest: Codable, Sendable {
     public var selectionStart = 0
     public var selectionEnd = 0
     public var forward = true
+    public var language = AppLanguage.zhCN.rawValue
     public init(_ action: String, input: String) { self.action = action; self.input = input }
 }
 public struct JSONMatch: Codable, Equatable, Sendable {
@@ -34,6 +35,10 @@ public struct JSONEngineReply: Codable, Sendable {
 }
 
 public enum JSONEngine {
+    private static func language(for request: JSONEngineRequest) -> AppLanguage { AppLanguage.normalized(request.language) }
+    private static func loc(_ key: String, request: JSONEngineRequest, replacements: [String: String] = [:]) -> String {
+        AppLocalization.format(key, language: language(for: request), replacements: replacements)
+    }
     public static var resources: Bundle {
         let name = "MooToolNextNative_MooToolNextCore"
         if let url = Bundle.main.url(forResource: name, withExtension: "bundle"), let bundle = Bundle(url: url) { return bundle }
@@ -57,8 +62,8 @@ public enum JSONEngine {
     }
     private static func runWorker(_ request: JSONEngineRequest, timeout: TimeInterval, state: WorkerCancellation) throws -> JSONEngineReply {
         let data = try JSONEncoder().encode(request)
-        guard data.count <= 16 * 1024 * 1024 else { throw ToolError("JSON 操作输入超过 16 MB。") }
-        guard FileManager.default.isExecutableFile(atPath: workerURL.path) else { throw ToolError("找不到原生 JSON 辅助程序，请重新构建或安装应用。") }
+        guard data.count <= 16 * 1024 * 1024 else { throw ToolError(loc("json.engine.inputTooLarge", request: request)) }
+        guard FileManager.default.isExecutableFile(atPath: workerURL.path) else { throw ToolError(loc("json.engine.workerMissing", request: request)) }
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(Product.id + "-json-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -76,18 +81,18 @@ public enum JSONEngine {
         var failure: Error?
         while process.isRunning {
             if state.cancelled { failure = CancellationError() }
-            else if Date() >= deadline { failure = ToolError("JSON 操作超过 \(timeout) 秒，已停止；正文保持原样。") }
-            else if (try? output.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0 > 16 * 1024 * 1024 { failure = ToolError("JSON 操作结果超过 16 MB。") }
+            else if Date() >= deadline { failure = ToolError(loc("json.engine.timeout", request: request, replacements: ["seconds": String(format: "%.0f", timeout)])) }
+            else if (try? output.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0 > 16 * 1024 * 1024 { failure = ToolError(loc("json.engine.resultTooLarge", request: request)) }
             if failure != nil { kill(process.processIdentifier, SIGKILL); break }
             Thread.sleep(forTimeInterval: 0.01)
         }
         process.waitUntilExit(); state.finish()
         if state.cancelled { throw CancellationError() }
         if let failure { throw failure }
-        guard process.terminationStatus == 0 else { throw ToolError("JSON 辅助程序未能完成操作，正文保持原样。") }
+        guard process.terminationStatus == 0 else { throw ToolError(loc("json.engine.workerFailed", request: request)) }
         let handle = try FileHandle(forReadingFrom: output); defer { try? handle.close() }
         let result = try handle.read(upToCount: 16 * 1024 * 1024 + 1) ?? Data()
-        guard result.count <= 16 * 1024 * 1024 else { throw ToolError("JSON 操作结果超过 16 MB。") }
+        guard result.count <= 16 * 1024 * 1024 else { throw ToolError(loc("json.engine.resultTooLarge", request: request)) }
         let reply = try JSONDecoder().decode(JSONEngineReply.self, from: result)
         if let error = reply.error { throw ToolError(error) }
         return reply
@@ -96,19 +101,21 @@ public enum JSONEngine {
     public static func evaluateLocally(_ request: JSONEngineRequest) throws -> JSONEngineReply {
         guard request.input.utf8.count <= 10 * 1024 * 1024, request.path.utf8.count <= 16_384,
               request.query.utf8.count <= 16_384, request.replacement.utf8.count <= 1024 * 1024,
-              request.className.utf8.count <= 240 else { throw ToolError("输入、查询或替换内容超过限制。") }
+              request.className.utf8.count <= 240 else { throw ToolError(loc("json.engine.inputLimits", request: request)) }
         if request.action == "formatXML" { return JSONEngineReply(value: try TextServices.formatXML(request.input)) }
         if request.action == "reformat" { return try ReformatEngine.evaluate(request) }
-        guard let context = JSContext() else { throw ToolError("无法初始化系统 JavaScriptCore。") }
+        guard let context = JSContext() else { throw ToolError(loc("json.engine.jscInitFailed", request: request)) }
         for name in ["jsonpath-plus", "fast-xml-parser", "JSONTools", "QuickNoteTools", "JSONDispatch"] {
-            guard let url = resources.url(forResource: name, withExtension: "js") else { throw ToolError("缺少 JSON 解析资源：\(name)") }
+            guard let url = resources.url(forResource: name, withExtension: "js") else {
+                throw ToolError(loc("json.engine.resourceMissing", request: request, replacements: ["name": name]))
+            }
             context.evaluateScript(try String(contentsOf: url, encoding: .utf8))
-            if let exception = context.exception { throw ToolError(exception.toString() ?? "JSON 引擎初始化失败。") }
+            if let exception = context.exception { throw ToolError(exception.toString() ?? loc("json.engine.initFailed", request: request)) }
         }
         let payload = String(decoding: try JSONEncoder().encode(request), as: UTF8.self)
         let value = context.objectForKeyedSubscript("runJSONRequest")?.call(withArguments: [payload])
-        if let exception = context.exception { throw ToolError(exception.toString() ?? "JSON 操作失败。") }
-        guard let string = value?.toString(), string.utf8.count <= 16 * 1024 * 1024 else { throw ToolError("JSON 结果无效或超过 16 MB。") }
+        if let exception = context.exception { throw ToolError(exception.toString() ?? loc("json.engine.operationFailed", request: request)) }
+        guard let string = value?.toString(), string.utf8.count <= 16 * 1024 * 1024 else { throw ToolError(loc("json.engine.invalidResult", request: request)) }
         let reply = try JSONDecoder().decode(JSONEngineReply.self, from: Data(string.utf8))
         if let error = reply.error { throw ToolError(error) }
         return reply

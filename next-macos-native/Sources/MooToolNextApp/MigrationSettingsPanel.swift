@@ -201,18 +201,18 @@ struct MigrationSettingsPanel: View {
         defer { busy = false }
         do {
             let url = URL(fileURLWithPath: httpDatabasePath.trimmingCharacters(in: .whitespacesAndNewlines))
-            httpPreview = try ElectronHttpImport.preview(at: url, collection: httpCollection(for: url))
-            hostProfileCount = try ElectronHostImport.preview(at: url).profileCount
-            let translation = try ElectronTranslationImport.preview(at: url)
+            httpPreview = try ElectronHttpImport.preview(at: url, collection: httpCollection(for: url), language: language)
+            hostProfileCount = try ElectronHostImport.preview(at: url, language: language).profileCount
+            let translation = try ElectronTranslationImport.preview(at: url, language: language)
             translationWordCount = translation.wordCount
             translationHistoryCount = translation.historyCount
-            let favorites = try ElectronFavoriteImport.preview(at: url)
+            let favorites = try ElectronFavoriteImport.preview(at: url, language: language)
             favoriteColorCount = favorites.colorCount
             favoriteRegexCount = favorites.regexCount
             favoriteCronCount = favorites.cronCount
-            funcHistoryCount = try ElectronFuncHistoryImport.preview(at: url).count
-            funcContentCount = try ElectronFuncContentImport.preview(at: url).count
-            let vaultPreview = try ElectronVaultSqliteImport.preview(at: url)
+            funcHistoryCount = try ElectronFuncHistoryImport.preview(at: url, language: language).count
+            funcContentCount = try ElectronFuncContentImport.preview(at: url, language: language).count
+            let vaultPreview = try ElectronVaultSqliteImport.preview(at: url, language: language)
             vaultQuickNoteCount = vaultPreview.quickNoteCount
             vaultJsonCount = vaultPreview.jsonCount
             vaultImportWarnings = vaultPreview.warnings
@@ -239,25 +239,25 @@ struct MigrationSettingsPanel: View {
         defer { busy = false }
         do {
             let collection = httpCollection(for: url)
-            let items = try ElectronHttpImport.loadRequests(at: url, collection: collection)
+            let items = try ElectronHttpImport.loadRequests(at: url, collection: collection, language: language)
             let result = ElectronHttpImport.merge(importing: items, into: store.httpRequests)
             store.httpRequests = result.merged
-            let historyItems = try ElectronHttpImport.loadHttpHistory(at: url)
+            let historyItems = try ElectronHttpImport.loadHttpHistory(at: url, language: language)
             let historyResult = ElectronHttpImport.mergeHistory(importing: historyItems, into: store.history)
             var mergedHistory = historyResult.merged
-            let hostItems = try ElectronHostImport.loadProfiles(at: url)
+            let hostItems = try ElectronHostImport.loadProfiles(at: url, language: language)
             let hostResult = ElectronHostImport.merge(importing: hostItems, into: store.hostProfiles)
             store.hostProfiles = hostResult.merged
-            let translationWords = try ElectronTranslationImport.loadWords(at: url)
+            let translationWords = try ElectronTranslationImport.loadWords(at: url, language: language)
             let wordResult = ElectronTranslationImport.mergeWords(importing: translationWords, into: store.translationWords)
             store.translationWords = wordResult.merged
-            let translationHistory = try ElectronTranslationImport.loadHistory(at: url)
+            let translationHistory = try ElectronTranslationImport.loadHistory(at: url, language: language)
             let translationHistoryResult = ElectronHttpImport.mergeHistory(importing: translationHistory, into: mergedHistory)
             mergedHistory = translationHistoryResult.merged
-            let funcHistory = try ElectronFuncHistoryImport.load(at: url)
+            let funcHistory = try ElectronFuncHistoryImport.load(at: url, language: language)
             let funcHistoryResult = ElectronFuncHistoryImport.merge(importing: funcHistory, into: mergedHistory)
             mergedHistory = funcHistoryResult.merged
-            let contentRows = try ElectronFuncContentImport.load(at: url)
+            let contentRows = try ElectronFuncContentImport.load(at: url, language: language)
             let draftsBeforeImport = store.snapshot().drafts
             let draftApply = LegacyToolDraftApplier.apply(rows: contentRows, merging: draftsBeforeImport, existingHistory: mergedHistory)
             mergedHistory = draftApply.history
@@ -267,11 +267,13 @@ struct MigrationSettingsPanel: View {
             let favorites = mergedHistory.filter(\.favorite)
             let ordinary = Array(mergedHistory.filter { !$0.favorite }.prefix(100))
             store.history = (favorites + ordinary).sorted { $0.date > $1.date }
-            let favoriteItems = try ElectronFavoriteImport.loadFavorites(at: url)
+            let favoriteItems = try ElectronFavoriteImport.loadFavorites(at: url, language: language)
             let favoriteResult = ElectronFavoriteImport.merge(importing: favoriteItems, into: store.toolFavorites)
             store.toolFavorites = favoriteResult.merged
             var vaultNoteAdded = 0, vaultJsonAdded = 0
-            let noteRows = ElectronVaultSqliteImport.filterNewQuickNotes(try ElectronVaultSqliteImport.loadQuickNotes(at: url), existing: store.documents)
+            let noteRows = ElectronVaultSqliteImport.filterNewQuickNotes(
+                try ElectronVaultSqliteImport.loadQuickNotes(at: url, language: language),
+                existing: store.documents)
             if !noteRows.isEmpty {
                 let ids = try store.importVaultDocuments(ElectronVaultSqliteImport.documentImportItems(from: noteRows), toolID: "quickNote", parent: nil)
                 vaultNoteAdded = ids.count
@@ -282,7 +284,9 @@ struct MigrationSettingsPanel: View {
                     }
                 }
             }
-            let jsonRows = ElectronVaultSqliteImport.filterNewJson(try ElectronVaultSqliteImport.loadJsonDocuments(at: url), existing: store.documents)
+            let jsonRows = ElectronVaultSqliteImport.filterNewJson(
+                try ElectronVaultSqliteImport.loadJsonDocuments(at: url, language: language),
+                existing: store.documents)
             if !jsonRows.isEmpty {
                 vaultJsonAdded = try store.importVaultDocuments(ElectronVaultSqliteImport.documentImportItems(from: jsonRows), toolID: "json", parent: nil).count
             }
@@ -294,7 +298,7 @@ struct MigrationSettingsPanel: View {
                 vaultNoteAdded, vaultJsonAdded, hostResult.added, wordResult.added,
                 translationHistoryResult.added, favoriteResult.added
             )
-            httpPreview = try ElectronHttpImport.preview(at: url, collection: collection)
+            httpPreview = try ElectronHttpImport.preview(at: url, collection: collection, language: language)
             error = nil
         } catch {
             self.error = error.localizedDescription
@@ -325,9 +329,10 @@ struct MigrationSettingsPanel: View {
         defer { busy = false }
         do {
             let url = URL(fileURLWithPath: storePath.trimmingCharacters(in: .whitespacesAndNewlines))
-            preview = try ElectronStoreImport.preview(at: url, knownToolIDs: knownToolIDs, currentPaneSizes: store.layoutPaneSizes)
-            let roots = try ElectronStoreImport.vaultDirectoryRoots(at: url)
-            vaultFolderPreview = try ElectronVaultFolderImport.preview(quickNoteRoot: roots.quickNote, jsonRoot: roots.json)
+            preview = try ElectronStoreImport.preview(
+                at: url, knownToolIDs: knownToolIDs, currentPaneSizes: store.layoutPaneSizes, language: language)
+            let roots = try ElectronStoreImport.vaultDirectoryRoots(at: url, language: language)
+            vaultFolderPreview = try ElectronVaultFolderImport.preview(quickNoteRoot: roots.quickNote, jsonRoot: roots.json, language: language)
         } catch {
             preview = nil
             vaultFolderPreview = nil
@@ -338,7 +343,7 @@ struct MigrationSettingsPanel: View {
     private func scanJavaVaultFolders() {
         do {
             let roots = try LegacyJavaVaultPaths.vaultDirectoryRoots()
-            javaVaultFolderPreview = try ElectronVaultFolderImport.preview(quickNoteRoot: roots.quickNote, jsonRoot: roots.json)
+            javaVaultFolderPreview = try ElectronVaultFolderImport.preview(quickNoteRoot: roots.quickNote, jsonRoot: roots.json, language: language)
         } catch {
             javaVaultFolderPreview = nil
         }
@@ -361,9 +366,9 @@ struct MigrationSettingsPanel: View {
         defer { busy = false }
         do {
             let url = URL(fileURLWithPath: storePath.trimmingCharacters(in: .whitespacesAndNewlines))
-            let roots = try ElectronStoreImport.vaultDirectoryRoots(at: url)
+            let roots = try ElectronStoreImport.vaultDirectoryRoots(at: url, language: language)
             try performVaultFolderImport(quickNoteRoot: roots.quickNote, jsonRoot: roots.json, label: "Electron")
-            vaultFolderPreview = try ElectronVaultFolderImport.preview(quickNoteRoot: roots.quickNote, jsonRoot: roots.json)
+            vaultFolderPreview = try ElectronVaultFolderImport.preview(quickNoteRoot: roots.quickNote, jsonRoot: roots.json, language: language)
         } catch {
             self.error = error.localizedDescription
         }
@@ -407,9 +412,10 @@ struct MigrationSettingsPanel: View {
         defer { busy = false }
         do {
             let url = URL(fileURLWithPath: storePath.trimmingCharacters(in: .whitespacesAndNewlines))
-            let patch = try ElectronStoreImport.loadPatch(at: url, knownToolIDs: knownToolIDs, merging: store.layoutPaneSizes)
+            let patch = try ElectronStoreImport.loadPatch(
+                at: url, knownToolIDs: knownToolIDs, merging: store.layoutPaneSizes, language: language)
             var snapshot = store.snapshot()
-            try ElectronStoreImport.apply(patch, to: &snapshot)
+            try ElectronStoreImport.apply(patch, to: &snapshot, language: language)
             store.restore(snapshot)
             if let value = patch.proxyEnabled { proxyEnabled = value }
             if let value = patch.proxyHost { proxyHost = value }
@@ -432,7 +438,8 @@ struct MigrationSettingsPanel: View {
             store.saveNow()
             NotificationCenter.default.post(name: .menuBarTrayRefresh, object: nil)
             notice = loc("migration.notice.settingsMerged")
-            preview = try ElectronStoreImport.preview(at: url, knownToolIDs: knownToolIDs, currentPaneSizes: store.layoutPaneSizes)
+            preview = try ElectronStoreImport.preview(
+                at: url, knownToolIDs: knownToolIDs, currentPaneSizes: store.layoutPaneSizes, language: language)
         } catch {
             self.error = error.localizedDescription
         }

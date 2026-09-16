@@ -3,8 +3,28 @@ import html from 'prettier/plugins/html';
 import xml from '@prettier/plugin-xml';
 import java from 'prettier-plugin-java';
 
+const messagesByLocale = {
+  'zh-CN': {
+    'reformat.error.nginxNest': 'Nginx 嵌套超过 256 层。',
+    'reformat.error.unsupportedType': '不支持的格式化类型。',
+  },
+  'en-US': {
+    'reformat.error.nginxNest': 'Nginx nesting exceeds 256 levels.',
+    'reformat.error.unsupportedType': 'Unsupported format type.',
+  },
+  'ja-JP': {
+    'reformat.error.nginxNest': 'Nginx のネストが 256 階層を超えています。',
+    'reformat.error.unsupportedType': '未対応の整形タイプです。',
+  },
+};
+
+function t(language, key) {
+  const locale = messagesByLocale[language] ? language : 'zh-CN';
+  return messagesByLocale[locale][key] ?? messagesByLocale['zh-CN'][key] ?? key;
+}
+
 // Match the Electron formatter's token boundaries, including quoted directives and comments.
-function nginx(input, indent) {
+function nginx(input, indent, language) {
   const tokens = []; let current = '', quote = '', escaped = false, comment = false;
   const flush = () => { const value = current.trim(); if (value) tokens.push(value); current = ''; };
   for (const char of input) {
@@ -23,7 +43,7 @@ function nginx(input, indent) {
   flush(); let level = 0;
   return tokens.map(token => {
     if (token === '}') level = Math.max(0, level - 1);
-    if (level > 256) throw new Error('Nginx 嵌套超过 256 层。');
+    if (level > 256) throw new Error(t(language, 'reformat.error.nginxNest'));
     const line = ' '.repeat(level * indent) + token;
     if (token.endsWith('{')) level++;
     return line;
@@ -32,12 +52,12 @@ function nginx(input, indent) {
 
 globalThis.startNativeReformat = async (payload) => {
   try {
-    const { input, path: type, indent } = JSON.parse(payload);
-    if (!['nginx', 'java', 'xml', 'html', 'json'].includes(type)) throw new Error('不支持的格式化类型。');
+    const { input, path: type, indent, language = 'zh-CN' } = JSON.parse(payload);
+    if (!['nginx', 'java', 'xml', 'html', 'json'].includes(type)) throw new Error(t(language, 'reformat.error.unsupportedType'));
     const tabWidth = Math.min(8, Math.max(1, Math.round(indent)));
     let value = '';
     if (input.trim()) {
-      if (type === 'nginx') value = nginx(input, tabWidth);
+      if (type === 'nginx') value = nginx(input, tabWidth, language);
       else if (type === 'json') value = JSON.stringify(JSON.parse(input), null, tabWidth);
       else value = (await format(input, {
         parser: type, plugins: [type === 'java' ? java : type === 'xml' ? xml : html],

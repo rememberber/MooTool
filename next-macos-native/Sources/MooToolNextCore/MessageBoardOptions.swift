@@ -7,11 +7,17 @@ public struct MessageBoardOptions: Codable, Equatable {
     public var alignment = "center"
     public init() {}
 
-    public func validate() throws {
-        guard fontSize.isFinite, (28...160).contains(fontSize) else { throw ToolError("留言板字号无效。") }
-        guard alignment == "left" || alignment == "center" else { throw ToolError("留言板对齐方式无效。") }
+    public func validate(language: AppLanguage = AppLocalization.preferredLanguage()) throws {
+        guard fontSize.isFinite, (28...160).contains(fontSize) else {
+            throw ToolError(AppLocalization.string("messageBoard.error.fontSize", language: language))
+        }
+        guard alignment == "left" || alignment == "center" else {
+            throw ToolError(AppLocalization.string("messageBoard.error.alignment", language: language))
+        }
         for hex in [backgroundHex, foregroundHex] {
-            guard hex.count == 6, UInt32(hex, radix: 16) != nil else { throw ToolError("留言板颜色无效。") }
+            guard hex.count == 6, UInt32(hex, radix: 16) != nil else {
+                throw ToolError(AppLocalization.string("messageBoard.error.color", language: language))
+            }
         }
     }
 }

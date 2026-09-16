@@ -44,6 +44,27 @@
 - Host/收藏弹窗与 `AppStore.run` 状态三语：**check-core** 59/0（2026-09-16）。
 - 网络工具面板与翻译页主控件三语：**check-core** 59/0（2026-09-16）。
 - 提交 `098a7f0f`（翻译词库/历史三语）后：**smoke** 单次全绿（约 6.7 min，2026-09-16）。
+- 工作区未提交：代码运行/系统信息/旧 net 模式、JSON 主工作区与 JSON/随手记文档库侧栏三语：**check-core** 59/0、**smoke** 单次全绿（约 8.9 min，2026-09-16；基线提交 `e2359e23` 之上本地改动）。
+- 同上批次追加随手记编辑区（工具栏/查找/24 项快速替换）三语：**check-core** 59/0、**smoke** 单次全绿（约 7.2 min，2026-09-16）。
+- TextTool 扩展（正则/计算器/环境变量/编码/Cron 预设菜单）三语：**check-core** 首轮 2 失败、复跑 **59/0**（2026-09-16）。
+- 横切未提交（VaultGit 面板全文 `git.*`、大文件读提示、cURL 标题、独立工具窗口标题等）后：**smoke** 单次全绿（约 7.4 min，2026-09-16）。
+- TextTool legacy JSON/紧凑加密三语与 crypto 稳定模式键：**check-core** 首轮 1 失败、复跑 **59/0**（2026-09-16）。
+- 文档库磁盘刷新/Finder/工作区读写错误三语、查找「全词」缩写标签、**0.7.0** release-notes 补全后：**check-core** **59/0**、**smoke** 单次全绿（约 8.4 min，2026-09-16）。
+- 侧栏右键常用/独立窗口、网络 `interfaces`/`detailed` 稳定键、TextTool 部分校验错误与空导入提示三语：**check-core** **59/0**（2026-09-16）。
+- `DocumentImportReader` 批量导入校验错误全文三语（`vault.import.error.*`）：**check-core** **59/0**（2026-09-16）。
+- Host 校验/配置保存错误与校验结果摘要三语（`host.error.*` / `host.validate.*`）：**check-core** **59/0**（2026-09-16）。
+- 时间转换校验错误与「详细解析」字段标签三语：**check-core** **59/0**、**smoke** 单次全绿（约 5.9 min，2026-09-16）。
+- JSON worker（`JSONDispatch.js` + `JSONEngine` 宿主错误）随 `language` 三语：**check-core** **59/0**；**smoke** 首轮 JSON ⌘Return 格式化验收失败（与历史 flake 同类），与 **check-core** 一并复跑后全绿（约 7.9 min，2026-09-16）。
+- JSON 结构树/路径选择面板（`JSONTreePane` + `JSONStructure` 限额提示）三语：**check-core** **59/0**；**smoke** 首轮格式化验收失败、复跑全绿（约 7.3 min，2026-09-16）。
+- 编码/配置转换/正则/计算器 Core 校验错误（`encode.error.*`、`config.error.*`、`regex.error.*`、`calculator.error.*`）随 `language` 三语：**check-core** **59/0**（约 3.2 min，2026-09-16）。
+- 格式化宿主/`ReformatTools` 边界错误与撤销动作名（`reformat.error.*` / `reformat.undo.*`，含 `vendor/formatters/entry.js` 重打包）：**check-core** **59/0**、**smoke** 单次全绿（约 6.6 min，2026-09-16）。
+- Cron 解析/构建/运行次数等引擎错误（`cron.error.*`，`QuartzCronParser` / `CronExpression`）：**check-core** **59/0**（约 3.1 min，2026-09-16）。
+- Protobuf wire 解析与留言板选项校验（`protobuf.error.*`、`messageBoard.error.*`；`DeveloperServices.pageIndices` 复用 `pdf.error.pageRange`）：**check-core** **59/0**（2026-09-16）。
+- TextTool / `CryptoToolView` legacy **AES-GCM** `TextServices.digest` 校验错误（`textCrypto.error.*`）：**check-core** **59/0**（约 2.6 min，2026-09-16）。
+- 文本对比输入超限错误（`textDiff.error.*`，`TextDiffEngine.compare`）：**check-core** **59/0**、**smoke** 单次全绿（约 5.5 min，2026-09-16）。
+- Electron 设置/SQLite 导入与备份校验（`migration.error.*`、`backup.error.*`、`workspace.error.*`；迁移面板传 `language`）：**check-core** **59/0**（约 3.2 min，2026-09-16）。
+- 迁移 **warnings**（`migration.warning.*`）、收藏/翻译词条/媒体/自定义分组校验与 `vault.error.documentMissing`：**check-core** **59/0**（约 2.9 min，2026-09-17）；**smoke** 首轮随手记查找计数验收失败（`随手记查找计数没有更新为 3`），与历史 flake 同类，需单独复跑确认。
+- RSA/SM2/`RSAOpenSSLBridge` 用户可见错误与验签结果（`crypto.error.*`、`crypto.verify.*`）：**check-core** **59/0**（约 2.5 min，2026-09-17）；**smoke** 复跑仍失败于格式化验收（`JSON 操作超过 3 秒`），随手记查找计数段未再报错（已加长 `waitForFind` 等待）。
 
 ## 手工建议
 

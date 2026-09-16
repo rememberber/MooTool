@@ -91,8 +91,8 @@ struct Workbench: View {
         .font(.system(size: 12.5)).tag(tool.id)
         .help(store.hideNavigationTitles ? tool.title : "")
             .contextMenu {
-                Button(store.pinned.contains(tool.id) ? "移出常用" : "添加到常用") { store.togglePin(tool.id) }
-                Button("在独立窗口中打开") { openWindow(id: "tool", value: tool.id) }
+                Button(store.pinned.contains(tool.id) ? AppLocalization.string("workbench.pinRemove", language: language) : AppLocalization.string("workbench.pinAdd", language: language)) { store.togglePin(tool.id) }
+                Button(AppLocalization.string("workbench.openDetached", language: language)) { openWindow(id: "tool", value: tool.id) }
             }
     }
 }

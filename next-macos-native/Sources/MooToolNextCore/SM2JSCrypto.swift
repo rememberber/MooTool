@@ -9,19 +9,24 @@ enum SM2JSCrypto {
     private static var sm2: JSValue?
     private static var loadError: Error?
 
-    private static func load() throws -> (JSContext, JSValue) {
+    private static func err(_ key: String, _ language: AppLanguage) -> ToolError {
+        ToolError(AppLocalization.string(key, language: language))
+    }
+
+    private static func load(language: AppLanguage) throws -> (JSContext, JSValue) {
         lock.lock()
         defer { lock.unlock() }
         if let context, let sm2 { return (context, sm2) }
         if let loadError { throw loadError }
         guard let url = Bundle.module.url(forResource: "sm2", withExtension: "js") else {
-            let error = ToolError("缺少 SM2 运行库。")
+            let error = err("crypto.error.sm2RuntimeMissing", language)
             loadError = error
             throw error
         }
         let ctx = JSContext()!
         ctx.exceptionHandler = { _, value in
-            loadError = ToolError(value?.toString() ?? "SM2 脚本错误。")
+            let message = value?.toString() ?? AppLocalization.string("crypto.error.sm2Script", language: language)
+            loadError = ToolError(message)
         }
         ctx.evaluateScript(
             """
@@ -42,7 +47,7 @@ enum SM2JSCrypto {
         ctx.evaluateScript(script)
         if let loadError { throw loadError }
         guard let value = ctx.objectForKeyedSubscript("sm2"), !value.isUndefined else {
-            let error = ToolError("无法加载 SM2 模块。")
+            let error = err("crypto.error.sm2LoadFailed", language)
             loadError = error
             throw error
         }
@@ -51,40 +56,45 @@ enum SM2JSCrypto {
         return (ctx, value)
     }
 
-    static func generateKeyPair() throws -> (publicKey: String, privateKey: String) {
-        let (_, sm2) = try load()
+    static func generateKeyPair(language: AppLanguage = AppLocalization.preferredLanguage()) throws -> (publicKey: String, privateKey: String) {
+        let (_, sm2) = try load(language: language)
         guard let pair = sm2.invokeMethod("generateKeyPairHex", withArguments: [])?.toDictionary(),
               let publicHex = pair["publicKey"] as? String,
               let privateHex = pair["privateKey"] as? String else {
-            throw ToolError("SM2 密钥生成失败。")
+            throw err("crypto.error.sm2GenerateFailed", language)
         }
         return (hexToBase64(publicHex), hexToBase64(privateHex))
     }
 
-    static func encrypt(plaintext: String, publicKeyBase64: String) throws -> String {
-        let (_, sm2) = try load()
+    static func encrypt(plaintext: String, publicKeyBase64: String, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> String {
+        let (_, sm2) = try load(language: language)
         let hex = sm2.invokeMethod("doEncrypt", withArguments: [plaintext, base64ToHex(publicKeyBase64), 1])?.toString()
-        guard let hex, !hex.isEmpty else { throw ToolError("SM2 加密失败。") }
+        guard let hex, !hex.isEmpty else { throw err("crypto.error.sm2EncryptFailed", language) }
         return hexToBase64(hex)
     }
 
-    static func decrypt(ciphertextBase64: String, privateKeyBase64: String) throws -> String {
-        let (_, sm2) = try load()
+    static func decrypt(ciphertextBase64: String, privateKeyBase64: String, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> String {
+        let (_, sm2) = try load(language: language)
         let plain = sm2.invokeMethod("doDecrypt", withArguments: [base64ToHex(ciphertextBase64), base64ToHex(privateKeyBase64), 1])?.toString()
-        guard let plain else { throw ToolError("SM2 解密失败。") }
+        guard let plain else { throw err("crypto.error.sm2DecryptFailed", language) }
         return plain
     }
 
-    static func sign(content: String, privateKeyBase64: String) throws -> String {
-        let (ctx, sm2) = try load()
+    static func sign(content: String, privateKeyBase64: String, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> String {
+        let (ctx, sm2) = try load(language: language)
         let options = JSValue(object: ["hash": true, "der": true, "userId": userID], in: ctx)!
         let signature = sm2.invokeMethod("doSignature", withArguments: [content, base64ToHex(privateKeyBase64), options])?.toString()
-        guard let signature, !signature.isEmpty else { throw ToolError("SM2 签名失败。") }
+        guard let signature, !signature.isEmpty else { throw err("crypto.error.sm2SignFailed", language) }
         return hexToBase64(signature)
     }
 
-    static func verify(content: String, signatureBase64: String, publicKeyBase64: String) throws -> Bool {
-        let (ctx, sm2) = try load()
+    static func verify(
+        content: String,
+        signatureBase64: String,
+        publicKeyBase64: String,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws -> Bool {
+        let (ctx, sm2) = try load(language: language)
         let options = JSValue(object: ["hash": true, "der": true], in: ctx)!
         return sm2.invokeMethod(
             "doVerifySignature",

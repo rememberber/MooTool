@@ -114,7 +114,10 @@ final class AppStore {
     init(directory: URL = Product.dataDirectory, bootstrap: Bootstrap = .full) {
         repository = WorkspaceRepository(directory: directory)
         do { restore(try repository.load()) }
-        catch { self.error = "无法读取工作区，已暂停自动保存以保留原文件。\n" + error.localizedDescription; persistenceBlocked = true }
+        catch {
+            self.error = Self.loc("workspace.error.loadFailed", replacements: ["detail": error.localizedDescription])
+            persistenceBlocked = true
+        }
         if !persistenceBlocked {
             try? syncVaultFilesystem()
             if bootstrap == .full {
@@ -229,7 +232,7 @@ final class AppStore {
             try repository.save(snapshot())
             try syncVaultFilesystem()
             savePending = false
-        } catch { self.error = "工作区保存失败：" + error.localizedDescription }
+        } catch { self.error = Self.loc("workspace.error.saveFailed", replacements: ["detail": error.localizedDescription]) }
     }
     func syncVaultFilesystem() throws {
         vaultMirrorSuppressedUntil = Date().addingTimeInterval(0.6)
@@ -270,18 +273,19 @@ final class AppStore {
                     _ = next.delete(id)
                     if draft(toolID).documentID == id, !draft(toolID).busy, draft(toolID).noteOperationID == nil {
                         draft(toolID).documentID = nil
-                        draft(toolID).status = "磁盘上的文件已删除，当前内容保留为草稿"
+                        draft(toolID).status = Self.loc("vault.status.deletedOnDisk")
                     }
                 }
             }
             try commitVault(next)
             try syncVaultFilesystem()
             if !conflicts.isEmpty {
-                error = "磁盘变更未自动合并（编辑器中有未同步修改）：" + conflicts.joined(separator: "、")
+                let paths = conflicts.joined(separator: Self.loc("common.listSeparator"))
+                error = Self.loc("vault.error.diskMergeConflict", replacements: ["paths": paths])
             } else {
-                draft(toolID).status = "已从磁盘刷新 \(changes.count) 项"
+                draft(toolID).status = Self.loc("vault.status.diskRefreshed", replacements: ["count": "\(changes.count)"])
             }
-        } catch { self.error = "读取磁盘文档库失败：" + error.localizedDescription }
+        } catch { self.error = Self.loc("vault.error.readDiskFailed", replacements: ["detail": error.localizedDescription]) }
     }
     private func hasUnmirroredEdits(toolID: String, documentID: UUID) -> Bool {
         guard let doc = documents.first(where: { $0.id == documentID && $0.toolID == toolID }) else { return false }
@@ -292,9 +296,9 @@ final class AppStore {
     func revealVaultEntry(_ entryID: UUID) throws {
         try syncVaultFilesystem()
         guard let url = VaultFilesystemSync.entryURL(entryID: entryID, vault: vault, workspace: repository.directory) else {
-            throw ToolError("无法在 Finder 中定位该项目。")
+            throw ToolError(Self.loc("vault.error.finderRevealFailed"))
         }
-        guard FileManager.default.fileExists(atPath: url.path) else { throw ToolError("磁盘副本尚未生成，请先保存文档。") }
+        guard FileManager.default.fileExists(atPath: url.path) else { throw ToolError(Self.loc("vault.error.diskCopyMissing")) }
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
     func run(_ id: String, operation: @escaping (DraftRecord) throws -> String) {
@@ -316,5 +320,17 @@ final class AppStore {
             } catch { if draft.documentID == value.documentID { draft.error = error.localizedDescription } }
             draft.busy = false
         }
+    }
+
+    private static func uiLanguage() -> AppLanguage {
+        AppLanguage.normalized(nativeDefaults.string(forKey: "general.language"))
+    }
+
+    private static func loc(_ key: String, replacements: [String: String] = [:]) -> String {
+        var text = AppLocalization.string(key, language: uiLanguage())
+        for (placeholder, value) in replacements {
+            text = text.replacingOccurrences(of: "{\(placeholder)}", with: value)
+        }
+        return text
     }
 }

@@ -10,23 +10,23 @@ public struct ElectronTranslationImportPreview: Equatable, Sendable {
 public enum ElectronTranslationImport {
     public static let rowLimit = 500
 
-    public static func preview(at url: URL) throws -> ElectronTranslationImportPreview {
+    public static func preview(at url: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> ElectronTranslationImportPreview {
         var warnings: [String] = []
-        guard FileManager.default.fileExists(atPath: url.path) else { throw ToolError("未找到数据库文件。") }
-        let words = try loadWords(at: url, warnings: &warnings)
-        let history = try loadHistory(at: url, warnings: &warnings)
-        if words.isEmpty && history.isEmpty { warnings.append("未找到可导入的翻译词条或历史。") }
+        guard FileManager.default.fileExists(atPath: url.path) else { throw MigrationImportErrors.sqliteNotFound(language) }
+        let words = try loadWords(at: url, language: language, warnings: &warnings)
+        let history = try loadHistory(at: url, language: language, warnings: &warnings)
+        if words.isEmpty && history.isEmpty { warnings.append(MigrationImportErrors.warning("migration.warning.translationEmpty", language: language)) }
         return ElectronTranslationImportPreview(wordCount: words.count, historyCount: history.count, warnings: warnings)
     }
 
-    public static func loadWords(at url: URL) throws -> [SavedTranslationWord] {
+    public static func loadWords(at url: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> [SavedTranslationWord] {
         var warnings: [String] = []
-        return try loadWords(at: url, warnings: &warnings)
+        return try loadWords(at: url, language: language, warnings: &warnings)
     }
 
-    public static func loadHistory(at url: URL) throws -> [HistoryRecord] {
+    public static func loadHistory(at url: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> [HistoryRecord] {
         var warnings: [String] = []
-        return try loadHistory(at: url, warnings: &warnings)
+        return try loadHistory(at: url, language: language, warnings: &warnings)
     }
 
     public static func mergeWords(importing items: [SavedTranslationWord], into existing: [SavedTranslationWord]) -> (merged: [SavedTranslationWord], added: Int, skipped: Int) {
@@ -49,33 +49,34 @@ public enum ElectronTranslationImport {
         return "\(source)\u{0}\(targetLang)"
     }
 
-    private static func loadWords(at url: URL, warnings: inout [String]) throws -> [SavedTranslationWord] {
-        try withCopiedDatabase(at: url) { copy in
-            try queryWords(copy, warnings: &warnings)
+    private static func loadWords(at url: URL, language: AppLanguage, warnings: inout [String]) throws -> [SavedTranslationWord] {
+        try withCopiedDatabase(at: url, language: language) { copy in
+            try queryWords(copy, language: language, warnings: &warnings)
         }
     }
 
-    private static func loadHistory(at url: URL, warnings: inout [String]) throws -> [HistoryRecord] {
-        try withCopiedDatabase(at: url) { copy in
-            try queryHistory(copy, warnings: &warnings)
+    private static func loadHistory(at url: URL, language: AppLanguage, warnings: inout [String]) throws -> [HistoryRecord] {
+        try withCopiedDatabase(at: url, language: language) { copy in
+            try queryHistory(copy, language: language, warnings: &warnings)
         }
     }
 
-    private static func withCopiedDatabase<T>(at url: URL, _ body: (URL) throws -> T) throws -> T {
+    private static func withCopiedDatabase<T>(at url: URL, language: AppLanguage, _ body: (URL) throws -> T) throws -> T {
+        _ = language
         let copy = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-translation-import-\(UUID().uuidString).db")
         try FileManager.default.copyItem(at: url, to: copy)
         defer { try? FileManager.default.removeItem(at: copy) }
         return try body(copy)
     }
 
-    private static func queryWords(_ url: URL, warnings: inout [String]) throws -> [SavedTranslationWord] {
+    private static func queryWords(_ url: URL, language: AppLanguage, warnings: inout [String]) throws -> [SavedTranslationWord] {
         var database: OpaquePointer?
         guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY, nil) == SQLITE_OK, let database else {
-            throw ToolError("无法打开 SQLite 数据库。")
+            throw MigrationImportErrors.sqliteOpen(language)
         }
         defer { sqlite3_close(database) }
         guard tableExists(database, name: "t_translation_word") else {
-            warnings.append("数据库中没有 t_translation_word 表。")
+            warnings.append(MigrationImportErrors.warning("migration.warning.noTranslationWordTable", language: language))
             return []
         }
         let sql = "SELECT source_text, target_text, source_lang, target_lang, remark, modified_time FROM t_translation_word ORDER BY id LIMIT \(rowLimit)"
@@ -101,14 +102,14 @@ public enum ElectronTranslationImport {
         return items
     }
 
-    private static func queryHistory(_ url: URL, warnings: inout [String]) throws -> [HistoryRecord] {
+    private static func queryHistory(_ url: URL, language: AppLanguage, warnings: inout [String]) throws -> [HistoryRecord] {
         var database: OpaquePointer?
         guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY, nil) == SQLITE_OK, let database else {
-            throw ToolError("无法打开 SQLite 数据库。")
+            throw MigrationImportErrors.sqliteOpen(language)
         }
         defer { sqlite3_close(database) }
         guard tableExists(database, name: "t_translation_history") else {
-            warnings.append("数据库中没有 t_translation_history 表。")
+            warnings.append(MigrationImportErrors.warning("migration.warning.noTranslationHistoryTable", language: language))
             return []
         }
         let sql = "SELECT source_text, target_text, source_lang, target_lang, create_time FROM t_translation_history ORDER BY id DESC LIMIT \(rowLimit)"

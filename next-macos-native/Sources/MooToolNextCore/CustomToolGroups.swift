@@ -13,14 +13,22 @@ public enum CustomToolGroupRules {
     public static func sanitized(_ groups: [CustomToolGroup]) -> [CustomToolGroup] {
         groups.map { CustomToolGroup(id: $0.id, name: $0.name.trimmingCharacters(in: .whitespacesAndNewlines), toolIds: $0.toolIds) }
     }
-    public static func validate(_ groups: [CustomToolGroup], knownToolIDs: Set<String>) throws {
-        guard Set(groups.map(\.id)).count == groups.count else { throw ToolError("自定义分组包含重复标识。") }
+    public static func validate(
+        _ groups: [CustomToolGroup],
+        knownToolIDs: Set<String>,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws {
+        func err(_ key: String) -> ToolError { ToolError(AppLocalization.string(key, language: language)) }
+        func errf(_ key: String, _ name: String) -> ToolError {
+            ToolError(String(format: AppLocalization.string(key, language: language), name))
+        }
+        guard Set(groups.map(\.id)).count == groups.count else { throw err("customGroup.error.duplicateId") }
         for group in groups {
             let name = group.name.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !name.isEmpty else { throw ToolError("自定义分组名称不能为空。") }
-            guard !group.toolIds.isEmpty else { throw ToolError("自定义分组「\(name)」需要至少选择一个工具。") }
-            guard Set(group.toolIds).count == group.toolIds.count else { throw ToolError("自定义分组「\(name)」包含重复工具。") }
-            guard group.toolIds.allSatisfy(knownToolIDs.contains) else { throw ToolError("自定义分组「\(name)」包含无效工具。") }
+            guard !name.isEmpty else { throw err("customGroup.error.emptyName") }
+            guard !group.toolIds.isEmpty else { throw errf("customGroup.error.needsTools", name) }
+            guard Set(group.toolIds).count == group.toolIds.count else { throw errf("customGroup.error.duplicateTools", name) }
+            guard group.toolIds.allSatisfy(knownToolIDs.contains) else { throw errf("customGroup.error.invalidTools", name) }
         }
     }
 }

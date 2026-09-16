@@ -89,10 +89,10 @@ struct TranslationWordBook: View {
             if let id = selectedID, let index = store.translationWords.firstIndex(where: { $0.id == id }) {
                 word.id = id
                 word.modified = Date()
-                try word.validate()
+                try word.validate(language: language)
                 store.translationWords[index] = word
             } else {
-                try word.validate()
+                try word.validate(language: language)
                 store.translationWords.append(word)
                 selectedID = word.id
             }

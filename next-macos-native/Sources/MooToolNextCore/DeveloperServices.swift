@@ -12,23 +12,35 @@ public enum DeveloperServices {
         }
     }
 
-    public static func validateHostsContent(_ text: String) throws -> String {
+    public static func validateHostsContent(_ text: String, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> String {
         let lines = text.components(separatedBy: .newlines)
         var entries: [String] = []
         for (index, raw) in lines.enumerated() {
             let line = raw.components(separatedBy: "#")[0].trimmingCharacters(in: .whitespaces)
             if line.isEmpty { continue }
             let parts = line.split(whereSeparator: \.isWhitespace).map(String.init)
-            guard parts.count >= 2 else { throw ToolError("第 \(index + 1) 行格式无效。") }
+            let lineNumber = String(index + 1)
+            guard parts.count >= 2 else {
+                throw ToolError(AppLocalization.format("host.error.lineFormat", language: language, replacements: ["line": lineNumber]))
+            }
             let ip = parts[0]
-            guard isValidHostIP(ip) else { throw ToolError("第 \(index + 1) 行 IP 无效：\(ip)") }
-            entries.append("\(ip) → \(parts.dropFirst().joined(separator: " "))")
+            guard isValidHostIP(ip) else {
+                throw ToolError(AppLocalization.format("host.error.lineIp", language: language, replacements: ["line": lineNumber, "ip": ip]))
+            }
+            entries.append(
+                AppLocalization.format("host.validate.entry", language: language, replacements: ["ip": ip, "aliases": parts.dropFirst().joined(separator: " ")])
+            )
         }
-        return entries.isEmpty ? "无有效映射（空文件或仅有注释）。" : "有效映射：\(entries.count) 行\n\n" + entries.joined(separator: "\n")
+        if entries.isEmpty {
+            return AppLocalization.string("host.validate.noMappings", language: language)
+        }
+        return AppLocalization.format("host.validate.summary", language: language, replacements: ["count": String(entries.count)]) + entries.joined(separator: "\n")
     }
 
-    public static func timestamp(_ input: String, zone: String) throws -> String {
-        guard let timezone = TimeZone(identifier: zone) else { throw ToolError("无效时区：\(zone)") }
+    public static func timestamp(_ input: String, zone: String, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> String {
+        guard let timezone = TimeZone(identifier: zone) else {
+            throw ToolError(AppLocalization.format("timeConvert.error.invalidTimezone", language: language, replacements: ["zone": zone]))
+        }
         let value = input.trimmingCharacters(in: .whitespacesAndNewlines)
         let date: Date
         if let number = Double(value), number.isFinite {
@@ -40,45 +52,64 @@ public enum DeveloperServices {
             formatter.timeZone = timezone; formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             formatter.isLenient = false
             if let parsed = iso.date(from: value) ?? ISO8601DateFormatter().date(from: value) ?? formatter.date(from: value) { date = parsed }
-            else { throw ToolError("请输入秒/毫秒时间戳、ISO 8601 或 yyyy-MM-dd HH:mm:ss。") }
+            else { throw ToolError(AppLocalization.string("timeConvert.error.parseInput", language: language)) }
         }
-        guard abs(date.timeIntervalSince1970) < 253_402_300_800 else { throw ToolError("日期超出支持范围。") }
+        guard abs(date.timeIntervalSince1970) < 253_402_300_800 else {
+            throw ToolError(AppLocalization.string("timeConvert.error.dateOutOfRange", language: language))
+        }
         let formatter = DateFormatter(); formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = timezone; formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS ZZZZZ"
         let iso = ISO8601DateFormatter(); iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return "日期    \(formatter.string(from: date))\n时区    \(zone)\n秒      \(Int64(floor(date.timeIntervalSince1970)))\n毫秒    \(Int64((date.timeIntervalSince1970 * 1000).rounded()))\nUTC     \(iso.string(from: date))"
+        let dateLabel = AppLocalization.string("timeConvert.detail.date", language: language)
+        let zoneLabel = AppLocalization.string("timeConvert.detail.timezone", language: language)
+        let secondsLabel = AppLocalization.string("timeConvert.detail.seconds", language: language)
+        let msLabel = AppLocalization.string("timeConvert.detail.milliseconds", language: language)
+        let utcLabel = AppLocalization.string("timeConvert.detail.utc", language: language)
+        return "\(dateLabel)    \(formatter.string(from: date))\n\(zoneLabel)    \(zone)\n\(secondsLabel)      \(Int64(floor(date.timeIntervalSince1970)))\n\(msLabel)    \(Int64((date.timeIntervalSince1970 * 1000).rounded()))\n\(utcLabel)     \(iso.string(from: date))"
     }
-    public static func protobuf(_ text: String, base64: Bool) throws -> String {
+    public static func protobuf(_ text: String, base64: Bool, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> String {
         let data: Data
-        if base64 { guard let decoded = Data(base64Encoded: text.filter { !$0.isWhitespace }) else { throw ToolError("无效 Base64。") }; data = decoded }
-        else { data = try Data(hex: text) }
+        if base64 {
+            guard let decoded = Data(base64Encoded: text.filter { !$0.isWhitespace }) else {
+                throw ToolError(AppLocalization.string("protobuf.error.base64Invalid", language: language))
+            }
+            data = decoded
+        } else { data = try Data(hex: text, language: language) }
         let bytes = Array(data); var position = 0; var fields: [[String: Any]] = []
         func varint() throws -> UInt64 {
             var value: UInt64 = 0
             for shift in stride(from: 0, through: 63, by: 7) {
-                guard position < bytes.count else { throw ToolError("Protobuf varint 被截断。") }
+                guard position < bytes.count else { throw ToolError(AppLocalization.string("protobuf.error.varintTruncated", language: language)) }
                 let byte = bytes[position]; position += 1
-                guard shift < 63 || byte <= 1 else { throw ToolError("Protobuf varint 溢出。") }
+                guard shift < 63 || byte <= 1 else { throw ToolError(AppLocalization.string("protobuf.error.varintOverflow", language: language)) }
                 value |= UInt64(byte & 127) << shift
                 if byte & 128 == 0 { return value }
-            }; throw ToolError("Protobuf varint 过长。")
+            }
+            throw ToolError(AppLocalization.string("protobuf.error.varintTooLong", language: language))
         }
         func take(_ count: Int) throws -> Data {
-            guard count >= 0, count <= bytes.count - position else { throw ToolError("Protobuf 字段长度超出数据范围。") }
+            guard count >= 0, count <= bytes.count - position else {
+                throw ToolError(AppLocalization.string("protobuf.error.lengthOutOfRange", language: language))
+            }
             defer { position += count }; return Data(bytes[position..<position+count])
         }
         while position < bytes.count {
             let tag = try varint(), field = tag >> 3, wire = tag & 7
-            guard field > 0, field <= 536_870_911 else { throw ToolError("无效 Protobuf 字段号。") }
+            guard field > 0, field <= 536_870_911 else {
+                throw ToolError(AppLocalization.string("protobuf.error.fieldNumberInvalid", language: language))
+            }
             var item: [String: Any] = ["field": field, "wireType": wire]
             switch wire {
             case 0: item["varint"] = String(try varint())
             case 1, 5: item["hexLittleEndian"] = try take(wire == 1 ? 8 : 4).hex
             case 2:
                 let length = try varint()
-                guard length <= UInt64(bytes.count - position) else { throw ToolError("Protobuf 字段长度超出数据范围。") }
+                guard length <= UInt64(bytes.count - position) else {
+                    throw ToolError(AppLocalization.string("protobuf.error.lengthOutOfRange", language: language))
+                }
                 let payload = try take(Int(length)); item["hex"] = payload.hex; item["utf8"] = String(data: payload, encoding: .utf8)
-            default: throw ToolError("不支持已废弃的 group wire 类型或无效 wire 类型：\(wire)")
+            default:
+                throw ToolError(String(format: AppLocalization.string("protobuf.error.wireUnsupported", language: language), wire))
             }
             fields.append(item)
         }
@@ -103,12 +134,14 @@ public enum DeveloperServices {
             "device": text.contains("iPad") ? "Tablet" : (text.contains("Mobile") || text.contains("Android") ? "Mobile" : "Desktop"),
             "note": "基于 UA 字符串识别，伪装或未收录的 UA 可能无法准确识别。"])
     }
-    public static func pageIndices(_ text: String, count: Int) throws -> [Int] {
+    public static func pageIndices(_ text: String, count: Int, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> [Int] {
         if text.trimmingCharacters(in: .whitespaces).isEmpty { return Array(0..<count) }
         var result: [Int] = []
         for part in text.split(separator: ",", omittingEmptySubsequences: false) {
             let bounds = part.trimmingCharacters(in: .whitespaces).split(separator: "-", omittingEmptySubsequences: false)
-            guard (1...2).contains(bounds.count), let start = Int(bounds[0]), let end = Int(bounds.last!), start > 0, end >= start, end <= count else { throw ToolError("页码需为 1–\(count)，例如 1-3,5。") }
+            guard (1...2).contains(bounds.count), let start = Int(bounds[0]), let end = Int(bounds.last!), start > 0, end >= start, end <= count else {
+                throw ToolError(String(format: AppLocalization.string("pdf.error.pageRange", language: language), count))
+            }
             result += (start...end).map { $0 - 1 }
         }; return result
     }
@@ -127,8 +160,8 @@ public struct CronExpression {
     let dayMatcher: CronDayMatcher
     let weekMatcher: CronWeekMatcher
 
-    public init(_ input: String) throws {
-        let parsed = try QuartzCronParser.parse(input)
+    public init(_ input: String, language: AppLanguage = AppLocalization.preferredLanguage()) throws {
+        let parsed = try QuartzCronParser.parse(input, language: language)
         flavor = parsed.flavor
         seconds = parsed.seconds
         minutesField = parsed.minutes
@@ -142,8 +175,8 @@ public struct CronExpression {
         weekMatcher = parsed.weekMatcher
     }
 
-    public func next(after date: Date, count: Int = 10, timeZone: TimeZone = .current) throws -> [Date] {
-        guard (1...100).contains(count) else { throw ToolError("执行次数需在 1–100 之间。") }
+    public func next(after date: Date, count: Int = 10, timeZone: TimeZone = .current, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> [Date] {
+        guard (1...100).contains(count) else { throw ToolError(AppLocalization.string("cron.error.runCountRange", language: language)) }
         var calendar = Calendar(identifier: .gregorian); calendar.timeZone = timeZone
         let step: TimeInterval = flavor == .quartz ? 1 : 60
         var cursor = Date(timeIntervalSince1970: floor(date.timeIntervalSince1970 / step) * step + step)
@@ -179,7 +212,7 @@ public struct CronExpression {
             }
             cursor.addTimeInterval(step)
         }
-        guard result.count == count else { throw ToolError("未来五年内找不到足够执行时间，请检查日期组合。") }
+        guard result.count == count else { throw ToolError(AppLocalization.string("cron.error.insufficientRuns", language: language)) }
         return result
     }
 }
@@ -187,17 +220,22 @@ public struct CronExpression {
 /// A small arithmetic parser, never an evaluator for shell, JavaScript or Objective-C.
 public struct Calculator {
     private var tokens: [String]; private var position = 0
-    public init(_ text: String) throws {
+    private let language: AppLanguage
+    public init(_ text: String, language: AppLanguage = AppLocalization.preferredLanguage()) throws {
+        self.language = language
         let regex = try NSRegularExpression(pattern: #"(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?|[a-zA-Z]+|[+\-*/%^(),]"#)
         let stripped = text.filter { !$0.isWhitespace }
         let ns = stripped as NSString
         let matches = regex.matches(in: stripped, range: NSRange(location: 0, length: ns.length))
-        guard matches.reduce(0, { $0 + $1.range.length }) == ns.length, ns.length <= 4096 else { throw ToolError("表达式包含不支持的字符或过长。") }
+        guard matches.reduce(0, { $0 + $1.range.length }) == ns.length, ns.length <= 4096 else {
+            throw ToolError(AppLocalization.string("calculator.error.unsupportedChars", language: language))
+        }
         tokens = matches.map { ns.substring(with: $0.range) }
     }
     public mutating func evaluate() throws -> Double {
         let result = try expression()
-        guard position == tokens.count, result.isFinite else { throw ToolError("无效表达式、除以零或计算结果超出范围。") }; return result
+        guard position == tokens.count, result.isFinite else { throw ToolError(AppLocalization.string("calculator.error.invalidExpr", language: language)) }
+        return result
     }
     private var peek: String { position < tokens.count ? tokens[position] : "" }
     private mutating func consume(_ value: String) -> Bool {
@@ -220,12 +258,14 @@ public struct Calculator {
         if consume("^") { value = pow(value, try unary()) }; return value
     }
     private mutating func atom() throws -> Double {
-        if consume("(") { let value = try expression(); guard consume(")") else { throw ToolError("缺少右括号。") }; return value }
+        if consume("(") { let value = try expression(); guard consume(")") else { throw ToolError(AppLocalization.string("calculator.error.missingParen", language: language)) }; return value }
         let token = peek; position += 1
         if let value = Double(token) { return value }
         if token == "pi" { return .pi }; if token == "e" { return exp(1) }
-        guard ["sin", "cos", "tan", "sqrt", "abs", "ln", "log", "floor", "ceil", "round"].contains(token), consume("(") else { throw ToolError("未知数字或函数：\(token)") }
-        let value = try expression(); guard consume(")") else { throw ToolError("缺少右括号。") }
+        guard ["sin", "cos", "tan", "sqrt", "abs", "ln", "log", "floor", "ceil", "round"].contains(token), consume("(") else {
+            throw ToolError(String(format: AppLocalization.string("calculator.error.unknownToken", language: language), token))
+        }
+        let value = try expression(); guard consume(")") else { throw ToolError(AppLocalization.string("calculator.error.missingParen", language: language)) }
         switch token {
         case "sin": return sin(value); case "cos": return cos(value); case "tan": return tan(value)
         case "sqrt": return sqrt(value); case "abs": return abs(value); case "ln": return log(value)

@@ -9,40 +9,41 @@ public struct ElectronFuncContentImportPreview: Equatable, Sendable {
 public enum ElectronFuncContentImport {
     public static let rowLimit = 500
 
-    public static func preview(at url: URL) throws -> ElectronFuncContentImportPreview {
+    public static func preview(at url: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> ElectronFuncContentImportPreview {
         var warnings: [String] = []
-        guard FileManager.default.fileExists(atPath: url.path) else { throw ToolError("未找到数据库文件。") }
-        let count = try load(at: url, warnings: &warnings).count
-        if count == 0 { warnings.append("未找到可导入的工具草稿（t_func_content）。") }
+        guard FileManager.default.fileExists(atPath: url.path) else { throw MigrationImportErrors.sqliteNotFound(language) }
+        let count = try load(at: url, language: language, warnings: &warnings).count
+        if count == 0 { warnings.append(MigrationImportErrors.warning("migration.warning.funcContentEmpty", language: language)) }
         return ElectronFuncContentImportPreview(count: count, warnings: warnings)
     }
 
-    public static func load(at url: URL) throws -> [ImportedLegacyToolDraft] {
+    public static func load(at url: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> [ImportedLegacyToolDraft] {
         var warnings: [String] = []
-        return try load(at: url, warnings: &warnings)
+        return try load(at: url, language: language, warnings: &warnings)
     }
 
-    private static func load(at url: URL, warnings: inout [String]) throws -> [ImportedLegacyToolDraft] {
-        try withCopiedDatabase(at: url) { copy in
-            try query(copy, warnings: &warnings)
+    private static func load(at url: URL, language: AppLanguage, warnings: inout [String]) throws -> [ImportedLegacyToolDraft] {
+        try withCopiedDatabase(at: url, language: language) { copy in
+            try query(copy, language: language, warnings: &warnings)
         }
     }
 
-    private static func withCopiedDatabase<T>(at url: URL, _ body: (URL) throws -> T) throws -> T {
+    private static func withCopiedDatabase<T>(at url: URL, language: AppLanguage, _ body: (URL) throws -> T) throws -> T {
+        _ = language
         let copy = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-func-content-import-\(UUID().uuidString).db")
         try FileManager.default.copyItem(at: url, to: copy)
         defer { try? FileManager.default.removeItem(at: copy) }
         return try body(copy)
     }
 
-    private static func query(_ url: URL, warnings: inout [String]) throws -> [ImportedLegacyToolDraft] {
+    private static func query(_ url: URL, language: AppLanguage, warnings: inout [String]) throws -> [ImportedLegacyToolDraft] {
         var database: OpaquePointer?
         guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY, nil) == SQLITE_OK, let database else {
-            throw ToolError("无法打开 SQLite 数据库。")
+            throw MigrationImportErrors.sqliteOpen(language)
         }
         defer { sqlite3_close(database) }
         guard tableExists(database, name: "t_func_content") else {
-            warnings.append("数据库中没有 t_func_content 表。")
+            warnings.append(MigrationImportErrors.warning("migration.warning.noFuncContentTable", language: language))
             return []
         }
         let sql = "SELECT id, func, content FROM t_func_content ORDER BY id LIMIT \(max(1, rowLimit))"

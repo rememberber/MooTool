@@ -37,28 +37,46 @@ public enum TimeConversion {
         ("+3", "Europe/Moscow"),
     ]
 
-    public static func timestampToLocal(_ input: String, unit: TimestampUnit, zone: String) throws -> (localTime: String, unit: TimestampUnit, milliseconds: Int64) {
+    public static func timestampToLocal(
+        _ input: String,
+        unit: TimestampUnit,
+        zone: String,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws -> (localTime: String, unit: TimestampUnit, milliseconds: Int64) {
         let normalized = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard normalized.range(of: #"^-?\d+$"#, options: .regularExpression) != nil else { throw ToolError("请输入有效的时间戳数字。") }
+        guard normalized.range(of: #"^-?\d+$"#, options: .regularExpression) != nil else {
+            throw ToolError(AppLocalization.string("timeConvert.error.invalidTimestampNumber", language: language))
+        }
         let digitCount = normalized.replacingOccurrences(of: "-", with: "").count
         let detected = digitCount >= 13 ? TimestampUnit.millisecond : unit
-        guard let value = Int64(normalized) else { throw ToolError("时间戳超出范围。") }
+        guard let value = Int64(normalized) else {
+            throw ToolError(AppLocalization.string("timeConvert.error.timestampOutOfRange", language: language))
+        }
         let milliseconds = detected == .second ? value * 1000 : value
         let date = Date(timeIntervalSince1970: TimeInterval(milliseconds) / 1000)
-        guard abs(date.timeIntervalSince1970) < 253_402_300_800 else { throw ToolError("日期超出支持范围。") }
+        guard abs(date.timeIntervalSince1970) < 253_402_300_800 else {
+            throw ToolError(AppLocalization.string("timeConvert.error.dateOutOfRange", language: language))
+        }
         return (formatLocalTime(milliseconds: milliseconds, zone: zone), detected, milliseconds)
     }
 
-    public static func localToTimestamp(_ input: String, unit: TimestampUnit, zone: String) throws -> String {
-        guard let timezone = TimeZone(identifier: zone) else { throw ToolError("无效时区：\(zone)") }
+    public static func localToTimestamp(
+        _ input: String,
+        unit: TimestampUnit,
+        zone: String,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws -> String {
+        guard TimeZone(identifier: zone) != nil else {
+            throw ToolError(AppLocalization.format("timeConvert.error.invalidTimezone", language: language, replacements: ["zone": zone]))
+        }
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = timezone
+        formatter.timeZone = TimeZone(identifier: zone)
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         formatter.isLenient = false
         guard let date = formatter.date(from: trimmed), formatter.string(from: date) == trimmed else {
-            throw ToolError("本地时间格式需为 yyyy-MM-dd HH:mm:ss。")
+            throw ToolError(AppLocalization.string("timeConvert.error.localTimeFormat", language: language))
         }
         let milliseconds = Int64((date.timeIntervalSince1970 * 1000).rounded())
         return unit == .second ? String(milliseconds / 1000) : String(milliseconds)

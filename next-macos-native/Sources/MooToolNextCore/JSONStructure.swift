@@ -53,21 +53,25 @@ public struct JSONStructure: Sendable {
     public let root: JSONTreeNode
     public let nodeCount: Int
     public let maxDepth: Int
-    public init(_ text: String, nodeLimit: Int = 20_000, depthLimit: Int = 128) throws {
-        guard text.utf8.count <= 10 * 1024 * 1024 else { throw ToolError("结构树最多读取 10 MB JSON。") }
+    public init(_ text: String, language: AppLanguage = AppLocalization.preferredLanguage(), nodeLimit: Int = 20_000, depthLimit: Int = 128) throws {
+        guard text.utf8.count <= 10 * 1024 * 1024 else { throw ToolError(AppLocalization.string("json.tree.error.sizeLimit", language: language)) }
         let object = try JSONSerialization.jsonObject(with: Data(text.utf8), options: [.fragmentsAllowed])
         var count = 0, deepest = 0
         func build(_ value: Any, name: String, pointer: String, queryPath: String, depth: Int) throws -> JSONTreeNode {
             count += 1; deepest = max(deepest, depth)
-            guard count <= nodeLimit, depth <= depthLimit else { throw ToolError("JSON 结构超过 \(nodeLimit) 个节点或 \(depthLimit) 层，请先查询需要的部分。") }
+            guard count <= nodeLimit, depth <= depthLimit else {
+                throw ToolError(String(format: AppLocalization.string("json.tree.error.limits", language: language), nodeLimit, depthLimit))
+            }
             let kind: String, summary: String, children: [JSONTreeNode]?
             if let dictionary = value as? [String: Any] {
-                kind = "Object"; summary = "\(dictionary.count) 个属性"
+                kind = "Object"
+                summary = String(format: AppLocalization.string("json.tree.summary.properties", language: language), dictionary.count)
                 children = dictionary.isEmpty ? nil : try dictionary.keys.sorted().map { key in
                     try build(dictionary[key]!, name: key, pointer: pointer + "/" + Self.escapePointer(key), queryPath: queryPath + Self.pathComponent(key), depth: depth + 1)
                 }
             } else if let array = value as? [Any] {
-                kind = "Array"; summary = "\(array.count) 个元素"
+                kind = "Array"
+                summary = String(format: AppLocalization.string("json.tree.summary.elements", language: language), array.count)
                 children = array.isEmpty ? nil : try array.enumerated().map { try build($0.element, name: "[\($0.offset)]", pointer: pointer + "/\($0.offset)", queryPath: queryPath + "[\($0.offset)]", depth: depth + 1) }
             } else if let string = value as? String {
                 kind = "String"; summary = try TextServices.serialize(String(string.prefix(150)), pretty: false) + (string.count > 150 ? "…" : "")

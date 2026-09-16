@@ -6,7 +6,23 @@ struct QuickNoteWorkspace: View {
     let onSave: () -> Void
     let onDelete: () -> Void
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @State private var editor = NativeEditorBridge()
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+    private func locf(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: AppLocalization.string(key, language: language), arguments: arguments)
+    }
+    private func viewModeHelp(_ mode: NoteViewMode) -> String {
+        switch mode {
+        case .editor: return loc("quickNote.view.editor")
+        case .split: return loc("quickNote.view.split")
+        case .preview: return loc("quickNote.view.preview")
+        }
+    }
+    private func noteColorTitle(_ color: NoteColor) -> String {
+        loc("quickNote.color.\(color.rawValue == "default" ? "default" : color.rawValue)")
+    }
+    private func quickActionTitle(_ action: QuickNoteAction) -> String { loc("quickNote.quick.\(action.rawValue)") }
     @State private var attachments = NoteAttachmentInsertionQueue()
     @State private var operation: Task<Void, Never>?
     @State private var operationID: UUID?
@@ -77,41 +93,46 @@ struct QuickNoteWorkspace: View {
         }.controlSize(.small).padding(.horizontal, 10).padding(.vertical, 9).frame(maxWidth: .infinity, alignment: .leading).background(.bar)
     }
     private var modes: some View {
-        Picker("笔记视图", selection: viewBinding) {
+        Picker(loc("quickNote.viewMode"), selection: viewBinding) {
             ForEach(NoteViewMode.allCases, id: \.self) { mode in
-                Image(systemName: mode == .editor ? "square.and.pencil" : mode == .split ? "rectangle.split.2x1" : "eye").help(mode.title).tag(mode)
+                Image(systemName: mode == .editor ? "square.and.pencil" : mode == .split ? "rectangle.split.2x1" : "eye").help(viewModeHelp(mode)).tag(mode)
             }
         }.pickerStyle(.segmented).labelsHidden().frame(width: 91)
     }
     private var colors: some View {
         Menu {
-            Picker("笔记颜色", selection: option(\.color)) { ForEach(NoteColor.allCases, id: \.self) { color in Label(color.title, systemImage: options.color == color ? "checkmark.circle.fill" : "circle.fill").foregroundStyle(NativeNoteStyle.color(color)).tag(color) } }
+            Picker(loc("quickNote.color"), selection: option(\.color)) {
+                ForEach(NoteColor.allCases, id: \.self) { color in
+                    Label(noteColorTitle(color), systemImage: options.color == color ? "checkmark.circle.fill" : "circle.fill").foregroundStyle(NativeNoteStyle.color(color)).tag(color)
+                }
+            }
         } label: { Image(systemName: "circle.fill").foregroundStyle(NativeNoteStyle.color(options.color)).frame(width: 20) }
-        .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().help("笔记颜色")
+        .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().help(loc("quickNote.color"))
     }
-    private var syntaxPicker: some View { Picker("语法类型", selection: option(\.syntax)) { ForEach(NoteSyntax.allCases, id: \.self) { Text($0.title).tag($0) } }.labelsHidden().frame(width: 96).help("语法类型") }
+    private var syntaxPicker: some View { Picker(loc("quickNote.syntax"), selection: option(\.syntax)) { ForEach(NoteSyntax.allCases, id: \.self) { Text($0.title).tag($0) } }.labelsHidden().frame(width: 96).help(loc("quickNote.syntax")) }
     private var fontPicker: some View {
-        Picker("字体", selection: option(\.fontName)) {
+        Picker(loc("quickNote.font"), selection: option(\.fontName)) {
             if !Self.fonts.contains(options.fontName) { Text(options.fontName).tag(options.fontName) }
-            ForEach(Self.fonts, id: \.self) { Text($0.isEmpty ? "系统字体" : $0 == "ui-monospace" ? "等宽字体" : $0).tag($0) }
-        }.labelsHidden().frame(width: 115).help("字体")
+            ForEach(Self.fonts, id: \.self) { Text($0.isEmpty ? loc("quickNote.font.system") : $0 == "ui-monospace" ? loc("quickNote.font.mono") : $0).tag($0) }
+        }.labelsHidden().frame(width: 115).help(loc("quickNote.font"))
     }
-    private var sizeField: some View { TextField("字号", value: option(\.fontSize), format: .number.precision(.fractionLength(0))).frame(width: 37).textFieldStyle(.roundedBorder).help("字号：8–48") }
-    private var spacingPicker: some View { Picker("行距", selection: option(\.lineSpacing)) { ForEach(QuickNoteOptions.lineSpacings, id: \.self) { Text(String(format: "%.1f×", $0)).tag($0) } }.labelsHidden().frame(width: 64).help("行间距") }
-    private var wrapButton: some View { icon("自动换行", "arrow.turn.down.left", active: options.lineWrap) { option(\.lineWrap).wrappedValue.toggle() } }
+    private var sizeField: some View { TextField(loc("quickNote.fontSize"), value: option(\.fontSize), format: .number.precision(.fractionLength(0))).frame(width: 37).textFieldStyle(.roundedBorder).help(loc("quickNote.fontSizeHint")) }
+    private var spacingPicker: some View { Picker(loc("quickNote.lineSpacing"), selection: option(\.lineSpacing)) { ForEach(QuickNoteOptions.lineSpacings, id: \.self) { Text(String(format: "%.1f×", $0)).tag($0) } }.labelsHidden().frame(width: 64).help(loc("quickNote.lineSpacing")) }
+    private var wrapButton: some View { icon(loc("quickNote.wrap"), "arrow.turn.down.left", active: options.lineWrap) { option(\.lineWrap).wrappedValue.toggle() } }
     private var formatButton: some View {
-        icon("格式化", "wand.and.stars") { format() }.disabled(draft.busy || draft.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || ![NoteSyntax.json, .xml].contains(options.syntax))
-            .keyboardShortcut(.return, modifiers: .command).help([NoteSyntax.json, .xml].contains(options.syntax) ? "格式化" : "当前语法暂不支持格式化")
+        let canFormat = [NoteSyntax.json, .xml].contains(options.syntax)
+        return icon(loc("tool.format"), "wand.and.stars") { format() }.disabled(draft.busy || draft.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !canFormat)
+            .keyboardShortcut(.return, modifiers: .command).help(canFormat ? loc("tool.format") : loc("quickNote.formatUnsupported"))
     }
     @ViewBuilder private var listButtons: some View {
-        icon("无序列表", "list.bullet") { perform(request("noteBullet"), title: "无序列表") }.disabled(draft.busy).jsonAcceptanceControl("note.bullet")
-        icon("有序列表", "list.number") { perform(request("noteNumbered"), title: "有序列表") }.disabled(draft.busy)
+        icon(loc("quickNote.bulletList"), "list.bullet") { perform(request("noteBullet"), title: loc("quickNote.bulletList")) }.disabled(draft.busy).jsonAcceptanceControl("note.bullet")
+        icon(loc("quickNote.numberedList"), "list.number") { perform(request("noteNumbered"), title: loc("quickNote.numberedList")) }.disabled(draft.busy)
     }
-    private var findButton: some View { icon("查找替换", "magnifyingglass", active: workspace.findOpen, action: openFind).keyboardShortcut("f", modifiers: .command).jsonAcceptanceControl("note.find") }
-    private var saveButton: some View { icon("保存", "square.and.arrow.down", action: onSave).keyboardShortcut("s", modifiers: .command) }
-    private var attachmentButton: some View { icon("插入图片附件（也可从剪贴板粘贴）", "photo.badge.plus", action: importAttachment).disabled(draft.documentID == nil || draft.busy).jsonAcceptanceControl("note.attachment") }
-    private var deleteButton: some View { icon("删除", "trash", action: onDelete).disabled(draft.documentID == nil) }
-    private func quickButton(_ width: CGFloat) -> some View { icon("快速替换", "arrow.left.arrow.right", active: workspace.quickReplaceOpen) {
+    private var findButton: some View { icon(loc("quickNote.find"), "magnifyingglass", active: workspace.findOpen, action: openFind).keyboardShortcut("f", modifiers: .command).jsonAcceptanceControl("note.find") }
+    private var saveButton: some View { icon(loc("tool.save"), "square.and.arrow.down", action: onSave).keyboardShortcut("s", modifiers: .command) }
+    private var attachmentButton: some View { icon(loc("quickNote.attachment"), "photo.badge.plus", action: importAttachment).disabled(draft.documentID == nil || draft.busy).jsonAcceptanceControl("note.attachment") }
+    private var deleteButton: some View { icon(loc("tool.delete"), "trash", action: onDelete).disabled(draft.documentID == nil) }
+    private func quickButton(_ width: CGFloat) -> some View { icon(loc("quickNote.quickReplace"), "arrow.left.arrow.right", active: workspace.quickReplaceOpen) {
         if width < 650 { quickPopover.toggle(); setting(\.quickReplaceOpen).wrappedValue = quickPopover }
         else { setting(\.quickReplaceOpen).wrappedValue.toggle() }
     }.jsonAcceptanceControl("note.quickPanel") }
@@ -121,33 +142,41 @@ struct QuickNoteWorkspace: View {
     private var findBar: some View {
         VStack(spacing: 7) {
             HStack(spacing: 6) {
-                TextField("查找", text: setting(\.findQuery)).focused($findFocused).onSubmit { find(true) }
-                Toggle("Aa", isOn: setting(\.matchCase)).help("区分大小写"); Toggle("词", isOn: setting(\.wholeWord)).help("全词匹配"); Toggle(".*", isOn: setting(\.regex)).help("正则表达式")
-                icon("上一个", "chevron.up") { find(false) }; icon("下一个", "chevron.down") { find(true) }
-                icon("关闭查找", "xmark") { setting(\.findOpen).wrappedValue = false }
+                TextField(loc("json.find.query"), text: setting(\.findQuery)).focused($findFocused).onSubmit { find(true) }
+                Toggle("Aa", isOn: setting(\.matchCase)).help(loc("json.find.matchCase"))
+                Toggle(loc("json.find.wholeWordAbbr"), isOn: setting(\.wholeWord)).help(loc("json.find.wholeWord"))
+                Toggle(".*", isOn: setting(\.regex)).help(loc("json.find.regex"))
+                icon(loc("json.find.prev"), "chevron.up") { find(false) }
+                icon(loc("json.find.next"), "chevron.down") { find(true) }
+                icon(loc("json.find.close"), "xmark") { setting(\.findOpen).wrappedValue = false }
             }
             HStack(spacing: 6) {
-                TextField("替换为", text: setting(\.replacement)).onSubmit { perform(request("replace"), title: "替换") }
-                Text("\(matchCount) 项").font(.caption).foregroundStyle(.secondary).fixedSize().jsonAcceptanceControl("note.find.count.\(matchCount)")
-                Button("替换") { perform(request("replace"), title: "替换") }.disabled(draft.busy)
-                Button("全部替换") { perform(request("replaceAll"), title: "全部替换") }.disabled(draft.busy).jsonAcceptanceControl("note.replaceAll")
+                TextField(loc("json.find.replaceWith"), text: setting(\.replacement)).onSubmit { perform(request("replace"), title: loc("common.replace")) }
+                Text(locf("json.find.matches", matchCount)).font(.caption).foregroundStyle(.secondary).fixedSize().jsonAcceptanceControl("note.find.count.\(matchCount)")
+                Button(loc("common.replace")) { perform(request("replace"), title: loc("common.replace")) }.disabled(draft.busy)
+                Button(loc("json.find.replaceAll")) { perform(request("replaceAll"), title: loc("json.find.replaceAll")) }.disabled(draft.busy).jsonAcceptanceControl("note.replaceAll")
             }
             if let findError { Text(findError).font(.caption).foregroundStyle(.red).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading) }
         }.textFieldStyle(.roundedBorder).toggleStyle(.button).controlSize(.small).padding(10).background(.quaternary.opacity(0.15))
     }
     private var quickPanel: some View {
         VStack(spacing: 0) {
-            HStack { Text("快速替换").font(.headline); Spacer(); icon("关闭快速替换", "xmark") { setting(\.quickReplaceOpen).wrappedValue = false; quickPopover = false } }.padding(13)
+            HStack {
+                Text(loc("quickNote.quickReplace")).font(.headline)
+                Spacer()
+                icon(loc("quickNote.closeQuickReplace"), "xmark") { setting(\.quickReplaceOpen).wrappedValue = false; quickPopover = false }
+            }.padding(13)
             Divider()
             ScrollView {
                 VStack(spacing: 6) {
                     ForEach(QuickNoteAction.allCases) { action in
-                        Button { var r = request("quickReplace"); r.path = action.rawValue; perform(r, title: action.title) } label: { Text(action.title).frame(maxWidth: .infinity, alignment: .leading) }
+                        let title = quickActionTitle(action)
+                        Button { var r = request("quickReplace"); r.path = action.rawValue; perform(r, title: title) } label: { Text(title).frame(maxWidth: .infinity, alignment: .leading) }
                             .buttonStyle(.bordered).controlSize(.small).disabled(draft.busy).jsonAcceptanceControl("note." + action.rawValue)
                     }
                 }.padding(12)
             }
-            Text("有选区时处理选区，否则处理全文").font(.system(size: 10)).foregroundStyle(.secondary).padding(10)
+            Text(loc("quickNote.quickReplaceHint")).font(.system(size: 10)).foregroundStyle(.secondary).padding(10)
         }.background(Color(nsColor: .controlBackgroundColor))
     }
     private func noteColumn(width: CGFloat) -> some View {
@@ -171,10 +200,10 @@ struct QuickNoteWorkspace: View {
     }
     private var statusBar: some View {
         HStack(spacing: 8) {
-            Text("\(draft.input.count) 字符 · \(draft.input.components(separatedBy: "\n").count) 行").fixedSize()
+            Text(locf("quickNote.status", draft.input.components(separatedBy: "\n").count, draft.input.count)).fixedSize()
             Spacer(minLength: 0)
             Text(draft.error ?? draft.status).lineLimit(2).foregroundStyle(draft.error == nil ? Color.secondary : .red)
-            if draft.busy { ProgressView().controlSize(.mini); Button("取消") { draft.noteTask?.cancel(); attachments.cancel() } }
+            if draft.busy { ProgressView().controlSize(.mini); Button(loc("common.cancel")) { draft.noteTask?.cancel(); attachments.cancel() } }
             Text(options.syntax.title).foregroundStyle(.tertiary).fixedSize()
         }.font(.system(size: 10)).padding(.horizontal, 12).frame(minHeight: 31)
     }
@@ -208,16 +237,18 @@ struct QuickNoteWorkspace: View {
             r.selectionStart = selection.location
             r.selectionEnd = NSMaxRange(selection)
         }
+        r.language = language.rawValue
         return r
     }
     private func importAttachment() {
         let document = draft.documentID, source = draft.input, generation = store.editorRestoreGeneration
         let selection = viewMode == .preview ? NSRange(location: (source as NSString).length, length: 0) : editor.selection
         let panel = NSOpenPanel(); panel.allowedContentTypes = [.png, .jpeg, .gif, .bmp, .webP]
-        panel.canChooseDirectories = false; panel.allowsMultipleSelection = false; panel.prompt = "插入图片"
+        panel.canChooseDirectories = false; panel.allowsMultipleSelection = false; panel.prompt = loc("quickNote.insertImage")
+        let staleMessage = loc("quickNote.error.imageStale")
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
-            guard draft.documentID == document, store.editorRestoreGeneration == generation, draft.input == source else { draft.error = "正文或文档已变化，请重新选择图片。"; return }
+            guard draft.documentID == document, store.editorRestoreGeneration == generation, draft.input == source else { draft.error = staleMessage; return }
             attachments.enqueue([.file(url)], selection: selection, store: store, draft: draft, editor: editor)
         }
     }
@@ -226,22 +257,29 @@ struct QuickNoteWorkspace: View {
         let source = request.input
         let id = draft.documentID, generation = store.editorRestoreGeneration, revision = draft.editorRevision, token = UUID()
         operationID = token; draft.noteOperationID = token; draft.busy = true; draft.error = nil
-        operation = Task {
+        let lang = language
+        operation = Task { @MainActor in
             defer { if draft.noteOperationID == token { draft.busy = false; draft.noteTask = nil; draft.noteOperationID = nil } }
             do {
                 let reply = try await JSONEngine.execute(request); try Task.checkCancellation()
                 guard draft.documentID == id, store.editorRestoreGeneration == generation, draft.editorRevision == revision else { return }
-                guard editorText == source, let value = reply.value, editor.replace(value, expected: source, action: title) else { throw ToolError("正文已变化，请重新执行操作。") }
+                let stale = AppLocalization.string("json.error.contentChanged", language: lang)
+                guard editorText == source, let value = reply.value, editor.replace(value, expected: source, action: title) else { throw ToolError(stale) }
                 if let match = reply.match { editor.select(match.range) }
                 if request.action == "replace", (reply.count ?? 0) > 0 { find(true) }
-                draft.status = title + "已完成" + (reply.count.map { " · \($0) 项" } ?? "")
+                if let count = reply.count {
+                    draft.status = String(format: AppLocalization.string("json.status.doneCount", language: lang), title, count)
+                } else {
+                    draft.status = String(format: AppLocalization.string("json.status.done", language: lang), title)
+                }
             } catch { if !Task.isCancelled, draft.documentID == id, store.editorRestoreGeneration == generation { draft.error = error.localizedDescription } }
         }
         draft.noteTask = operation
     }
     private func format() {
-        if options.syntax == .json { var r = request("advanced"); r.indent = 4; r.checkDuplicateKeys = false; perform(r, title: "格式化") }
-        else if options.syntax == .xml { perform(request("formatXML"), title: "格式化") }
+        let title = loc("tool.format")
+        if options.syntax == .json { var r = request("advanced"); r.indent = 4; r.checkDuplicateKeys = false; perform(r, title: title) }
+        else if options.syntax == .xml { perform(request("formatXML"), title: title) }
     }
     private func find(_ forward: Bool) {
         if viewMode == .preview { viewBinding.wrappedValue = .split }

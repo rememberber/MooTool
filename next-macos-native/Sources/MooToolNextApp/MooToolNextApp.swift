@@ -34,7 +34,7 @@ struct MooToolNextApp: App {
                 ForEach(Catalog.localizedTools(language)) { tool in Button(tool.title) { store.select(tool.id) } }
             }
         }
-        WindowGroup("工具", id: "tool", for: String.self) { $id in
+        WindowGroup(AppLocalization.string("app.menu.tools", language: language), id: "tool", for: String.self) { $id in
             ToolRouter(id: id ?? "json").environment(store).environment(\.appLanguage, language).environment(\.locale, language.locale).preferredColorScheme(scheme)
                 .navigationTitle(Catalog.localizedTool(id ?? "json", language: language).title)
                 .frame(minWidth: 680, minHeight: 500)

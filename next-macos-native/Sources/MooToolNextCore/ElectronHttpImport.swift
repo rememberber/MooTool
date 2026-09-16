@@ -12,25 +12,38 @@ public enum ElectronHttpImport {
     public static let defaultCollection = "Electron 导入"
     public static let rowLimit = 500
 
-    public static func preview(at url: URL, collection: String = defaultCollection) throws -> ElectronHttpImportPreview {
+    public static func preview(
+        at url: URL,
+        collection: String = defaultCollection,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws -> ElectronHttpImportPreview {
         var warnings: [String] = []
         guard FileManager.default.fileExists(atPath: url.path) else {
-            throw ToolError("未找到数据库文件。")
+            throw MigrationImportErrors.sqliteNotFound(language)
         }
-        let count = try readRequests(at: url, collection: collection, limit: rowLimit, warnings: &warnings).count
-        let historyCount = try readHistory(at: url, limit: rowLimit, warnings: &warnings).count
-        if count == 0 && historyCount == 0 { warnings.append("未找到可导入的 HTTP 集合或历史。") }
+        let count = try readRequests(at: url, collection: collection, limit: rowLimit, language: language, warnings: &warnings).count
+        let historyCount = try readHistory(at: url, limit: rowLimit, language: language, warnings: &warnings).count
+        if count == 0 && historyCount == 0 { warnings.append(MigrationImportErrors.warning("migration.warning.httpEmpty", language: language)) }
         return ElectronHttpImportPreview(databasePath: url.path, requestCount: count, historyCount: historyCount, warnings: warnings)
     }
 
-    public static func loadRequests(at url: URL, collection: String = defaultCollection, limit: Int = rowLimit) throws -> [SavedHTTPRequest] {
+    public static func loadRequests(
+        at url: URL,
+        collection: String = defaultCollection,
+        limit: Int = rowLimit,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws -> [SavedHTTPRequest] {
         var warnings: [String] = []
-        return try readRequests(at: url, collection: collection, limit: limit, warnings: &warnings)
+        return try readRequests(at: url, collection: collection, limit: limit, language: language, warnings: &warnings)
     }
 
-    public static func loadHttpHistory(at url: URL, limit: Int = rowLimit) throws -> [HistoryRecord] {
+    public static func loadHttpHistory(
+        at url: URL,
+        limit: Int = rowLimit,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws -> [HistoryRecord] {
         var warnings: [String] = []
-        return try readHistory(at: url, limit: limit, warnings: &warnings)
+        return try readHistory(at: url, limit: limit, language: language, warnings: &warnings)
     }
 
     public static func mergeHistory(importing items: [HistoryRecord], into existing: [HistoryRecord]) -> (merged: [HistoryRecord], added: Int, skipped: Int) {
@@ -61,33 +74,46 @@ public enum ElectronHttpImport {
         return (result, added, skipped)
     }
 
-    private static func readRequests(at url: URL, collection: String, limit: Int, warnings: inout [String]) throws -> [SavedHTTPRequest] {
-        try withCopiedDatabase(at: url) { copy in
-            try queryRequests(copy, collection: collection, limit: limit, warnings: &warnings)
+    private static func readRequests(
+        at url: URL,
+        collection: String,
+        limit: Int,
+        language: AppLanguage,
+        warnings: inout [String]
+    ) throws -> [SavedHTTPRequest] {
+        try withCopiedDatabase(at: url, language: language) { copy in
+            try queryRequests(copy, collection: collection, limit: limit, language: language, warnings: &warnings)
         }
     }
 
-    private static func readHistory(at url: URL, limit: Int, warnings: inout [String]) throws -> [HistoryRecord] {
-        try withCopiedDatabase(at: url) { copy in
-            try queryHistory(copy, limit: limit, warnings: &warnings)
+    private static func readHistory(at url: URL, limit: Int, language: AppLanguage, warnings: inout [String]) throws -> [HistoryRecord] {
+        try withCopiedDatabase(at: url, language: language) { copy in
+            try queryHistory(copy, limit: limit, language: language, warnings: &warnings)
         }
     }
 
-    private static func withCopiedDatabase<T>(at url: URL, _ body: (URL) throws -> T) throws -> T {
+    private static func withCopiedDatabase<T>(at url: URL, language: AppLanguage, _ body: (URL) throws -> T) throws -> T {
+        _ = language
         let copy = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-http-import-\(UUID().uuidString).db")
         try FileManager.default.copyItem(at: url, to: copy)
         defer { try? FileManager.default.removeItem(at: copy) }
         return try body(copy)
     }
 
-    private static func queryRequests(_ url: URL, collection: String, limit: Int, warnings: inout [String]) throws -> [SavedHTTPRequest] {
+    private static func queryRequests(
+        _ url: URL,
+        collection: String,
+        limit: Int,
+        language: AppLanguage,
+        warnings: inout [String]
+    ) throws -> [SavedHTTPRequest] {
         var database: OpaquePointer?
         guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY, nil) == SQLITE_OK, let database else {
-            throw ToolError("无法打开 SQLite 数据库。")
+            throw MigrationImportErrors.sqliteOpen(language)
         }
         defer { sqlite3_close(database) }
         guard tableExists(database, name: "t_msg_http") else {
-            warnings.append("数据库中没有 t_msg_http 表。")
+            warnings.append(MigrationImportErrors.warning("migration.warning.noHttpTable", language: language))
             return []
         }
         let sql = "SELECT msg_name, method, url, params, headers, cookies, body, body_type, modified_time FROM t_msg_http ORDER BY id LIMIT \(max(1, min(limit, rowLimit)))"
@@ -121,14 +147,14 @@ public enum ElectronHttpImport {
         return items
     }
 
-    private static func queryHistory(_ url: URL, limit: Int, warnings: inout [String]) throws -> [HistoryRecord] {
+    private static func queryHistory(_ url: URL, limit: Int, language: AppLanguage, warnings: inout [String]) throws -> [HistoryRecord] {
         var database: OpaquePointer?
         guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY, nil) == SQLITE_OK, let database else {
-            throw ToolError("无法打开 SQLite 数据库。")
+            throw MigrationImportErrors.sqliteOpen(language)
         }
         defer { sqlite3_close(database) }
         guard tableExists(database, name: "t_http_request_history") else {
-            warnings.append("数据库中没有 t_http_request_history 表。")
+            warnings.append(MigrationImportErrors.warning("migration.warning.noHttpHistoryTable", language: language))
             return []
         }
         let sql = """

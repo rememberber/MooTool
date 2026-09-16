@@ -53,7 +53,7 @@ struct CustomGroupsSettings: View {
     private func saveAndClose() {
         do {
             let next = CustomToolGroupRules.sanitized(groups)
-            try CustomToolGroupRules.validate(next, knownToolIDs: Set(Catalog.tools.map(\.id)))
+            try CustomToolGroupRules.validate(next, knownToolIDs: Set(Catalog.tools.map(\.id)), language: language)
             store.customGroups = next
             store.scheduleSave()
             dismiss()

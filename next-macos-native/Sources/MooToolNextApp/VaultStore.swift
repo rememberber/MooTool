@@ -21,8 +21,10 @@ extension AppStore {
         if toolID == "json" { documents[index].output = draft.output; documents[index].query = draft.option }
         if toolID == "quickNote", documents[index].noteOptions != draft.noteOptions { documents[index].noteOptions = draft.noteOptions; documents[index].modified = Date() }
     }
-    func openDocument(_ id: UUID) throws {
-        guard let file = documents.first(where: { $0.id == id }) else { throw ToolError("文档已不存在。") }
+    func openDocument(_ id: UUID, language: AppLanguage = AppLocalization.preferredLanguage()) throws {
+        guard let file = documents.first(where: { $0.id == id }) else {
+            throw ToolError(AppLocalization.string("vault.error.documentMissing", language: language))
+        }
         let draft = draft(file.toolID)
         if draft.documentID != id {
             if draft.documentID == nil { scratchDrafts[file.toolID] = draft.record }

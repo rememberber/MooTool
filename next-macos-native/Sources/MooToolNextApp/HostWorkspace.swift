@@ -100,7 +100,7 @@ struct HostWorkspace: View {
             profile.name = profileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? loc("host.unnamedProfile") : profileName
             profile.content = draft.input
             profile.modified = Date()
-            try profile.validate()
+            try profile.validate(language: language)
             store.hostProfiles[index] = profile
             profileName = profile.name
             draft.status = loc("host.status.saved")
@@ -121,11 +121,12 @@ struct HostWorkspace: View {
     }
 
     private func validateHosts() {
-        store.run("host") { d in try HostWorkspace.validateContent(d.input) }
+        let lang = language
+        store.run("host") { d in try HostWorkspace.validateContent(d.input, language: lang) }
     }
 
-    static func validateContent(_ text: String) throws -> String {
-        try DeveloperServices.validateHostsContent(text)
+    static func validateContent(_ text: String, language: AppLanguage) throws -> String {
+        try DeveloperServices.validateHostsContent(text, language: language)
     }
 
     private func deleteProfile() {

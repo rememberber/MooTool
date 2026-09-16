@@ -11,19 +11,19 @@ public struct ElectronFavoriteImportPreview: Equatable, Sendable {
 public enum ElectronFavoriteImport {
     public static let rowLimit = 2_000
 
-    public static func preview(at url: URL) throws -> ElectronFavoriteImportPreview {
+    public static func preview(at url: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> ElectronFavoriteImportPreview {
         var warnings: [String] = []
-        let items = try loadFavorites(at: url, warnings: &warnings)
+        let items = try loadFavorites(at: url, language: language, warnings: &warnings)
         let color = items.filter { $0.kind == .color }.count
         let regex = items.filter { $0.kind == .regex }.count
         let cron = items.filter { $0.kind == .cron }.count
-        if items.isEmpty { warnings.append("未找到可导入的收藏。") }
+        if items.isEmpty { warnings.append(MigrationImportErrors.warning("migration.warning.favoritesEmpty", language: language)) }
         return ElectronFavoriteImportPreview(colorCount: color, regexCount: regex, cronCount: cron, warnings: warnings)
     }
 
-    public static func loadFavorites(at url: URL) throws -> [SavedToolFavorite] {
+    public static func loadFavorites(at url: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> [SavedToolFavorite] {
         var warnings: [String] = []
-        return try loadFavorites(at: url, warnings: &warnings)
+        return try loadFavorites(at: url, language: language, warnings: &warnings)
     }
 
     public static func merge(importing items: [SavedToolFavorite], into existing: [SavedToolFavorite]) -> (merged: [SavedToolFavorite], added: Int, skipped: Int) {
@@ -44,13 +44,14 @@ public enum ElectronFavoriteImport {
         "\(item.kind.rawValue)\u{0}\(item.folder.lowercased())\u{0}\(item.name.lowercased())"
     }
 
-    private static func loadFavorites(at url: URL, warnings: inout [String]) throws -> [SavedToolFavorite] {
+    private static func loadFavorites(at url: URL, language: AppLanguage, warnings: inout [String]) throws -> [SavedToolFavorite] {
+        guard FileManager.default.fileExists(atPath: url.path) else { throw MigrationImportErrors.sqliteNotFound(language) }
         let copy = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-favorite-import-\(UUID().uuidString).db")
         try FileManager.default.copyItem(at: url, to: copy)
         defer { try? FileManager.default.removeItem(at: copy) }
         var database: OpaquePointer?
         guard sqlite3_open_v2(copy.path, &database, SQLITE_OPEN_READONLY, nil) == SQLITE_OK, let database else {
-            throw ToolError("无法打开 SQLite 数据库。")
+            throw MigrationImportErrors.sqliteOpen(language)
         }
         defer { sqlite3_close(database) }
         var items: [SavedToolFavorite] = []

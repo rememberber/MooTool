@@ -2,10 +2,14 @@ import Foundation
 
 /// RSA PKCS#1 type 1 private-encrypt / public-decrypt, matching Electron `node-forge` semantics via system OpenSSL.
 enum RSAOpenSSLBridge {
-    static func privateEncrypt(plaintext: String, privateKeyBase64: String) throws -> String {
+    static func privateEncrypt(
+        plaintext: String,
+        privateKeyBase64: String,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws -> String {
         let directory = try makeWorkspace()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let privateDER = try derData(from: privateKeyBase64)
+        let privateDER = try derData(from: privateKeyBase64, language: language)
         let privateDERFile = directory.appendingPathComponent("private.der")
         let privatePEM = directory.appendingPathComponent("private.pem")
         let plainFile = directory.appendingPathComponent("plain.txt")
@@ -14,35 +18,43 @@ enum RSAOpenSSLBridge {
         try Data(plaintext.utf8).write(to: plainFile)
         try runOpenSSL(["rsa", "-inform", "DER", "-in", privateDERFile.path, "-out", privatePEM.path])
         try runOpenSSL(["rsautl", "-sign", "-inkey", privatePEM.path, "-in", plainFile.path, "-out", cipherFile.path])
-        guard FileManager.default.fileExists(atPath: cipherFile.path) else { throw ToolError("RSA 私钥加密失败。") }
+        guard FileManager.default.fileExists(atPath: cipherFile.path) else { throw err("crypto.error.rsaPrivateEncryptFailed", language) }
         return try Data(contentsOf: cipherFile).base64EncodedString()
     }
 
-    static func publicDecrypt(ciphertextBase64: String, publicKeyBase64: String) throws -> String {
+    static func publicDecrypt(
+        ciphertextBase64: String,
+        publicKeyBase64: String,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws -> String {
         let directory = try makeWorkspace()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let publicDER = try derData(from: publicKeyBase64)
+        let publicDER = try derData(from: publicKeyBase64, language: language)
         let publicDERFile = directory.appendingPathComponent("public.der")
         let publicPEM = directory.appendingPathComponent("public.pem")
         let cipherFile = directory.appendingPathComponent("cipher.bin")
         let plainFile = directory.appendingPathComponent("plain.txt")
         try publicDER.write(to: publicDERFile)
         guard let cipher = Data(base64Encoded: ciphertextBase64.replacingOccurrences(of: "\\s", with: "", options: .regularExpression)) else {
-            throw ToolError("密文需为 Base64。")
+            throw err("crypto.error.cipherBase64", language)
         }
         try cipher.write(to: cipherFile)
         try importPublicDER(publicDER, pemPath: publicPEM)
         try runOpenSSL(["rsautl", "-verify", "-pubin", "-inkey", publicPEM.path, "-in", cipherFile.path, "-out", plainFile.path])
-        guard FileManager.default.fileExists(atPath: plainFile.path) else { throw ToolError("RSA 公钥解密失败。") }
+        guard FileManager.default.fileExists(atPath: plainFile.path) else { throw err("crypto.error.rsaPublicDecryptFailed", language) }
         guard let text = String(data: try Data(contentsOf: plainFile), encoding: .utf8) else {
-            throw ToolError("解密结果不是 UTF-8 文本。")
+            throw err("crypto.error.decryptNotUtf8", language)
         }
         return text
     }
 
-    private static func derData(from base64: String) throws -> Data {
+    private static func err(_ key: String, _ language: AppLanguage) -> ToolError {
+        ToolError(AppLocalization.string(key, language: language))
+    }
+
+    private static func derData(from base64: String, language: AppLanguage) throws -> Data {
         let cleaned = base64.replacingOccurrences(of: "\\s", with: "", options: .regularExpression)
-        guard let data = Data(base64Encoded: cleaned), !data.isEmpty else { throw ToolError("密钥需为 Base64 DER。") }
+        guard let data = Data(base64Encoded: cleaned), !data.isEmpty else { throw err("crypto.error.keyBase64Der", language) }
         return data
     }
 

@@ -94,7 +94,7 @@ import MooToolNextCore
         let expected = try TextServices.json(source)
         for _ in 0..<50 {
             let views = allViews(window)
-            if views.contains(where: { $0.identifier?.rawValue == "json.acceptance.路径树就绪" }),
+            if views.contains(where: { $0.identifier?.rawValue == "json.acceptance.json.pathTree.ready" }),
                views.compactMap({ $0 as? NSTextView }).contains(where: { !$0.isEditable && (try? TextServices.json($0.string)) == expected }) { return }
             try await Task.sleep(for: .milliseconds(100))
         }

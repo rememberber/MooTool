@@ -197,7 +197,13 @@ struct SettingsView: View {
                             backupBusy = true
                             Task {
                                 defer { backupBusy = false }
-                                do { pendingBackup = try await Task.detached { try WorkspaceRepository.readSnapshot(at: urls[0]) }.value; confirmRestore = true }
+                                do {
+                                    let lang = language
+                                    pendingBackup = try await Task.detached {
+                                        try WorkspaceRepository.readSnapshot(at: urls[0], language: lang)
+                                    }.value
+                                    confirmRestore = true
+                                }
                                 catch { FilePanels.error(error) }
                             }
                         }

@@ -24,23 +24,23 @@ public struct ImportedVaultJsonDocument: Equatable, Sendable {
 public enum ElectronVaultSqliteImport {
     public static let rowLimit = 500
 
-    public static func preview(at url: URL) throws -> ElectronVaultSqliteImportPreview {
+    public static func preview(at url: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> ElectronVaultSqliteImportPreview {
         var warnings: [String] = []
-        guard FileManager.default.fileExists(atPath: url.path) else { throw ToolError("未找到数据库文件。") }
-        let notes = try loadQuickNotes(at: url, warnings: &warnings)
-        let json = try loadJsonDocuments(at: url, warnings: &warnings)
-        if notes.isEmpty && json.isEmpty { warnings.append("未找到可导入的随手记（t_quick_note）或 JSON（t_json_beauty）文档。") }
+        guard FileManager.default.fileExists(atPath: url.path) else { throw MigrationImportErrors.sqliteNotFound(language) }
+        let notes = try loadQuickNotes(at: url, language: language, warnings: &warnings)
+        let json = try loadJsonDocuments(at: url, language: language, warnings: &warnings)
+        if notes.isEmpty && json.isEmpty { warnings.append(MigrationImportErrors.warning("migration.warning.vaultSqliteEmpty", language: language)) }
         return ElectronVaultSqliteImportPreview(quickNoteCount: notes.count, jsonCount: json.count, warnings: warnings)
     }
 
-    public static func loadQuickNotes(at url: URL) throws -> [ImportedVaultQuickNote] {
+    public static func loadQuickNotes(at url: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> [ImportedVaultQuickNote] {
         var warnings: [String] = []
-        return try loadQuickNotes(at: url, warnings: &warnings)
+        return try loadQuickNotes(at: url, language: language, warnings: &warnings)
     }
 
-    public static func loadJsonDocuments(at url: URL) throws -> [ImportedVaultJsonDocument] {
+    public static func loadJsonDocuments(at url: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> [ImportedVaultJsonDocument] {
         var warnings: [String] = []
-        return try loadJsonDocuments(at: url, warnings: &warnings)
+        return try loadJsonDocuments(at: url, language: language, warnings: &warnings)
     }
 
     public static func filterNewQuickNotes(_ items: [ImportedVaultQuickNote], existing: [SavedDocument]) -> [ImportedVaultQuickNote] {
@@ -85,33 +85,34 @@ public enum ElectronVaultSqliteImport {
         }
     }
 
-    private static func loadQuickNotes(at url: URL, warnings: inout [String]) throws -> [ImportedVaultQuickNote] {
-        try withCopiedDatabase(at: url) { copy in
-            try queryQuickNotes(copy, warnings: &warnings)
+    private static func loadQuickNotes(at url: URL, language: AppLanguage, warnings: inout [String]) throws -> [ImportedVaultQuickNote] {
+        try withCopiedDatabase(at: url, language: language) { copy in
+            try queryQuickNotes(copy, language: language, warnings: &warnings)
         }
     }
 
-    private static func loadJsonDocuments(at url: URL, warnings: inout [String]) throws -> [ImportedVaultJsonDocument] {
-        try withCopiedDatabase(at: url) { copy in
-            try queryJsonDocuments(copy, warnings: &warnings)
+    private static func loadJsonDocuments(at url: URL, language: AppLanguage, warnings: inout [String]) throws -> [ImportedVaultJsonDocument] {
+        try withCopiedDatabase(at: url, language: language) { copy in
+            try queryJsonDocuments(copy, language: language, warnings: &warnings)
         }
     }
 
-    private static func withCopiedDatabase<T>(at url: URL, _ body: (URL) throws -> T) throws -> T {
+    private static func withCopiedDatabase<T>(at url: URL, language: AppLanguage, _ body: (URL) throws -> T) throws -> T {
+        _ = language
         let copy = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-vault-import-\(UUID().uuidString).db")
         try FileManager.default.copyItem(at: url, to: copy)
         defer { try? FileManager.default.removeItem(at: copy) }
         return try body(copy)
     }
 
-    private static func queryQuickNotes(_ url: URL, warnings: inout [String]) throws -> [ImportedVaultQuickNote] {
+    private static func queryQuickNotes(_ url: URL, language: AppLanguage, warnings: inout [String]) throws -> [ImportedVaultQuickNote] {
         var database: OpaquePointer?
         guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY, nil) == SQLITE_OK, let database else {
-            throw ToolError("无法打开 SQLite 数据库。")
+            throw MigrationImportErrors.sqliteOpen(language)
         }
         defer { sqlite3_close(database) }
         guard tableExists(database, name: "t_quick_note") else {
-            warnings.append("数据库中没有 t_quick_note 表。")
+            warnings.append(MigrationImportErrors.warning("migration.warning.noQuickNoteTable", language: language))
             return []
         }
         let sql = """
@@ -147,14 +148,14 @@ public enum ElectronVaultSqliteImport {
         return items
     }
 
-    private static func queryJsonDocuments(_ url: URL, warnings: inout [String]) throws -> [ImportedVaultJsonDocument] {
+    private static func queryJsonDocuments(_ url: URL, language: AppLanguage, warnings: inout [String]) throws -> [ImportedVaultJsonDocument] {
         var database: OpaquePointer?
         guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY, nil) == SQLITE_OK, let database else {
-            throw ToolError("无法打开 SQLite 数据库。")
+            throw MigrationImportErrors.sqliteOpen(language)
         }
         defer { sqlite3_close(database) }
         guard tableExists(database, name: "t_json_beauty") else {
-            warnings.append("数据库中没有 t_json_beauty 表。")
+            warnings.append(MigrationImportErrors.warning("migration.warning.noJsonBeautyTable", language: language))
             return []
         }
         let sql = "SELECT id, name, content FROM t_json_beauty ORDER BY id LIMIT \(max(1, rowLimit))"

@@ -282,7 +282,10 @@ enum FilePanels {
         open(types: [.text, .json, .data]) { urls in
             do {
                 let url = urls[0]
-                guard (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) < 10 * 1024 * 1024 else { throw ToolError("文本文件超过 10 MB。") }
+                let lang = AppLanguage.normalized(nativeDefaults.string(forKey: "general.language") ?? "zh-CN")
+                guard (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) < 10 * 1024 * 1024 else {
+                    throw ToolError(AppLocalization.string("editor.textFileTooLarge", language: lang))
+                }
                 completion(try String(contentsOf: url, encoding: .utf8))
             } catch { Self.error(error) }
         }

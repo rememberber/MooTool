@@ -131,7 +131,12 @@ import MooToolNextCore
                 try await Task.sleep(for: .milliseconds(1000)); hosting.layoutSubtreeIfNeeded()
                 if variant.contains("tree") { try await NativeJSONAcceptance.waitForPathPreview(window, source: store.draft("json").input); hosting.layoutSubtreeIfNeeded() }
                 if id == "quickNote" && (variant.contains("split") || variant.contains("preview")) { try await NativeNoteAcceptance.waitForPreview(window); hosting.layoutSubtreeIfNeeded() }
-                if id == "quickNote" && noteWorkspace.findOpen { try await NativeNoteAcceptance.waitForFind(window, count: 3); hosting.layoutSubtreeIfNeeded() }
+                if id == "quickNote" && noteWorkspace.findOpen {
+                    try await Task.sleep(for: .milliseconds(400))
+                    hosting.layoutSubtreeIfNeeded()
+                    try await NativeNoteAcceptance.waitForFind(window, count: 3)
+                    hosting.layoutSubtreeIfNeeded()
+                }
                 if variant.contains("image") { try await NativeAttachmentAcceptance.waitForImage(window, path: variant.contains("missing") ? NativeAttachmentAcceptance.missingPath : previewAttachments[0].path, missing: variant.contains("missing")); hosting.layoutSubtreeIfNeeded() }
                 if variant == "quickNote-images-light" || variant == "quickNote-images-dark" { try NativeAttachmentAcceptance.verifySplitLayout(window) }
                 guard let bitmap = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else { throw ToolError("无法捕获 \(variant)") }

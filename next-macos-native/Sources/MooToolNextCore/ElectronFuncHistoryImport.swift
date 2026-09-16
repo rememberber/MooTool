@@ -9,17 +9,17 @@ public struct ElectronFuncHistoryImportPreview: Equatable, Sendable {
 public enum ElectronFuncHistoryImport {
     public static let rowLimit = 500
 
-    public static func preview(at url: URL) throws -> ElectronFuncHistoryImportPreview {
+    public static func preview(at url: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> ElectronFuncHistoryImportPreview {
         var warnings: [String] = []
-        guard FileManager.default.fileExists(atPath: url.path) else { throw ToolError("未找到数据库文件。") }
-        let count = try load(at: url, warnings: &warnings).count
-        if count == 0 { warnings.append("未找到可导入的通用工具历史（t_func_history）。") }
+        guard FileManager.default.fileExists(atPath: url.path) else { throw MigrationImportErrors.sqliteNotFound(language) }
+        let count = try load(at: url, language: language, warnings: &warnings).count
+        if count == 0 { warnings.append(MigrationImportErrors.warning("migration.warning.funcHistoryEmpty", language: language)) }
         return ElectronFuncHistoryImportPreview(count: count, warnings: warnings)
     }
 
-    public static func load(at url: URL) throws -> [HistoryRecord] {
+    public static func load(at url: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> [HistoryRecord] {
         var warnings: [String] = []
-        return try load(at: url, warnings: &warnings)
+        return try load(at: url, language: language, warnings: &warnings)
     }
 
     public static func merge(importing items: [HistoryRecord], into existing: [HistoryRecord]) -> (merged: [HistoryRecord], added: Int, skipped: Int) {
@@ -42,27 +42,28 @@ public enum ElectronFuncHistoryImport {
         return record.draft.option
     }
 
-    private static func load(at url: URL, warnings: inout [String]) throws -> [HistoryRecord] {
-        try withCopiedDatabase(at: url) { copy in
-            try query(copy, warnings: &warnings)
+    private static func load(at url: URL, language: AppLanguage, warnings: inout [String]) throws -> [HistoryRecord] {
+        try withCopiedDatabase(at: url, language: language) { copy in
+            try query(copy, language: language, warnings: &warnings)
         }
     }
 
-    private static func withCopiedDatabase<T>(at url: URL, _ body: (URL) throws -> T) throws -> T {
+    private static func withCopiedDatabase<T>(at url: URL, language: AppLanguage, _ body: (URL) throws -> T) throws -> T {
+        _ = language
         let copy = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-func-history-import-\(UUID().uuidString).db")
         try FileManager.default.copyItem(at: url, to: copy)
         defer { try? FileManager.default.removeItem(at: copy) }
         return try body(copy)
     }
 
-    private static func query(_ url: URL, warnings: inout [String]) throws -> [HistoryRecord] {
+    private static func query(_ url: URL, language: AppLanguage, warnings: inout [String]) throws -> [HistoryRecord] {
         var database: OpaquePointer?
         guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY, nil) == SQLITE_OK, let database else {
-            throw ToolError("无法打开 SQLite 数据库。")
+            throw MigrationImportErrors.sqliteOpen(language)
         }
         defer { sqlite3_close(database) }
         guard tableExists(database, name: "t_func_history") else {
-            warnings.append("数据库中没有 t_func_history 表。")
+            warnings.append(MigrationImportErrors.warning("migration.warning.noFuncHistoryTable", language: language))
             return []
         }
         let sql = """

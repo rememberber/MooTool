@@ -199,7 +199,7 @@ struct ReformatWorkspace: View {
                 if operationID == id { operationID = nil }
             }
             do {
-                let result = try await ReformatEngine.format(source, type: current.type, indent: current.indent)
+                let result = try await ReformatEngine.format(source, type: current.type, indent: current.indent, language: language)
                 try Task.checkCancellation()
                 guard store.editorRestoreGeneration == generation, draft.reformatOperationID == id,
                       draft.input == input, options.tab == current.tab, options.type == current.type,
@@ -207,7 +207,7 @@ struct ReformatWorkspace: View {
                       options.fileSource == current.fileSource else { return }
                 var history = draft.record; history.output = result
                 if current.tab == .text {
-                    if !textEditor.replace(result, expected: source, action: "格式化"), draft.input == source { draft.input = result }
+                    if !textEditor.replace(result, expected: source, action: loc("reformat.undo.format")), draft.input == source { draft.input = result }
                 } else {
                     var next = options; next.fileResult = result; draft.reformat = next
                     history.reformat = next
@@ -229,7 +229,7 @@ struct ReformatWorkspace: View {
             guard pickerID == request, store.editorRestoreGeneration == generation, let url = urls.first else { return }
             pickerID = nil
             do {
-                let source = try ReformatEngine.readFile(url)
+                let source = try ReformatEngine.readFile(url, language: language)
                 var next = options; next.tab = .file; next.fileName = url.lastPathComponent
                 next.fileSource = source; next.fileResult = ""; next.fileIdentity = UUID()
                 next.fileEditor = EditorViewState(); next.resultEditor = EditorViewState()
@@ -241,7 +241,7 @@ struct ReformatWorkspace: View {
     private func export() { guard !chosenText.isEmpty else { return }; FilePanels.saveText(chosenText, name: options.exportName) }
     private func clear() {
         if options.tab == .text {
-            if !textEditor.replace("", expected: draft.input, action: "清空") { draft.input = "" }
+            if !textEditor.replace("", expected: draft.input, action: loc("reformat.undo.clear")) { draft.input = "" }
         } else {
             var next = options; next.fileSource = ""; next.fileResult = ""; next.fileName = ""
             next.fileIdentity = UUID(); next.fileEditor = EditorViewState(); next.resultEditor = EditorViewState()

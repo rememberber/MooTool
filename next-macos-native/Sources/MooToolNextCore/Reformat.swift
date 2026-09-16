@@ -41,9 +41,11 @@ public struct ReformatOptions: Codable, Equatable, Sendable {
         let base = (name as NSString).deletingPathExtension
         return (base.isEmpty || base == "." || base == ".." ? "formatted" : String(base.prefix(100))) + "." + type.fileExtension
     }
-    public func validate() throws {
+    public func validate(language: AppLanguage = AppLocalization.preferredLanguage()) throws {
         guard (2...6).contains(indent), fileName.utf8.count <= 1024,
-              fileSource.utf8.count <= 10 * 1024 * 1024, fileResult.utf8.count <= 16 * 1024 * 1024 else { throw ToolError("格式化工作区设置无效或内容超过大小限制。") }
+              fileSource.utf8.count <= 10 * 1024 * 1024, fileResult.utf8.count <= 16 * 1024 * 1024 else {
+            throw ToolError(AppLocalization.string("reformat.error.workspaceInvalid", language: language))
+        }
     }
     public static func restoringHistory(_ record: DraftRecord) -> DraftRecord {
         var value = record; var options = migrating(record)
@@ -55,36 +57,50 @@ public struct ReformatOptions: Codable, Equatable, Sendable {
 
 public enum ReformatEngine {
     public static let maximumInputBytes = 2 * 1024 * 1024
-    public static func format(_ input: String, type: ReformatType, indent: Int = 4) async throws -> String {
-        guard input.utf8.count <= maximumInputBytes else { throw ToolError("格式化输入超过 2 MB，正文保持原样。") }
-        var request = JSONEngineRequest("reformat", input: input); request.path = type.rawValue; request.indent = indent
+    public static func format(_ input: String, type: ReformatType, indent: Int = 4, language: AppLanguage = AppLocalization.preferredLanguage()) async throws -> String {
+        guard input.utf8.count <= maximumInputBytes else { throw ToolError(AppLocalization.string("reformat.error.inputTooLarge", language: language)) }
+        var request = JSONEngineRequest("reformat", input: input)
+        request.path = type.rawValue; request.indent = indent
+        request.language = language.rawValue
         return try await JSONEngine.execute(request).value ?? ""
     }
-    public static func readFile(_ file: URL) throws -> String {
+    public static func readFile(_ file: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> String {
         let values = try file.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
-        guard values.isRegularFile == true, (values.fileSize ?? Int.max) <= maximumInputBytes else { throw ToolError("请选择 2 MB 以内的 UTF-8 文本文件。") }
+        guard values.isRegularFile == true, (values.fileSize ?? Int.max) <= maximumInputBytes else {
+            throw ToolError(AppLocalization.string("reformat.error.filePickTooLarge", language: language))
+        }
         let handle = try FileHandle(forReadingFrom: file); defer { try? handle.close() }
         let data = try handle.read(upToCount: maximumInputBytes + 1) ?? Data()
-        guard data.count <= maximumInputBytes, let value = String(data: data, encoding: .utf8) else { throw ToolError("文件不是 UTF-8 文本或超过 2 MB。") }
+        guard data.count <= maximumInputBytes, let value = String(data: data, encoding: .utf8) else {
+            throw ToolError(AppLocalization.string("reformat.error.fileNotUtf8", language: language))
+        }
         return value
     }
     /// Called only by the bounded helper and deterministic tests; no file/network APIs are exposed to JS.
     static func evaluate(_ request: JSONEngineRequest) throws -> JSONEngineReply {
-        guard request.input.utf8.count <= maximumInputBytes, (2...6).contains(request.indent), ReformatType(rawValue: request.path) != nil else { throw ToolError("格式化类型、缩进无效或输入超过 2 MB。") }
-        guard let context = JSContext(), let url = JSONEngine.resources.url(forResource: "ReformatTools", withExtension: "js") else { throw ToolError("缺少原生格式化解析器，请重新构建或安装应用。") }
+        let language = AppLanguage(rawValue: request.language) ?? AppLocalization.preferredLanguage()
+        func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+        guard request.input.utf8.count <= maximumInputBytes, (2...6).contains(request.indent), ReformatType(rawValue: request.path) != nil else {
+            throw ToolError(loc("reformat.error.invalidRequest"))
+        }
+        guard let context = JSContext(), let url = JSONEngine.resources.url(forResource: "ReformatTools", withExtension: "js") else {
+            throw ToolError(loc("reformat.error.missingParser"))
+        }
         context.evaluateScript(bootstrap)
         context.evaluateScript(try String(contentsOf: url, encoding: .utf8))
-        if let exception = context.exception { throw ToolError(exception.toString() ?? "格式化解析器初始化失败。") }
+        if let exception = context.exception { throw ToolError(exception.toString() ?? loc("reformat.error.parserInit")) }
         let payload = String(decoding: try JSONEncoder().encode(request), as: UTF8.self)
         context.objectForKeyedSubscript("startNativeReformat")?.call(withArguments: [payload])
         let deadline = Date().addingTimeInterval(2.8)
         while context.objectForKeyedSubscript("nativeReformatReply")?.isUndefined != false {
-            if let exception = context.exception { throw ToolError(exception.toString() ?? "格式化失败。") }
-            guard Date() < deadline, !Task.isCancelled else { throw ToolError("格式化超时，正文保持原样。") }
+            if let exception = context.exception { throw ToolError(exception.toString() ?? loc("reformat.error.failed")) }
+            guard Date() < deadline, !Task.isCancelled else { throw ToolError(loc("reformat.error.timeout")) }
             RunLoop.current.run(until: Date().addingTimeInterval(0.005))
             context.evaluateScript("void 0")
         }
-        guard let output = context.objectForKeyedSubscript("nativeReformatReply")?.toString(), output.utf8.count <= 16 * 1024 * 1024 else { throw ToolError("格式化结果超过 16 MB。") }
+        guard let output = context.objectForKeyedSubscript("nativeReformatReply")?.toString(), output.utf8.count <= 16 * 1024 * 1024 else {
+            throw ToolError(loc("reformat.error.outputTooLarge"))
+        }
         let reply = try JSONDecoder().decode(JSONEngineReply.self, from: Data(output.utf8))
         if let error = reply.error { throw ToolError(error) }; return reply
     }

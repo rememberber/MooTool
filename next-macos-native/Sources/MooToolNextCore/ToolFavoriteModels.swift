@@ -21,11 +21,12 @@ public struct SavedToolFavorite: Codable, Equatable, Identifiable {
         self.remark = remark
     }
 
-    public func validate() throws {
-        guard !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw ToolError("收藏内容不能为空。") }
-        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw ToolError("收藏名称不能为空。") }
+    public func validate(language: AppLanguage = AppLocalization.preferredLanguage()) throws {
+        func err(_ key: String) -> ToolError { ToolError(AppLocalization.string(key, language: language)) }
+        guard !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw err("favorites.error.emptyValue") }
+        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw err("favorites.error.emptyName") }
         guard folder.utf8.count <= 120, name.utf8.count <= 120, value.utf8.count <= 16_384, remark.utf8.count <= 1024 else {
-            throw ToolError("收藏字段超过限制。")
+            throw err("favorites.error.fieldLimit")
         }
     }
 }

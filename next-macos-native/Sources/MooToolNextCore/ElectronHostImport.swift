@@ -11,17 +11,17 @@ public enum ElectronHostImport {
     public static let defaultCollectionPrefix = "导入"
     public static let rowLimit = 500
 
-    public static func preview(at url: URL) throws -> ElectronHostImportPreview {
+    public static func preview(at url: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> ElectronHostImportPreview {
         var warnings: [String] = []
-        guard FileManager.default.fileExists(atPath: url.path) else { throw ToolError("未找到数据库文件。") }
-        let count = try loadProfiles(at: url, warnings: &warnings).count
-        if count == 0 { warnings.append("未在 t_host 中找到可导入的配置。") }
+        guard FileManager.default.fileExists(atPath: url.path) else { throw MigrationImportErrors.sqliteNotFound(language) }
+        let count = try loadProfiles(at: url, language: language, warnings: &warnings).count
+        if count == 0 { warnings.append(MigrationImportErrors.warning("migration.warning.hostEmpty", language: language)) }
         return ElectronHostImportPreview(databasePath: url.path, profileCount: count, warnings: warnings)
     }
 
-    public static func loadProfiles(at url: URL) throws -> [SavedHostProfile] {
+    public static func loadProfiles(at url: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> [SavedHostProfile] {
         var warnings: [String] = []
-        return try loadProfiles(at: url, warnings: &warnings)
+        return try loadProfiles(at: url, language: language, warnings: &warnings)
     }
 
     public static func merge(importing items: [SavedHostProfile], into existing: [SavedHostProfile]) -> (merged: [SavedHostProfile], added: Int, skipped: Int) {
@@ -38,17 +38,18 @@ public enum ElectronHostImport {
         return (result, added, skipped)
     }
 
-    private static func loadProfiles(at url: URL, warnings: inout [String]) throws -> [SavedHostProfile] {
+    private static func loadProfiles(at url: URL, language: AppLanguage, warnings: inout [String]) throws -> [SavedHostProfile] {
+        guard FileManager.default.fileExists(atPath: url.path) else { throw MigrationImportErrors.sqliteNotFound(language) }
         let copy = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-host-import-\(UUID().uuidString).db")
         try FileManager.default.copyItem(at: url, to: copy)
         defer { try? FileManager.default.removeItem(at: copy) }
         var database: OpaquePointer?
         guard sqlite3_open_v2(copy.path, &database, SQLITE_OPEN_READONLY, nil) == SQLITE_OK, let database else {
-            throw ToolError("无法打开 SQLite 数据库。")
+            throw MigrationImportErrors.sqliteOpen(language)
         }
         defer { sqlite3_close(database) }
         guard tableExists(database, name: "t_host") else {
-            warnings.append("数据库中没有 t_host 表。")
+            warnings.append(MigrationImportErrors.warning("migration.warning.noHostTable", language: language))
             return []
         }
         let sql = "SELECT name, content, modified_time FROM t_host ORDER BY id LIMIT \(rowLimit)"

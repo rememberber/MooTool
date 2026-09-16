@@ -6,6 +6,18 @@ struct DocumentsTool: View {
     let id: String
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+    private func locf(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: AppLocalization.string(key, language: language), arguments: arguments)
+    }
+    private func sortTitle(_ sort: VaultSort) -> String {
+        switch sort {
+        case .name: return loc("vault.sort.name")
+        case .modified: return loc("vault.sort.modified")
+        case .created: return loc("vault.sort.created")
+        }
+    }
     @State private var documentPicker = false
     @State private var action: VaultAction?
     @State private var importing = false
@@ -36,8 +48,8 @@ struct DocumentsTool: View {
             }
         }
         .popover(isPresented: $documentPicker) { library.frame(width: 270, height: 480) }
-        .sheet(item: $action) { VaultActionSheet(toolID: id, action: $0).environment(store) }
-        .sheet(isPresented: $gitOpen) { VaultGitDialog(toolID: id).environment(store) }
+        .sheet(item: $action) { VaultActionSheet(toolID: id, action: $0).environment(store).environment(\.appLanguage, language) }
+        .sheet(isPresented: $gitOpen) { VaultGitDialog(toolID: id).environment(store).environment(\.appLanguage, language) }
     }
     private var editorColumn: some View {
         GeometryReader { geometry in
@@ -55,24 +67,24 @@ struct DocumentsTool: View {
         VStack(spacing: 0) {
             HStack(spacing: 7) {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField(id == "json" ? "搜索 JSON 文档" : "搜索笔记", text: preference(\.query)).textFieldStyle(.plain)
-                if !preferences.query.isEmpty { Button { store.updateVaultPreference(id) { $0.query = "" } } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(.borderless).help("清空搜索") }
+                TextField(id == "json" ? loc("vault.search.json") : loc("vault.search.note"), text: preference(\.query)).textFieldStyle(.plain)
+                if !preferences.query.isEmpty { Button { store.updateVaultPreference(id) { $0.query = "" } } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(.borderless).help(loc("vault.clearSearch")) }
             }.padding(8).background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 8)).padding(.horizontal, 11).padding(.top, 12)
             HStack(spacing: 6) {
-                Toggle("搜索正文", isOn: preference(\.includeContent)).toggleStyle(.checkbox).fixedSize()
+                Toggle(loc("vault.searchContent"), isOn: preference(\.includeContent)).toggleStyle(.checkbox).fixedSize()
                 Spacer(minLength: 0)
-                Picker("排序", selection: preference(\.sort)) {
-                    ForEach(VaultSort.allCases.filter { id == "quickNote" || $0 != .created }, id: \.self) { Text($0.title).tag($0) }
+                Picker(loc("vault.sort"), selection: preference(\.sort)) {
+                    ForEach(VaultSort.allCases.filter { id == "quickNote" || $0 != .created }, id: \.self) { Text(sortTitle($0)).tag($0) }
                 }.labelsHidden().frame(width: 82)
                 moreMenu
             }.font(.system(size: 11)).controlSize(.small).padding(.horizontal, 12).padding(.vertical, 9)
             HStack(spacing: 14) {
-                iconButton("新建文档", "doc.badge.plus") { begin(.file) }
-                iconButton("新建文件夹", "folder.badge.plus") { begin(.folder) }
-                iconButton(allExpanded ? "全部折叠" : "全部展开", allExpanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right") {
+                iconButton(loc("vault.newDocument"), "doc.badge.plus") { begin(.file) }
+                iconButton(loc("vault.newFolder"), "folder.badge.plus") { begin(.folder) }
+                iconButton(allExpanded ? loc("vault.collapseAll") : loc("vault.expandAll"), allExpanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right") {
                     store.updateVaultPreference(id) { $0.expanded = allExpanded ? [] : Set(store.folders.filter { $0.toolID == id }.map(\.id)) }
                 }
-                if id == "json" { iconButton("保存", "square.and.arrow.down", action: save); iconButton("删除", "trash") { begin(.delete) }.disabled(selectedID == nil) }
+                if id == "json" { iconButton(loc("tool.save"), "square.and.arrow.down", action: save); iconButton(loc("tool.delete"), "trash") { begin(.delete) }.disabled(selectedID == nil) }
                 iconButton("Git", "arrow.triangle.branch") { gitOpen = true }
                 Spacer(minLength: 0)
                 if importing { ProgressView().controlSize(.mini) }
@@ -81,10 +93,10 @@ struct DocumentsTool: View {
             tree
             Divider()
             HStack {
-                Text(selectedID.map { store.vault.path(of: $0) } ?? "\(store.documents.filter { $0.toolID == id }.count) 份文档").lineLimit(1).truncationMode(.middle)
+                Text(selectedID.map { store.vault.path(of: $0) } ?? locf("vault.documentCount", store.documents.filter { $0.toolID == id }.count)).lineLimit(1).truncationMode(.middle)
                 Spacer(minLength: 0)
-                if draft.documentID == nil { Text("草稿").foregroundStyle(.tertiary) }
-            }.font(.system(size: 10)).foregroundStyle(.secondary).padding(12).help(selectedID.map { store.vault.path(of: $0) } ?? "文档库根目录")
+                if draft.documentID == nil { Text(loc("vault.draft")).foregroundStyle(.tertiary) }
+            }.font(.system(size: 10)).foregroundStyle(.secondary).padding(12).help(selectedID.map { store.vault.path(of: $0) } ?? loc("vault.root"))
                 .dropDestination(for: String.self) { values, _ in drop(values, into: nil) }
         }.background(Color(nsColor: .controlBackgroundColor))
     }
@@ -110,7 +122,7 @@ struct DocumentsTool: View {
                     .help(row.node.path)
                 }
             }.listStyle(.sidebar)
-            .overlay { if rows.isEmpty { Text(preferences.query.isEmpty ? "新建文档或导入文件\n开始整理你的工作区" : "没有匹配的文档").font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center).padding() } }
+            .overlay { if rows.isEmpty { Text(preferences.query.isEmpty ? loc("vault.empty.hint") : loc("vault.empty.noMatch")).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center).padding() } }
             .dropDestination(for: String.self) { values, _ in drop(values, into: nil) }
             .onAppear { if let selectedID { proxy.scrollTo(selectedID, anchor: .center) } }
             .onChange(of: draft.documentID) { _, value in if let value { proxy.scrollTo(value) } }
@@ -118,47 +130,54 @@ struct DocumentsTool: View {
     }
     private func editorToolbar(compact: Bool) -> some View {
         HStack(spacing: 10) {
-            iconButton("显示或隐藏文档库", "sidebar.left") { if compact { documentPicker.toggle() } else { store.updateVaultPreference(id) { $0.treeVisible.toggle() } } }
-            Text(activeDocument?.title ?? "未命名草稿").font(.system(size: 12, weight: .medium)).lineLimit(1).help(activeDocument.map { store.vault.path(of: $0.id) } ?? "草稿")
+            iconButton(loc("vault.toggleTree"), "sidebar.left") { if compact { documentPicker.toggle() } else { store.updateVaultPreference(id) { $0.treeVisible.toggle() } } }
+            Text(activeDocument?.title ?? loc("vault.unnamedDraft")).font(.system(size: 12, weight: .medium)).lineLimit(1).help(activeDocument.map { store.vault.path(of: $0.id) } ?? loc("vault.draft"))
             Spacer(minLength: 0)
-            Text(store.persistenceBlocked ? "保存已暂停" : store.savePending ? "保存中…" : "已保存").font(.system(size: 10)).foregroundStyle(store.persistenceBlocked ? Color.red : .secondary)
-            if id == "json" { iconButton("保存", "square.and.arrow.down", action: save).keyboardShortcut("s", modifiers: .command) }
+            Text(store.persistenceBlocked ? loc("vault.savePaused") : store.savePending ? loc("vault.saving") : loc("vault.saved")).font(.system(size: 10)).foregroundStyle(store.persistenceBlocked ? Color.red : .secondary)
+            if id == "json" { iconButton(loc("tool.save"), "square.and.arrow.down", action: save).keyboardShortcut("s", modifiers: .command) }
         }.buttonStyle(.borderless).padding(.horizontal, 16).frame(height: 43).background(.bar)
     }
     private var moreMenu: some View {
         Menu {
-            Button("重命名…") { begin(.rename) }.disabled(selectedID == nil)
-            Button("移动…") { begin(.move) }.disabled(selectedID == nil)
-            Button("创建副本") { if let selectedID { perform { try store.duplicateVaultDocument(selectedID) } } }.disabled(!store.documents.contains { $0.id == selectedID })
+            Button(loc("vault.rename")) { begin(.rename) }.disabled(selectedID == nil)
+            Button(loc("vault.move")) { begin(.move) }.disabled(selectedID == nil)
+            Button(loc("vault.duplicate")) { if let selectedID { perform { try store.duplicateVaultDocument(selectedID) } } }.disabled(!store.documents.contains { $0.id == selectedID })
             Divider()
-            Button("导入文件…") { importFiles(folder: false) }.disabled(importing)
-            Button("导入文件夹…") { importFiles(folder: true) }.disabled(importing)
-            Button("导出当前文档…", action: exportCurrent)
-            if id == "quickNote" { Button("导出文档及附件…") { exportWithAttachments(name: activeDocument?.title ?? "未命名笔记", content: draft.input) }.disabled(exporting) }
+            Button(loc("vault.importFile")) { importFiles(folder: false) }.disabled(importing)
+            Button(loc("vault.importFolder")) { importFiles(folder: true) }.disabled(importing)
+            Button(loc("vault.exportCurrent"), action: exportCurrent)
+            if id == "quickNote" { Button(loc("vault.exportWithAttachments")) { exportWithAttachments(name: activeDocument?.title ?? loc("vault.unnamedNote"), content: draft.input) }.disabled(exporting) }
             Divider()
-            Button("从磁盘刷新") { store.refreshVaultFromDisk(toolID: id) }
-            Button("打开草稿") { store.openScratch(id) }
-            Button("另存为文档…") { begin(.file, saveAs: true) }
-            Button("删除…") { begin(.delete) }.disabled(selectedID == nil)
-        } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().frame(width: 20).help("更多文档操作")
+            Button(loc("vault.refreshFromDisk")) { store.refreshVaultFromDisk(toolID: id) }
+            Button(loc("vault.openScratch")) { store.openScratch(id) }
+            Button(loc("vault.saveAs")) { begin(.file, saveAs: true) }
+            Button(loc("vault.delete")) { begin(.delete) }.disabled(selectedID == nil)
+        } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().frame(width: 20).help(loc("vault.moreActions"))
     }
     @ViewBuilder private func entryMenu(_ node: VaultNode) -> some View {
-        if node.isFolder { Button("新建文档…") { action = VaultAction(kind: .file, parentID: node.id, content: id == "json" ? draft.input : "") }; Button("新建文件夹…") { action = VaultAction(kind: .folder, parentID: node.id) }; Divider() }
-        Button("重命名…") { action = VaultAction(kind: .rename, entryID: node.id) }
-        Button("移动…") { action = VaultAction(kind: .move, entryID: node.id) }
-        if !node.isFolder {
-            Button("创建副本") { perform { try store.duplicateVaultDocument(node.id) } }
-            Button("导出…") { if let file = store.documents.first(where: { $0.id == node.id }) { FilePanels.saveText(file.content, name: exportName(file.title)) } }
-            if id == "quickNote" { Button("导出文档及附件…") { if let file = store.documents.first(where: { $0.id == node.id }) { exportWithAttachments(name: file.title, content: file.content) } }.disabled(exporting) }
+        if node.isFolder {
+            Button(loc("vault.newDocumentMenu")) { action = VaultAction(kind: .file, parentID: node.id, content: id == "json" ? draft.input : "") }
+            Button(loc("vault.newFolderMenu")) { action = VaultAction(kind: .folder, parentID: node.id) }
+            Divider()
         }
-        Button("复制路径") { FilePanels.copy(node.path) }
-        Button("在 Finder 中显示") { reveal(node.id) }
+        Button(loc("vault.rename")) { action = VaultAction(kind: .rename, entryID: node.id) }
+        Button(loc("vault.move")) { action = VaultAction(kind: .move, entryID: node.id) }
+        if !node.isFolder {
+            Button(loc("vault.duplicate")) { perform { try store.duplicateVaultDocument(node.id) } }
+            Button(loc("vault.exportEntry")) { if let file = store.documents.first(where: { $0.id == node.id }) { FilePanels.saveText(file.content, name: exportName(file.title)) } }
+            if id == "quickNote" { Button(loc("vault.exportWithAttachments")) { if let file = store.documents.first(where: { $0.id == node.id }) { exportWithAttachments(name: file.title, content: file.content) } }.disabled(exporting) }
+        }
+        Button(loc("vault.copyPath")) { FilePanels.copy(node.path) }
+        Button(loc("vault.revealInFinder")) { reveal(node.id) }
         Divider()
-        Button("删除…", role: .destructive) { action = VaultAction(kind: .delete, entryID: node.id) }
+        Button(loc("vault.delete"), role: .destructive) { action = VaultAction(kind: .delete, entryID: node.id) }
     }
     private var allExpanded: Bool { let folders = Set(store.folders.filter { $0.toolID == id }.map(\.id)); return !folders.isEmpty && folders.isSubset(of: preferences.expanded) }
     private func select(_ entry: UUID) {
-        if store.documents.contains(where: { $0.id == entry && $0.toolID == id }) { perform { try store.openDocument(entry) }; documentPicker = false }
+        if store.documents.contains(where: { $0.id == entry && $0.toolID == id }) {
+            perform { try store.openDocument(entry, language: language) }
+            documentPicker = false
+        }
         else { store.updateVaultPreference(id) { $0.selectedEntryID = entry } }
     }
     private func toggleFolder(_ entry: UUID) { store.updateVaultPreference(id) { if $0.expanded.contains(entry) { $0.expanded.remove(entry) } else { $0.expanded.insert(entry) } } }
@@ -170,16 +189,16 @@ struct DocumentsTool: View {
         else {
             store.synchronizeDocument(id); store.saveNow()
             if store.error == nil {
-                draft.status = "已保存"
+                draft.status = loc("vault.status.saved")
                 store.recordVaultGitActivity(id, message: id == "json" ? "Update JSON snippet" : "Update Quick Note")
             }
         }
     }
     private func exportName(_ name: String) -> String { name.contains(".") ? name.replacingOccurrences(of: "/", with: "_") : name + (id == "json" ? ".json" : ".md") }
-    private func exportCurrent() { FilePanels.saveText(draft.input, name: exportName(activeDocument?.title ?? "未命名文档")) }
+    private func exportCurrent() { FilePanels.saveText(draft.input, name: exportName(activeDocument?.title ?? loc("vault.unnamedDocument"))) }
     private func exportWithAttachments(name: String, content: String) {
         let panel = NSOpenPanel(); panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.canCreateDirectories = true
-        panel.prompt = "导出到此处"; panel.message = "将在所选位置新建文件夹，包含 Markdown 笔记和图片附件。"
+        panel.prompt = loc("vault.export.prompt"); panel.message = loc("vault.export.message")
         let repository = store.repository.attachmentRepository, manifest = store.noteAttachments
         panel.begin { response in
             guard response == .OK, let parent = panel.url else { return }; exporting = true
@@ -187,7 +206,7 @@ struct DocumentsTool: View {
                 defer { exporting = false }
                 do {
                     let target = try await Task.detached { try repository.exportDocument(name: name, content: content, attachments: manifest, to: parent) }.value
-                    draft.status = "已导出：" + target.lastPathComponent
+                    draft.status = locf("vault.status.exported", target.lastPathComponent)
                 } catch { FilePanels.error(error) }
             }
         }
@@ -204,15 +223,16 @@ struct DocumentsTool: View {
     private func importFiles(folder: Bool) {
         let panel = NSOpenPanel(); panel.canChooseDirectories = folder; panel.canChooseFiles = !folder; panel.allowsMultipleSelection = !folder
         if !folder { panel.allowedContentTypes = id == "json" ? [.json] : [.plainText, .text] }
-        panel.prompt = "导入"; let parent = selectedParent
+        panel.prompt = loc("vault.import.prompt"); let parent = selectedParent
         panel.begin { response in
             guard response == .OK else { return }; let urls = panel.urls; importing = true
             Task {
                 defer { importing = false }
                 do {
-                    let items = try await Task.detached { try DocumentImportReader.read(urls, toolID: id) }.value
+                    let lang = language
+                    let items = try await Task.detached { try DocumentImportReader.read(urls, toolID: id, language: lang) }.value
                     let ids = try store.importVaultDocuments(items, toolID: id, parent: parent)
-                    draft.status = "已导入 \(ids.count) 份文档"; draft.error = nil
+                    draft.status = locf("vault.status.imported", ids.count); draft.error = nil
                 } catch { draft.error = error.localizedDescription; FilePanels.error(error) }
             }
         }
@@ -226,14 +246,27 @@ struct VaultAction: Identifiable {
     var entryID: UUID?
     var parentID: UUID?
     var content = ""
-    var title: String { switch kind { case .file: return "新建文档"; case .folder: return "新建文件夹"; case .rename: return "重命名"; case .move: return "移动"; case .delete: return "删除" } }
+    var titleKey: String {
+        switch kind {
+        case .file: return "vault.sheet.newDocument"
+        case .folder: return "vault.sheet.newFolder"
+        case .rename: return "vault.sheet.rename"
+        case .move: return "vault.sheet.move"
+        case .delete: return "vault.sheet.delete"
+        }
+    }
 }
 
 private struct VaultActionSheet: View {
     let toolID: String
     let action: VaultAction
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @Environment(\.dismiss) private var dismiss
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+    private func locf(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: AppLocalization.string(key, language: language), arguments: arguments)
+    }
     @State private var name = ""
     @State private var target: UUID?
     @State private var error: String?
@@ -243,24 +276,33 @@ private struct VaultActionSheet: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text(action.title).font(.title2.bold())
+            Text(loc(action.titleKey)).font(.title2.bold())
             if let id = action.entryID, [.rename, .move, .delete].contains(action.kind) { Text(store.vault.path(of: id)).font(.caption).foregroundStyle(.secondary).textSelection(.enabled) }
             if action.kind == .delete {
                 let ids = action.entryID.map { store.vault.descendants(of: $0) } ?? []
-                Text("将删除 \(store.documents.filter { ids.contains($0.id) }.count) 份文档和 \(store.folders.filter { ids.contains($0.id) }.count) 个文件夹。正在编辑的内容会保留为草稿。")
+                Text(locf("vault.delete.summary", store.documents.filter { ids.contains($0.id) }.count, store.folders.filter { ids.contains($0.id) }.count))
             } else if action.kind == .move {
-                Picker("目标文件夹", selection: $target) { Text("文档库根目录").tag(nil as UUID?); ForEach(destinations) { Text(store.vault.path(of: $0.id)).tag(Optional($0.id)) } }
+                Picker(loc("vault.moveTarget"), selection: $target) { Text(loc("vault.root")).tag(nil as UUID?); ForEach(destinations) { Text(store.vault.path(of: $0.id)).tag(Optional($0.id)) } }
             } else {
-                TextField(action.kind == .folder ? "文件夹名称" : "名称", text: $name).textFieldStyle(.roundedBorder).onSubmit(submit)
-                if action.kind == .file || action.kind == .folder { Text("位置：" + (action.parentID.map { store.vault.path(of: $0) } ?? "文档库根目录")).font(.caption).foregroundStyle(.secondary) }
+                TextField(action.kind == .folder ? loc("vault.folderName") : loc("vault.nameField"), text: $name).textFieldStyle(.roundedBorder).onSubmit(submit)
+                if action.kind == .file || action.kind == .folder {
+                    Text(locf("vault.location", action.parentID.map { store.vault.path(of: $0) } ?? loc("vault.root"))).font(.caption).foregroundStyle(.secondary)
+                }
             }
             if let error { Text(error).font(.caption).foregroundStyle(.red).textSelection(.enabled) }
-            HStack { Button("取消") { dismiss() }.keyboardShortcut(.cancelAction); Spacer(); Button(action.kind == .delete ? "删除" : action.kind == .move ? "移动" : "保存", role: action.kind == .delete ? .destructive : nil, action: submit).buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction) }
+            HStack {
+                Button(loc("common.cancel")) { dismiss() }.keyboardShortcut(.cancelAction)
+                Spacer()
+                Button(action.kind == .delete ? loc("vault.sheet.delete") : action.kind == .move ? loc("vault.sheet.move") : loc("tool.save"), role: action.kind == .delete ? .destructive : nil, action: submit).buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction)
+            }
         }.padding(24).frame(width: 430)
         .onAppear {
             target = action.entryID.flatMap { store.vault.parent(of: $0) }
             if action.kind == .rename, let id = action.entryID { name = store.vault.name(of: id) ?? "" }
-            else { name = store.vault.uniqueName(action.kind == .folder ? "新建文件夹" : toolID == "json" ? "未命名.json" : "未命名笔记.md", toolID: toolID, parent: action.parentID) }
+            else {
+                let defaultName = action.kind == .folder ? loc("vault.defaultFolder") : toolID == "json" ? loc("vault.default.jsonFile") : loc("vault.default.noteFile")
+                name = store.vault.uniqueName(defaultName, toolID: toolID, parent: action.parentID)
+            }
         }
     }
     private func submit() {

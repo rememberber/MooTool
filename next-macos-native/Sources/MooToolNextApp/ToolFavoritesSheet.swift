@@ -81,7 +81,7 @@ struct ToolFavoritesSheet: View {
             let value = currentValue.trimmingCharacters(in: .whitespacesAndNewlines)
             let name = saveName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? defaultName : saveName
             var item = SavedToolFavorite(kind: kind, folder: loc("favorites.defaultFolder"), name: name, value: value)
-            try item.validate()
+            try item.validate(language: language)
             store.toolFavorites.append(item)
             store.scheduleSave()
         } catch {

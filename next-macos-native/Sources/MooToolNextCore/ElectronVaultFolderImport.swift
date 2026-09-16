@@ -31,13 +31,17 @@ public enum ElectronVaultFolderImport {
     private static let maxFileBytes = 10 * 1024 * 1024
     private static let maxAttachmentBytes = 20 * 1024 * 1024
 
-    public static func preview(quickNoteRoot: URL, jsonRoot: URL) throws -> ElectronVaultFolderImportPreview {
+    public static func preview(
+        quickNoteRoot: URL,
+        jsonRoot: URL,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws -> ElectronVaultFolderImportPreview {
         var warnings: [String] = []
-        let notes = try collectQuickNotes(at: quickNoteRoot, warnings: &warnings)
-        let json = try collectJson(at: jsonRoot, warnings: &warnings)
+        let notes = try collectQuickNotes(at: quickNoteRoot, language: language, warnings: &warnings)
+        let json = try collectJson(at: jsonRoot, language: language, warnings: &warnings)
         let attachments = try countAttachments(at: quickNoteRoot)
         if notes.isEmpty && json.isEmpty && attachments == 0 {
-            warnings.append("未在 Electron 文档库目录中找到可导入的文本或图片文件。")
+            warnings.append(MigrationImportErrors.warning("migration.warning.vaultFolderEmpty", language: language))
         }
         return ElectronVaultFolderImportPreview(
             quickNoteRoot: quickNoteRoot.path,
@@ -48,14 +52,14 @@ public enum ElectronVaultFolderImport {
             warnings: warnings)
     }
 
-    public static func loadQuickNotes(at root: URL) throws -> [ElectronVaultFolderQuickNote] {
+    public static func loadQuickNotes(at root: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> [ElectronVaultFolderQuickNote] {
         var warnings: [String] = []
-        return try collectQuickNotes(at: root, warnings: &warnings)
+        return try collectQuickNotes(at: root, language: language, warnings: &warnings)
     }
 
-    public static func loadJsonItems(at root: URL) throws -> [DocumentImportItem] {
+    public static func loadJsonItems(at root: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> [DocumentImportItem] {
         var warnings: [String] = []
-        return try collectJson(at: root, warnings: &warnings).map { DocumentImportItem(relativePath: $0.relativePath, content: $0.content) }
+        return try collectJson(at: root, language: language, warnings: &warnings).map { DocumentImportItem(relativePath: $0.relativePath, content: $0.content) }
     }
 
     public static func filterNewQuickNotes(_ items: [ElectronVaultFolderQuickNote], existing: [SavedDocument]) -> [ElectronVaultFolderQuickNote] {
@@ -122,7 +126,7 @@ public enum ElectronVaultFolderImport {
         return savedBase.caseInsensitiveCompare(importedBase) == .orderedSame
     }
 
-    private static func collectQuickNotes(at root: URL, warnings: inout [String]) throws -> [ElectronVaultFolderQuickNote] {
+    private static func collectQuickNotes(at root: URL, language: AppLanguage, warnings: inout [String]) throws -> [ElectronVaultFolderQuickNote] {
         guard FileManager.default.fileExists(atPath: root.path) else { return [] }
         let files = try collectTextFiles(at: root, allowedExtensions: quickNoteExtensions, skipDirectoryNames: ["attachments"])
         var totalBytes = 0
@@ -130,7 +134,7 @@ public enum ElectronVaultFolderImport {
         for file in files {
             let bytes = file.content.utf8.count
             guard result.count < 500, bytes <= maxFileBytes, totalBytes + bytes <= 32 * 1024 * 1024 else {
-                warnings.append("随手记磁盘导入达到 500 份或 32 MB 上限，其余文件已跳过。")
+                warnings.append(MigrationImportErrors.warning("migration.warning.quickNoteImportLimit", language: language))
                 break
             }
             totalBytes += bytes
@@ -141,7 +145,7 @@ public enum ElectronVaultFolderImport {
         return result.sorted { $0.relativePath.localizedStandardCompare($1.relativePath) == .orderedAscending }
     }
 
-    private static func collectJson(at root: URL, warnings: inout [String]) throws -> [CollectedFile] {
+    private static func collectJson(at root: URL, language: AppLanguage, warnings: inout [String]) throws -> [CollectedFile] {
         guard FileManager.default.fileExists(atPath: root.path) else { return [] }
         let files = try collectTextFiles(at: root, allowedExtensions: jsonExtensions, skipDirectoryNames: [])
         var totalBytes = 0
@@ -149,7 +153,7 @@ public enum ElectronVaultFolderImport {
         for file in files {
             let bytes = file.content.utf8.count
             guard result.count < 500, bytes <= maxFileBytes, totalBytes + bytes <= 32 * 1024 * 1024 else {
-                warnings.append("JSON 磁盘导入达到 500 份或 32 MB 上限，其余文件已跳过。")
+                warnings.append(MigrationImportErrors.warning("migration.warning.jsonImportLimit", language: language))
                 break
             }
             totalBytes += bytes

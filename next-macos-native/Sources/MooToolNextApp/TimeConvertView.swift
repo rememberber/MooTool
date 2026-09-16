@@ -147,7 +147,7 @@ struct TimeConvertView: View {
 
     private func convertToLocal() {
         do {
-            let result = try TimeConversion.timestampToLocal(draft.input, unit: unit, zone: zone)
+            let result = try TimeConversion.timestampToLocal(draft.input, unit: unit, zone: zone, language: language)
             draft.secondary = result.localTime
             draft.mode = result.unit.rawValue
             draft.error = nil
@@ -160,7 +160,7 @@ struct TimeConvertView: View {
 
     private func convertToTimestamp() {
         do {
-            draft.input = try TimeConversion.localToTimestamp(draft.secondary, unit: unit, zone: zone)
+            draft.input = try TimeConversion.localToTimestamp(draft.secondary, unit: unit, zone: zone, language: language)
             draft.error = nil
             draft.status = locf("timeConvert.statusToTimestamp", unitLabel())
             store.record("timeConvert")
@@ -171,7 +171,7 @@ struct TimeConvertView: View {
 
     private func parseDetail() {
         do {
-            draft.output = try DeveloperServices.timestamp(draft.input, zone: zone)
+            draft.output = try DeveloperServices.timestamp(draft.input, zone: zone, language: language)
             draft.error = nil
             draft.status = loc("timeConvert.statusParsed")
         } catch {

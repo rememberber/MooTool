@@ -43,12 +43,17 @@ public enum ElectronStoreImport {
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
-    public static func preview(at url: URL, knownToolIDs: Set<String>, currentPaneSizes: [String: [Double]] = [:]) throws -> ElectronImportPreview {
-        let loaded = try parseStore(at: url, knownToolIDs: knownToolIDs, currentPaneSizes: currentPaneSizes)
+    public static func preview(
+        at url: URL,
+        knownToolIDs: Set<String>,
+        currentPaneSizes: [String: [Double]] = [:],
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws -> ElectronImportPreview {
+        let loaded = try parseStore(at: url, knownToolIDs: knownToolIDs, currentPaneSizes: currentPaneSizes, language: language)
         var warnings: [String] = []
-        if loaded.hasEncryptedSecrets { warnings.append("Electron 中存在 safeStorage 加密密钥，代理密码等不会导入。") }
+        if loaded.hasEncryptedSecrets { warnings.append(MigrationImportErrors.warning("migration.warning.encryptedSecrets", language: language)) }
         if loaded.patch.customGroups == nil && loaded.patch.hiddenNavigationToolIds == nil && loaded.patch.layoutPaneSizes == nil {
-            warnings.append("未找到可合并的布局或分组数据。")
+            warnings.append(MigrationImportErrors.warning("migration.warning.noLayoutData", language: language))
         }
         return ElectronImportPreview(
             storePath: url.path,
@@ -59,14 +64,22 @@ public enum ElectronStoreImport {
             warnings: warnings)
     }
 
-    public static func loadPatch(at url: URL, knownToolIDs: Set<String>, merging currentPaneSizes: [String: [Double]] = [:]) throws -> ElectronImportPatch {
-        try parseStore(at: url, knownToolIDs: knownToolIDs, currentPaneSizes: currentPaneSizes).patch
+    public static func loadPatch(
+        at url: URL,
+        knownToolIDs: Set<String>,
+        merging currentPaneSizes: [String: [Double]] = [:],
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws -> ElectronImportPatch {
+        try parseStore(at: url, knownToolIDs: knownToolIDs, currentPaneSizes: currentPaneSizes, language: language).patch
     }
 
     /// Resolves Electron on-disk vault folders (`quick-notes`, `json-vault`) from `mootool-next.json`.
-    public static func vaultDirectoryRoots(at storeURL: URL) throws -> (quickNote: URL, json: URL) {
-        let root = try readJSONObject(at: storeURL)
-        guard let settings = root["settings"] as? [String: Any] else { throw ToolError("不是有效的 Electron 工作区文件（缺少 settings）。") }
+    public static func vaultDirectoryRoots(
+        at storeURL: URL,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws -> (quickNote: URL, json: URL) {
+        let root = try readJSONObject(at: storeURL, language: language)
+        guard let settings = root["settings"] as? [String: Any] else { throw MigrationImportErrors.electronMissingSettings(language) }
         let dataDirectory = resolveDataDirectory(settings: settings, storeURL: storeURL)
         let vault = settings["vault"] as? [String: Any] ?? [:]
         let quick = resolveConfiguredDirectory(vault["quickNotePath"], defaultRelativeTo: dataDirectory, fallbackName: "quick-notes")
@@ -99,14 +112,18 @@ public enum ElectronStoreImport {
         return dataDirectory.appendingPathComponent(fallbackName, isDirectory: true).standardizedFileURL
     }
 
-    public static func apply(_ patch: ElectronImportPatch, to snapshot: inout WorkspaceSnapshot) throws {
+    public static func apply(
+        _ patch: ElectronImportPatch,
+        to snapshot: inout WorkspaceSnapshot,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws {
         if let value = patch.showRecent { snapshot.showRecent = value }
         if let value = patch.hideNavigationTitles { snapshot.hideNavigationTitles = value }
         if let value = patch.showNavigationSeparators { snapshot.showNavigationSeparators = value }
         if let value = patch.hiddenNavigationToolIds { snapshot.hiddenNavigationToolIds = value }
         if let value = patch.customGroups { snapshot.customGroups = CustomToolGroupRules.sanitized(value) }
         if let value = patch.layoutPaneSizes { snapshot.layoutPaneSizes = value }
-        _ = try snapshot.validated()
+        _ = try snapshot.validated(language: language)
     }
 
     private struct LoadedStore {
@@ -114,10 +131,15 @@ public enum ElectronStoreImport {
         var hasEncryptedSecrets: Bool
     }
 
-    private static func parseStore(at url: URL, knownToolIDs: Set<String>, currentPaneSizes: [String: [Double]]) throws -> LoadedStore {
-        let root = try readJSONObject(at: url)
+    private static func parseStore(
+        at url: URL,
+        knownToolIDs: Set<String>,
+        currentPaneSizes: [String: [Double]],
+        language: AppLanguage
+    ) throws -> LoadedStore {
+        let root = try readJSONObject(at: url, language: language)
         let hasEncryptedSecrets = encryptedSecrets(in: root)
-        guard let settings = root["settings"] as? [String: Any] else { throw ToolError("不是有效的 Electron 工作区文件（缺少 settings）。") }
+        guard let settings = root["settings"] as? [String: Any] else { throw MigrationImportErrors.electronMissingSettings(language) }
         let layout = settings["layout"] as? [String: Any] ?? [:]
         let network = settings["network"] as? [String: Any] ?? [:]
         let editor = settings["editor"] as? [String: Any] ?? [:]
@@ -166,10 +188,10 @@ public enum ElectronStoreImport {
         return LoadedStore(patch: patch, hasEncryptedSecrets: hasEncryptedSecrets)
     }
 
-    private static func readJSONObject(at url: URL) throws -> [String: Any] {
+    private static func readJSONObject(at url: URL, language: AppLanguage) throws -> [String: Any] {
         let data = try Data(contentsOf: url)
         guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw ToolError("无法解析 Electron 工作区 JSON。")
+            throw MigrationImportErrors.electronParseJson(language)
         }
         return root
     }
