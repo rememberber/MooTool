@@ -22,11 +22,13 @@ struct MessageBoardTool: View {
         let textAlignment: TextAlignment = options.alignment == "left" ? .leading : .center
         ToolPage(tool: Catalog.tool("messageBoard"), draft: draft) {
             Menu(loc("messageBoard.presets")) {
-                ForEach(MessageBoardThemes.presets, id: \.title) { preset in
-                    Button(preset.title) {
-                        draft.input = preset.message
+                ForEach(MessageBoardThemes.presets) { preset in
+                    Button {
+                        draft.input = loc("messageBoard.preset.\(preset.id)")
                         board.wrappedValue.backgroundHex = preset.backgroundHex
                         board.wrappedValue.foregroundHex = preset.foregroundHex
+                    } label: {
+                        Text(loc("messageBoard.preset.\(preset.id)"))
                     }
                 }
             }
@@ -63,7 +65,7 @@ struct MessageBoardTool: View {
         }
         .onAppear {
             if draft.messageBoard == nil { draft.messageBoard = MessageBoardOptions() }
-            if draft.input.isEmpty { draft.input = "马上回来" }
+            if draft.input.isEmpty { draft.input = loc("messageBoard.preset.away") }
         }
         .onDisappear { presenter.dismiss() }
     }

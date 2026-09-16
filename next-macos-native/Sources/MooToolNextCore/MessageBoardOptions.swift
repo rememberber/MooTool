@@ -16,13 +16,27 @@ public struct MessageBoardOptions: Codable, Equatable {
     }
 }
 
+public struct MessageBoardPreset: Identifiable, Equatable {
+    public let id: String
+    public let backgroundHex: String
+    public let foregroundHex: String
+    public init(id: String, backgroundHex: String, foregroundHex: String) {
+        self.id = id
+        self.backgroundHex = backgroundHex
+        self.foregroundHex = foregroundHex
+    }
+}
+
 public enum MessageBoardThemes {
-    public static let presets: [(title: String, message: String, backgroundHex: String, foregroundHex: String)] = [
-        ("离开一会", "马上回来", "F4CE57", "183832"),
-        ("暂停营业", "暂停营业", "F36B55", "FFF7EC"),
-        ("休息中", "休息中，请稍候", "EFE9DC", "29241F"),
-        ("请勿打扰", "请勿打扰", "3459D4", "F3F5FF"),
-        ("正在开会", "正在开会", "0F4A3A", "E8F0C2"),
-        ("保持安静", "保持安静", "151821", "E8F0FF"),
+    /// Preset ids match Electron `messageBoard.preset.*` keys (sunbeam … midnight themes).
+    public static let presets: [MessageBoardPreset] = [
+        MessageBoardPreset(id: "away", backgroundHex: "F4CE57", foregroundHex: "183832"),
+        MessageBoardPreset(id: "closed", backgroundHex: "F36B55", foregroundHex: "FFF7EC"),
+        MessageBoardPreset(id: "rest", backgroundHex: "EFE9DC", foregroundHex: "29241F"),
+        MessageBoardPreset(id: "busy", backgroundHex: "3459D4", foregroundHex: "F3F5FF"),
+        MessageBoardPreset(id: "meeting", backgroundHex: "0F4A3A", foregroundHex: "E8F0C2"),
+        MessageBoardPreset(id: "quiet", backgroundHex: "151821", foregroundHex: "E8F0FF"),
+        MessageBoardPreset(id: "maintenance", backgroundHex: "3459D4", foregroundHex: "F3F5FF"),
+        MessageBoardPreset(id: "call", backgroundHex: "0F4A3A", foregroundHex: "E8F0C2"),
     ]
 }
