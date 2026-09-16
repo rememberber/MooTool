@@ -314,12 +314,22 @@ public struct CronFieldDraft: Equatable {
         guard parts.count == 6 || parts.count == 7 else { throw ToolError("Quartz 表达式需为 6 或 7 段。") }
         return CronFieldDraft(second: parts[0], minute: parts[1], hour: parts[2], day: parts[3], month: parts[4], week: parts[5], year: parts.count == 7 ? parts[6] : "")
     }
-    public static let presets: [(String, String)] = [
-        ("每分钟", "0 * * * * ?"),
-        ("每小时", "0 0 * * * ?"),
-        ("每天零点", "0 0 0 * * ?"),
-        ("工作日 9:00", "0 0 9 ? * MON-FRI"),
-        ("每月最后一天", "0 0 0 L * ?"),
-        ("每月第一个周五 9:00", "0 0 9 ? * FRI#1")
+    public struct Preset: Identifiable, Equatable {
+        public let id: String
+        public let expression: String
+        public init(id: String, expression: String) {
+            self.id = id
+            self.expression = expression
+        }
+    }
+
+    /// Preset ids align with Electron `cron.everyMinute` … `cron.weekdays`; native adds `lastDayOfMonth` and `firstFriday9`.
+    public static let presets: [Preset] = [
+        Preset(id: "everyMinute", expression: "0 * * * * ?"),
+        Preset(id: "everyHour", expression: "0 0 * * * ?"),
+        Preset(id: "everyDay", expression: "0 0 0 * * ?"),
+        Preset(id: "weekdays", expression: "0 0 9 ? * MON-FRI"),
+        Preset(id: "lastDayOfMonth", expression: "0 0 0 L * ?"),
+        Preset(id: "firstFriday9", expression: "0 0 9 ? * FRI#1"),
     ]
 }

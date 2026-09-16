@@ -114,10 +114,11 @@ struct HomeView: View {
         HomePerson(title: "sunsence", url: "https://github.com/sunsence"),
         HomePerson(title: "rememberber", url: "https://github.com/rememberber")
     ]
-    private let works: [(String, String, String)] = [
-        ("WePush", "微信消息推送与定时提醒", "https://github.com/rememberber/WePush"),
-        ("MooInfo", "系统与硬件信息速览", "https://github.com/rememberber/MooInfo")
+    private let works: [(title: String, descKey: String, url: String)] = [
+        ("WePush", "home.work.wepush.desc", "https://github.com/rememberber/WePush"),
+        ("MooInfo", "home.work.mooinfo.desc", "https://github.com/rememberber/MooInfo")
     ]
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 30) {
@@ -156,14 +157,14 @@ struct HomeView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Link("GitHub ↗", destination: URL(string: "https://github.com/rememberber/MooTool")!)
                         Link("Gitee ↗", destination: URL(string: "https://gitee.com/zhoubochina/MooTool")!)
-                        Link("提交问题 ↗", destination: URL(string: "https://github.com/rememberber/MooTool/issues")!)
+                        Link("\(loc("home.link.reportIssue")) ↗", destination: URL(string: "https://github.com/rememberber/MooTool/issues")!)
                     }
                 }
                 homeSection(AppLocalization.string("home.section.otherWorks", language: language)) {
                     VStack(alignment: .leading, spacing: 8) {
-                        ForEach(works, id: \.0) { work in
-                            Link("\(work.0) ↗", destination: URL(string: work.2)!)
-                            Text(work.1).font(.caption).foregroundStyle(.secondary)
+                        ForEach(works, id: \.title) { work in
+                            Link("\(work.title) ↗", destination: URL(string: work.url)!)
+                            Text(loc(work.descKey)).font(.caption).foregroundStyle(.secondary)
                         }
                     }
                 }

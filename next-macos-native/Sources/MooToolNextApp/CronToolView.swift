@@ -8,15 +8,18 @@ struct CronToolView: View {
     @State private var fields = CronFieldDraft()
     @State private var favoritesOpen = false
     private let zones = Array(Set([TimeZone.current.identifier, "UTC", "Asia/Shanghai", "Asia/Tokyo", "Europe/London", "America/New_York"])).sorted()
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
     var body: some View {
         ToolPage(tool: Catalog.tool("cron"), draft: draft) {
-            PrimaryButton(title: AppLocalization.string("tool.parse", language: language), symbol: "play.fill") { parse() }
-            Menu("常用表达式") {
-                ForEach(CronFieldDraft.presets, id: \.1) { preset in
-                    Button(preset.0) { apply(preset.1) }
+            PrimaryButton(title: loc("cron.parse"), symbol: "play.fill") { parse() }
+            Menu(loc("cron.preset")) {
+                ForEach(CronFieldDraft.presets) { preset in
+                    Button { apply(preset.expression) } label: {
+                        Text(loc("cron.preset.\(preset.id)"))
+                    }
                 }
             }
-            Picker("时区", selection: Binding(get: { draft.option.isEmpty ? TimeZone.current.identifier : draft.option }, set: { draft.option = $0 })) {
+            Picker(loc("cron.timezone"), selection: Binding(get: { draft.option.isEmpty ? TimeZone.current.identifier : draft.option }, set: { draft.option = $0 })) {
                 ForEach(zones, id: \.self) { Text($0) }
             }.frame(width: 220)
             Button(AppLocalization.string("tool.example", language: language)) { apply("0 */15 * * * ?") }
@@ -26,25 +29,25 @@ struct CronToolView: View {
         } content: {
             PersistedHSplit(toolID: "cron", defaultLeading: 320, minLeading: 260, maxLeading: 520) {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("表达式构建").font(.headline)
-                    grid("秒", $fields.second)
-                    grid("分", $fields.minute)
-                    grid("时", $fields.hour)
-                    grid("日", $fields.day)
-                    grid("月", $fields.month)
-                    grid("周", $fields.week)
-                    grid("年（可选）", $fields.year)
-                    Text("与 Electron 相同：六段 Quartz 使用 ? 分隔「日」与「周」。").font(.caption).foregroundStyle(.secondary)
+                    Text(loc("cron.builder")).font(.headline)
+                    grid(loc("cron.second"), $fields.second)
+                    grid(loc("cron.minute"), $fields.minute)
+                    grid(loc("cron.hour"), $fields.hour)
+                    grid(loc("cron.day"), $fields.day)
+                    grid(loc("cron.month"), $fields.month)
+                    grid(loc("cron.week"), $fields.week)
+                    grid(loc("cron.year"), $fields.year)
+                    Text(loc("cron.builderHint")).font(.caption).foregroundStyle(.secondary)
                 }.padding()
             } trailing: {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Cron 表达式").font(.headline)
+                    Text(loc("cron.expression")).font(.headline)
                     TextField("0 0 9 ? * MON-FRI", text: $draft.input).textFieldStyle(.roundedBorder).font(.system(.body, design: .monospaced))
                         .onChange(of: draft.input) { _, value in syncFields(from: value) }
                     if let description = CronExpression.describe(draft.input) {
-                        Text("说明：\(description)").font(.callout).foregroundStyle(.secondary)
+                        Text(humanSummary(description)).font(.callout).foregroundStyle(.secondary)
                     }
-                    EditorPane(title: "下 10 次执行时间", text: $draft.output, editable: false)
+                    EditorPane(title: loc("cron.nextRuns"), text: $draft.output, editable: false)
                 }.padding()
             }
         }.onAppear {
@@ -75,17 +78,24 @@ struct CronToolView: View {
         syncFields(from: expression)
         parse()
     }
+    private func humanSummary(_ description: String) -> String {
+        let sep = language == .enUS ? ": " : "："
+        return loc("cron.humanReadable") + sep + description
+    }
     private func parse() {
+        let lang = language
         store.run("cron") { d in
             let zone = TimeZone(identifier: d.option) ?? .current
             let runs = try CronExpression(d.input).next(after: Date(), count: 10, timeZone: zone)
             let formatter = DateFormatter()
-            formatter.locale = Locale(identifier: "zh_CN")
+            formatter.locale = lang.locale
             formatter.timeZone = zone
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss ZZZZ"
             let lines = runs.enumerated().map { "\($0.offset + 1).  \(formatter.string(from: $0.element))" }.joined(separator: "\n")
             if let description = CronExpression.describe(d.input) {
-                return "说明：\(description)\n\n\(lines)"
+                let sep = lang == .enUS ? ": " : "："
+                let summary = AppLocalization.string("cron.humanReadable", language: lang) + sep + description
+                return "\(summary)\n\n\(lines)"
             }
             return lines
         }
