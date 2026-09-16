@@ -2,6 +2,7 @@ package com.rememberber.mootool.next.compose.app
 
 import com.rememberber.mootool.next.compose.model.ToolGroupId
 import com.rememberber.mootool.next.compose.model.ToolId
+import com.rememberber.mootool.next.compose.model.ToolStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -12,6 +13,7 @@ class ToolRegistryTest {
         assertEquals(26, ToolRegistry.tools.size)
         assertEquals(ToolId.ordered, ToolRegistry.tools.map { it.id })
         assertEquals(6, ToolRegistry.groups.size)
+        assertTrue(ToolRegistry.tools.all { it.status == ToolStatus.Available })
         assertTrue(ToolRegistry.byId.getValue(ToolId.Json).status.name == "Available")
         assertTrue(ToolRegistry.byId.getValue(ToolId.TimeConvert).status.name == "Available")
         assertTrue(ToolRegistry.byId.getValue(ToolId.Calculator).status.name == "Available")

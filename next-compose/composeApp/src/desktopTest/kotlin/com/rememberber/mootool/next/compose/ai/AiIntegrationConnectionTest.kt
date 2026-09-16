@@ -43,8 +43,11 @@ class AiIntegrationConnectionTest {
             }
             val result = service.testConnection()
             assertEquals("MooTool", result.serverName)
-            assertTrue(MooToolMcpTools.toolNames().all { result.tools.contains(it) })
-            assertTrue(VaultMcpTools.toolNames.all { result.tools.contains(it) })
+            assertEquals(11, result.tools.size)
+            assertEquals(
+                MooToolMcpTools.toolNames().toSet() + VaultMcpTools.toolNames.toSet(),
+                result.tools.toSet(),
+            )
         } finally {
             productRoot.toFile().deleteRecursively()
             clientHome.toFile().deleteRecursively()

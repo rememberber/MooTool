@@ -78,7 +78,7 @@ object ToolRegistry {
         titleKey: String,
         glyph: String,
         keywords: List<String>,
-        status: ToolStatus = if (id == ToolId.Mootool) ToolStatus.Available else ToolStatus.NotImplemented
+        status: ToolStatus = ToolStatus.Available
     ): ToolDefinition {
         val history = id != ToolId.Mootool && id != ToolId.Hardware && id != ToolId.MessageBoard && id != ToolId.Variables && id != ToolId.Translation
         val favorites = id == ToolId.Regex || id == ToolId.Cron || id == ToolId.ColorBoard
