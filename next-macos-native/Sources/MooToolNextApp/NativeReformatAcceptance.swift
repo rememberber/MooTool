@@ -45,7 +45,7 @@ import MooToolNextCore
         guard try store.repository.load().drafts["reformat"]?.reformat == draft.reformat else { throw ToolError("格式化验收：文件工作区未持久化。") }
     }
     private static func finish(_ draft: ToolDraft, _ window: NSWindow) async throws {
-        for _ in 0..<100 {
+        for _ in 0..<150 {
             try await Task.sleep(for: .milliseconds(100))
             if !draft.busy { try await settle(window); return }
         }

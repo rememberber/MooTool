@@ -62,7 +62,7 @@ public enum ReformatEngine {
         var request = JSONEngineRequest("reformat", input: input)
         request.path = type.rawValue; request.indent = indent
         request.language = language.rawValue
-        return try await JSONEngine.execute(request).value ?? ""
+        return try await JSONEngine.execute(request, timeout: 10).value ?? ""
     }
     public static func readFile(_ file: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> String {
         let values = try file.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
