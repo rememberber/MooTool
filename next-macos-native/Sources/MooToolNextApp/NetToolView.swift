@@ -82,7 +82,7 @@ struct NetToolView: View {
         draft.busy = true; draft.error = nil
         Task {
             defer { draft.busy = false }
-            do { draft.output = try await operation(); draft.status = "已完成"; store.record("net") }
+            do { draft.output = try await operation(); draft.status = AppLocalization.string("tool.status.done", language: language); store.record("net") }
             catch { draft.error = error.localizedDescription }
         }
     }
@@ -91,7 +91,7 @@ struct NetToolView: View {
         draft.busy = true; draft.error = nil
         Task {
             defer { draft.busy = false }
-            do { draft.output = try operation(); draft.status = "已完成"; store.record("net") }
+            do { draft.output = try operation(); draft.status = AppLocalization.string("tool.status.done", language: language); store.record("net") }
             catch { draft.error = error.localizedDescription }
         }
     }

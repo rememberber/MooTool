@@ -16,7 +16,7 @@
 | Protobuf | Hex/Base64 wire 解码，varint/fixed32/fixed64/length-delimited、UTF-8 检查 | `.proto` schema、按 schema 编码、嵌套类型推断；不支持废弃 group wire 类型 |
 | 环境变量 | 查看进程环境、`.env` 草稿、导出、传给代码运行 | 不写入 shell profile、launchd 或其他应用环境 |
 | HTTP | cURL 导入/导出；方法、URL、启用/禁用查询参数和 Cookie；原始/JSON/URL 编码表单与 **multipart/form-data**（文本字段 + 本地文件，单文件/总正文 10 MB）；集合分组、搜索、保存/替换/删除；正文/响应头/Cookie 分栏（最终响应 `Set-Cookie` 含 Domain/Path/Expires）；JSON 显示格式化；超时、重定向、跨工具切换取消；临时 URLSession；**设置中的 HTTP 代理**（主机/端口/可选认证）；请求/正文类型、参数与 Cookie 表单、multipart 编辑器、cURL 导入与请求集合弹窗支持三语 | 完整 cURL 选项、Cookie 文件、SOCKS/系统代理；GET/HEAD 不附正文；响应上限 10 MB；NetworkServices 错误信息仍为系统或中文 |
-| Host | 与 Electron 相同的配置列表 + 编辑器分栏（`host-workspace`）；读取 `/etc/hosts`、IP/映射校验、多配置保存/搜索、导出独立文件；配置写入 `workspace.json`；菜单栏托盘可切换已保存配置；SQLite `t_host` 可合并导入 | 不执行管理员提权覆盖系统 Hosts |
+| Host | 与 Electron 相同的配置列表 + 编辑器分栏（`host-workspace`）；读取 `/etc/hosts`、IP/映射校验、多配置保存/搜索、导出独立文件；配置写入 `workspace.json`；菜单栏托盘可切换已保存配置；SQLite `t_host` 可合并导入；侧栏搜索、空状态、编辑器标题与保存/读取状态支持三语 | 不执行管理员提权覆盖系统 Hosts；校验错误信息仍为中文 |
 | 网络工具 | DNS（dig）、Ping、Whois、ifconfig/netstat、DNS 缓存刷新、主机解析、IPv4↔Long、/24 IP 段 Ping 探测、TCP 端口扫描（常见端口或自定义）、本机地址列表 | 与 Electron 相同的并发/取消细粒度控制；Windows/Linux 命令差异不适用本产品线 |
 | UA 解析 | Safari、Chrome、Edge、Firefox、Opera；常见 OS/设备规则 | 未集成完整 UA 数据库；伪装或罕见 UA 可能识别不准确 |
 | 编码转换 | UTF-8 Base64、Base32、URL component、Hex、Unicode UTF-16 转义、常用 HTML 实体 | 其他字符集、完整 HTML 命名实体库 |
@@ -28,7 +28,7 @@
 | 留言板 | 预设文案（含主题色）、字号、左/居中对齐、前景/背景、草稿持久化、自适应预览、独立全屏窗口、Esc 退出、展示时阻止显示器休眠；工具栏与编辑区主控件支持三语；8 条常用留言预设与 Electron `messageBoard.preset.*` 对齐且三语 | 与 Electron 一致的完整主题面板、字号百分比自适应算法与入场动画 |
 | 翻译 | 与 Electron 相同的「翻译 / 词库 / 历史」标签；macOS 15+ 系统 Translation、分栏原文/译文（`translation`）与词库分栏（`translation-words`）；词条写入 `workspace.json`；系统词典入口；SQLite 词条/历史可合并导入 | 第三方翻译供应商；macOS 14 无系统 Translation，仍可使用词库/历史与词典 |
 | 计算器 | 运算优先级、幂、科学计数、常用函数、常量、64 位进制转换 | 任意精度、单位换算；三角函数使用弧度 |
-| 调色板 | 系统 ColorPicker、屏幕取色、HEX/RGB/HSL/SwiftUI；颜色/正则/Cron **收藏**（`toolFavorites`，与 Electron 收藏夹语义一致）；工具栏与结果栏主控件及 HEX 校验提示支持三语 | 全部色彩空间和 Electron 的配色功能；收藏夹分组 UI 较简；颜色值输出块标签仍为英文 |
+| 调色板 | 系统 ColorPicker、屏幕取色、HEX/RGB/HSL/SwiftUI；颜色/正则/Cron **收藏**（`toolFavorites`，与 Electron 收藏夹语义一致）；工具栏与结果栏主控件及 HEX 校验提示支持三语；收藏弹窗标题与操作支持三语 | 全部色彩空间和 Electron 的配色功能；收藏夹分组 UI 较简；颜色值输出块标签仍为英文 |
 | 图片工具 | 拖放、预览、可拖动分栏（预览 / 导出选项）、比例缩放、PNG/JPEG/TIFF、JPEG 质量、文字水印、系统截图；工具栏与导出侧栏主控件支持三语；分栏宽度写入 `workspace.json`；加载/导出/截图常见错误提示三语 | 批处理、多图库列表、矢量化、复杂编辑；导出新位图，不保留原 EXIF/色彩配置/动画帧 |
 | PDF | PDFKit 预览、多文件排序合并、页码提取、文本提取和导出；工具栏与列表面板主控件支持三语；加载/页码/导出常见错误提示三语 | OCR、密码处理、复杂压缩/水印；重建页面不保留原文档的书签和签名 |
 | 系统信息 | OS、CPU 核数、内存、运行时间、磁盘、system_profiler 详细信息；刷新/详细报告按钮与输出区标题支持三语 | 持续传感器监控和 Electron 全部硬件指标；system_profiler 与摘要字段标签仍为英文/中文混排 |

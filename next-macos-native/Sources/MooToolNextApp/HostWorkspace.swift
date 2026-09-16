@@ -9,6 +9,8 @@ struct HostWorkspace: View {
     @State private var profileName = ""
     @State private var search = ""
 
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+
     private var filtered: [SavedHostProfile] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return store.hostProfiles }
@@ -28,7 +30,7 @@ struct HostWorkspace: View {
         } content: {
             PersistedHSplit(toolID: "host", defaultLeading: 220, minLeading: 170, maxLeading: 360) {
                 VStack(alignment: .leading, spacing: 8) {
-                    TextField("搜索配置", text: $search).textFieldStyle(.roundedBorder)
+                    TextField(loc("host.search"), text: $search).textFieldStyle(.roundedBorder)
                     List {
                         ForEach(filtered) { profile in
                             Button {
@@ -44,13 +46,13 @@ struct HostWorkspace: View {
                         }
                     }.listStyle(.inset)
                     if store.hostProfiles.isEmpty {
-                        Text("暂无保存的配置，可新建或从设置迁移导入。").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 8)
+                        Text(loc("host.emptyHint")).font(.caption).foregroundStyle(.secondary).padding(.horizontal, 8)
                     }
                 }
             } trailing: {
                 VStack(alignment: .leading, spacing: 10) {
-                    TextField("配置名称", text: $profileName).textFieldStyle(.roundedBorder)
-                    EditorPane(title: "Hosts 内容", text: $draft.input)
+                    TextField(loc("host.profileName"), text: $profileName).textFieldStyle(.roundedBorder)
+                    EditorPane(title: loc("host.content"), text: $draft.input)
                 }
             }
         }
@@ -82,7 +84,7 @@ struct HostWorkspace: View {
     }
 
     private func createProfile() {
-        let profile = SavedHostProfile(name: "新配置", content: "127.0.0.1 localhost\n")
+        let profile = SavedHostProfile(name: loc("host.defaultProfileName"), content: "127.0.0.1 localhost\n")
         store.hostProfiles.append(profile)
         selectedID = profile.id
         profileName = profile.name
@@ -95,13 +97,13 @@ struct HostWorkspace: View {
         guard let id = selectedID, let index = store.hostProfiles.firstIndex(where: { $0.id == id }) else { return }
         do {
             var profile = store.hostProfiles[index]
-            profile.name = profileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "未命名" : profileName
+            profile.name = profileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? loc("host.unnamedProfile") : profileName
             profile.content = draft.input
             profile.modified = Date()
             try profile.validate()
             store.hostProfiles[index] = profile
             profileName = profile.name
-            draft.status = "已保存配置"
+            draft.status = loc("host.status.saved")
             store.scheduleSave()
         } catch {
             draft.error = error.localizedDescription
@@ -111,7 +113,7 @@ struct HostWorkspace: View {
     private func readSystemHosts() {
         do {
             draft.input = try String(contentsOfFile: "/etc/hosts", encoding: .utf8)
-            draft.status = "已读取 /etc/hosts，可编辑后导出或保存为配置。"
+            draft.status = loc("host.status.readSystem")
             draft.error = nil
         } catch {
             draft.error = error.localizedDescription

@@ -6,9 +6,15 @@ struct ToolFavoritesSheet: View {
     let currentValue: String
     let onApply: (String) -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.appLanguage) private var language
     @Environment(AppStore.self) private var store
     @State private var search = ""
     @State private var saveName = ""
+
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+    private func locf(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: AppLocalization.string(key, language: language), arguments: arguments)
+    }
 
     private var items: [SavedToolFavorite] {
         let all = store.toolFavorites.filter { $0.kind == kind }
@@ -26,12 +32,12 @@ struct ToolFavoritesSheet: View {
             HStack {
                 Text(favoriteTitle).font(.title2)
                 Spacer()
-                Button("完成") { dismiss() }
+                Button(loc("common.done")) { dismiss() }
             }
-            TextField("搜索收藏", text: $search).textFieldStyle(.roundedBorder)
+            TextField(loc("favorites.search"), text: $search).textFieldStyle(.roundedBorder)
             HStack {
-                TextField("保存名称", text: $saveName).textFieldStyle(.roundedBorder)
-                Button("保存当前") { saveCurrent() }.disabled(currentValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                TextField(loc("favorites.saveName"), text: $saveName).textFieldStyle(.roundedBorder)
+                Button(loc("favorites.saveCurrent")) { saveCurrent() }.disabled(currentValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             List {
                 ForEach(items) { item in
@@ -42,13 +48,13 @@ struct ToolFavoritesSheet: View {
                             Text(item.value).font(.caption.monospaced()).lineLimit(2)
                         }
                         Spacer()
-                        Button("使用") { onApply(item.value); dismiss() }
+                        Button(loc("favorites.use")) { onApply(item.value); dismiss() }
                         Button(role: .destructive) { delete(item) } label: { Image(systemName: "trash") }
                     }.padding(.vertical, 4)
                 }
             }
             if items.isEmpty {
-                Text("暂无收藏，可保存当前内容或从迁移导入。").font(.caption).foregroundStyle(.secondary)
+                Text(loc("favorites.empty")).font(.caption).foregroundStyle(.secondary)
             }
         }.padding(20).frame(width: 560, height: 480)
         .onAppear { if saveName.isEmpty { saveName = defaultName } }
@@ -56,15 +62,17 @@ struct ToolFavoritesSheet: View {
 
     private var favoriteTitle: String {
         switch kind {
-        case .color: return "颜色收藏"
-        case .regex: return "正则收藏"
-        case .cron: return "Cron 收藏"
+        case .color: return loc("favorites.color")
+        case .regex: return loc("favorites.regex")
+        case .cron: return loc("favorites.cron")
         }
     }
 
     private var defaultName: String {
         let trimmed = currentValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return "收藏 \(store.toolFavorites.filter { $0.kind == kind }.count + 1)" }
+        if trimmed.isEmpty {
+            return locf("favorites.numberedName", store.toolFavorites.filter { $0.kind == kind }.count + 1)
+        }
         return String(trimmed.prefix(40))
     }
 
@@ -72,7 +80,7 @@ struct ToolFavoritesSheet: View {
         do {
             let value = currentValue.trimmingCharacters(in: .whitespacesAndNewlines)
             let name = saveName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? defaultName : saveName
-            var item = SavedToolFavorite(kind: kind, folder: "默认收藏夹", name: name, value: value)
+            var item = SavedToolFavorite(kind: kind, folder: loc("favorites.defaultFolder"), name: name, value: value)
             try item.validate()
             store.toolFavorites.append(item)
             store.scheduleSave()

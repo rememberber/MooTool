@@ -300,12 +300,17 @@ final class AppStore {
     func run(_ id: String, operation: @escaping (DraftRecord) throws -> String) {
         let draft = draft(id); guard !draft.busy else { return }
         let value = draft.record
-        guard value.input.utf8.count + value.secondary.utf8.count <= 10 * 1024 * 1024 else { draft.error = "输入总大小超过 10 MB。"; return }
+        let language = AppLanguage.normalized(nativeDefaults.string(forKey: "general.language"))
+        guard value.input.utf8.count + value.secondary.utf8.count <= 10 * 1024 * 1024 else {
+            draft.error = AppLocalization.string("tool.inputTooLarge", language: language)
+            return
+        }
         draft.busy = true; draft.error = nil
         Task {
             do {
                 let result = try await Task.detached(priority: .userInitiated) { try operation(value) }.value
-                if draft.documentID == value.documentID { draft.output = result; draft.status = "已完成 · \(result.count) 字符" }
+                let status = String(format: AppLocalization.string("tool.status.doneChars", language: language), result.count)
+                if draft.documentID == value.documentID { draft.output = result; draft.status = status }
                 else if let documentID = value.documentID, let index = documents.firstIndex(where: { $0.id == documentID && $0.toolID == id }) { documents[index].output = result; scheduleSave() }
                 var completed = value; completed.output = result; record(id, snapshot: completed)
             } catch { if draft.documentID == value.documentID { draft.error = error.localizedDescription } }
