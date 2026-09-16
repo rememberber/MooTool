@@ -13,6 +13,8 @@ struct TranslationWordBook: View {
     @State private var targetLang = "zh-Hans"
     @State private var remark = ""
 
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+
     private var filtered: [SavedTranslationWord] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return store.translationWords }
@@ -26,7 +28,7 @@ struct TranslationWordBook: View {
     var body: some View {
         PersistedHSplit(toolID: "translation-words", defaultLeading: 220, minLeading: 170, maxLeading: 360) {
             VStack(alignment: .leading, spacing: 8) {
-                TextField("搜索词条", text: $search).textFieldStyle(.roundedBorder)
+                TextField(loc("translation.searchWords"), text: $search).textFieldStyle(.roundedBorder)
                 List {
                     ForEach(filtered) { word in
                         Button {
@@ -44,8 +46,8 @@ struct TranslationWordBook: View {
         } trailing: {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    TextField("源语言", text: $sourceLang).textFieldStyle(.roundedBorder).frame(width: 100)
-                    TextField("目标语言", text: $targetLang).textFieldStyle(.roundedBorder).frame(width: 100)
+                    TextField(loc("translation.sourceLanguage"), text: $sourceLang).textFieldStyle(.roundedBorder).frame(width: 100)
+                    TextField(loc("translation.targetLanguage"), text: $targetLang).textFieldStyle(.roundedBorder).frame(width: 100)
                     Spacer()
                     Button(AppLocalization.string("tool.new", language: language)) { createWord() }
                     Button(AppLocalization.string("tool.save", language: language)) { saveWord() }.disabled(selectedID == nil && sourceText.isEmpty)
@@ -54,7 +56,7 @@ struct TranslationWordBook: View {
                 }.font(.caption)
                 EditorPane(title: AppLocalization.string("translation.source", language: language), text: $sourceText)
                 EditorPane(title: AppLocalization.string("translation.target", language: language), text: $targetText)
-                TextField("备注", text: $remark).textFieldStyle(.roundedBorder)
+                TextField(loc("translation.remark"), text: $remark).textFieldStyle(.roundedBorder)
             }
         }
         .onAppear { bootstrap() }
@@ -114,13 +116,15 @@ struct TranslationWordBook: View {
         draft.output = targetText
         draft.mode = targetLang
         draft.option = sourceLang
-        draft.status = "已从词库填入"
+        draft.status = loc("translation.status.fromWordBook")
     }
 }
 
 struct TranslationHistoryPane: View {
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @Bindable var draft: ToolDraft
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
     private var items: [HistoryRecord] { store.history.filter { $0.toolID == "translation" } }
 
     var body: some View {
@@ -130,7 +134,7 @@ struct TranslationHistoryPane: View {
                 draft.output = item.draft.output
                 draft.mode = item.draft.mode
                 draft.option = item.draft.option
-                draft.status = "已从历史恢复"
+                draft.status = loc("translation.status.fromHistory")
             } label: {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.draft.input).lineLimit(2)
@@ -140,7 +144,7 @@ struct TranslationHistoryPane: View {
             }.buttonStyle(.plain)
         }.overlay {
             if items.isEmpty {
-                ContentUnavailableView("暂无翻译历史", systemImage: "clock", description: Text("翻译后会自动记录，也可从迁移导入。"))
+                ContentUnavailableView(loc("translation.history.emptyTitle"), systemImage: "clock", description: Text(loc("translation.history.emptyDescription")))
             }
         }
     }
