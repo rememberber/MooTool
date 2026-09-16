@@ -4,6 +4,7 @@ import MooToolNextCore
 
 struct MigrationSettingsPanel: View {
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @AppStorage("appearance", store: nativeDefaults) private var appearance = "system"
     @AppStorage("editorSize", store: nativeDefaults) private var editorSize = 13.0
     @AppStorage("wrapLines", store: nativeDefaults) private var wrapLines = true
@@ -55,14 +56,14 @@ struct MigrationSettingsPanel: View {
             Text("从 next Electron 的 `mootool-next.json` 合并工作台布局、HTTP 代理、编辑器与文档库 Git 设置；并可从 Electron 磁盘目录 `quick-notes` / `json-vault` 导入文档与 `attachments/` 图片。SQLite 可合并 HTTP/Host/翻译/历史/草稿及表内文档正文；不含加密密钥。")
                 .font(.caption).foregroundStyle(.secondary).padding(.vertical, 4)
             HStack {
-                TextField("Electron 数据文件", text: $storePath)
-                Button("选择…") { chooseFile() }
+                TextField(AppLocalization.string("migration.electronStorePath", language: language), text: $storePath)
+                Button(AppLocalization.string("migration.choose", language: language)) { chooseFile() }
             }
             HStack {
-                Button("扫描") { scan() }.disabled(busy || storePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                Button("导入布局与代理…") { confirmImport = true }
+                Button(AppLocalization.string("migration.scan", language: language)) { scan() }.disabled(busy || storePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Button(AppLocalization.string("migration.importLayout", language: language)) { confirmImport = true }
                     .disabled(busy || preview == nil)
-                Button("导入磁盘文档库…") { confirmVaultFolderImport = true }
+                Button(AppLocalization.string("migration.importVaultDisk", language: language)) { confirmVaultFolderImport = true }
                     .disabled(busy || vaultFolderPreview == nil || vaultFolderImportableCount == 0)
             }
             if busy { ProgressView().controlSize(.small) }
@@ -81,7 +82,7 @@ struct MigrationSettingsPanel: View {
                 ForEach(vaultFolderPreview.warnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
             }
             Divider()
-            Section("Java 版数据") {
+            Section(AppLocalization.string("migration.section.java", language: language)) {
                 let root = LegacyJavaDataPaths.defaultDirectory
                 LabeledContent("默认目录", value: root.path)
                 if LegacyJavaDataPaths.hasLegacyInstall(at: root) {
@@ -90,8 +91,8 @@ struct MigrationSettingsPanel: View {
                     Text("未在默认目录找到 Java 版数据库。若数据在其他位置，请用 Compose 迁移或手动复制文件到文档库。").font(.caption).foregroundStyle(.secondary)
                 }
                 HStack {
-                    Button("扫描磁盘文档库") { scanJavaVaultFolders() }
-                    Button("导入 Java 磁盘文档库…") { confirmJavaVaultFolderImport = true }
+                    Button(AppLocalization.string("migration.scanJavaVaultDisk", language: language)) { scanJavaVaultFolders() }
+                    Button(AppLocalization.string("migration.importJavaVaultDisk", language: language)) { confirmJavaVaultFolderImport = true }
                         .disabled(busy || javaVaultImportableCount == 0)
                 }
                 if let javaVaultFolderPreview {
@@ -100,22 +101,22 @@ struct MigrationSettingsPanel: View {
                     LabeledContent("Java 磁盘图片", value: "\(javaVaultFolderPreview.attachmentFileCount)")
                     ForEach(javaVaultFolderPreview.warnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
                 }
-                Button("在 Finder 中打开…") { NSWorkspace.shared.open(root) }
+                Button(AppLocalization.string("migration.openFinder", language: language)) { NSWorkspace.shared.open(root) }
                 if let javaDB = LegacyJavaDataPaths.legacyDatabaseURL(in: root) {
                     Divider()
-                    Button("从 Java 数据库导入 HTTP…") { importHttp(from: javaDB) }
+                    Button(AppLocalization.string("migration.importJavaHttp", language: language)) { importHttp(from: javaDB) }
                 }
             }
             Divider()
-            Section("HTTP 请求集合（SQLite）") {
+            Section(AppLocalization.string("migration.section.sqlite", language: language)) {
                 Text("从 Electron/Java SQLite 合并 HTTP、Host、翻译、历史、草稿与文档库正文（`t_quick_note` / `t_json_beauty`）；重复标题+正文会跳过。").font(.caption).foregroundStyle(.secondary)
                 HStack {
-                    TextField("SQLite 数据库", text: $httpDatabasePath)
-                    Button("选择…") { chooseDatabase() }
+                    TextField(AppLocalization.string("migration.sqlitePath", language: language), text: $httpDatabasePath)
+                    Button(AppLocalization.string("migration.choose", language: language)) { chooseDatabase() }
                 }
                 HStack {
-                    Button("扫描") { scanHttp() }.disabled(busy || httpDatabasePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    Button("合并导入…") { confirmHttpImport = true }
+                    Button(AppLocalization.string("migration.scan", language: language)) { scanHttp() }.disabled(busy || httpDatabasePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    Button(AppLocalization.string("migration.importMerge", language: language)) { confirmHttpImport = true }
                         .disabled(busy || importableSqliteCount == 0)
                 }
                 if let httpPreview {
@@ -142,22 +143,22 @@ struct MigrationSettingsPanel: View {
             scanJavaVaultFolders()
         }
         .confirmationDialog("导入 Electron 设置？", isPresented: $confirmImport) {
-            Button("合并到当前原生工作区") { importSettings() }
+            Button(AppLocalization.string("migration.mergeIntoWorkspace", language: language)) { importSettings() }
         } message: {
             Text("将覆盖匹配的工作台字段，并写入 HTTP 代理与编辑器偏好。导入前会自动保存当前工作区。")
         }
         .confirmationDialog("导入 HTTP 请求集合？", isPresented: $confirmHttpImport) {
-            Button("合并到当前工作区") { importHttp(from: URL(fileURLWithPath: httpDatabasePath)) }
+            Button(AppLocalization.string("migration.mergeIntoWorkspace", language: language)) { importHttp(from: URL(fileURLWithPath: httpDatabasePath)) }
         } message: {
             Text("将合并 HTTP 集合、各工具历史（含 t_func_history）与 Host/翻译/收藏；重复项会跳过。")
         }
         .confirmationDialog("导入 Electron 磁盘文档库？", isPresented: $confirmVaultFolderImport) {
-            Button("合并到当前原生工作区") { importVaultFolders() }
+            Button(AppLocalization.string("migration.mergeIntoWorkspace", language: language)) { importVaultFolders() }
         } message: {
             Text("从 Electron 的 quick-notes 与 json-vault 目录复制文本文件；随手记正文中的 attachments/ 图片会转为原生附件。重复标题+正文会跳过。")
         }
         .confirmationDialog("导入 Java 磁盘文档库？", isPresented: $confirmJavaVaultFolderImport) {
-            Button("合并到当前原生工作区") { importJavaVaultFolders() }
+            Button(AppLocalization.string("migration.mergeIntoWorkspace", language: language)) { importJavaVaultFolders() }
         } message: {
             Text("从 Java 版 `quick-notes` 与 `json-beauty` 目录合并文本与 attachments/ 图片；重复标题+正文会跳过。")
         }

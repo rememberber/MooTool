@@ -62,7 +62,7 @@ struct SettingsView: View {
         .frame(width: 820, height: 580)
         .sheet(isPresented: $customGroupsOpen) { CustomGroupsSettings().environment(store) }
         .sheet(isPresented: $navigationToolsOpen) { NavigationToolVisibilitySettings().environment(store) }
-        .sheet(isPresented: $migrationOpen) { MigrationSettingsPanel().environment(store) }
+        .sheet(isPresented: $migrationOpen) { MigrationSettingsPanel().environment(store).environment(\.appLanguage, language) }
         .confirmationDialog("恢复原生版工作区？", isPresented: $confirmRestore) {
             Button("保存当前副本并恢复") {
                 guard let value = pendingBackup else { return }
