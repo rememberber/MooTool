@@ -98,7 +98,7 @@ struct TranslationTool: View {
     @State private var tab = "translate"
     var body: some View {
         VStack(spacing: 0) {
-            Picker("翻译视图", selection: $tab) {
+            Picker(AppLocalization.string("translation.viewPicker", language: language), selection: $tab) {
                 Text(AppLocalization.string("translation.tab.translate", language: language)).tag("translate")
                 Text(AppLocalization.string("translation.tab.words", language: language)).tag("words")
                 Text(AppLocalization.string("translation.tab.history", language: language)).tag("history")
@@ -118,13 +118,15 @@ struct TranslationTool: View {
 
 private struct LegacyTranslationTool: View {
     @Bindable var draft: ToolDraft
+    @Environment(\.appLanguage) private var language
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
     var body: some View {
         ToolPage(tool: Catalog.tool("translation"), draft: draft) {
-            Button("在系统词典中查找") { openDictionary(draft.input) }
+            Button(loc("translation.systemDictionary")) { openDictionary(draft.input) }
         } content: {
             VStack(alignment: .leading, spacing: 15) {
-                Text("自动翻译需要 macOS 15 或更高版本。当前系统可选中文本，使用右键菜单的翻译/查询服务，或打开系统词典。").font(.callout).foregroundStyle(.secondary)
-                EditorPane(title: "原文", text: $draft.input)
+                Text(loc("translation.legacyHint")).font(.callout).foregroundStyle(.secondary)
+                EditorPane(title: loc("translation.source"), text: $draft.input)
             }
         }
     }
@@ -135,11 +137,19 @@ private struct ModernTranslationTool: View {
     @State private var configuration: TranslationSession.Configuration?
     @Environment(AppStore.self) private var store
     @Environment(\.appLanguage) private var language
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
     var body: some View {
         ToolPage(tool: Catalog.tool("translation"), draft: draft) {
-            Picker("目标语言", selection: $draft.mode) { Text("简体中文").tag("zh-Hans"); Text("English").tag("en"); Text("日本語").tag("ja"); Text("한국어").tag("ko"); Text("Français").tag("fr"); Text("Deutsch").tag("de") }.frame(width: 200)
+            Picker(loc("translation.targetLanguage"), selection: $draft.mode) {
+                Text(loc("translation.lang.zhHans")).tag("zh-Hans")
+                Text(loc("translation.lang.en")).tag("en")
+                Text(loc("translation.lang.ja")).tag("ja")
+                Text(loc("translation.lang.ko")).tag("ko")
+                Text(loc("translation.lang.fr")).tag("fr")
+                Text(loc("translation.lang.de")).tag("de")
+            }.frame(width: 200)
             PrimaryButton(title: AppLocalization.string("tool.translate", language: language), symbol: "character.bubble") {
-                guard !draft.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { draft.error = "请输入需要翻译的文本。"; return }
+                guard !draft.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { draft.error = loc("translation.error.emptyInput"); return }
                 draft.error = nil
                 if configuration?.target == Locale.Language(identifier: draft.mode) { configuration?.invalidate() }
                 else { configuration = .init(source: nil, target: Locale.Language(identifier: draft.mode)) }

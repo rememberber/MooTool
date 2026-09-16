@@ -17,7 +17,7 @@
 | 环境变量 | 查看进程环境、`.env` 草稿、导出、传给代码运行 | 不写入 shell profile、launchd 或其他应用环境 |
 | HTTP | cURL 导入/导出；方法、URL、启用/禁用查询参数和 Cookie；原始/JSON/URL 编码表单与 **multipart/form-data**（文本字段 + 本地文件，单文件/总正文 10 MB）；集合分组、搜索、保存/替换/删除；正文/响应头/Cookie 分栏（最终响应 `Set-Cookie` 含 Domain/Path/Expires）；JSON 显示格式化；超时、重定向、跨工具切换取消；临时 URLSession；**设置中的 HTTP 代理**（主机/端口/可选认证）；请求/正文类型、参数与 Cookie 表单、multipart 编辑器、cURL 导入与请求集合弹窗支持三语 | 完整 cURL 选项、Cookie 文件、SOCKS/系统代理；GET/HEAD 不附正文；响应上限 10 MB；NetworkServices 错误信息仍为系统或中文 |
 | Host | 与 Electron 相同的配置列表 + 编辑器分栏（`host-workspace`）；读取 `/etc/hosts`、IP/映射校验、多配置保存/搜索、导出独立文件；配置写入 `workspace.json`；菜单栏托盘可切换已保存配置；SQLite `t_host` 可合并导入；侧栏搜索、空状态、编辑器标题与保存/读取状态支持三语 | 不执行管理员提权覆盖系统 Hosts；校验错误信息仍为中文 |
-| 网络工具 | DNS（dig）、Ping、Whois、ifconfig/netstat、DNS 缓存刷新、主机解析、IPv4↔Long、/24 IP 段 Ping 探测、TCP 端口扫描（常见端口或自定义）、本机地址列表 | 与 Electron 相同的并发/取消细粒度控制；Windows/Linux 命令差异不适用本产品线 |
+| 网络工具 | DNS（dig）、Ping、Whois、ifconfig/netstat、DNS 缓存刷新、主机解析、IPv4↔Long、/24 IP 段 Ping 探测、TCP 端口扫描（常见端口或自定义）、本机地址列表；面板分区、按钮与输出标题支持三语 | 与 Electron 相同的并发/取消细粒度控制；Windows/Linux 命令差异不适用本产品线；命令错误仍为系统或中文 |
 | UA 解析 | Safari、Chrome、Edge、Firefox、Opera；常见 OS/设备规则 | 未集成完整 UA 数据库；伪装或罕见 UA 可能识别不准确 |
 | 编码转换 | UTF-8 Base64、Base32、URL component、Hex、Unicode UTF-16 转义、常用 HTML 实体 | 其他字符集、完整 HTML 命名实体库 |
 | 加密工具 | 与 Electron 相同的五标签布局（对称 / 非对称 / 摘要 / 编码 / 随机）：对称 **AES-GCM** 及 **AES/DES/SM4 ECB**；非对称 **RSA**（含私钥加密/公钥解密）与 **SM2**（`sm-crypto` 同源脚本、C1C3C2）；摘要/编码/随机与 Electron 一致 | AES-GCM 仍使用 Hex 密钥与 Base64 密文；SM2 依赖内嵌脚本而非原生曲线实现；随机串字符集细节可能略有差异 |
@@ -26,7 +26,7 @@
 | 二维码 | Core Image 生成、四级纠错、含静区 PNG、Vision 图片识别；工具栏、空状态与识别结果区主文案支持三语；生成/识别常见错误提示三语 | 摄像头、Logo、批量或其他条码；Vision 系统错误仍为系统语言 |
 | 时间转换 | 与 Electron 对齐的当前时间带、时区选择与快捷区、时间戳↔本地时间双向转换（秒/毫秒单位）、大时钟浮层、历史记录；面板主文案与历史摘要支持 zh-CN / en-US / ja-JP；「详细解析」保留 ISO 8601/日期文本及秒毫秒/UTC 多行输出 | 独立全屏 Portal 动效；解析/校验错误信息仍为系统或中文；13 位及以上数字按毫秒解析（与 Electron 一致），更短毫秒戳请用手动单位或 ISO |
 | 留言板 | 预设文案（含主题色）、字号、左/居中对齐、前景/背景、草稿持久化、自适应预览、独立全屏窗口、Esc 退出、展示时阻止显示器休眠；工具栏与编辑区主控件支持三语；8 条常用留言预设与 Electron `messageBoard.preset.*` 对齐且三语 | 与 Electron 一致的完整主题面板、字号百分比自适应算法与入场动画 |
-| 翻译 | 与 Electron 相同的「翻译 / 词库 / 历史」标签；macOS 15+ 系统 Translation、分栏原文/译文（`translation`）与词库分栏（`translation-words`）；词条写入 `workspace.json`；系统词典入口；SQLite 词条/历史可合并导入 | 第三方翻译供应商；macOS 14 无系统 Translation，仍可使用词库/历史与词典 |
+| 翻译 | 与 Electron 相同的「翻译 / 词库 / 历史」标签；macOS 15+ 系统 Translation、分栏原文/译文（`translation`）与词库分栏（`translation-words`）；词条写入 `workspace.json`；系统词典入口；SQLite 词条/历史可合并导入；翻译页目标语言、macOS 14 降级说明与空输入错误支持三语 | 第三方翻译供应商；macOS 14 无系统 Translation，仍可使用词库/历史与词典；词库/历史子面板部分文案仍为中文 |
 | 计算器 | 运算优先级、幂、科学计数、常用函数、常量、64 位进制转换 | 任意精度、单位换算；三角函数使用弧度 |
 | 调色板 | 系统 ColorPicker、屏幕取色、HEX/RGB/HSL/SwiftUI；颜色/正则/Cron **收藏**（`toolFavorites`，与 Electron 收藏夹语义一致）；工具栏与结果栏主控件及 HEX 校验提示支持三语；收藏弹窗标题与操作支持三语 | 全部色彩空间和 Electron 的配色功能；收藏夹分组 UI 较简；颜色值输出块标签仍为英文 |
 | 图片工具 | 拖放、预览、可拖动分栏（预览 / 导出选项）、比例缩放、PNG/JPEG/TIFF、JPEG 质量、文字水印、系统截图；工具栏与导出侧栏主控件支持三语；分栏宽度写入 `workspace.json`；加载/导出/截图常见错误提示三语 | 批处理、多图库列表、矢量化、复杂编辑；导出新位图，不保留原 EXIF/色彩配置/动画帧 |
