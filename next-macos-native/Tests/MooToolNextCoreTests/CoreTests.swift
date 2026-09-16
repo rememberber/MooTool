@@ -8,6 +8,112 @@ import ImageIO
 
 final class CoreTests: XCTestCase {
 
+    func testVaultGitCheckpointSchedulerIdle() throws {
+        var now: TimeInterval = 0
+        var checkpointCalls = 0
+        let scheduler = VaultGitCheckpointScheduler(options: .init(
+            enabled: { true },
+            hasUnsavedEditorChanges: { false },
+            idleMilliseconds: { 30_000 },
+            inactiveMilliseconds: { 120_000 },
+            checkpoint: { _ in checkpointCalls += 1; return VaultGitActionResult(success: true, message: "ok") },
+            now: { now }
+        ))
+        now = 1
+        scheduler.recordActivity("Edit")
+        now = 10_000
+        XCTAssertFalse(scheduler.evaluate())
+        now = 31_000
+        XCTAssertTrue(scheduler.evaluate())
+        Thread.sleep(forTimeInterval: 0.25)
+        XCTAssertEqual(checkpointCalls, 1)
+        now = 61_000
+        scheduler.recordActivity("Edit again")
+        now = 92_000
+        XCTAssertTrue(scheduler.evaluate())
+        Thread.sleep(forTimeInterval: 0.25)
+        XCTAssertEqual(checkpointCalls, 2)
+    }
+
+    func testNetworkDiagnosticsParsing() throws {
+        XCTAssertEqual(try NetworkDiagnostics.ipv4ToLong("192.168.0.1"), 3_232_235_521)
+        XCTAssertEqual(try NetworkDiagnostics.longToIPv4("3232235521"), "192.168.0.1")
+        XCTAssertEqual(try NetworkDiagnostics.parseIPv4Range("10.0.0").count, 254)
+        XCTAssertEqual(try NetworkDiagnostics.parsePortSpec("80,443").count, 2)
+        XCTAssertTrue(try NetworkDiagnostics.parsePortSpec("").count > 40)
+        XCTAssertFalse(try NetworkDiagnostics.resolveHost("localhost").isEmpty)
+    }
+
+    func testVaultGitContinueWithoutMergeReportsError() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let service = VaultGitService(rootDirectory: root)
+        _ = try service.perform(VaultGitActionInput(action: .initRepo))
+        let result = try service.perform(VaultGitActionInput(action: .continueOperation))
+        XCTAssertFalse(result.success)
+        XCTAssertTrue(result.message.contains("没有进行"))
+    }
+
+    func testVaultGitWorkingTreeDiff() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let file = root.appendingPathComponent("sample.json")
+        try Data("{\"v\":1}".utf8).write(to: file)
+        let service = VaultGitService(rootDirectory: root)
+        _ = try service.perform(VaultGitActionInput(action: .initRepo))
+        try Data("{\"v\":2}".utf8).write(to: file)
+        let diff = try service.diff(path: "sample.json")
+        XCTAssertEqual(diff.files.count, 1)
+        XCTAssertEqual(diff.files[0].before, "{\"v\":1}\n")
+        XCTAssertTrue(diff.files[0].after.contains("\"v\":2"))
+    }
+
+    func testVaultFilesystemDetectsExternalChange() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        var vault = DocumentVault()
+        let document = try vault.createDocument(toolID: "json", name: "a.json", content: "{}", parent: nil)
+        let baseline = VaultFilesystemSync.baseline(for: "json", vault: vault)
+        try VaultFilesystemSync.sync(vault: vault, workspace: root)
+        let file = VaultFilesystemSync.entryURL(entryID: document, vault: vault, workspace: root)!
+        try Data("{\"v\":2}".utf8).write(to: file)
+        let changes = try VaultFilesystemSync.detectChanges(toolID: "json", vault: vault, workspace: root, baseline: baseline)
+        XCTAssertEqual(changes.count, 1)
+        XCTAssertEqual(changes[0].kind, .updated)
+        XCTAssertEqual(changes[0].content, "{\"v\":2}")
+    }
+
+    func testVaultFilesystemMirrorsReferencedQuickNoteAttachments() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let workspace = root.appendingPathComponent("workspace")
+        let payload = try NoteImagePayload(data: noteImageData())
+        var vault = DocumentVault()
+        let document = try vault.createDocument(toolID: "quickNote", name: "note.md", content: payload.attachment.markdown, parent: nil)
+        XCTAssertTrue(vault.documents[0].content.contains(payload.attachment.path))
+        try VaultFilesystemSync.sync(vault: vault, workspace: workspace, noteAttachments: [payload.attachment], readNoteAttachment: { _ in payload.data })
+        let mirrored = workspace.appendingPathComponent("quick-notes")
+            .appendingPathComponent("attachments", isDirectory: true)
+            .appendingPathComponent((payload.attachment.path as NSString).lastPathComponent, isDirectory: false)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: mirrored.path))
+        XCTAssertEqual(try Data(contentsOf: mirrored), payload.data)
+        _ = vault.delete(document)
+        try VaultFilesystemSync.sync(vault: vault, workspace: workspace, noteAttachments: [], readNoteAttachment: { _ in Data() })
+        XCTAssertFalse(FileManager.default.fileExists(atPath: mirrored.path))
+    }
+
+    func testVaultFilesystemSyncWritesAndRevealPath() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        var vault = DocumentVault()
+        let folder = try vault.createFolder(toolID: "json", name: "api")
+        let document = try vault.createDocument(toolID: "json", name: "sample.json", content: "{\n  \"ok\": true\n}", parent: folder)
+        try VaultFilesystemSync.sync(vault: vault, workspace: root)
+        let file = VaultFilesystemSync.entryURL(entryID: document, vault: vault, workspace: root)!
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "{\n  \"ok\": true\n}")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: VaultFilesystemSync.entryURL(entryID: folder, vault: vault, workspace: root)!.path))
+        _ = vault.delete(folder)
+        try VaultFilesystemSync.sync(vault: vault, workspace: root)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+    }
+
     func testTextDiffElectronRangesAndUnifiedPatch() throws {
         let result = try TextDiffEngine.compare("one\ntwo\n", "one\nthree\nplus\n")
         XCTAssertEqual(result.changed, 1); XCTAssertEqual(result.added, 1); XCTAssertEqual(result.removed, 0)
@@ -531,7 +637,8 @@ final class CoreTests: XCTestCase {
     }
     func testEncodingRoundTrips() throws {
         let text = "你好 🌍 &<>\"' /?=+#\n"
-        for format in ["Base64", "URL", "Hex", "Unicode", "HTML"] {
+        XCTAssertEqual(try TextServices.encode("foo", format: "Base32", decode: false), "MZXW6===")
+        for format in ["Base64", "Base32", "URL", "Hex", "Unicode", "HTML"] {
             XCTAssertEqual(try TextServices.encode(TextServices.encode(text, format: format, decode: false), format: format, decode: true), text, format)
         }
         XCTAssertEqual(try TextServices.encode("&#x1F600;&#39;", format: "HTML", decode: true), "😀'")
@@ -543,7 +650,41 @@ final class CoreTests: XCTestCase {
     func testKnownDigests() throws {
         XCTAssertEqual(try TextServices.digest("abc", algorithm: "SHA-256"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
         XCTAssertEqual(try TextServices.digest("abc", algorithm: "MD5"), "900150983cd24fb0d6963f7d28e17f72")
+        XCTAssertEqual(try TextServices.digest("abc", algorithm: "SM3"), "66c7f0f462eeedd9d1f2d46bdc10e4e24167c4875cf2f7a2297da02b8f4ba8e0")
         XCTAssertEqual(try TextServices.digest("The quick brown fox jumps over the lazy dog", algorithm: "HMAC-SHA256", key: "key"), "f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8")
+    }
+    func testRSACryptoRoundTrip() throws {
+        let pair = try CryptoServices.rsaGenerateKeyPair(bits: 2048)
+        let cipher = try CryptoServices.rsaEncrypt("MooTool Native", publicKeyBase64: pair.publicKey)
+        XCTAssertEqual(try CryptoServices.rsaDecrypt(cipher, privateKeyBase64: pair.privateKey), "MooTool Native")
+        let signature = try CryptoServices.rsaSign("payload", privateKeyBase64: pair.privateKey)
+        XCTAssertEqual(try CryptoServices.rsaVerify("payload", signatureBase64: signature, publicKeyBase64: pair.publicKey), "验签通过")
+        XCTAssertThrowsError(try CryptoServices.rsaVerify("tampered", signatureBase64: signature, publicKeyBase64: pair.publicKey))
+        let privateCipher = try CryptoServices.rsaPrivateEncrypt("moo", privateKeyBase64: pair.privateKey)
+        XCTAssertEqual(try CryptoServices.rsaPublicDecrypt(privateCipher, publicKeyBase64: pair.publicKey), "moo")
+        let rsaPublic = "MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAJxmdw437OuNcTuW2QmB3cZe5qFnn9z0BgzoKsxkFaIimxjbAUe92yHU/N4xIB4cNWooh5FkbeOmF1u0Q8fALskCAwEAAQ=="
+        XCTAssertEqual(try CryptoServices.rsaPublicDecrypt("cuK3mq7ZcgMh52MA2firzCp1+EvvtOPOxFz06wvpRVHpnRzW3DfALV40AED1goAqoqQHa73TwWc2+HWMfaYliQ==", publicKeyBase64: rsaPublic), "moo")
+    }
+    func testSM2ElectronFixtures() throws {
+        let sm2Public = "BKIlVD33k3zQPoXMFwbYCNlxMYbXkWuGTH95zjETCIP+sRSvl4776aFm2OQbJZUq/KGws7Og5M0kijj+AKlIPrM="
+        let sm2Private = "gLwDampri1xBKCTE3NiipyOneBMZ/QxntuSCNoOYlqk="
+        let cipher = "TBZTzJ/HFo1vuyucFmkDcwswEE9cDfPWsD6H22zmvYa1DQtqbkilfn6tlmgmGwfx0Aobx4S2leIFaYvgP9qpXHIyZLninIh/nMsiCV73AXyUd2WFR60T7gSv00x5rUXcpeUH"
+        XCTAssertEqual(try CryptoServices.sm2Decrypt(cipher, privateKeyBase64: sm2Private), "moo")
+        XCTAssertEqual(try CryptoServices.sm2Verify("moo", signatureBase64: "MEQCIBsBrgCe5e7uTx9g5lvc8/d+IMqKc4IZ8F6yQBpAEMytAiAwm32c1OVmneoL/li0abLEaB29bXHvK7TMHwas2UnL3w==", publicKeyBase64: sm2Public), "验签通过")
+        let pair = try CryptoServices.sm2GenerateKeyPair()
+        let encrypted = try CryptoServices.sm2Encrypt("moo", publicKeyBase64: pair.publicKey)
+        XCTAssertEqual(try CryptoServices.sm2Decrypt(encrypted, privateKeyBase64: pair.privateKey), "moo")
+    }
+    func testLegacySymmetricElectronFixtures() throws {
+        let plain = "MooTool 加密"
+        let key = "1234567890abcdef"
+        XCTAssertEqual(try LegacySymmetricCrypto.encrypt(algorithm: .aesECB, plaintext: plain, key: key), "504a3eb1fee7af3af9561f37a6f12fa8")
+        XCTAssertEqual(try LegacySymmetricCrypto.encrypt(algorithm: .desECB, plaintext: plain, key: key), "cc169541943882e354b03c72dbf8f8c8")
+        XCTAssertEqual(try LegacySymmetricCrypto.encrypt(algorithm: .sm4ECB, plaintext: plain, key: key), "bced0ef937398d96aadf38aa5aa8e478")
+        XCTAssertEqual(try LegacySymmetricCrypto.decrypt(algorithm: .aesECB, cipherHex: "504a3eb1fee7af3af9561f37a6f12fa8", key: key), plain)
+        XCTAssertEqual(try LegacySymmetricCrypto.decrypt(algorithm: .desECB, cipherHex: "cc169541943882e354b03c72dbf8f8c8", key: key), plain)
+        XCTAssertEqual(try LegacySymmetricCrypto.decrypt(algorithm: .sm4ECB, cipherHex: "bced0ef937398d96aadf38aa5aa8e478", key: key), plain)
+        XCTAssertEqual(try LegacySymmetricCrypto.encrypt(algorithm: .aesECB, plaintext: "Moo", key: "abc"), "ad1d510fa78f8f8276e4f3ad541f1957")
     }
     func testAESGCMAuthenticatedRoundTrip() throws {
         let key = String(repeating: "01", count: 32)
@@ -591,6 +732,18 @@ final class CoreTests: XCTestCase {
         XCTAssertThrowsError(try DeveloperServices.timestamp("1e30", zone: "UTC"))
         XCTAssertThrowsError(try DeveloperServices.timestamp("0", zone: "invalid-zone"))
     }
+    func testTimeConversionElectronParity() throws {
+        let local = try TimeConversion.timestampToLocal("1700000000", unit: .second, zone: "UTC")
+        XCTAssertEqual(local.localTime, "2023-11-14 22:13:20")
+        XCTAssertEqual(local.unit, .second)
+        let ms = try TimeConversion.timestampToLocal("1700000000123", unit: .second, zone: "UTC")
+        XCTAssertEqual(ms.unit, .millisecond)
+        XCTAssertEqual(ms.localTime, "2023-11-14 22:13:20")
+        XCTAssertEqual(try TimeConversion.localToTimestamp("2023-11-14 22:13:20", unit: .second, zone: "UTC"), "1700000000")
+        XCTAssertEqual(try TimeConversion.localToTimestamp("2023-11-14 22:13:20", unit: .millisecond, zone: "UTC"), "1700000000000")
+        XCTAssertThrowsError(try TimeConversion.localToTimestamp("2023-11-14", unit: .second, zone: "UTC"))
+        XCTAssertTrue(TimeConversion.formatTimezoneLabel(zone: "Asia/Shanghai").contains("Asia/Shanghai"))
+    }
     func testCalculatorPrecedenceAndFunctions() throws {
         for (input, expected) in [("2 + 3 * 4", 14.0), ("2^3^2", 512), ("-2^2", -4), ("2^-2", 0.25), ("sqrt(144)+sin(pi/2)", 13), ("1.2e3/2", 600)] {
             var calc = try Calculator(input); XCTAssertEqual(try calc.evaluate(), expected, accuracy: 0.000001)
@@ -606,11 +759,21 @@ final class CoreTests: XCTestCase {
         XCTAssertEqual(result[1].timeIntervalSince(result[0]), 900)
         XCTAssertThrowsError(try CronExpression("60 * * * *"))
         XCTAssertThrowsError(try CronExpression("*/0 * * * *"))
-        XCTAssertThrowsError(try CronExpression("0 0 0 * * *"))
+        let quartz = try CronExpression("0 0 9 ? * MON-FRI").next(after: start, count: 2, timeZone: TimeZone(identifier: "Asia/Shanghai")!)
+        XCTAssertEqual(quartz.count, 2)
+        XCTAssertTrue(CronExpression.describe("0 0 9 ? * MON-FRI")?.contains("工作日") == true)
         XCTAssertThrowsError(try CronExpression("0 0 31 2 *").next(after: start, count: 1))
         // Traditional cron ORs restricted day-of-month and day-of-week fields.
         let sunday = try CronExpression("0 0 1 * 0").next(after: start, count: 1, timeZone: zone)[0]
         XCTAssertEqual(ISO8601DateFormatter().string(from: sunday), "2026-09-06T00:00:00Z")
+        let lastDay = try CronExpression("0 0 0 L * ?").next(after: start, count: 1, timeZone: zone)[0]
+        XCTAssertEqual(ISO8601DateFormatter().string(from: lastDay), "2026-09-30T00:00:00Z")
+        let nearest = try CronExpression("0 0 0 15W * ?").next(after: ISO8601DateFormatter().date(from: "2026-09-14T00:00:00Z")!, count: 1, timeZone: zone)[0]
+        XCTAssertEqual(ISO8601DateFormatter().string(from: nearest), "2026-09-15T00:00:00Z")
+        let firstFriday = try CronExpression("0 0 9 ? * FRI#1").next(after: start, count: 1, timeZone: zone)[0]
+        XCTAssertEqual(ISO8601DateFormatter().string(from: firstFriday), "2026-10-02T09:00:00Z")
+        XCTAssertTrue(CronExpression.describe("0 0 0 L * ?")?.contains("最后一天") == true)
+        XCTAssertThrowsError(try CronExpression("0 0 0 ? * FRI#6"))
     }
     func testProtobufBoundsAndTypes() throws {
         let decoded = try DeveloperServices.protobuf("08 96 01 12 07 4d 6f 6f 54 6f 6f 6c", base64: false)
@@ -633,6 +796,30 @@ final class CoreTests: XCTestCase {
         XCTAssertThrowsError(try NetworkServices.request(method: "GET", url: "https://example.com", headers: "bad key: value", body: ""))
         XCTAssertNil(try NetworkServices.request(method: "GET", url: "https://example.com", headers: "", body: "ignored").httpBody)
     }
+    func testHTTPMultipartBody() throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".bin")
+        try Data([0x00, 0x41, 0x42]).write(to: file)
+        var options = HTTPOptions()
+        options.bodyKind = .multipart
+        options.multipart = [
+            HTTPMultipartPart(name: "title", value: "hello", enabled: true, isFile: false),
+            HTTPMultipartPart(name: "file", filePath: file.path, enabled: true, isFile: true)
+        ]
+        let encoded = try HTTPMultipartBuilder.encode(options.multipart)
+        XCTAssertTrue(encoded.1.hasPrefix("multipart/form-data; boundary="))
+        let text = String(decoding: encoded.0, as: UTF8.self)
+        XCTAssertTrue(text.contains("name=\"title\""))
+        XCTAssertTrue(text.contains("hello"))
+        XCTAssertTrue(text.contains("filename=\"\(file.lastPathComponent)\""))
+        var draft = DraftRecord()
+        draft.mode = "POST"
+        draft.option = "https://example.com/upload"
+        draft.http = options
+        let request = try NetworkServices.request(draft)
+        XCTAssertEqual(request.httpBody, encoded.0)
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), encoded.1)
+    }
+
     func testHTTPParametersCookiesAndBodyModes() throws {
         var draft = DraftRecord(); draft.mode = "POST"; draft.option = "https://example.com/api?keep=a%2Bb#section"; draft.input = "raw"
         var options = HTTPOptions(); options.timeout = 5; options.bodyKind = .form
@@ -703,6 +890,61 @@ final class CoreTests: XCTestCase {
         var invalid = state; invalid.httpRequests?.append(state.httpRequests![0]); XCTAssertThrowsError(try invalid.validated())
         invalid = state; invalid.drafts["http"]?.http?.timeout = 0; XCTAssertThrowsError(try invalid.validated())
         invalid = state; let field = HTTPField("a", "b"); invalid.drafts["http"]?.http?.params = [field, field]; XCTAssertThrowsError(try invalid.validated())
+        state.customGroups = [CustomToolGroup(id: "dev", name: "开发常用", toolIds: ["json", "http"])]
+        state.hideNavigationTitles = true
+        state.showRecent = true
+        state.sidebarWidth = 248
+        state.hiddenNavigationToolIds = ["json", "http"]
+        state.drafts["messageBoard"] = DraftRecord()
+        state.drafts["messageBoard"]?.messageBoard = MessageBoardOptions()
+        state.drafts["messageBoard"]?.messageBoard?.fontSize = 96
+        state.drafts["messageBoard"]?.messageBoard?.alignment = "left"
+        XCTAssertEqual(try WorkspaceRepository.decode(WorkspaceRepository.encode(state)).customGroups, state.customGroups)
+        XCTAssertTrue(try WorkspaceRepository.decode(WorkspaceRepository.encode(state)).hideNavigationTitles)
+        XCTAssertTrue(try WorkspaceRepository.decode(WorkspaceRepository.encode(state)).showRecent)
+        XCTAssertEqual(try WorkspaceRepository.decode(WorkspaceRepository.encode(state)).sidebarWidth, 248)
+        XCTAssertEqual(try WorkspaceRepository.decode(WorkspaceRepository.encode(state)).drafts["messageBoard"]?.messageBoard?.fontSize, 96)
+        XCTAssertEqual(
+            Set(try WorkspaceRepository.decode(WorkspaceRepository.encode(state)).hiddenNavigationToolIds),
+            Set(state.hiddenNavigationToolIds))
+        invalid = state; invalid.hiddenNavigationToolIds = ["mootool"]; XCTAssertThrowsError(try invalid.validated())
+        invalid = state; invalid.hiddenNavigationToolIds = ["json", "json"]; XCTAssertThrowsError(try invalid.validated())
+        let panes = LayoutPaneSizes.withPane([:], toolId: "json", index: 0, value: 260, slots: 2)
+        XCTAssertEqual(LayoutPaneSizes.pane(panes, toolId: "json", index: 0, default: 240, min: 200, max: 320), 260)
+        let clamped = LayoutPaneSizes.withPane([:], toolId: "json", index: 0, value: 12, slots: 2)
+        XCTAssertEqual(LayoutPaneSizes.pane(clamped, toolId: "json", index: 0, default: 240, min: 200, max: 320), 200)
+        state.layoutPaneSizes = LayoutPaneSizes.withPane([:], toolId: "http", index: 0, value: 400, slots: 2)
+        XCTAssertEqual(try WorkspaceRepository.decode(WorkspaceRepository.encode(state)).layoutPaneSizes["http"]?.first, 400)
+        state.layoutPaneSizes = LayoutPaneSizes.withPane(state.layoutPaneSizes, toolId: "quick-note-editor-preview", index: 0, value: 480, slots: 2)
+        state.layoutPaneSizes = LayoutPaneSizes.withPane(state.layoutPaneSizes, toolId: "quick-note-no-tree-replace", index: 0, value: 640, slots: 2)
+        let decoded = try WorkspaceRepository.decode(WorkspaceRepository.encode(state))
+        XCTAssertEqual(decoded.layoutPaneSizes["quick-note-editor-preview"]?.first, 480)
+        XCTAssertEqual(decoded.layoutPaneSizes["quick-note-no-tree-replace"]?.first, 640)
+        let proxy = NetworkProxySettings(enabled: true, host: "127.0.0.1", port: 3128, username: "user", password: "secret")
+        XCTAssertEqual(proxy.connectionProxyDictionary()?["HTTPProxy"] as? String, "127.0.0.1")
+        XCTAssertNil(NetworkProxySettings(enabled: false, host: "x", port: 1).connectionProxyDictionary())
+        invalid = state; invalid.customGroups = [CustomToolGroup(name: "空", toolIds: [])]; XCTAssertThrowsError(try invalid.validated())
+        invalid = state; invalid.customGroups = [CustomToolGroup(name: "坏", toolIds: ["not-a-tool"])]; XCTAssertThrowsError(try invalid.validated())
+        let merged = ElectronPaneSizeImport.mergeElectronIntoNative(
+            ["http-workspace": [0.35, 0.65], "json-three-pane": [0.2, 0.5, 0.3]],
+            current: [:])
+        XCTAssertEqual(merged["json"]?.count, 2)
+        XCTAssertTrue((merged["http"]?.first ?? 0) > 150)
+        let storeJSON = """
+        {"settings":{"layout":{"showRecent":true,"hideNavigationTitles":true,"showSeparators":false,"customGroups":[{"id":"g1","name":"常用","toolIds":["json","http"]}],"hiddenNavigationToolIds":["pdf"],"paneSizes":{"http-workspace":[0.4,0.6]}},"network":{"proxyEnabled":true,"proxyHost":"127.0.0.1","proxyPort":"8888"},"editor":{"jsonFontSize":15,"softWrap":false}}}
+        """
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-electron-import-\(UUID().uuidString).json")
+        try storeJSON.write(to: url, atomically: true, encoding: .utf8)
+        let known = Set(Catalog.tools.map(\.id))
+        let patch = try ElectronStoreImport.loadPatch(at: url, knownToolIDs: known)
+        XCTAssertEqual(patch.showRecent, true)
+        XCTAssertEqual(patch.proxyPort, 8888)
+        XCTAssertEqual(patch.customGroups?.first?.toolIds, ["json", "http"])
+        var imported = WorkspaceSnapshot()
+        try ElectronStoreImport.apply(patch, to: &imported)
+        XCTAssertTrue(imported.showRecent)
+        XCTAssertEqual(imported.hiddenNavigationToolIds, ["pdf"])
+        try? FileManager.default.removeItem(at: url)
     }
     func testHTTPRedirectPolicyAndSessionIsolation() async throws {
         let fixture = try HTTPFixture()

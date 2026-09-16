@@ -5,10 +5,12 @@ import MooToolNextCore
 @MainActor enum NativeVaultAcceptance {
     static func run(store: AppStore, window: NSWindow) async throws {
         let original = store.snapshot()
-        defer { store.restore(original) }
+        store.suspendVaultDiskRefresh()
+        defer { store.restore(original); store.resumeVaultDiskRefresh() }
         func check(_ value: @autoclosure () throws -> Bool, _ message: String) throws { if try !value() { throw ToolError("文档库验收：" + message) } }
         let folder = try store.createVaultFolder("quickNote", name: "验收临时文档", parent: nil)
         let a = try store.createVaultDocument("quickNote", name: "A.md", parent: folder, content: (0..<200).map { "第 \($0) 行 · MooTool Native" }.joined(separator: "\n"))
+        store.saveNow()
         let aContent = store.draft("quickNote").input
         let lateEvent = store.editorPersistence("quickNote")
         let b = try store.createVaultDocument("quickNote", name: "B.md", parent: folder, content: "B 的独立内容")
@@ -24,7 +26,7 @@ import MooToolNextCore
         store.updateVaultPreference("quickNote") { $0.noteViewMode = .editor }
         window.setContentSize(NSSize(width: 1200, height: 800))
         try await settle(window)
-        let editorA = try editor(in: window, documentID: a)
+        let editorA = try await editor(in: window, documentID: a)
         editorA.setSelectedRange(NSRange(location: 28, length: 4))
         if let scroll = editorA.enclosingScrollView {
             scroll.contentView.scroll(to: NSPoint(x: 0, y: 360)); scroll.reflectScrolledClipView(scroll.contentView)
@@ -33,12 +35,12 @@ import MooToolNextCore
         let expectedA = store.draft("quickNote").inputEditor
         try check(expectedA?.location == 28 && (expectedA?.scrollY ?? 0) > 100, "真实编辑器没有记录选择和滚动位置")
         try store.openDocument(b); try await settle(window)
-        let editorB = try editor(in: window, documentID: b)
+        let editorB = try await editor(in: window, documentID: b)
         editorB.insertText("追加：", replacementRange: NSRange(location: 0, length: 0))
         try await Task.sleep(for: .milliseconds(100))
         try check(store.documents.first { $0.id == b }?.content == "追加：B 已修改", "NSTextView 编辑未写入当前文档")
         try store.openDocument(a); try await settle(window)
-        let restoredA = try editor(in: window, documentID: a)
+        let restoredA = try await editor(in: window, documentID: a)
         try check(restoredA.selectedRange() == NSRange(location: 28, length: 4), "切回文档没有还原选择范围")
         try check((restoredA.enclosingScrollView?.contentView.bounds.origin.y ?? 0) > 100, "切回文档没有还原滚动位置")
         try check(restoredA.undoManager?.canUndo != true, "撤销记录跨文档泄漏")
@@ -50,14 +52,15 @@ import MooToolNextCore
         try await settle(second)
         restoredA.insertText("同步：", replacementRange: NSRange(location: 0, length: 0))
         try await settle(second)
-        try check(try editor(in: second, documentID: a).string.hasPrefix("同步："), "独立窗口没有同步编辑内容")
+        let synced = try await editor(in: second, documentID: a)
+        try check(synced.string.hasPrefix("同步："), "独立窗口没有同步编辑内容")
         second.close(); window.makeKeyAndOrderFront(nil)
 
         try store.renameVaultEntry(folder, name: "已重命名")
         try store.moveVaultEntry(a, to: nil)
         try check(store.draft("quickNote").documentID == a, "移动或重命名改变了打开的文档")
         store.saveNow()
-        let fresh = AppStore(directory: store.repository.directory)
+        let fresh = AppStore(directory: store.repository.directory, bootstrap: .workspaceOnly)
         try check(fresh.draft("quickNote").documentID == a && fresh.draft("quickNote").input == store.draft("quickNote").input, "重新加载未恢复活动文档")
         try check(fresh.draft("quickNote").inputEditor == store.draft("quickNote").inputEditor, "重新加载未恢复编辑器状态")
         let deletingContent = store.draft("quickNote").input
@@ -83,12 +86,13 @@ import MooToolNextCore
         _ = jsonB
         print("PASS: rapid document switching, native selection/scroll, undo isolation, multi-window edits, scratch recovery, JSON state and atomic import")
     }
-    private static func editor(in window: NSWindow, documentID: UUID) throws -> NSTextView {
-        func find(_ view: NSView) -> NSTextView? {
-            if let text = view as? NSTextView, text.identifier?.rawValue.contains(documentID.uuidString) == true { return text }
-            for child in view.subviews { if let value = find(child) { return value } }; return nil
+    private static func editor(in window: NSWindow, documentID: UUID) async throws -> NSTextView {
+        for _ in 0..<50 {
+            window.contentView?.layoutSubtreeIfNeeded()
+            if let view = NativeJSONAcceptance.allViews(window).compactMap({ $0 as? NSTextView }).first(where: { $0.identifier?.rawValue.contains(documentID.uuidString) == true }) { return view }
+            try await Task.sleep(for: .milliseconds(100))
         }
-        guard let root = window.contentView, let view = find(root) else { throw ToolError("文档库验收找不到原生编辑器") }; return view
+        throw ToolError("文档库验收找不到原生编辑器")
     }
     private static func settle(_ window: NSWindow) async throws {
         window.contentView?.layoutSubtreeIfNeeded(); window.displayIfNeeded()

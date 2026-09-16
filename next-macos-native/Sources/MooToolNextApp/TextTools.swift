@@ -12,13 +12,17 @@ struct ToolRouter: View {
             case "reformat": ReformatWorkspace(draft: store.draft(id))
             case "textDiff": TextDiffWorkspace(draft: store.draft(id))
             case "http": HTTPTool(draft: store.draft(id))
-            case "java", "net", "hardware": SystemTool(id: id, draft: store.draft(id))
+            case "net": NetToolView(draft: store.draft(id))
+            case "java", "hardware": SystemTool(id: id, draft: store.draft(id))
             case "qrCode": QRTool(draft: store.draft(id))
             case "colorBoard": ColorTool(draft: store.draft(id))
             case "image": ImageTool(draft: store.draft(id))
             case "pdf": PDFTool(draft: store.draft(id))
             case "messageBoard": MessageBoardTool(draft: store.draft(id))
             case "translation": TranslationTool(draft: store.draft(id))
+            case "cron": CronToolView(draft: store.draft(id))
+            case "timeConvert": TimeConvertView(draft: store.draft(id))
+            case "crypto": CryptoToolView(draft: store.draft(id))
             default: TextTool(id: id, draft: store.draft(id))
             }
         }.id(id)
@@ -40,14 +44,25 @@ struct TextTool: View {
                     HStack { Text("表达式").foregroundStyle(.secondary); TextField("例如 (\\w+)@(\\w+)", text: $draft.secondary).font(.system(.body, design: .monospaced)); TextField("标志 ims", text: $regexFlags).frame(width: 70) }.textFieldStyle(.roundedBorder)
                     if draft.mode == "替换" { TextField("替换模板，例如 $1", text: $draft.option).textFieldStyle(.roundedBorder) }
                 }
-                if id == "crypto" && (draft.mode.contains("AES") || draft.mode.contains("HMAC")) {
-                    SecureField(draft.mode.contains("AES") ? "Hex 密钥 · 16 / 24 / 32 字节" : "HMAC 密钥（UTF-8）", text: $draft.secondary).textFieldStyle(.roundedBorder)
+                if id == "crypto" {
+                    if draft.mode.hasPrefix("RSA") && draft.mode != "RSA 生成密钥对" {
+                        TextField("RSA 密钥（Base64 DER，与 Electron 导出格式兼容）", text: $draft.secondary).textFieldStyle(.roundedBorder)
+                    }
+                    if draft.mode == "RSA 验签" {
+                        TextField("签名（Base64）", text: $draft.option).textFieldStyle(.roundedBorder)
+                    }
+                    if draft.mode.contains("AES") || draft.mode.contains("HMAC") {
+                        SecureField(draft.mode.contains("AES") ? "Hex 密钥 · 16 / 24 / 32 字节" : "HMAC 密钥（UTF-8）", text: $draft.secondary).textFieldStyle(.roundedBorder)
+                    }
                 }
-                HSplitView {
+                PersistedHSplit(toolID: id, defaultLeading: id == "json" ? 420 : 360, minLeading: id == "json" ? 280 : 200, maxLeading: 900) {
                     EditorPane(title: inputTitle, text: $draft.input, syntax: id == "json" || id == "ymlProperties", persistence: id == "json" ? store.editorPersistence(id) : nil)
-                        .frame(minWidth: id == "json" ? 240 : 180)
-                    if id == "json" && draft.json?.showsTree == true { JSONTreePane(text: draft.input, path: $draft.option).frame(minWidth: 240) }
-                    else { EditorPane(title: "结果", text: $draft.output, editable: false, syntax: ["json", "uaParse", "ymlProperties", "protobuf", "regex"].contains(id), persistence: id == "json" ? store.editorPersistence(id, output: true) : nil).frame(minWidth: id == "json" ? 240 : 180) }
+                } trailing: {
+                    if id == "json" && draft.json?.showsTree == true {
+                        JSONTreePane(text: draft.input, path: $draft.option)
+                    } else {
+                        EditorPane(title: "结果", text: $draft.output, editable: false, syntax: ["json", "uaParse", "ymlProperties", "protobuf", "regex"].contains(id), persistence: id == "json" ? store.editorPersistence(id, output: true) : nil)
+                    }
                 }
             }
         }.onAppear { if !modes.isEmpty && !modes.contains(draft.mode) { draft.mode = modes[0] }; if id == "timeConvert" && draft.option.isEmpty { draft.option = TimeZone.current.identifier } }
@@ -58,8 +73,8 @@ struct TextTool: View {
     }
     private var modes: [String] {
         switch id {
-        case "encode": return ["Base64", "URL", "Hex", "Unicode", "HTML"]
-        case "crypto": return ["SHA-256", "SHA-512", "MD5", "SHA-1", "HMAC-SHA256", "AES-GCM 加密", "AES-GCM 解密", "UUID", "随机 32 字节"]
+        case "encode": return ["Base64", "Base32", "URL", "Hex", "Unicode", "HTML"]
+        case "crypto": return ["SHA-256", "SHA-384", "SHA-512", "MD5", "SHA-1", "SM3", "HMAC-SHA256", "AES-GCM 加密", "AES-GCM 解密", "RSA 生成密钥对", "RSA 公钥加密", "RSA 私钥解密", "RSA 签名", "RSA 验签", "UUID", "随机 32 字节"]
         case "regex": return ["匹配", "替换"]
         case "ymlProperties": return ["YAML → JSON", "JSON → YAML", "YAML → Properties", "Properties → YAML", "JSON → Properties", "Properties → JSON"]
         case "protobuf": return ["Hex", "Base64"]
@@ -68,7 +83,7 @@ struct TextTool: View {
         }
     }
     @ViewBuilder private var controls: some View {
-        if !modes.isEmpty { Picker("模式", selection: $draft.mode) { ForEach(modes, id: \.self) { Text($0) } }.labelsHidden().frame(width: id == "ymlProperties" ? 185 : 145) }
+        if !modes.isEmpty { Picker("模式", selection: $draft.mode) { ForEach(modes, id: \.self) { Text($0) } }.labelsHidden().frame(width: id == "crypto" ? 200 : id == "ymlProperties" ? 185 : 145) }
         switch id {
         case "json":
             PrimaryButton(title: "格式化", symbol: "text.alignleft") { execute("format") }
@@ -138,7 +153,17 @@ struct TextTool: View {
                 }
                 return try TextServices.json(d.input, pretty: action != "minify", sorted: d.json?.sortKeys ?? true, indent: d.json?.indent ?? 2)
             case "encode": return try TextServices.encode(d.input, format: d.mode, decode: action == "decode")
-            case "crypto": return try TextServices.digest(d.input, algorithm: d.mode, key: d.secondary)
+            case "crypto":
+                switch d.mode {
+                case "RSA 生成密钥对":
+                    let pair = try CryptoServices.rsaGenerateKeyPair()
+                    return "公钥 (Base64 DER):\n\(pair.publicKey)\n\n私钥 (Base64 DER):\n\(pair.privateKey)"
+                case "RSA 公钥加密": return try CryptoServices.rsaEncrypt(d.input, publicKeyBase64: d.secondary)
+                case "RSA 私钥解密": return try CryptoServices.rsaDecrypt(d.input, privateKeyBase64: d.secondary)
+                case "RSA 签名": return try CryptoServices.rsaSign(d.input, privateKeyBase64: d.secondary)
+                case "RSA 验签": return try CryptoServices.rsaVerify(d.input, signatureBase64: d.option, publicKeyBase64: d.secondary)
+                default: return try TextServices.digest(d.input, algorithm: d.mode, key: d.secondary)
+                }
             case "regex": return try TextServices.regex(d.input, pattern: d.secondary, replacement: d.mode == "替换" ? d.option : nil, flags: flags)
             case "timeConvert": return try DeveloperServices.timestamp(d.input, zone: d.option)
             case "ymlProperties": let pair = d.mode.components(separatedBy: " → "); guard pair.count == 2 else { throw ToolError("请选择转换格式。") }; return try TextServices.config(d.input, from: pair[0], to: pair[1])

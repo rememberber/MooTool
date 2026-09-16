@@ -103,6 +103,7 @@ enum NoteImageSource: Sendable {
                     try Task.checkCancellation()
                     guard self.isCurrent(request, store: store, draft: draft), draft.input == expected,
                           editor.replace(content, expected: expected, action: "插入图片附件") else { throw ToolError("正文或文档已变化，未插入过期的图片。") }
+                    draft.input = content
                     store.noteAttachments = manifest; store.attachmentGeneration += 1
                     var options = draft.noteOptions ?? QuickNoteOptions(); options.syntax = .markdown; draft.noteOptions = options
                     editor.select(NSRange(location: caret, length: 0)); store.scheduleSave()

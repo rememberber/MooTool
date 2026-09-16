@@ -123,9 +123,10 @@ struct ReformatWorkspace: View {
                 Divider()
                 Group {
                     if geometry.size.width >= 630 {
-                        HSplitView {
-                            filePane(title: "原始文件", result: false).frame(minWidth: 260)
-                            filePane(title: "格式化结果", result: true).frame(minWidth: 260)
+                        PersistedHSplit(toolID: "reformat", defaultLeading: 400, minLeading: 260, maxLeading: 900) {
+                            filePane(title: "原始文件", result: false)
+                        } trailing: {
+                            filePane(title: "格式化结果", result: true)
                         }
                     } else {
                         VSplitView {

@@ -17,14 +17,15 @@ struct QRTool: View {
             Button("保存 PNG") { if let png { FilePanels.save(png, name: "qrcode.png") } }.disabled(png == nil)
             Button("识别图片…") { FilePanels.open(types: [.image]) { recognize($0[0]) } }
         } content: {
-            HSplitView {
+            PersistedHSplit(toolID: "qrCode", defaultLeading: 360, minLeading: 260, maxLeading: 640) {
                 VStack(spacing: 12) { EditorPane(title: "内容", text: $draft.input); if !draft.output.isEmpty { EditorPane(title: "识别结果", text: $draft.output, editable: false) } }
+            } trailing: {
                 VStack(spacing: 18) {
                     Spacer()
                     if let image { Image(nsImage: image).interpolation(.none).resizable().scaledToFit().frame(maxWidth: 320, maxHeight: 320).padding(24).background(.white, in: RoundedRectangle(cornerRadius: 16)) }
                     else { ContentUnavailableView("生成你的二维码", systemImage: "qrcode", description: Text("支持文本、网址和 Wi-Fi 配置信息")) }
                     Spacer()
-                }.frame(minWidth: 260, maxWidth: .infinity, maxHeight: .infinity)
+                }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }.onAppear { if draft.mode.isEmpty { draft.mode = "M" }; if !draft.input.isEmpty { generate() } }
     }
@@ -76,10 +77,11 @@ struct ColorTool: View {
             Button("应用 HEX", action: parse)
             Button("收藏颜色") { store.record("colorBoard"); if let index = store.history.firstIndex(where: { $0.toolID == "colorBoard" }) { store.history[index].favorite = true; store.scheduleSave() } }
         } content: {
-            HSplitView {
+            PersistedHSplit(toolID: "colorBoard", defaultLeading: 320, minLeading: 220, maxLeading: 560) {
                 RoundedRectangle(cornerRadius: 18).fill(color).overlay {
                     VStack(spacing: 10) { Text(draft.input.uppercased()).font(.system(size: 34, weight: .medium, design: .monospaced)); Text("MooTool Color").font(.title3) }.foregroundStyle(contrastColor)
-                }.padding(24).frame(minWidth: 260)
+                }.padding(24)
+            } trailing: {
                 EditorPane(title: "颜色值", text: $draft.output, editable: false)
             }
         }.onChange(of: color) { update() }.onAppear { if draft.input.isEmpty { update() } else { parse() } }
@@ -127,13 +129,29 @@ struct ImageTool: View {
             TextField("宽度 px", text: $width).textFieldStyle(.roundedBorder).frame(width: 90)
             Button("导出", action: export).disabled(original == nil)
         } content: {
-            VStack(spacing: 12) {
-                HStack { Text("质量").font(.caption); Slider(value: $quality, in: 0.1...1).frame(width: 150).disabled(draft.mode != "JPEG"); Text("\(Int(quality * 100))%").font(.caption).monospacedDigit(); Spacer(); TextField("文字水印（可选）", text: $watermark).textFieldStyle(.roundedBorder).frame(width: 230) }
+            PersistedHSplit(toolID: "image", defaultLeading: 360, minLeading: 240, maxLeading: 720) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12).fill(.quaternary.opacity(0.3))
                     if let preview { Image(nsImage: preview).resizable().scaledToFit().padding(24) }
                     else { ContentUnavailableView("拖入一张图片", systemImage: "photo.on.rectangle.angled", description: Text("支持 PNG、JPEG、HEIC、TIFF 等系统图像格式")) }
                 }.frame(maxWidth: .infinity, maxHeight: .infinity).dropDestination(for: URL.self) { urls, _ in if let url = urls.first { load(url); return true }; return false }
+            } trailing: {
+                VStack(alignment: .leading, spacing: 14) {
+                    GroupBox("导出") {
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Text("质量").font(.caption)
+                                Slider(value: $quality, in: 0.1...1).disabled(draft.mode != "JPEG")
+                                Text("\(Int(quality * 100))%").font(.caption).monospacedDigit().frame(width: 36, alignment: .trailing)
+                            }
+                            TextField("文字水印（可选）", text: $watermark).textFieldStyle(.roundedBorder)
+                        }.padding(4)
+                    }
+                    if !draft.status.isEmpty {
+                        Text(draft.status).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                    }
+                    Spacer(minLength: 0)
+                }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.vertical, 4)
             }
         }.onAppear { if draft.mode.isEmpty { draft.mode = "PNG" } }
     }
@@ -186,7 +204,7 @@ struct PDFTool: View {
             Button("导出 PDF", action: export).disabled(combined == nil)
             Button(showText ? "预览 PDF" : "提取文本") { draft.output = combined?.string ?? ""; showText.toggle() }.disabled(combined == nil)
         } content: {
-            HSplitView {
+            PersistedHSplit(toolID: "pdf", defaultLeading: 200, minLeading: 160, maxLeading: 320) {
                 VStack(alignment: .leading) {
                     Text("合并顺序").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 10)
                     List(Array(files.enumerated()), id: \.offset) { index, url in
@@ -198,9 +216,12 @@ struct PDFTool: View {
                             }.font(.caption).buttonStyle(.borderless)
                         }.padding(.vertical, 6)
                     }.listStyle(.inset)
-                }.frame(minWidth: 170, idealWidth: 190, maxWidth: 230)
-                if showText { EditorPane(title: "PDF 文本", text: $draft.output, editable: false) }
-                else { NativePDFView(document: combined).overlay { if combined == nil { ContentUnavailableView("添加或拖入 PDF", systemImage: "doc.richtext", description: Text("按左侧顺序合并，或按页码提取页面")) } }.frame(minWidth: 300) }
+                }
+            } trailing: {
+                Group {
+                    if showText { EditorPane(title: "PDF 文本", text: $draft.output, editable: false) }
+                    else { NativePDFView(document: combined).overlay { if combined == nil { ContentUnavailableView("添加或拖入 PDF", systemImage: "doc.richtext", description: Text("按左侧顺序合并，或按页码提取页面")) } } }
+                }.frame(minWidth: 300)
             }.dropDestination(for: URL.self) { urls, _ in load(urls); return true }
         }
     }

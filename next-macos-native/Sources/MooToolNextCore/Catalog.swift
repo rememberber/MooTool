@@ -41,7 +41,7 @@ public enum Catalog {
         Tool("host", "Host", "server.rack", "网络与请求", "读取系统 Hosts，编辑和导出配置", "dns hosts"),
         Tool("net", "网络工具", "network", "网络与请求", "DNS、Ping、Whois 与网络接口", "ip ping whois dns"),
         Tool("uaParse", "UA 解析", "safari", "网络与请求", "识别 User-Agent 中的浏览器、系统与设备", "user-agent browser"),
-        Tool("encode", "编码转换", "arrow.left.arrow.right", "编码与加密", "Base64、URL、Hex、Unicode 与 HTML 实体", "encode decode"),
+        Tool("encode", "编码转换", "arrow.left.arrow.right", "编码与加密", "Base64、Base32、URL、Hex、Unicode 与 HTML 实体", "encode decode"),
         Tool("crypto", "加密工具", "lock.shield", "编码与加密", "摘要、HMAC、AES-GCM、UUID 与随机数据", "hash md5 sha256 sha512"),
         Tool("regex", "正则表达式", "text.magnifyingglass", "编码与加密", "匹配、捕获分组与替换", "regexp match"),
         Tool("cron", "Cron", "calendar.badge.clock", "编码与加密", "解析五段 Cron，预览接下来的执行时间", "schedule"),

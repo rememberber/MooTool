@@ -12,22 +12,50 @@ struct Workbench: View {
             List(selection: Binding(get: { store.selected }, set: { store.select($0) })) {
                 row(Catalog.tools[0])
                 if !store.pinned.isEmpty {
-                    Section("常用") { ForEach(store.pinned.filter { Catalog.tool($0).matches(query) }, id: \.self) { row(Catalog.tool($0)) } }
+                    Section("常用") { ForEach(store.pinned.filter { navigationVisible($0) && Catalog.tool($0).matches(query) }, id: \.self) { row(Catalog.tool($0)) } }
+                }
+                ForEach(store.customGroups) { custom in
+                    let tools = custom.toolIds.compactMap { id in Catalog.tools.first { $0.id == id } }.filter { navigationVisible($0.id) && $0.matches(query) }
+                    if !tools.isEmpty {
+                        Section(custom.name) { ForEach(tools) { row($0) } }
+                            .listSectionSeparator(store.showNavigationSeparators ? .visible : .hidden)
+                    }
                 }
                 ForEach(Catalog.groups, id: \.self) { group in
-                    let tools = Catalog.tools.filter { $0.group == group && $0.matches(query) }
+                    let tools = Catalog.tools.filter { $0.group == group && navigationVisible($0.id) && $0.matches(query) }
                     if !tools.isEmpty { Section(group) { ForEach(tools) { row($0) } } }
                 }
-                if !store.recent.isEmpty && query.isEmpty {
-                    Section("最近使用") { ForEach(store.recent.prefix(5), id: \.self) { row(Catalog.tool($0)) } }
+                if store.showRecent && !store.recent.isEmpty && query.isEmpty {
+                    Section("最近使用") { ForEach(store.recent.filter { navigationVisible($0) }.prefix(5), id: \.self) { row(Catalog.tool($0)) } }
                 }
-            }.listStyle(.sidebar).navigationSplitViewColumnWidth(min: 185, ideal: 215, max: 280)
+            }.listStyle(.sidebar)
+                .navigationSplitViewColumnWidth(
+                    min: store.hideNavigationTitles ? 58 : 185,
+                    ideal: store.hideNavigationTitles ? 64 : store.sidebarWidth,
+                    max: store.hideNavigationTitles ? 88 : 300)
+                .overlay(alignment: .trailing) {
+                    if !store.hideNavigationTitles {
+                        PaneResizeDivider(
+                            vertical: true,
+                            current: CGFloat(store.sidebarWidth),
+                            min: 185,
+                            max: 300,
+                            onResize: { store.sidebarWidth = Double($0); store.scheduleSave() },
+                            onReset: { store.sidebarWidth = 215; store.scheduleSave() })
+                    }
+                }
                 .searchable(text: $query, placement: .sidebar, prompt: "搜索工具")
                 .safeAreaInset(edge: .bottom) {
                     HStack(spacing: 9) {
                         Image(nsImage: NSImage(contentsOf: AppResources.bundle.url(forResource: "Brand", withExtension: "png")!)!).resizable().frame(width: 24, height: 24)
                         VStack(alignment: .leading, spacing: 2) { Text("MooTool").font(.system(size: 12, weight: .semibold)); Text("Next Native").font(.system(size: 10)).foregroundStyle(.secondary) }
-                        Spacer(); SettingsLink { Image(systemName: "gearshape") }.buttonStyle(.plain).help("设置 · ⌘,")
+                        Spacer()
+                        Button {
+                            store.hideNavigationTitles.toggle(); store.scheduleSave()
+                        } label: {
+                            Image(systemName: store.hideNavigationTitles ? "sidebar.left" : "sidebar.right")
+                        }.buttonStyle(.plain).help(store.hideNavigationTitles ? "展开导航标题" : "仅显示图标")
+                        SettingsLink { Image(systemName: "gearshape") }.buttonStyle(.plain).help("设置 · ⌘,")
                     }.padding(14).background(.bar)
                 }
         } detail: {
@@ -48,8 +76,19 @@ struct Workbench: View {
             .sheet(isPresented: $store.historyPresented) { HistoryView(toolID: store.selected).environment(store) }
             .alert("工作区提示", isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) { Button("好") { store.error = nil } } message: { Text(store.error ?? "") }
     }
+    private func navigationVisible(_ id: String) -> Bool {
+        id == "mootool" || !store.hiddenNavigationToolIds.contains(id)
+    }
     private func row(_ tool: Tool) -> some View {
-        Label(tool.title, systemImage: tool.symbol).font(.system(size: 12.5)).tag(tool.id)
+        Group {
+            if store.hideNavigationTitles {
+                Label(tool.title, systemImage: tool.symbol).labelStyle(.iconOnly)
+            } else {
+                Label(tool.title, systemImage: tool.symbol)
+            }
+        }
+        .font(.system(size: 12.5)).tag(tool.id)
+        .help(store.hideNavigationTitles ? tool.title : "")
             .contextMenu {
                 Button(store.pinned.contains(tool.id) ? "移出常用" : "添加到常用") { store.togglePin(tool.id) }
                 Button("在独立窗口中打开") { openWindow(id: "tool", value: tool.id) }
@@ -57,17 +96,73 @@ struct Workbench: View {
     }
 }
 
+private struct HomePerson: Identifiable {
+    let id = UUID()
+    let title: String
+    let url: String
+}
+
 struct HomeView: View {
     @Environment(AppStore.self) private var store
+    private let contributors = [
+        HomePerson(title: "CassianFlorin", url: "https://github.com/CassianFlorin"),
+        HomePerson(title: "felixcn", url: "https://github.com/felixcn"),
+        HomePerson(title: "felixnan168", url: "https://gitee.com/felixnan168"),
+        HomePerson(title: "Lyp", url: "https://gitee.com/L1yp"),
+        HomePerson(title: "sunsence", url: "https://github.com/sunsence"),
+        HomePerson(title: "rememberber", url: "https://github.com/rememberber")
+    ]
+    private let works: [(String, String, String)] = [
+        ("WePush", "微信消息推送与定时提醒", "https://github.com/rememberber/WePush"),
+        ("MooInfo", "系统与硬件信息速览", "https://github.com/rememberber/MooInfo")
+    ]
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 30) {
                 HStack(spacing: 22) {
                     Image(nsImage: NSImage(contentsOf: AppResources.bundle.url(forResource: "Brand", withExtension: "png")!)!).resizable().scaledToFit().frame(width: 86, height: 86)
                     VStack(alignment: .leading, spacing: 7) {
-                        HStack(alignment: .firstTextBaseline) { Text("MooTool").font(.system(size: 34, weight: .bold)); Text("Next Native").font(.caption).padding(.horizontal, 9).padding(.vertical, 4).background(.quaternary, in: Capsule()) }
+                        HStack(alignment: .firstTextBaseline) {
+                            Text("MooTool").font(.system(size: 34, weight: .bold))
+                            Text("Next Native").font(.caption).padding(.horizontal, 9).padding(.vertical, 4).background(.quaternary, in: Capsule())
+                            Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.8.0")").font(.caption).foregroundStyle(.tertiary)
+                        }
                         Text("开发与日常，得心应手。").font(.system(size: 15)).foregroundStyle(.secondary)
+                        Text("由 Zhou Bo 创作").font(.caption).foregroundStyle(.tertiary)
                         Link("mootool.luoboduner.com ↗", destination: URL(string: "https://mootool.luoboduner.com")!).font(.caption)
+                    }
+                }
+                homeSection("关于") {
+                    Text("MooTool 是面向开发者与日常效率的桌面工具箱。原生版保留 26 个工具入口与工作区，数据独立保存在本机。").font(.system(size: 13)).foregroundStyle(.secondary).lineSpacing(4)
+                }
+                homeSection("贡献者") {
+                    FlowLayout(spacing: 10) {
+                        ForEach(contributors) { person in
+                            Link(person.title, destination: URL(string: person.url)!).font(.system(size: 12, weight: .medium))
+                        }
+                    }
+                    Text("感谢每一位为 MooTool 生态贡献想法、代码与反馈的朋友。").font(.caption).foregroundStyle(.tertiary).padding(.top, 6)
+                }
+                homeSection("赞赏") {
+                    Text("如果 MooTool 对你有帮助，欢迎请作者喝杯咖啡。").font(.system(size: 13)).foregroundStyle(.secondary)
+                    if let sponsor = AppResources.bundle.url(forResource: "wx-zanshang", withExtension: "jpg") {
+                        Image(nsImage: NSImage(contentsOf: sponsor)!).resizable().scaledToFit().frame(width: 139).clipShape(RoundedRectangle(cornerRadius: 4))
+                    }
+                    Text("微信赞赏码").font(.caption).foregroundStyle(.tertiary)
+                }
+                homeSection("源码与反馈") {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Link("GitHub ↗", destination: URL(string: "https://github.com/rememberber/MooTool")!)
+                        Link("Gitee ↗", destination: URL(string: "https://gitee.com/zhoubochina/MooTool")!)
+                        Link("提交问题 ↗", destination: URL(string: "https://github.com/rememberber/MooTool/issues")!)
+                    }
+                }
+                homeSection("其他作品") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(works, id: \.0) { work in
+                            Link("\(work.0) ↗", destination: URL(string: work.2)!)
+                            Text(work.1).font(.caption).foregroundStyle(.secondary)
+                        }
                     }
                 }
                 Button { store.searchPresented = true } label: {
@@ -98,12 +193,54 @@ struct HomeView: View {
                         Label("本地保存", systemImage: "internaldrive"); Label("独立安装", systemImage: "square.stack.3d.up"); Label("原生快捷键", systemImage: "command")
                     }.font(.caption).foregroundStyle(.secondary)
                 }
-                HStack {
-                    Text("由 Zhou Bo 创作 · MIT License").foregroundStyle(.tertiary); Spacer()
-                    Link("GitHub ↗", destination: URL(string: "https://github.com/rememberber/MooTool")!)
-                }.font(.caption)
+                Text("MIT License").font(.caption).foregroundStyle(.tertiary)
             }.frame(maxWidth: 820).padding(44).frame(maxWidth: .infinity)
         }.background(Color(nsColor: .windowBackgroundColor))
+    }
+    @ViewBuilder private func homeSection(_ title: String, @ViewBuilder content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(.headline)
+            content()
+        }
+    }
+}
+
+private struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = arrange(proposal: proposal, subviews: subviews)
+        let height = rows.map(\.height).reduce(0, +) + CGFloat(max(0, rows.count - 1)) * spacing
+        return CGSize(width: proposal.width ?? 0, height: height)
+    }
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for row in arrange(proposal: proposal, subviews: subviews) {
+            var x = bounds.minX
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+                x += size.width + spacing
+            }
+            y += row.height + spacing
+        }
+    }
+    private struct Row { var indices: [Int]; var height: CGFloat }
+    private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> [Row] {
+        let width = proposal.width ?? 640
+        var rows: [Row] = []
+        var current = Row(indices: [], height: 0)
+        var x: CGFloat = 0
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            if x + size.width > width && !current.indices.isEmpty {
+                rows.append(current); current = Row(indices: [], height: 0); x = 0
+            }
+            current.indices.append(index)
+            current.height = max(current.height, size.height)
+            x += size.width + spacing
+        }
+        if !current.indices.isEmpty { rows.append(current) }
+        return rows
     }
 }
 

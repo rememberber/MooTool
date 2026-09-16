@@ -48,30 +48,44 @@ extension AppStore {
         synchronizeDocument(toolID)
         if let id = draft(toolID).documentID { updateVaultPreference(toolID) { $0.selectedEntryID = id; $0.expanded.formUnion(vault.ancestors(of: id)) } }
     }
-    func commitVault(_ value: DocumentVault) throws {
+    func commitVault(_ value: DocumentVault, toolID: String? = nil, gitMessage: String? = nil) throws {
         try value.validate()
         var candidate = snapshot(); candidate.documents = value.documents; candidate.folders = value.folders
         _ = try WorkspaceRepository.encode(candidate)
         documents = value.documents; folders = value.folders; scheduleSave()
+        if !persistenceBlocked { try syncVaultFilesystem() }
+        if let toolID, let gitMessage { recordVaultGitActivity(toolID, message: gitMessage) }
     }
     @discardableResult func createVaultDocument(_ toolID: String, name: String, parent: UUID?, content: String = "") throws -> UUID {
         var next = vault; let id = try next.createDocument(toolID: toolID, name: name, content: content, parent: parent)
-        try commitVault(next); try openDocument(id); return id
+        try commitVault(next, toolID: toolID, gitMessage: toolID == "json" ? "Create JSON snippet" : "Create Quick Note")
+        try openDocument(id); return id
     }
     @discardableResult func createVaultFolder(_ toolID: String, name: String, parent: UUID?) throws -> UUID {
-        var next = vault; let id = try next.createFolder(toolID: toolID, name: name, parent: parent); try commitVault(next)
+        var next = vault; let id = try next.createFolder(toolID: toolID, name: name, parent: parent)
+        try commitVault(next, toolID: toolID, gitMessage: toolID == "json" ? "Create JSON Vault folder" : "Create Quick Note folder")
         updateVaultPreference(toolID) { $0.selectedEntryID = id; $0.expanded.formUnion(vault.ancestors(of: id) + [id]) }; return id
     }
     func moveVaultEntry(_ id: UUID, to parent: UUID?) throws {
-        var next = vault; try next.move(id, to: parent); try commitVault(next)
-        if let toolID = vault.tool(of: id) { updateVaultPreference(toolID) { $0.expanded.formUnion(vault.ancestors(of: id)); $0.selectedEntryID = id } }
+        var next = vault; try next.move(id, to: parent); let toolID = vault.tool(of: id)
+        try commitVault(next, toolID: toolID, gitMessage: toolID == "json" ? "Move JSON Vault entry" : "Move Quick Note entry")
+        if let toolID { updateVaultPreference(toolID) { $0.expanded.formUnion(vault.ancestors(of: id)); $0.selectedEntryID = id } }
     }
-    func renameVaultEntry(_ id: UUID, name: String) throws { var next = vault; try next.rename(id, to: name); try commitVault(next) }
+    func renameVaultEntry(_ id: UUID, name: String) throws {
+        let toolID = vault.tool(of: id)
+        var next = vault; try next.rename(id, to: name)
+        try commitVault(next, toolID: toolID, gitMessage: toolID == "json" ? "Rename JSON Vault entry" : "Rename Quick Note entry")
+    }
     func duplicateVaultDocument(_ id: UUID) throws {
-        var next = vault; let newID = try next.duplicate(id); try commitVault(next); try openDocument(newID)
+        let toolID = vault.tool(of: id)
+        var next = vault; let newID = try next.duplicate(id)
+        try commitVault(next, toolID: toolID, gitMessage: toolID == "json" ? "Duplicate JSON snippet" : "Duplicate Quick Note")
+        try openDocument(newID)
     }
     func deleteVaultEntry(_ id: UUID) throws {
-        var next = vault; let removed = next.delete(id); try commitVault(next)
+        let toolID = vault.tool(of: id)
+        var next = vault; let removed = next.delete(id)
+        try commitVault(next, toolID: toolID, gitMessage: toolID == "json" ? "Delete JSON Vault entry" : "Delete Quick Note entry")
         for toolID in ["json", "quickNote"] {
             let draft = draft(toolID)
             if let active = draft.documentID, removed.contains(active) { draft.documentID = nil; draft.status = "已删除文档，当前内容保留为草稿" }
@@ -82,7 +96,8 @@ extension AppStore {
         }
     }
     func importVaultDocuments(_ items: [DocumentImportItem], toolID: String, parent: UUID?) throws -> [UUID] {
-        var next = vault; let ids = try next.importDocuments(items, toolID: toolID, parent: parent); try commitVault(next)
+        var next = vault; let ids = try next.importDocuments(items, toolID: toolID, parent: parent)
+        try commitVault(next, toolID: toolID, gitMessage: toolID == "json" ? "Import JSON Vault files" : "Import Quick Note files")
         if let first = ids.first { try openDocument(first) }; return ids
     }
     func editorPersistence(_ toolID: String, output: Bool = false) -> EditorPersistence {

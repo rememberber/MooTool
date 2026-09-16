@@ -164,7 +164,16 @@ struct CodeEditor: NSViewRepresentable {
             guard value != lastReported else { return }; lastReported = value
             DispatchQueue.main.async { context.onChange(value) }
         }
-        func textViewDidChangeSelection(_ notification: Notification) { if let view = notification.object as? NSTextView { record(view) } }
+        func textViewDidChangeSelection(_ notification: Notification) {
+            guard let view = notification.object as? NSTextView else { return }
+            if parent.bridge != nil, let context = parent.persistence, context.identity == identity {
+                let selection = view.selectedRange()
+                let origin = view.enclosingScrollView?.contentView.bounds.origin ?? .zero
+                let value = EditorViewState(location: selection.location, length: selection.length, scrollX: origin.x, scrollY: origin.y).clamped(toUTF16Length: (view.string as NSString).length)
+                if value != lastReported { lastReported = value; context.onChange(value) }
+            }
+            record(view)
+        }
         func textDidChange(_ notification: Notification) {
             guard !updating, let view = notification.object as? NSTextView else { return }
             parent.text = view.string; highlight(view); applyDiffHighlights(view); record(view)

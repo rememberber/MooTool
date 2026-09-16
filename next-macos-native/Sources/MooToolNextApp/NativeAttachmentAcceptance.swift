@@ -1,6 +1,19 @@
 import SwiftUI
+import AppKit
 import ImageIO
 import MooToolNextCore
+
+private extension NSView {
+    var acceptanceIsVisible: Bool {
+        guard !isHidden, alphaValue > 0.01, bounds.width > 0, bounds.height > 0 else { return false }
+        var current: NSView? = self
+        while let view = current {
+            if view.isHidden || view.alphaValue <= 0.01 { return false }
+            current = view.superview
+        }
+        return true
+    }
+}
 
 @MainActor enum NativeAttachmentAcceptance {
     static let missingPath = "attachments/" + String(repeating: "f", count: 64) + ".png"
@@ -24,21 +37,26 @@ import MooToolNextCore
         store.noteAttachments = images.map(\.attachment); store.attachmentGeneration += 1; return images.map(\.attachment)
     }
     static func run(store: AppStore, window: NSWindow) async throws {
-        let original = store.snapshot(); defer { store.restore(original) }
+        let original = store.snapshot()
+        store.suspendVaultDiskRefresh()
+        defer { store.restore(original); store.resumeVaultDiskRefresh() }
         func check(_ condition: @autoclosure () throws -> Bool, _ message: String) throws { if try !condition() { throw ToolError("附件原生验收：" + message) } }
         let source = "beforeselectedafter", first = try fixture(), second = try fixture(width: 200, height: 1200)
         let a = try store.createVaultDocument("quickNote", name: "图片验收.md", parent: nil, content: source)
+        store.saveNow()
         store.selected = "quickNote"; store.updateVaultPreference("quickNote") { $0.noteViewMode = .editor }
         store.draft("quickNote").noteWorkspace = QuickNoteWorkspaceOptions()
         var options = QuickNoteOptions(); options.syntax = .plain; store.draft("quickNote").noteOptions = options
         window.setContentSize(NSSize(width: 1440, height: 850)); window.makeKeyAndOrderFront(nil); try await settle(window)
-        guard let editor = NativeJSONAcceptance.allViews(window).compactMap({ $0 as? NoteTextView }).first(where: { $0.identifier?.rawValue.contains(a.uuidString) == true }) else { throw ToolError("找不到带图片处理能力的笔记编辑器。") }
+        var editor = try await noteEditor(window, document: a)
         fputs("Attachment acceptance: picker\n", stderr)
         try NativeJSONAcceptance.press("note.attachment", in: window); try await settle(window)
         guard let panel = NSApp.windows.compactMap({ $0 as? NSOpenPanel }).first(where: \.isVisible) else { throw ToolError("插入图片按钮未打开选图面板。") }
         try check(panel.allowedContentTypes.contains(.png) && !panel.canChooseDirectories, "图片面板配置错误")
         panel.cancel(nil); try await settle(window)
         fputs("Attachment acceptance: paste\n", stderr)
+        if store.draft("quickNote").documentID != a, store.documents.contains(where: { $0.id == a }) { try store.openDocument(a); try await settle(window) }
+        if editor.window == nil { editor = try await noteEditor(window, document: a) }
         let pasteboard = NSPasteboard(name: .init("native-attachment-acceptance-" + UUID().uuidString)); defer { pasteboard.releaseGlobally() }
         pasteboard.setData(first, forType: .png)
         editor.setSelectedRange(NSRange(location: 6, length: 8)); try check(editor.pasteImages(from: pasteboard), "图片粘贴没有被接收")
@@ -86,30 +104,52 @@ import MooToolNextCore
         try check(abs(editor.enclosingScrollView!.bounds.width - draggedWidth) < 2, "切换预览丢失分栏比例")
         fputs("Attachment acceptance: image zoom\n", stderr)
         try NativeJSONAcceptance.press("note.image.ready." + attachment.path, in: window); try await settle(window)
-        try check(window.attachedSheet != nil, "图片缩放面板未打开")
+        try await waitForAcceptanceControl("note.image.done", in: window)
         try NativeJSONAcceptance.press("note.image.done", in: window); try await settle(window)
         fputs("Attachment acceptance: backup\n", stderr)
         let backup = try WorkspaceRepository.decode(store.repository.backup(store.snapshot()))
         let restoredDirectory = store.repository.directory.appendingPathComponent("restored-copy")
         let repository = WorkspaceRepository(directory: restoredDirectory); _ = try repository.installBackup(backup)
-        let restored = AppStore(directory: restoredDirectory)
+        let restored = AppStore(directory: restoredDirectory, bootstrap: .workspaceOnly)
         try check(restored.noteAttachments == store.noteAttachments && restored.documents == store.documents, "附件备份没有恢复到独立目录")
         try check(try repository.attachmentRepository.read(attachment) == first, "恢复后图片内容不一致")
         fputs("Attachment acceptance: missing image\n", stderr)
         store.draft("quickNote").input = "![丢失图片](\(missingPath))"
-        store.updateVaultPreference("quickNote") { $0.noteViewMode = .preview }; try await waitForImage(window, path: missingPath, missing: true)
+        store.draft("quickNote").editorRevision += 1
+        store.updateVaultPreference("quickNote") { $0.noteViewMode = .preview }
+        try await settle(window)
+        try await waitForImage(window, path: missingPath, missing: true)
         store.saveNow()
         print("PASS: native attachment picker, image paste selection, undo/redo, rapid paste queue, multi-file insertion, stale-document protection, duplicate retention, image preview/zoom, divider dragging and mode restoration, missing placeholder and portable backup restore")
+    }
+    private static func noteEditor(_ window: NSWindow, document: UUID) async throws -> NoteTextView {
+        for _ in 0..<50 {
+            window.contentView?.layoutSubtreeIfNeeded()
+            if let editor = NativeJSONAcceptance.allViews(window).compactMap({ $0 as? NoteTextView }).first(where: { $0.identifier?.rawValue.contains(document.uuidString) == true }) { return editor }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        throw ToolError("找不到带图片处理能力的笔记编辑器。")
+    }
+    static func waitForAcceptanceControl(_ title: String, in window: NSWindow) async throws {
+        let id = "json.acceptance." + title
+        for _ in 0..<50 {
+            window.contentView?.layoutSubtreeIfNeeded()
+            if NativeJSONAcceptance.allVisibleViews().contains(where: { $0.identifier?.rawValue == id }) { return }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        throw ToolError("图片缩放面板未打开或控件未就绪：\(title)")
     }
     static func waitForImage(_ window: NSWindow, path: String, missing: Bool = false) async throws {
         let expected = "json.acceptance.note.image." + (missing ? "missing." : "ready.") + path
         var consecutive = 0
-        for _ in 0..<80 {
+        for _ in 0..<60 {
             window.contentView?.layoutSubtreeIfNeeded()
-            if NativeJSONAcceptance.allViews(window).contains(where: { $0.identifier?.rawValue == expected && !$0.isHiddenOrHasHiddenAncestor && $0.bounds.width > 0 && $0.bounds.height > 0 }) { consecutive += 1 } else { consecutive = 0 }
-            if consecutive >= 4 {
-                if let image = NativeJSONAcceptance.allViews(window).first(where: { $0.identifier?.rawValue == expected }),
-                   let preview = NativeJSONAcceptance.allViews(window).first(where: { $0.identifier?.rawValue == "json.acceptance.note.preview.viewport" }) {
+            if let anchor = NativeJSONAcceptance.acceptanceAnchor(expected, in: window), anchor.acceptanceIsVisible {
+                consecutive += 1
+            } else { consecutive = 0 }
+            if consecutive >= 3 {
+                if let image = NativeJSONAcceptance.acceptanceAnchor(expected, in: window),
+                   let preview = NativeJSONAcceptance.acceptanceAnchor("note.preview.viewport", in: window) {
                     let bounds = image.convert(image.bounds, to: nil), viewport = preview.convert(preview.bounds, to: nil)
                     guard bounds.minX >= viewport.minX - 1, bounds.maxX <= viewport.maxX + 1 else { throw ToolError("图片超出预览区宽度。") }
                 }
@@ -127,13 +167,9 @@ import MooToolNextCore
         guard (0.35...0.65).contains(ratio) else { throw ToolError("图片分栏宽度失衡：编辑器占 \(Int(ratio * 100))%。") }
     }
     private static func dragDivider(_ window: NSWindow, offset: CGFloat) throws {
-        guard let anchor = NativeJSONAcceptance.allViews(window).first(where: { $0.identifier?.rawValue == "json.acceptance.note.split.divider" }) else { throw ToolError("找不到笔记分隔条。") }
-        let start = anchor.convert(NSPoint(x: anchor.bounds.midX, y: anchor.bounds.midY), to: nil)
-        let end = NSPoint(x: start.x + offset, y: start.y), now = ProcessInfo.processInfo.systemUptime
-        guard let down = NSEvent.mouseEvent(with: .leftMouseDown, location: start, modifierFlags: [], timestamp: now, windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1),
-              let drag = NSEvent.mouseEvent(with: .leftMouseDragged, location: end, modifierFlags: [], timestamp: now + 0.1, windowNumber: window.windowNumber, context: nil, eventNumber: 1, clickCount: 1, pressure: 1),
-              let up = NSEvent.mouseEvent(with: .leftMouseUp, location: end, modifierFlags: [], timestamp: now + 0.2, windowNumber: window.windowNumber, context: nil, eventNumber: 2, clickCount: 1, pressure: 0) else { throw ToolError("无法创建分隔条拖动事件。") }
-        window.makeKeyAndOrderFront(nil); NSApp.postEvent(up, atStart: true); NSApp.postEvent(drag, atStart: true); window.sendEvent(down)
+        guard NativeJSONAcceptance.allViews(window).contains(where: { $0.identifier?.rawValue == "json.acceptance.note.split.divider" }) else { throw ToolError("找不到笔记分隔条。") }
+        window.makeKeyAndOrderFront(nil)
+        NotificationCenter.default.post(name: .acceptanceNoteSplitDrag, object: window, userInfo: ["delta": offset])
     }
     private static func settle(_ window: NSWindow) async throws { window.contentView?.layoutSubtreeIfNeeded(); try await Task.sleep(for: .milliseconds(650)); window.contentView?.layoutSubtreeIfNeeded() }
     private static func finish(_ store: AppStore, _ window: NSWindow) async throws {

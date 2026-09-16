@@ -33,25 +33,17 @@ struct QuickNoteWorkspace: View {
     }
     var body: some View {
         GeometryReader { geometry in
-            HSplitView {
-                VStack(spacing: 0) {
-                    toolbar(width: geometry.size.width)
-                    if workspace.findOpen { findBar }
-                    Divider()
-                    NoteEditorSplit(mode: viewMode) {
-                        CodeEditor(text: $draft.input, persistence: store.editorPersistence("quickNote"), bridge: editor,
-                                   softWrap: options.lineWrap, fontName: options.fontName, pointSize: options.fontSize,
-                                   lineHeightMultiple: 1.65 * options.lineSpacing, language: options.syntax,
-                                   imageTransfer: { sources, selection in attachments.enqueue(sources, selection: selection, store: store, draft: draft, editor: editor) })
-                    } preview: {
-                        Group {
-                            if options.syntax == .markdown { MarkdownPreview(text: draft.input, fontName: options.fontName, pointSize: options.fontSize) }
-                            else { CodeEditor(text: .constant(draft.input), editable: false, softWrap: options.lineWrap, fontName: options.fontName, pointSize: options.fontSize, lineHeightMultiple: 1.65 * options.lineSpacing) }
-                        }.background(Color(nsColor: .textBackgroundColor))
+            let replaceOpen = workspace.quickReplaceOpen && geometry.size.width >= 650
+            Group {
+                if replaceOpen {
+                    PersistedHSplit(toolID: "quick-note-no-tree-replace", defaultLeading: min(520, geometry.size.width - 220), minLeading: 360, maxLeading: min(900, geometry.size.width - 200)) {
+                        noteColumn(width: geometry.size.width)
+                    } trailing: {
+                        quickPanel.frame(minWidth: 185, maxWidth: 280)
                     }
-                    Divider(); statusBar
-                }.frame(minWidth: 420)
-                if workspace.quickReplaceOpen && geometry.size.width >= 650 { quickPanel.frame(minWidth: 185, idealWidth: 218, maxWidth: 250) }
+                } else {
+                    noteColumn(width: geometry.size.width)
+                }
             }
             .onChange(of: geometry.size.width) { _, width in if width < 650 && workspace.quickReplaceOpen { quickPopover = true } }
         }
@@ -158,6 +150,25 @@ struct QuickNoteWorkspace: View {
             Text("有选区时处理选区，否则处理全文").font(.system(size: 10)).foregroundStyle(.secondary).padding(10)
         }.background(Color(nsColor: .controlBackgroundColor))
     }
+    private func noteColumn(width: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            toolbar(width: width)
+            if workspace.findOpen { findBar }
+            Divider()
+            NoteEditorSplit(mode: viewMode) {
+                CodeEditor(text: $draft.input, persistence: store.editorPersistence("quickNote"), bridge: editor,
+                           softWrap: options.lineWrap, fontName: options.fontName, pointSize: options.fontSize,
+                           lineHeightMultiple: 1.65 * options.lineSpacing, language: options.syntax,
+                           imageTransfer: { sources, selection in attachments.enqueue(sources, selection: selection, store: store, draft: draft, editor: editor) })
+            } preview: {
+                Group {
+                    if options.syntax == .markdown { MarkdownPreview(text: draft.input, fontName: options.fontName, pointSize: options.fontSize) }
+                    else { CodeEditor(text: .constant(draft.input), editable: false, softWrap: options.lineWrap, fontName: options.fontName, pointSize: options.fontSize, lineHeightMultiple: 1.65 * options.lineSpacing) }
+                }.background(Color(nsColor: .textBackgroundColor))
+            }
+            Divider(); statusBar
+        }.frame(minWidth: 420)
+    }
     private var statusBar: some View {
         HStack(spacing: 8) {
             Text("\(draft.input.count) 字符 · \(draft.input.components(separatedBy: "\n").count) 行").fixedSize()
@@ -167,10 +178,34 @@ struct QuickNoteWorkspace: View {
             Text(options.syntax.title).foregroundStyle(.tertiary).fixedSize()
         }.font(.system(size: 10)).padding(.horizontal, 12).frame(minHeight: 31)
     }
+    private var editorText: String {
+        if viewMode != .preview, let live = editor.view?.string { return live }
+        return draft.input
+    }
+    private func effectiveEditorSelection() -> NSRange {
+        guard viewMode != .preview else { return NSRange(location: 0, length: 0) }
+        let textLen = (editorText as NSString).length
+        func clamped(_ range: NSRange) -> NSRange {
+            let start = max(0, min(range.location, textLen))
+            let end = max(start, min(NSMaxRange(range), textLen))
+            return NSRange(location: start, length: end - start)
+        }
+        let live = editor.view?.selectedRange() ?? editor.selection
+        if live.length > 0 { return clamped(live) }
+        if let state = draft.inputEditor {
+            let persisted = NSRange(location: state.location, length: state.length)
+            if persisted.length > 0 { return clamped(persisted) }
+        }
+        return NSRange(location: 0, length: 0)
+    }
     private func request(_ action: String) -> JSONEngineRequest {
-        var r = JSONEngineRequest(action, input: draft.input)
+        var r = JSONEngineRequest(action, input: editorText)
         r.query = workspace.findQuery; r.replacement = workspace.replacement; r.matchCase = workspace.matchCase; r.wholeWord = workspace.wholeWord; r.regex = workspace.regex
-        if viewMode != .preview { r.selectionStart = editor.selection.location; r.selectionEnd = NSMaxRange(editor.selection) }
+        if viewMode != .preview {
+            let selection = effectiveEditorSelection()
+            r.selectionStart = selection.location
+            r.selectionEnd = NSMaxRange(selection)
+        }
         return r
     }
     private func importAttachment() {
@@ -186,6 +221,7 @@ struct QuickNoteWorkspace: View {
     }
     private func perform(_ request: JSONEngineRequest, title: String) {
         guard !draft.busy else { return }
+        let source = request.input
         let id = draft.documentID, generation = store.editorRestoreGeneration, revision = draft.editorRevision, token = UUID()
         operationID = token; draft.noteOperationID = token; draft.busy = true; draft.error = nil
         operation = Task {
@@ -193,7 +229,7 @@ struct QuickNoteWorkspace: View {
             do {
                 let reply = try await JSONEngine.execute(request); try Task.checkCancellation()
                 guard draft.documentID == id, store.editorRestoreGeneration == generation, draft.editorRevision == revision else { return }
-                guard draft.input == request.input, let value = reply.value, editor.replace(value, expected: request.input, action: title) else { throw ToolError("正文已变化，请重新执行操作。") }
+                guard editorText == source, let value = reply.value, editor.replace(value, expected: source, action: title) else { throw ToolError("正文已变化，请重新执行操作。") }
                 if let match = reply.match { editor.select(match.range) }
                 if request.action == "replace", (reply.count ?? 0) > 0 { find(true) }
                 draft.status = title + "已完成" + (reply.count.map { " · \($0) 项" } ?? "")

@@ -15,14 +15,25 @@ public enum NetworkServices {
         let options = draft.http ?? HTTPOptions()
         guard options.timeout.isFinite, (1...120).contains(options.timeout) else { throw ToolError("请求超时需在 1 至 120 秒之间。") }
         for fields in [options.params, options.cookies, options.form] { guard fields.count <= 1000 else { throw ToolError("每组最多支持 1000 个参数。") } }
+        guard options.multipart.count <= 1000 else { throw ToolError("Multipart 最多支持 1000 个字段。") }
         let url = try HTTPFields.appendingQuery(HTTPFields.query(options.params), to: draft.option)
         var body = draft.input
+        var bodyData: Data?
+        var multipartType: String?
         if options.bodyKind == .form { body = HTTPFields.query(options.form) }
         if options.bodyKind == .none { body = "" }
-        guard body.utf8.count + draft.secondary.utf8.count <= 10 * 1024 * 1024 else { throw ToolError("请求正文和请求头超过 10 MB。") }
-        var result = try request(method: draft.mode.isEmpty ? "GET" : draft.mode, url: url, headers: draft.secondary, body: body)
+        if options.bodyKind == .multipart {
+            body = ""
+            let encoded = try HTTPMultipartBuilder.encode(options.multipart)
+            bodyData = encoded.0
+            multipartType = encoded.1
+        }
+        guard body.utf8.count + (bodyData?.count ?? 0) + draft.secondary.utf8.count <= 10 * 1024 * 1024 else { throw ToolError("请求正文和请求头超过 10 MB。") }
+        var result = try request(method: draft.mode.isEmpty ? "GET" : draft.mode, url: url, headers: draft.secondary, body: body, bodyData: bodyData)
         result.timeoutInterval = options.timeout
-        if result.value(forHTTPHeaderField: "Content-Type") == nil {
+        if let multipartType {
+            if result.value(forHTTPHeaderField: "Content-Type") == nil { result.setValue(multipartType, forHTTPHeaderField: "Content-Type") }
+        } else if result.value(forHTTPHeaderField: "Content-Type") == nil {
             if options.bodyKind == .json { result.setValue("application/json", forHTTPHeaderField: "Content-Type") }
             if options.bodyKind == .form { result.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type") }
         }
@@ -39,7 +50,7 @@ public enum NetworkServices {
         }
         return result
     }
-    public static func request(method: String, url: String, headers: String, body: String) throws -> URLRequest {
+    public static func request(method: String, url: String, headers: String, body: String, bodyData: Data? = nil) throws -> URLRequest {
         guard let url = URL(string: url.trimmingCharacters(in: .whitespacesAndNewlines)),
               ["http", "https"].contains(url.scheme?.lowercased() ?? ""), let host = url.host, !host.isEmpty else { throw ToolError("请输入有效的 HTTP / HTTPS URL。") }
         guard ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"].contains(method) else { throw ToolError("不支持的 HTTP 方法。") }
@@ -48,13 +59,17 @@ public enum NetworkServices {
             if key.lowercased() == "cookie", let previous = request.value(forHTTPHeaderField: key) { request.setValue(previous + "; " + value, forHTTPHeaderField: key) }
             else { request.addValue(value, forHTTPHeaderField: key) }
         }
-        if !body.isEmpty && method != "GET" && method != "HEAD" { request.httpBody = Data(body.utf8) }
+        if let bodyData, !bodyData.isEmpty, method != "GET", method != "HEAD" { request.httpBody = bodyData }
+        else if !body.isEmpty && method != "GET" && method != "HEAD" { request.httpBody = Data(body.utf8) }
         return request
     }
-    public static func send(_ request: URLRequest, followRedirects: Bool = true) async throws -> HTTPResponse {
+    public static func send(_ request: URLRequest, followRedirects: Bool = true, proxy: NetworkProxySettings? = nil) async throws -> HTTPResponse {
         // No shared cookies, disk cache, or credentials with other applications.
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForResource = request.timeoutInterval
+        if let dictionary = (proxy ?? NetworkProxySettings.current()).connectionProxyDictionary() {
+            config.connectionProxyDictionary = dictionary
+        }
         let session = URLSession(configuration: config, delegate: RedirectPolicy(follow: followRedirects), delegateQueue: nil)
         defer { session.invalidateAndCancel() }
         let start = Date(); let (stream, response) = try await session.bytes(for: request)
@@ -65,8 +80,13 @@ public enum NetworkServices {
         }
         guard let http = response as? HTTPURLResponse else { throw ToolError("服务器没有返回 HTTP 响应。") }
         let fields = http.allHeaderFields.reduce(into: [String: String]()) { $0[String(describing: $1.key)] = String(describing: $1.value) }
+        let formatter = ISO8601DateFormatter()
         let cookies = HTTPCookie.cookies(withResponseHeaderFields: fields, for: http.url ?? request.url!).map { cookie in
-            "\(cookie.name)=\(cookie.value)\n  Domain: \(cookie.domain) · Path: \(cookie.path)" + (cookie.isSecure ? " · Secure" : "") + (cookie.isHTTPOnly ? " · HttpOnly" : "")
+            var lines = ["\(cookie.name)=\(cookie.value)", "  Domain: \(cookie.domain) · Path: \(cookie.path)"]
+            if let expires = cookie.expiresDate { lines.append("  Expires: \(formatter.string(from: expires))") }
+            if cookie.isSecure { lines.append("  Secure") }
+            if cookie.isHTTPOnly { lines.append("  HttpOnly") }
+            return lines.joined(separator: "\n")
         }.joined(separator: "\n\n")
         return HTTPResponse(status: http.statusCode,
             headers: http.allHeaderFields.map { "\($0.key): \($0.value)" }.sorted().joined(separator: "\n"),
@@ -83,6 +103,9 @@ private final class RedirectPolicy: NSObject, URLSessionTaskDelegate, @unchecked
 
 /// Runs only on explicit user action. Arguments are never interpolated into a shell command.
 public enum ProcessRunner {
+    public static func runSync(executable: String, arguments: [String], environment: [String: String] = [:], timeout: TimeInterval = 20) throws -> String {
+        try runSynchronously(executable: executable, arguments: arguments, environment: environment, timeout: timeout)
+    }
     public static func run(executable: String, arguments: [String], environment: [String: String] = [:], timeout: TimeInterval = 20) async throws -> String {
         try await Task.detached(priority: .userInitiated) {
             try runSynchronously(executable: executable, arguments: arguments, environment: environment, timeout: timeout)

@@ -40,7 +40,7 @@ MooTool 目前包含 7 条独立产品线，各自维护代码、构建、版本
 | [**MooTool Next Electron**](next/README.md) | Electron、Vite、React、TypeScript；当前推荐的主力桌面版本。 | Windows / Linux / macOS | 稳定版：[下载 1.2.0](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.0) |
 | [**MooTool Java**](src/) | Java、Swing；持续维护的原始桌面版本。 | Windows / Linux / macOS | 稳定版：[下载 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee 镜像](https://gitee.com/zhoubochina/MooTool/releases) |
 | [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2、Rust、React、TypeScript；已实现 25 个工具、独立存储与更新。 | Windows / Linux / macOS | 候选预发布版：[下载 0.1.0-rc.2](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2) |
-| [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI、AppKit、系统框架；原生工作区、JSON 文档库、随手记与图片附件。 | macOS 14+ | 0.6.0 开发版；可从源码构建 `.app` / DMG。 |
+| [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI、AppKit、系统框架；原生工作区、JSON 文档库、随手记与图片附件。 | macOS 14+ | 0.8.0；可从源码构建 `.app` / DMG。 |
 | [**MooTool Next Flutter**](next-flutter/README.md) | Flutter、Dart；工具与桌面通道已实现，平台验收和部分能力仍在完善。 | Windows / Linux / macOS | 0.1.0 开发版；提供本地运行与未签名打包脚本。 |
 | [**MooTool Next Compose**](next-compose/README.md) | Kotlin、Compose Multiplatform Desktop；已实现多项工具、随手记及备份恢复。 | Windows / Linux / macOS | 0.1.0 开发版；已验证本机 macOS app-image 构建，自带 JVM 运行时。 |
 | [**MooTool Next FX**](next-fx/README.md) | OpenJDK、OpenJFX（JavaFX）；已有应用壳、JSON 文档库、编码解码和正则工具。 | Windows / Linux / macOS | 0.1.0-SNAPSHOT 早期开发版；已实现本机 macOS app-image 打包。 |

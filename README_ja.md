@@ -40,7 +40,7 @@ MooTool には現在 7 つの独立した製品ラインがあり、コード、
 | [**MooTool Next Electron**](next/README.md) | Electron、Vite、React、TypeScript。現在推奨する主力デスクトップ版。 | Windows / Linux / macOS | 安定版：[1.2.0 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.0) |
 | [**MooTool Java**](src/) | Java、Swing。保守を継続している従来のデスクトップ版。 | Windows / Linux / macOS | 安定版：[1.8.6 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee ミラー](https://gitee.com/zhoubochina/MooTool/releases) |
 | [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2、Rust、React、TypeScript。25 個のツールと独立したデータ保存・更新を実装。 | Windows / Linux / macOS | リリース候補版：[0.1.0-rc.2 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2) |
-| [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI、AppKit、システムフレームワーク。ネイティブワークスペース、JSON ライブラリ、クイックメモ、画像添付。 | macOS 14+ | 0.6.0 開発版。ソースから `.app` / DMG をビルド可能。 |
+| [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI、AppKit、システムフレームワーク。ネイティブワークスペース、JSON ライブラリ、クイックメモ、画像添付。 | macOS 14+ | 0.8.0。ソースから `.app` / DMG をビルド可能。 |
 | [**MooTool Next Flutter**](next-flutter/README.md) | Flutter、Dart。ツールとデスクトップチャネルを実装済み。プラットフォーム検証と一部機能は対応中。 | Windows / Linux / macOS | 0.1.0 開発版。ローカル実行・未署名パッケージ作成スクリプトあり。 |
 | [**MooTool Next Compose**](next-compose/README.md) | Kotlin、Compose Multiplatform Desktop。複数のツール、クイックメモ、バックアップ・復元を実装。 | Windows / Linux / macOS | 0.1.0 開発版。JVM 同梱の macOS app-image をローカルでビルド確認済み。 |
 | [**MooTool Next FX**](next-fx/README.md) | OpenJDK、OpenJFX（JavaFX）。アプリシェル、JSON ライブラリ、エンコード・デコード、正規表現ツールを実装。 | Windows / Linux / macOS | 0.1.0-SNAPSHOT 初期開発版。ローカルでの macOS app-image 作成に対応。 |

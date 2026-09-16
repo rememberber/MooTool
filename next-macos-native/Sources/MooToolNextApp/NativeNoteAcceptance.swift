@@ -3,26 +3,31 @@ import MooToolNextCore
 
 @MainActor enum NativeNoteAcceptance {
     static func run(store: AppStore, window: NSWindow) async throws {
-        let original = store.snapshot(); defer { store.restore(original) }
+        let original = store.snapshot()
+        store.suspendVaultDiskRefresh()
+        defer { store.restore(original); store.resumeVaultDiskRefresh() }
         func check(_ condition: @autoclosure () throws -> Bool, _ message: String) throws { if try !condition() { throw ToolError("随手记原生验收：" + message) } }
         let source = "keep alpha\nbeta\nalpha"
         let a = try store.createVaultDocument("quickNote", name: "样式验收.md", parent: nil, content: source)
+        store.saveNow()
         store.selected = "quickNote"; store.updateVaultPreference("quickNote") { $0.noteViewMode = .editor }
         var options = QuickNoteOptions(); options.fontName = "Menlo"; options.fontSize = 18; options.lineSpacing = 1.4; options.lineWrap = false; options.color = .blue
         store.draft("quickNote").noteOptions = options
         var workspace = QuickNoteWorkspaceOptions(); workspace.quickReplaceOpen = true; store.draft("quickNote").noteWorkspace = workspace
         window.setContentSize(NSSize(width: 1440, height: 850)); window.makeKeyAndOrderFront(nil); try await settle(window)
-        let editor = try inputEditor(window, document: a)
+        let editor = try await inputEditor(window, document: a)
         try check(editor.font?.pointSize == 18 && editor.isHorizontallyResizable, "文档字号或换行没有应用到原生编辑器")
         try check(abs((editor.defaultParagraphStyle?.minimumLineHeight ?? 0) - 18 * 1.65 * 1.4) < 0.1, "行距没有应用")
         try check(store.documents.first { $0.id == a }?.noteOptions == options, "仅修改文档设置没有自动保存")
         window.makeFirstResponder(editor); editor.setSelectedRange(NSRange(location: 5, length: 5))
+        try await settle(window)
         try NativeJSONAcceptance.press("note.uppercase", in: window); try await finish(store, window)
         try check(store.draft("quickNote").input == "keep ALPHA\nbeta\nalpha", "快速替换没有仅处理选区")
         try check(store.documents.first { $0.id == a }?.content == store.draft("quickNote").input, "快速替换没有自动保存")
         editor.undoManager?.undo(); try await settle(window)
         try check(store.draft("quickNote").input == source, "选区快速替换无法撤销")
         editor.setSelectedRange(NSRange(location: 0, length: 0))
+        try await settle(window)
         try NativeJSONAcceptance.press("note.uppercase", in: window); try await finish(store, window)
         try check(store.draft("quickNote").input == source.uppercased(), "无选区时未处理全文")
         editor.undoManager?.undo(); try await settle(window)
@@ -38,14 +43,16 @@ import MooToolNextCore
         try check(store.draft("quickNote").input == "- " + source, "列表操作没有处理当前行")
         store.updateVaultPreference("quickNote") { $0.noteViewMode = .preview }; try await settle(window)
         store.updateVaultPreference("quickNote") { $0.noteViewMode = .editor }; try await settle(window)
-        try check(try inputEditor(window, document: a) === editor, "切换预览重建了输入编辑器")
+        let editorAfterPreview = try await inputEditor(window, document: a)
+        try check(editorAfterPreview === editor, "切换预览重建了输入编辑器")
         editor.undoManager?.undo(); try await settle(window)
         try check(store.draft("quickNote").input == source, "切换预览丢失了撤销记录")
         let otherWindow = NSWindow(contentRect: NSRect(x: 40, y: 40, width: 1000, height: 700), styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
         otherWindow.isReleasedWhenClosed = false; otherWindow.contentView = NSHostingView(rootView: ToolRouter(id: "quickNote").environment(store)); otherWindow.makeKeyAndOrderFront(nil)
         defer { otherWindow.close() }
         options.fontSize = 22; store.draft("quickNote").noteOptions = options; try await settle(otherWindow)
-        try check(try inputEditor(otherWindow, document: a).font?.pointSize == 22 && editor.font?.pointSize == 22, "跨窗口文档设置没有同步")
+        let otherEditor = try await inputEditor(otherWindow, document: a)
+        try check(otherEditor.font?.pointSize == 22 && editor.font?.pointSize == 22, "跨窗口文档设置没有同步")
         otherWindow.close(); window.makeKeyAndOrderFront(nil)
         let b = try store.createVaultDocument("quickNote", name: "另一份笔记.md", parent: nil, content: "independent")
         var otherOptions = QuickNoteOptions(); otherOptions.fontName = "Monaco"; otherOptions.fontSize = 24; otherOptions.color = .red; otherOptions.syntax = .python
@@ -55,7 +62,7 @@ import MooToolNextCore
         try check(editor.undoManager?.canUndo != true, "撤销记录跨文档泄漏")
         try store.openDocument(b); try await settle(window)
         try check(store.draft("quickNote").noteOptions == otherOptions, "文档 B 设置没有恢复")
-        store.saveNow(); let fresh = AppStore(directory: store.repository.directory)
+        store.saveNow(); let fresh = AppStore(directory: store.repository.directory, bootstrap: .workspaceOnly)
         try check(fresh.draft("quickNote").noteOptions == otherOptions && fresh.draft("quickNote").noteWorkspace == workspace, "重载工作区没有恢复文档设置与面板选项")
         print("PASS: native note metadata, font/line spacing/wrap, selected/full quick replacements, find/replace, list actions, preview undo, multi-window settings and document isolation")
     }
@@ -73,8 +80,13 @@ import MooToolNextCore
         }
         throw ToolError("随手记查找计数没有更新为 \(count)。")
     }
-    private static func inputEditor(_ window: NSWindow, document: UUID) throws -> NSTextView {
-        guard let editor = NativeJSONAcceptance.allViews(window).compactMap({ $0 as? NSTextView }).first(where: { $0.identifier?.rawValue.contains(document.uuidString) == true && $0.identifier?.rawValue.hasSuffix(":input") == true }) else { throw ToolError("找不到随手记输入编辑器。") }; return editor
+    private static func inputEditor(_ window: NSWindow, document: UUID) async throws -> NSTextView {
+        for _ in 0..<50 {
+            window.contentView?.layoutSubtreeIfNeeded()
+            if let editor = NativeJSONAcceptance.allViews(window).compactMap({ $0 as? NSTextView }).first(where: { $0.identifier?.rawValue.contains(document.uuidString) == true && $0.identifier?.rawValue.hasSuffix(":input") == true }) { return editor }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        throw ToolError("找不到随手记输入编辑器。")
     }
     private static func settle(_ window: NSWindow) async throws { window.contentView?.layoutSubtreeIfNeeded(); window.displayIfNeeded(); try await Task.sleep(for: .milliseconds(650)); window.contentView?.layoutSubtreeIfNeeded() }
     private static func finish(_ store: AppStore, _ window: NSWindow) async throws {

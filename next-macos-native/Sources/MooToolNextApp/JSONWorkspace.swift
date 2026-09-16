@@ -29,17 +29,25 @@ struct JSONWorkspace: View {
     var body: some View {
         GeometryReader { geometry in
             let expanded = options.inspectorOpen ?? (geometry.size.width >= 720)
-            HSplitView {
-                VStack(spacing: 0) {
-                    toolbar(compact: expanded && geometry.size.width >= 660, availableWidth: geometry.size.width)
-                    if options.findOpen { findBar }
-                    Divider()
-                    CodeEditor(text: $draft.input, syntax: true, persistence: store.editorPersistence("json"), bridge: editor,
-                               softWrap: options.wrapLines, fontName: options.fontName)
-                    Divider()
-                    statusBar
-                }.frame(minWidth: 350)
-                if expanded && geometry.size.width >= 660 { inspector.frame(minWidth: 240, idealWidth: 260, maxWidth: 310) }
+            let editorColumn = VStack(spacing: 0) {
+                toolbar(compact: expanded && geometry.size.width >= 660, availableWidth: geometry.size.width)
+                if options.findOpen { findBar }
+                Divider()
+                CodeEditor(text: $draft.input, syntax: true, persistence: store.editorPersistence("json"), bridge: editor,
+                           softWrap: options.wrapLines, fontName: options.fontName)
+                Divider()
+                statusBar
+            }
+            Group {
+                if expanded && geometry.size.width >= 660 {
+                    PersistedHSplit(toolID: "json", paneIndex: 0, defaultLeading: 520, minLeading: 350, maxLeading: 900) {
+                        editorColumn
+                    } trailing: {
+                        inspector
+                    }
+                } else {
+                    editorColumn.frame(minWidth: 350)
+                }
             }
             .onChange(of: expanded) { _, value in if value && geometry.size.width < 660 { inspectorPopup = true } }
         }

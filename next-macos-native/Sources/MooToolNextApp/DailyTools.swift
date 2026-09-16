@@ -4,36 +4,89 @@ import MooToolNextCore
 
 struct MessageBoardTool: View {
     @Bindable var draft: ToolDraft
-    @State private var fontSize = 72.0
-    @State private var background = Color(red: 0.97, green: 0.80, blue: 0.29)
-    @State private var foreground = Color.black
-    @State private var board: NSWindow?
+    @State private var presenter = MessageBoardFullscreenPresenter()
+    private var board: Binding<MessageBoardOptions> {
+        Binding(
+            get: {
+                if draft.messageBoard == nil { draft.messageBoard = MessageBoardOptions() }
+                return draft.messageBoard!
+            },
+            set: { draft.messageBoard = $0 })
+    }
     var body: some View {
+        let options = board.wrappedValue
+        let background = MessageBoardColorCoding.color(hex: options.backgroundHex) ?? .yellow
+        let foreground = MessageBoardColorCoding.color(hex: options.foregroundHex) ?? .black
+        let textAlignment: TextAlignment = options.alignment == "left" ? .leading : .center
         ToolPage(tool: Catalog.tool("messageBoard"), draft: draft) {
-            Menu("常用留言") { ForEach(["马上回来", "请勿打扰", "正在开会", "欢迎光临", "今天也要开心"], id: \.self) { text in Button(text) { draft.input = text } } }
-            ColorPicker("背景", selection: $background).frame(width: 90)
-            ColorPicker("文字", selection: $foreground).frame(width: 90)
-            Slider(value: $fontSize, in: 28...160).frame(width: 130)
+            Menu("常用留言") {
+                ForEach(MessageBoardThemes.presets, id: \.title) { preset in
+                    Button(preset.title) {
+                        draft.input = preset.message
+                        board.wrappedValue.backgroundHex = preset.backgroundHex
+                        board.wrappedValue.foregroundHex = preset.foregroundHex
+                    }
+                }
+            }
+            Picker("对齐", selection: Binding(get: { board.wrappedValue.alignment }, set: { board.wrappedValue.alignment = $0 })) {
+                Text("居中").tag("center")
+                Text("左对齐").tag("left")
+            }.frame(width: 140)
+            ColorPicker("背景", selection: Binding(
+                get: { background },
+                set: { board.wrappedValue.backgroundHex = MessageBoardColorCoding.hex($0) }))
+                .frame(width: 90)
+            ColorPicker("文字", selection: Binding(
+                get: { foreground },
+                set: { board.wrappedValue.foregroundHex = MessageBoardColorCoding.hex($0) }))
+                .frame(width: 90)
+            Slider(value: Binding(get: { board.wrappedValue.fontSize }, set: { board.wrappedValue.fontSize = $0 }), in: 28...160)
+                .frame(width: 130)
             PrimaryButton(title: "全屏展示", symbol: "arrow.up.left.and.arrow.down.right") {
-                let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 720), styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
-                window.title = "MooTool Native · 留言板"; window.isReleasedWhenClosed = false
-                window.contentView = NSHostingView(rootView: BoardDisplay(text: draft.input, size: fontSize, background: background, foreground: foreground))
-                window.center(); window.makeKeyAndOrderFront(nil); window.toggleFullScreen(nil); board = window
+                presenter.present(
+                    text: draft.input,
+                    size: board.wrappedValue.fontSize,
+                    background: background,
+                    foreground: foreground,
+                    alignment: textAlignment)
             }
         } content: {
             VStack(spacing: 14) {
                 TextField("写下你的留言", text: $draft.input).textFieldStyle(.roundedBorder).font(.title3)
-                BoardDisplay(text: draft.input, size: fontSize, background: background, foreground: foreground).clipShape(RoundedRectangle(cornerRadius: 16))
+                BoardDisplay(text: draft.input, size: board.wrappedValue.fontSize, background: background, foreground: foreground, alignment: textAlignment)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                Text("全屏展示时按 Esc 退出；展示期间会阻止显示器休眠。").font(.caption).foregroundStyle(.secondary)
             }
-        }.onAppear { if draft.input.isEmpty { draft.input = "马上回来" } }
+        }
+        .onAppear {
+            if draft.messageBoard == nil { draft.messageBoard = MessageBoardOptions() }
+            if draft.input.isEmpty { draft.input = "马上回来" }
+        }
+        .onDisappear { presenter.dismiss() }
     }
 }
-private struct BoardDisplay: View {
-    let text: String; let size: Double; let background: Color; let foreground: Color
+
+struct BoardDisplay: View {
+    let text: String
+    let size: Double
+    let background: Color
+    let foreground: Color
+    var alignment: TextAlignment = .center
     var body: some View {
-        ZStack { background; Text(text).font(.system(size: size, weight: .bold, design: .rounded)).foregroundStyle(foreground).multilineTextAlignment(.center).minimumScaleFactor(0.15).padding(40) }.frame(maxWidth: .infinity, maxHeight: .infinity)
+        ZStack {
+            background
+            Text(text)
+                .font(.system(size: size, weight: .bold, design: .rounded))
+                .foregroundStyle(foreground)
+                .multilineTextAlignment(alignment)
+                .frame(maxWidth: .infinity, alignment: alignment == .leading ? .leading : .center)
+                .minimumScaleFactor(0.15)
+                .padding(40)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
+
 struct TranslationTool: View {
     @Bindable var draft: ToolDraft
     var body: some View {
@@ -66,17 +119,23 @@ private struct ModernTranslationTool: View {
             }
             Button("系统词典") { openDictionary(draft.input) }
         } content: {
-            HSplitView { EditorPane(title: "原文 · 自动识别语言", text: $draft.input); EditorPane(title: "译文", text: $draft.output, editable: false) }
+            PersistedHSplit(toolID: "translation", defaultLeading: 360, minLeading: 240, maxLeading: 720) {
+                EditorPane(title: "原文 · 自动识别语言", text: $draft.input)
+            } trailing: {
+                EditorPane(title: "译文", text: $draft.output, editable: false)
+            }
         }.onAppear { if draft.mode.isEmpty { draft.mode = "zh-Hans" } }
             .translationTask(configuration) { session in
-                draft.busy = true
-                defer { draft.busy = false }
-                do { let response = try await session.translate(draft.input); draft.output = response.targetText; draft.status = "已通过 macOS 翻译"; store.record("translation") }
-                catch { draft.error = error.localizedDescription }
+                do {
+                    let response = try await session.translate(draft.input)
+                    draft.output = response.targetText
+                } catch { draft.error = error.localizedDescription }
             }
     }
 }
-private func openDictionary(_ text: String) {
-    let encoded = text.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-    if let url = URL(string: "dict://" + encoded) { NSWorkspace.shared.open(url) }
+
+private func openDictionary(_ query: String) {
+    let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return }
+    NSWorkspace.shared.open(URL(string: "dict://\(trimmed.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? trimmed)")!)
 }

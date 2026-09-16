@@ -10,6 +10,7 @@ struct DocumentsTool: View {
     @State private var action: VaultAction?
     @State private var importing = false
     @State private var exporting = false
+    @State private var gitOpen = false
     private var preferences: VaultPreferences { store.vaultPreference(id) }
     private var selectedID: UUID? { preferences.selectedEntryID }
     private var selectedParent: UUID? {
@@ -22,20 +23,33 @@ struct DocumentsTool: View {
     }
     var body: some View {
         GeometryReader { geometry in
-            HSplitView {
-                if preferences.treeVisible && geometry.size.width >= 800 { library.frame(minWidth: id == "json" ? 190 : 220, idealWidth: id == "json" ? 210 : 235, maxWidth: id == "json" ? 260 : 330) }
-                VStack(spacing: 0) {
-                    editorToolbar(compact: geometry.size.width < 800)
-                    Divider()
-                    if id == "json" { JSONWorkspace(draft: draft) }
-                    else { QuickNoteWorkspace(draft: draft, onSave: save, onDelete: {
-                        if let documentID = draft.documentID { action = VaultAction(kind: .delete, entryID: documentID) }
-                    }) }
-                }.frame(minWidth: id == "json" ? 360 : 430)
+            Group {
+                if preferences.treeVisible && geometry.size.width >= 800 {
+                    PersistedHSplit(toolID: id, defaultLeading: id == "json" ? 210 : 235, minLeading: id == "json" ? 190 : 220, maxLeading: id == "json" ? 260 : 330) {
+                        library
+                    } trailing: {
+                        editorColumn
+                    }
+                } else {
+                    editorColumn
+                }
             }
         }
         .popover(isPresented: $documentPicker) { library.frame(width: 270, height: 480) }
         .sheet(item: $action) { VaultActionSheet(toolID: id, action: $0).environment(store) }
+        .sheet(isPresented: $gitOpen) { VaultGitDialog(toolID: id).environment(store) }
+    }
+    private var editorColumn: some View {
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                editorToolbar(compact: geometry.size.width < 800)
+                Divider()
+                if id == "json" { JSONWorkspace(draft: draft) }
+                else { QuickNoteWorkspace(draft: draft, onSave: save, onDelete: {
+                    if let documentID = draft.documentID { action = VaultAction(kind: .delete, entryID: documentID) }
+                }) }
+            }
+        }
     }
     private var library: some View {
         VStack(spacing: 0) {
@@ -59,6 +73,7 @@ struct DocumentsTool: View {
                     store.updateVaultPreference(id) { $0.expanded = allExpanded ? [] : Set(store.folders.filter { $0.toolID == id }.map(\.id)) }
                 }
                 if id == "json" { iconButton("保存", "square.and.arrow.down", action: save); iconButton("删除", "trash") { begin(.delete) }.disabled(selectedID == nil) }
+                iconButton("Git", "arrow.triangle.branch") { gitOpen = true }
                 Spacer(minLength: 0)
                 if importing { ProgressView().controlSize(.mini) }
             }.buttonStyle(.borderless).padding(.horizontal, 15).padding(.bottom, 12)
@@ -121,6 +136,7 @@ struct DocumentsTool: View {
             Button("导出当前文档…", action: exportCurrent)
             if id == "quickNote" { Button("导出文档及附件…") { exportWithAttachments(name: activeDocument?.title ?? "未命名笔记", content: draft.input) }.disabled(exporting) }
             Divider()
+            Button("从磁盘刷新") { store.refreshVaultFromDisk(toolID: id) }
             Button("打开草稿") { store.openScratch(id) }
             Button("另存为文档…") { begin(.file, saveAs: true) }
             Button("删除…") { begin(.delete) }.disabled(selectedID == nil)
@@ -136,6 +152,7 @@ struct DocumentsTool: View {
             if id == "quickNote" { Button("导出文档及附件…") { if let file = store.documents.first(where: { $0.id == node.id }) { exportWithAttachments(name: file.title, content: file.content) } }.disabled(exporting) }
         }
         Button("复制路径") { FilePanels.copy(node.path) }
+        Button("在 Finder 中显示") { reveal(node.id) }
         Divider()
         Button("删除…", role: .destructive) { action = VaultAction(kind: .delete, entryID: node.id) }
     }
@@ -150,7 +167,13 @@ struct DocumentsTool: View {
     }
     private func save() {
         if draft.documentID == nil { begin(.file, saveAs: true) }
-        else { store.synchronizeDocument(id); store.saveNow(); if store.error == nil { draft.status = "已保存" } }
+        else {
+            store.synchronizeDocument(id); store.saveNow()
+            if store.error == nil {
+                draft.status = "已保存"
+                store.recordVaultGitActivity(id, message: id == "json" ? "Update JSON snippet" : "Update Quick Note")
+            }
+        }
     }
     private func exportName(_ name: String) -> String { name.contains(".") ? name.replacingOccurrences(of: "/", with: "_") : name + (id == "json" ? ".json" : ".md") }
     private func exportCurrent() { FilePanels.saveText(draft.input, name: exportName(activeDocument?.title ?? "未命名文档")) }
@@ -168,6 +191,9 @@ struct DocumentsTool: View {
                 } catch { FilePanels.error(error) }
             }
         }
+    }
+    private func reveal(_ entryID: UUID) {
+        do { try store.revealVaultEntry(entryID) } catch { draft.error = error.localizedDescription; FilePanels.error(error) }
     }
     private func iconButton(_ title: String, _ symbol: String, action: @escaping () -> Void) -> some View { Button(action: action) { Image(systemName: symbol) }.help(title).accessibilityLabel(title) }
     private func perform(_ operation: () throws -> Void) { do { try operation(); draft.error = nil } catch { draft.error = error.localizedDescription; FilePanels.error(error) } }

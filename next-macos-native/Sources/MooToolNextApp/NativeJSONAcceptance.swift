@@ -3,10 +3,13 @@ import MooToolNextCore
 
 @MainActor enum NativeJSONAcceptance {
     static func run(store: AppStore, window: NSWindow) async throws {
-        let original = store.snapshot(); defer { store.restore(original) }
+        let original = store.snapshot()
+        store.suspendVaultDiskRefresh()
+        defer { store.restore(original); store.resumeVaultDiskRefresh() }
         func check(_ condition: @autoclosure () -> Bool, _ message: String) throws { if !condition() { throw ToolError("JSON 原生验收：" + message) } }
         let source = #"{"z":1,"name":"MooTool","values":[1,2]}"#
         let a = try store.createVaultDocument("json", name: "JSON 操作验收.json", parent: nil, content: source)
+        store.saveNow()
         store.selected = "json"; var options = JSONOptions(); options.inspectorOpen = true; store.draft("json").json = options
         window.setContentSize(NSSize(width: 1400, height: 850)); window.makeKeyAndOrderFront(nil)
         try await settle(window)
@@ -56,13 +59,35 @@ import MooToolNextCore
         try store.openDocument(a); try await settle(window)
         options.findOpen = true; options.findQuery = "MooTool"; options.wrapLines = false; options.fontName = "Monaco"; store.draft("json").json = options
         try await settle(window); store.saveNow()
-        let fresh = AppStore(directory: store.repository.directory)
+        let fresh = AppStore(directory: store.repository.directory, bootstrap: .workspaceOnly)
         try check(fresh.draft("json").json == options, "检查器、查找或换行设置未恢复")
         print("PASS: native JSON format shortcut, in-place autosave, undo/redo, conversion dialogs and apply, replace undo, stale-document protection and workspace options")
     }
+    static func acceptanceAnchor(_ marker: String, in window: NSWindow) -> NSView? {
+        let id = marker.hasPrefix("json.acceptance.") ? marker : "json.acceptance." + marker
+        func search(_ view: NSView) -> NSView? {
+            if view.identifier?.rawValue == id { return view }
+            for child in view.subviews { if let found = search(child) { return found } }
+            return nil
+        }
+        var roots: [NSView] = []
+        if let root = window.contentView { roots.append(root) }
+        if let attached = window.attachedSheet?.contentView { roots.append(attached) }
+        for root in roots { if let found = search(root) { return found } }
+        return nil
+    }
     static func allViews(_ window: NSWindow) -> [NSView] {
-        var pending = [window.contentView, window.attachedSheet?.contentView].compactMap { $0 }, result: [NSView] = []
-        while let view = pending.popLast() { result.append(view); pending.append(contentsOf: view.subviews) }; return result
+        var windows = [window]
+        if let attached = window.attachedSheet { windows.append(attached) }
+        for candidate in NSApp.windows where candidate !== window && candidate.sheetParent == window { windows.append(candidate) }
+        var pending = windows.compactMap(\.contentView), result: [NSView] = []
+        while let view = pending.popLast() { result.append(view); pending.append(contentsOf: view.subviews) }
+        return result
+    }
+    static func allVisibleViews() -> [NSView] {
+        var pending = NSApp.windows.filter(\.isVisible).compactMap(\.contentView), result: [NSView] = []
+        while let view = pending.popLast() { result.append(view); pending.append(contentsOf: view.subviews) }
+        return result
     }
     static func waitForPathPreview(_ window: NSWindow, source: String) async throws {
         let expected = try TextServices.json(source)
@@ -75,7 +100,9 @@ import MooToolNextCore
         throw ToolError("路径选择器未能展示树和当前正文预览。")
     }
     static func press(_ title: String, in window: NSWindow) throws {
-        guard let anchor = allViews(window).first(where: { $0.identifier?.rawValue == "json.acceptance." + title }),
+        let marker = "json.acceptance." + title
+        let matches = allViews(window).filter { $0.identifier?.rawValue == marker }
+        guard let anchor = matches.first(where: { $0.window === window }) ?? matches.first,
               let root = anchor.window?.contentView else { throw ToolError("找不到 JSON 控件定位标记：\(title)") }
         let point = anchor.convert(NSPoint(x: anchor.bounds.midX, y: anchor.bounds.midY), to: root)
         var target = root.hitTest(point)

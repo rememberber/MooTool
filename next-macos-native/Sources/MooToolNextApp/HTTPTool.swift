@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import MooToolNextCore
 
@@ -42,9 +43,10 @@ struct HTTPTool: View {
                         }.frame(width: 118)
                     }
                 }.font(.caption).controlSize(.small)
-                HSplitView {
-                    requestPane.frame(minWidth: 270).disabled(draft.busy)
-                    responsePane.frame(minWidth: 270)
+                PersistedHSplit(toolID: "http", defaultLeading: 420, minLeading: 270, maxLeading: 900) {
+                    requestPane.disabled(draft.busy)
+                } trailing: {
+                    responsePane
                 }
             }
         }.onAppear { if draft.mode.isEmpty { draft.mode = "GET" } }
@@ -78,6 +80,7 @@ struct HTTPTool: View {
                             switch draft.http?.bodyKind ?? .raw {
                             case .none: ContentUnavailableView("无请求正文", systemImage: "doc", description: Text("更换正文类型可编辑数据。"))
                             case .form: HTTPFieldsEditor(fields: option(\.form), description: "以 application/x-www-form-urlencoded 编码发送。", keyHint: "字段名")
+                            case .multipart: HTTPMultipartEditor(parts: option(\.multipart))
                             case .raw, .json: EditorPane(title: "请求正文", text: $draft.input, syntax: draft.http?.bodyKind == .json)
                             }
                         }.disabled(["GET", "HEAD"].contains(draft.mode))
@@ -130,6 +133,54 @@ struct HTTPTool: View {
                 }
             }
         } catch { draft.error = error.localizedDescription }
+    }
+}
+
+struct HTTPMultipartEditor: View {
+    @Binding var parts: [HTTPMultipartPart]
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("以 multipart/form-data 发送文本字段或本地文件；每个文件不超过 10 MB。").font(.caption).foregroundStyle(.secondary)
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    ForEach($parts) { $part in
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 7) {
+                                Toggle("启用", isOn: $part.enabled).labelsHidden().toggleStyle(.checkbox)
+                                TextField("字段名", text: $part.name).accessibilityLabel("字段名")
+                                Picker("类型", selection: $part.isFile) { Text("文本").tag(false); Text("文件").tag(true) }.labelsHidden().frame(width: 72)
+                                Button { parts.removeAll { $0.id == part.id } } label: { Image(systemName: "minus.circle") }.buttonStyle(.borderless)
+                            }
+                            if part.isFile {
+                                HStack {
+                                    Text(part.filePath.isEmpty ? "未选择文件" : (part.filePath as NSString).lastPathComponent).lineLimit(1).foregroundStyle(part.filePath.isEmpty ? .secondary : .primary)
+                                    Spacer()
+                                    Button("选择文件…") { chooseFile(for: $part) }
+                                }.font(.system(size: 12, design: .monospaced))
+                            } else {
+                                TextField("文本值", text: $part.value).textFieldStyle(.roundedBorder).font(.system(size: 12, design: .monospaced))
+                            }
+                        }.padding(8).background(.quaternary.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
+                    }
+                }.padding(1)
+            }
+            HStack {
+                Button { parts.append(HTTPMultipartPart()) } label: { Label("添加字段", systemImage: "plus") }.disabled(parts.count >= 1000)
+                Spacer()
+                Text("\(HTTPMultipartBuilder.active(parts).count) 项启用").foregroundStyle(.secondary)
+            }.font(.caption)
+        }.padding(13).background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 9)).overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(.quaternary))
+    }
+    private func chooseFile(for part: Binding<HTTPMultipartPart>) {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            part.wrappedValue.filePath = url.path
+            part.wrappedValue.isFile = true
+        }
     }
 }
 

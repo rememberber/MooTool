@@ -21,8 +21,13 @@ struct SystemTool: View {
                 Button("详细硬件报告") { draft.mode = "详细"; run() }
             }
         } content: {
-            HSplitView {
-                if id == "java" { EditorPane(title: "代码", text: $draft.input) }
+            if id == "java" {
+                PersistedHSplit(toolID: "java", defaultLeading: 420, minLeading: 280, maxLeading: 900) {
+                    EditorPane(title: "代码", text: $draft.input)
+                } trailing: {
+                    EditorPane(title: "输出", text: $draft.output, editable: false)
+                }
+            } else {
                 EditorPane(title: id == "hardware" ? "此 Mac" : "输出", text: $draft.output, editable: false)
             }
         }.onAppear {

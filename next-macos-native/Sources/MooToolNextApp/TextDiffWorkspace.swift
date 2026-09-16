@@ -106,11 +106,12 @@ struct TextDiffWorkspace: View {
         }
     }
     private var editors: some View {
-        HSplitView {
+        PersistedHSplit(toolID: "textDiff", defaultLeading: 420, minLeading: 240, maxLeading: 900) {
             pane("原始文本", text: $draft.input, editable: true, highlights: sideHighlights(left: true),
-                 persistence: editorPersistence(.left), bridge: leftEditor).frame(minWidth: 240)
+                 persistence: editorPersistence(.left), bridge: leftEditor)
+        } trailing: {
             pane("修改后", text: $draft.secondary, editable: true, highlights: sideHighlights(left: false),
-                 persistence: editorPersistence(.right), bridge: rightEditor).frame(minWidth: 240)
+                 persistence: editorPersistence(.right), bridge: rightEditor)
         }
     }
     private func pane(_ title: String, text: Binding<String>, editable: Bool, highlights: [EditorHighlight],

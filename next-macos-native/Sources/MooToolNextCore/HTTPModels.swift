@@ -11,9 +11,24 @@ public struct HTTPField: Codable, Equatable, Identifiable {
 }
 
 public enum HTTPBodyKind: String, Codable, CaseIterable {
-    case raw, json, form, none
+    case raw, json, form, multipart, none
     public var title: String {
-        switch self { case .raw: return "原始文本"; case .json: return "JSON"; case .form: return "表单"; case .none: return "无正文" }
+        switch self {
+        case .raw: return "原始文本"; case .json: return "JSON"; case .form: return "URL 编码表单"
+        case .multipart: return "Multipart"; case .none: return "无正文"
+        }
+    }
+}
+
+public struct HTTPMultipartPart: Codable, Equatable, Identifiable {
+    public var id = UUID()
+    public var name = ""
+    public var value = ""
+    public var filePath = ""
+    public var enabled = true
+    public var isFile = false
+    public init(name: String = "", value: String = "", filePath: String = "", enabled: Bool = true, isFile: Bool = false) {
+        self.name = name; self.value = value; self.filePath = filePath; self.enabled = enabled; self.isFile = isFile
     }
 }
 
@@ -21,6 +36,7 @@ public struct HTTPOptions: Codable, Equatable {
     public var params: [HTTPField] = []
     public var cookies: [HTTPField] = []
     public var form: [HTTPField] = []
+    public var multipart: [HTTPMultipartPart] = []
     public var bodyKind: HTTPBodyKind = .raw
     public var timeout: Double = 30
     public var followRedirects = true

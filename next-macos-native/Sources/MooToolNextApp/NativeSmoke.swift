@@ -152,7 +152,7 @@ import MooToolNextCore
             try await Task.sleep(for: .milliseconds(200))
             store.saveNow()
             guard try store.repository.load() == store.snapshot() else { throw ToolError("工作区持久化验证失败。") }
-            let restored = AppStore(directory: store.repository.directory)
+            let restored = AppStore(directory: store.repository.directory, bootstrap: .workspaceOnly)
             guard restored.httpRequests == store.httpRequests, restored.draft("http").record == store.draft("http").record,
                   restored.draft("json").record == store.draft("json").record, restored.draft("quickNote").record == store.draft("quickNote").record,
                   restored.draft("reformat").record == store.draft("reformat").record,

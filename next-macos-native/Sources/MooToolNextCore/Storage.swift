@@ -14,6 +14,8 @@ public struct DraftRecord: Codable, Equatable {
     public var textDiff: TextDiffOptions?
     public var noteOptions: QuickNoteOptions?
     public var noteWorkspace: QuickNoteWorkspaceOptions?
+    public var messageBoard: MessageBoardOptions?
+    public var cryptoAsymmetric = "RSA"
     public var inputEditor: EditorViewState?
     public var outputEditor: EditorViewState?
     public init() {}
@@ -50,6 +52,13 @@ public struct WorkspaceSnapshot: Codable, Equatable {
     public var selectedTool = "mootool"
     public var recent: [String] = []
     public var pinned: [String] = ["json", "quickNote", "timeConvert"]
+    public var customGroups: [CustomToolGroup] = []
+    public var showNavigationSeparators = true
+    public var showRecent = false
+    public var sidebarWidth = 215.0
+    public var hideNavigationTitles = false
+    public var hiddenNavigationToolIds: [String] = []
+    public var layoutPaneSizes: [String: [Double]] = [:]
     public var drafts: [String: DraftRecord] = [:]
     public var documents: [SavedDocument] = []
     public var history: [HistoryRecord] = []
@@ -78,6 +87,8 @@ public struct WorkspaceSnapshot: Codable, Equatable {
               Set((httpRequests ?? []).map(\.id)).count == (httpRequests ?? []).count else { throw ToolError("备份包含重复记录。") }
         for draft in Array(drafts.values) + history.map(\.draft) + (httpRequests ?? []).map(\.draft) + Array((scratchDrafts ?? [:]).values) {
             try draft.noteOptions?.validate(); try draft.noteWorkspace?.validate()
+            try draft.messageBoard?.validate()
+            guard ["RSA", "SM2"].contains(draft.cryptoAsymmetric) else { throw ToolError("非对称算法无效。") }
             try draft.reformat?.validate()
             if let http = draft.http {
                 guard http.timeout.isFinite, (1...120).contains(http.timeout) else { throw ToolError("HTTP 超时设置无效。") }
@@ -91,6 +102,13 @@ public struct WorkspaceSnapshot: Codable, Equatable {
             }
         }
         let knownIDs = Set(Catalog.tools.map(\.id))
+        try CustomToolGroupRules.validate(customGroups, knownToolIDs: knownIDs)
+        guard hiddenNavigationToolIds.count <= knownIDs.count,
+              Set(hiddenNavigationToolIds).count == hiddenNavigationToolIds.count,
+              hiddenNavigationToolIds.allSatisfy({ knownIDs.contains($0) && $0 != "mootool" }) else { throw ToolError("隐藏导航项无效。") }
+        guard layoutPaneSizes.count <= 32,
+              layoutPaneSizes.values.allSatisfy({ $0.count <= 4 && $0.allSatisfy({ $0.isFinite && $0 >= 0 }) }) else { throw ToolError("分栏宽度设置无效。") }
+        guard sidebarWidth.isFinite, (185...300).contains(sidebarWidth) else { throw ToolError("侧栏宽度无效。") }
         guard knownIDs.contains(selectedTool), pinned.allSatisfy(knownIDs.contains), recent.allSatisfy(knownIDs.contains),
               Set(pinned).count == pinned.count, Set(recent).count == recent.count,
               drafts.keys.allSatisfy(knownIDs.contains), history.allSatisfy({ knownIDs.contains($0.toolID) }),

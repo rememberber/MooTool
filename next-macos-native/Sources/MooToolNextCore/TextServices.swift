@@ -47,6 +47,10 @@ public enum TextServices {
         case ("Base64", false): return Data(text.utf8).base64EncodedString()
         case ("Base64", true):
             guard let data = Data(base64Encoded: text.filter { !$0.isWhitespace }), let result = String(data: data, encoding: .utf8) else { throw ToolError("无效 Base64 或非 UTF-8 文本。") }; return result
+        case ("Base32", false): return Base32Codec.encode(Data(text.utf8))
+        case ("Base32", true):
+            guard let result = String(data: try Base32Codec.decode(text), encoding: .utf8) else { throw ToolError("无效 Base32 或非 UTF-8 文本。") }
+            return result
         case ("URL", false): return text.addingPercentEncoding(withAllowedCharacters: CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~")) ?? ""
         case ("URL", true): guard let result = text.removingPercentEncoding else { throw ToolError("无效 URL 百分号编码。") }; return result
         case ("Hex", false): return Data(text.utf8).hex
@@ -75,7 +79,9 @@ public enum TextServices {
         case "MD5": return Insecure.MD5.hash(data: data).map { String(format: "%02x", $0) }.joined()
         case "SHA-1": return Insecure.SHA1.hash(data: data).map { String(format: "%02x", $0) }.joined()
         case "SHA-256": return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        case "SHA-384": return SHA384.hash(data: data).map { String(format: "%02x", $0) }.joined()
         case "SHA-512": return SHA512.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        case "SM3": return CryptoServices.sm3(text)
         case "HMAC-SHA256": return Data(HMAC<SHA256>.authenticationCode(for: data, using: SymmetricKey(data: Data(key.utf8)))).hex
         case "UUID": return UUID().uuidString.lowercased()
         case "随机 32 字节":

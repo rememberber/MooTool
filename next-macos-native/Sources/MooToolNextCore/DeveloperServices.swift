@@ -89,47 +89,69 @@ public enum DeveloperServices {
 }
 
 public struct CronExpression {
-    private let fields: [Set<Int>]
-    private let anyDay: Bool
-    private let anyWeekday: Bool
+    let flavor: CronFlavor
+    let seconds: Set<Int>
+    let minutesField: Set<Int>
+    let hoursField: Set<Int>
+    let daysField: Set<Int>
+    let monthsField: Set<Int>
+    let weekdaysField: Set<Int>
+    let yearsField: Set<Int>?
+    let dayRule: CronDayRule
+    let dayMatcher: CronDayMatcher
+    let weekMatcher: CronWeekMatcher
+
     public init(_ input: String) throws {
-        let parts = input.split(whereSeparator: \.isWhitespace).map(String.init)
-        guard parts.count == 5 else { throw ToolError("使用五段 Cron：分 时 日 月 周；支持 *、范围、列表和 / 步长。") }
-        anyDay = parts[2].hasPrefix("*"); anyWeekday = parts[4].hasPrefix("*")
-        fields = try zip(parts, [0...59, 0...23, 1...31, 1...12, 0...7]).map { try Self.parse($0, range: $1) }
+        let parsed = try QuartzCronParser.parse(input)
+        flavor = parsed.flavor
+        seconds = parsed.seconds
+        minutesField = parsed.minutes
+        hoursField = parsed.hours
+        daysField = parsed.days
+        monthsField = parsed.months
+        weekdaysField = parsed.weekdays
+        yearsField = parsed.years
+        dayRule = parsed.dayRule
+        dayMatcher = parsed.dayMatcher
+        weekMatcher = parsed.weekMatcher
     }
-    private static func parse(_ value: String, range: ClosedRange<Int>) throws -> Set<Int> {
-        var output = Set<Int>()
-        for item in value.split(separator: ",", omittingEmptySubsequences: false) {
-            let pair = item.split(separator: "/", omittingEmptySubsequences: false)
-            guard (1...2).contains(pair.count), let step = pair.count == 2 ? Int(pair[1]) : 1, step > 0, step <= range.upperBound + 1 else { throw ToolError("无效 Cron 步长。") }
-            let bounds = pair[0].split(separator: "-", omittingEmptySubsequences: false)
-            let lower: Int; let upper: Int
-            if pair[0] == "*" { lower = range.lowerBound; upper = range.upperBound }
-            else if bounds.count == 1, let number = Int(bounds[0]) { lower = number; upper = pair.count == 2 ? range.upperBound : number }
-            else if bounds.count == 2, let a = Int(bounds[0]), let b = Int(bounds[1]) { lower = a; upper = b }
-            else { throw ToolError("无效 Cron 字段：\(item)") }
-            guard range.contains(lower), range.contains(upper), lower <= upper else { throw ToolError("Cron 字段越界：\(item)") }
-            output.formUnion(stride(from: lower, through: upper, by: step))
-        }; return output
-    }
+
     public func next(after date: Date, count: Int = 10, timeZone: TimeZone = .current) throws -> [Date] {
         guard (1...100).contains(count) else { throw ToolError("执行次数需在 1–100 之间。") }
         var calendar = Calendar(identifier: .gregorian); calendar.timeZone = timeZone
-        var cursor = Date(timeIntervalSince1970: floor(date.timeIntervalSince1970 / 60) * 60 + 60)
+        let step: TimeInterval = flavor == .quartz ? 1 : 60
+        var cursor = Date(timeIntervalSince1970: floor(date.timeIntervalSince1970 / step) * step + step)
         let deadline = calendar.date(byAdding: .year, value: 5, to: date)!
         var result: [Date] = []
         while cursor < deadline && result.count < count {
-            let c = calendar.dateComponents([.minute, .hour, .day, .month, .weekday], from: cursor)
+            let c = calendar.dateComponents([.second, .minute, .hour, .day, .month, .weekday, .year], from: cursor)
             let weekday = c.weekday! - 1
-            let dayMatch = fields[2].contains(c.day!), weekMatch = fields[4].contains(weekday) || (weekday == 0 && fields[4].contains(7))
-            let dayAllowed = anyDay || anyWeekday ? dayMatch && weekMatch : dayMatch || weekMatch
-            if fields[3].contains(c.month!) && dayAllowed {
-                if fields[1].contains(c.hour!) && fields[0].contains(c.minute!) { result.append(cursor) }
-                cursor.addTimeInterval(60)
-            } else {
-                cursor = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: cursor))!
+            let weekMatch = weekdaysField.contains(weekday) || (weekday == 0 && weekdaysField.contains(7))
+            let dayMatch = daysField.contains(c.day!)
+            let dayAllowed: Bool = switch dayRule {
+            case .quartzAny: true
+            case .quartzDay:
+                switch dayMatcher {
+                case .last: CronScheduleMatch.isLastDayOfMonth(cursor, calendar: calendar)
+                case .nearestWeekday(let day): CronScheduleMatch.isNearestWeekday(to: day, date: cursor, calendar: calendar)
+                case .any: true
+                case .values: dayMatch
+                }
+            case .quartzWeek:
+                switch weekMatcher {
+                case .last(let value): CronScheduleMatch.isLastWeekday(value, date: cursor, calendar: calendar)
+                case .nth(let value, let nth): CronScheduleMatch.isNthWeekday(nth, weekday: value, date: cursor, calendar: calendar)
+                case .any: true
+                case .values: weekMatch
+                }
+            case .unixOr: dayMatch || weekMatch
             }
+            let yearOK = yearsField == nil || yearsField!.contains(c.year!)
+            let secondOK = flavor == .unix ? true : seconds.contains(c.second!)
+            if yearOK && monthsField.contains(c.month!) && dayAllowed && hoursField.contains(c.hour!) && minutesField.contains(c.minute!) && secondOK {
+                result.append(cursor)
+            }
+            cursor.addTimeInterval(step)
         }
         guard result.count == count else { throw ToolError("未来五年内找不到足够执行时间，请检查日期组合。") }
         return result

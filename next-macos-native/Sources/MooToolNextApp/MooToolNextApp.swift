@@ -10,7 +10,7 @@ struct MooToolNextApp: App {
     var body: some Scene {
         Window("MooTool Next Native", id: "main") {
             Workbench().environment(store).preferredColorScheme(scheme)
-                .onAppear { delegate.store = store }
+                .onAppear { delegate.store = store; store.startVaultFilesystemWatcher() }
         }
         .defaultSize(width: 1200, height: 800).windowStyle(.titleBar).windowToolbarStyle(.unified)
         .commands {
@@ -84,6 +84,8 @@ struct MooToolNextApp: App {
             if let store { NativeSmoke.verifyRestart(store: store) } else { exit(2) }
         } }
     }
+    func applicationDidBecomeActive(_ notification: Notification) { store?.setVaultCheckpointWindowActive(true) }
+    func applicationDidResignActive(_ notification: Notification) { store?.setVaultCheckpointWindowActive(false) }
     func applicationWillTerminate(_ notification: Notification) { store?.saveNow() }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag { sender.windows.first { $0.canBecomeMain && $0.frame.width > 500 }?.makeKeyAndOrderFront(nil) }; return true
