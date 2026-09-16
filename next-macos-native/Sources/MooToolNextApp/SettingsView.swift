@@ -65,8 +65,8 @@ struct SettingsView: View {
             Form { detail }.formStyle(.grouped).frame(minWidth: 420)
         }
         .frame(width: 820, height: 580)
-        .sheet(isPresented: $customGroupsOpen) { CustomGroupsSettings().environment(store) }
-        .sheet(isPresented: $navigationToolsOpen) { NavigationToolVisibilitySettings().environment(store) }
+        .sheet(isPresented: $customGroupsOpen) { CustomGroupsSettings().environment(store).environment(\.appLanguage, language) }
+        .sheet(isPresented: $navigationToolsOpen) { NavigationToolVisibilitySettings().environment(store).environment(\.appLanguage, language) }
         .sheet(isPresented: $migrationOpen) { MigrationSettingsPanel().environment(store).environment(\.appLanguage, language) }
         .confirmationDialog(loc("settings.restore.title"), isPresented: $confirmRestore) {
             Button(loc("settings.restore.confirm")) {
