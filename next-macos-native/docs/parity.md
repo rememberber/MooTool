@@ -15,7 +15,7 @@
 | 配置转换 | Yams 解析 YAML；YAML/JSON/Properties 互转 | Properties 支持点分层级及标量；不支持续行、转义键/值、值首尾空白、数组/null 等无法无损表示的数据，遇到这些情况报错 |
 | Protobuf | Hex/Base64 wire 解码，varint/fixed32/fixed64/length-delimited、UTF-8 检查 | `.proto` schema、按 schema 编码、嵌套类型推断；不支持废弃 group wire 类型 |
 | 环境变量 | 查看进程环境、`.env` 草稿、导出、传给代码运行 | 不写入 shell profile、launchd 或其他应用环境 |
-| HTTP | cURL 导入/导出；方法、URL、启用/禁用查询参数和 Cookie；原始/JSON/URL 编码表单与 **multipart/form-data**（文本字段 + 本地文件，单文件/总正文 10 MB）；集合分组、搜索、保存/替换/删除；正文/响应头/Cookie 分栏（最终响应 `Set-Cookie` 含 Domain/Path/Expires）；JSON 显示格式化；超时、重定向、跨工具切换取消；临时 URLSession；**设置中的 HTTP 代理**（主机/端口/可选认证） | 完整 cURL 选项、Cookie 文件、SOCKS/系统代理；GET/HEAD 不附正文；响应上限 10 MB |
+| HTTP | cURL 导入/导出；方法、URL、启用/禁用查询参数和 Cookie；原始/JSON/URL 编码表单与 **multipart/form-data**（文本字段 + 本地文件，单文件/总正文 10 MB）；集合分组、搜索、保存/替换/删除；正文/响应头/Cookie 分栏（最终响应 `Set-Cookie` 含 Domain/Path/Expires）；JSON 显示格式化；超时、重定向、跨工具切换取消；临时 URLSession；**设置中的 HTTP 代理**（主机/端口/可选认证）；请求/正文类型、参数与 Cookie 表单、multipart 编辑器、cURL 导入与请求集合弹窗支持三语 | 完整 cURL 选项、Cookie 文件、SOCKS/系统代理；GET/HEAD 不附正文；响应上限 10 MB；NetworkServices 错误信息仍为系统或中文 |
 | Host | 与 Electron 相同的配置列表 + 编辑器分栏（`host-workspace`）；读取 `/etc/hosts`、IP/映射校验、多配置保存/搜索、导出独立文件；配置写入 `workspace.json`；菜单栏托盘可切换已保存配置；SQLite `t_host` 可合并导入 | 不执行管理员提权覆盖系统 Hosts |
 | 网络工具 | DNS（dig）、Ping、Whois、ifconfig/netstat、DNS 缓存刷新、主机解析、IPv4↔Long、/24 IP 段 Ping 探测、TCP 端口扫描（常见端口或自定义）、本机地址列表 | 与 Electron 相同的并发/取消细粒度控制；Windows/Linux 命令差异不适用本产品线 |
 | UA 解析 | Safari、Chrome、Edge、Firefox、Opera；常见 OS/设备规则 | 未集成完整 UA 数据库；伪装或罕见 UA 可能识别不准确 |
