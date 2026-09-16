@@ -15,6 +15,7 @@ public struct DraftRecord: Codable, Equatable {
     public var noteOptions: QuickNoteOptions?
     public var noteWorkspace: QuickNoteWorkspaceOptions?
     public var messageBoard: MessageBoardOptions?
+    public var media: MediaWorkspaceState?
     public var cryptoAsymmetric = "RSA"
     public var inputEditor: EditorViewState?
     public var outputEditor: EditorViewState?
@@ -88,6 +89,7 @@ public struct WorkspaceSnapshot: Codable, Equatable {
         for draft in Array(drafts.values) + history.map(\.draft) + (httpRequests ?? []).map(\.draft) + Array((scratchDrafts ?? [:]).values) {
             try draft.noteOptions?.validate(); try draft.noteWorkspace?.validate()
             try draft.messageBoard?.validate()
+            try draft.media?.validate()
             guard ["RSA", "SM2"].contains(draft.cryptoAsymmetric) else { throw ToolError("非对称算法无效。") }
             try draft.reformat?.validate()
             if let http = draft.http {

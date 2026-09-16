@@ -973,6 +973,7 @@ final class CoreTests: XCTestCase {
         XCTAssertEqual(process.terminationStatus, 0)
         let preview = try ElectronHttpImport.preview(at: httpDB)
         XCTAssertEqual(preview.requestCount, 1)
+        XCTAssertEqual(preview.historyCount, 0)
         let loaded = try ElectronHttpImport.loadRequests(at: httpDB)
         XCTAssertEqual(loaded.first?.name, "Demo")
         XCTAssertEqual(loaded.first?.draft.mode, "POST")
@@ -981,7 +982,34 @@ final class CoreTests: XCTestCase {
         let httpMerge = ElectronHttpImport.merge(importing: loaded, into: [loaded[0]])
         XCTAssertEqual(httpMerge.added, 0)
         XCTAssertEqual(httpMerge.skipped, 1)
+        let historyDB = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-http-history-\(UUID().uuidString).db")
+        let historySQL = """
+        CREATE TABLE t_http_request_history (id INTEGER PRIMARY KEY, request_id INTEGER, title TEXT, method TEXT, url TEXT, params TEXT, headers TEXT, cookies TEXT, body TEXT, body_type TEXT, response_body TEXT, response_headers TEXT, response_cookies TEXT, status TEXT, cost_time INTEGER, create_time TEXT, modified_time TEXT);
+        INSERT INTO t_http_request_history VALUES (1, NULL, 'Call', 'GET', 'https://example.com/h', '[]', '[]', '[]', '', 'none', '{"ok":true}', 'HTTP/1.1 200', '[]', '200 OK', 42, '2024-03-01T10:00:00', '2024-03-01T10:00:00');
+        """
+        let historyProcess = Process()
+        historyProcess.executableURL = URL(fileURLWithPath: "/usr/bin/sqlite3")
+        historyProcess.arguments = [historyDB.path]
+        let historyPipe = Pipe()
+        historyProcess.standardInput = historyPipe
+        try historyProcess.run()
+        historyPipe.fileHandleForWriting.write(Data(historySQL.utf8))
+        historyPipe.fileHandleForWriting.closeFile()
+        historyProcess.waitUntilExit()
+        let history = try ElectronHttpImport.loadHttpHistory(at: historyDB)
+        XCTAssertEqual(history.first?.toolID, "http")
+        XCTAssertEqual(history.first?.draft.httpResult?.status, 200)
+        XCTAssertTrue(history.first?.draft.output.contains("ok") ?? false)
+        var imageDraft = DraftRecord()
+        imageDraft.media = MediaWorkspaceState()
+        imageDraft.media?.filePaths = ["/tmp/demo.png"]
+        imageDraft.media?.exportWidth = "800"
+        imageDraft.media?.jpegQuality = 0.7
+        imageDraft.media?.watermark = "Moo"
+        state.drafts["image"] = imageDraft
+        XCTAssertEqual(try WorkspaceRepository.decode(WorkspaceRepository.encode(state)).drafts["image"]?.media?.exportWidth, "800")
         try? FileManager.default.removeItem(at: httpDB)
+        try? FileManager.default.removeItem(at: historyDB)
     }
     func testHTTPRedirectPolicyAndSessionIsolation() async throws {
         let fixture = try HTTPFixture()

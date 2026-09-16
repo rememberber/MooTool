@@ -110,8 +110,10 @@ struct ColorTool: View {
 
 struct ImageTool: View {
     @Bindable var draft: ToolDraft
+    @Environment(AppStore.self) private var store
     @State private var original: CGImage?
     @State private var preview: NSImage?
+    @State private var sourcePath = ""
     @State private var width = ""
     @State private var quality = 0.85
     @State private var watermark = ""
@@ -126,7 +128,7 @@ struct ImageTool: View {
                 }
             }
             Picker("格式", selection: $draft.mode) { Text("PNG").tag("PNG"); Text("JPEG").tag("JPEG"); Text("TIFF").tag("TIFF") }.frame(width: 135)
-            TextField("宽度 px", text: $width).textFieldStyle(.roundedBorder).frame(width: 90)
+            TextField("宽度 px", text: $width).textFieldStyle(.roundedBorder).frame(width: 90).onChange(of: width) { persistMedia() }
             Button("导出", action: export).disabled(original == nil)
         } content: {
             PersistedHSplit(toolID: "image", defaultLeading: 360, minLeading: 240, maxLeading: 720) {
@@ -141,10 +143,10 @@ struct ImageTool: View {
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
                                 Text("质量").font(.caption)
-                                Slider(value: $quality, in: 0.1...1).disabled(draft.mode != "JPEG")
+                                Slider(value: $quality, in: 0.1...1).disabled(draft.mode != "JPEG").onChange(of: quality) { persistMedia() }
                                 Text("\(Int(quality * 100))%").font(.caption).monospacedDigit().frame(width: 36, alignment: .trailing)
                             }
-                            TextField("文字水印（可选）", text: $watermark).textFieldStyle(.roundedBorder)
+                            TextField("文字水印（可选）", text: $watermark).textFieldStyle(.roundedBorder).onChange(of: watermark) { persistMedia() }
                         }.padding(4)
                     }
                     if !draft.status.isEmpty {
@@ -153,15 +155,38 @@ struct ImageTool: View {
                     Spacer(minLength: 0)
                 }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.vertical, 4)
             }
-        }.onAppear { if draft.mode.isEmpty { draft.mode = "PNG" } }
+        }.onAppear {
+            if draft.mode.isEmpty { draft.mode = "PNG" }
+            restoreMedia()
+        }
     }
-    private func load(_ url: URL) {
+    private func restoreMedia() {
+        guard let media = draft.media else { return }
+        if !media.exportWidth.isEmpty { width = media.exportWidth }
+        quality = media.jpegQuality
+        watermark = media.watermark
+        if let path = media.filePaths.first, path != sourcePath, FileManager.default.fileExists(atPath: path) {
+            load(URL(fileURLWithPath: path), persist: false)
+        }
+    }
+    private func persistMedia() {
+        var state = draft.media ?? MediaWorkspaceState()
+        state.exportWidth = width
+        state.jpegQuality = quality
+        state.watermark = watermark
+        state.filePaths = sourcePath.isEmpty ? [] : [sourcePath]
+        draft.media = state
+        store.scheduleSave()
+    }
+    private func load(_ url: URL, persist: Bool = true) {
         do {
             guard let source = CGImageSourceCreateWithURL(url as CFURL, nil), let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
                   let w = properties[kCGImagePropertyPixelWidth] as? Int, let h = properties[kCGImagePropertyPixelHeight] as? Int, Double(w) * Double(h) <= 80_000_000,
                   let cg = CGImageSourceCreateImageAtIndex(source, 0, nil) else { throw ToolError("无法读取图片，或图片超过 8000 万像素。") }
             original = cg; preview = NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height)); width = String(cg.width)
+            sourcePath = url.path
             draft.status = "\(url.lastPathComponent) · \(cg.width) × \(cg.height) px"; draft.error = nil
+            if persist { persistMedia() }
         } catch { draft.error = error.localizedDescription }
     }
     private func export() {
@@ -193,16 +218,21 @@ struct NativePDFView: NSViewRepresentable {
 }
 struct PDFTool: View {
     @Bindable var draft: ToolDraft
+    @Environment(AppStore.self) private var store
     @State private var files: [URL] = []
     @State private var documents: [PDFDocument] = []
     @State private var combined: PDFDocument?
     @State private var showText = false
     var body: some View {
         ToolPage(tool: Catalog.tool("pdf"), draft: draft) {
-            PrimaryButton(title: "添加 PDF", symbol: "plus") { FilePanels.open(types: [.pdf], multiple: true, completion: load) }
+            PrimaryButton(title: "添加 PDF", symbol: "plus") { FilePanels.open(types: [.pdf], multiple: true) { load($0) } }
             TextField("页码：1-3,5（留空为全部）", text: $draft.option).textFieldStyle(.roundedBorder).frame(minWidth: 180, maxWidth: 270)
             Button("导出 PDF", action: export).disabled(combined == nil)
-            Button(showText ? "预览 PDF" : "提取文本") { draft.output = combined?.string ?? ""; showText.toggle() }.disabled(combined == nil)
+            Button(showText ? "预览 PDF" : "提取文本") {
+                draft.output = combined?.string ?? ""
+                showText.toggle()
+                persistMedia()
+            }.disabled(combined == nil)
         } content: {
             PersistedHSplit(toolID: "pdf", defaultLeading: 200, minLeading: 160, maxLeading: 320) {
                 VStack(alignment: .leading) {
@@ -222,23 +252,42 @@ struct PDFTool: View {
                     if showText { EditorPane(title: "PDF 文本", text: $draft.output, editable: false) }
                     else { NativePDFView(document: combined).overlay { if combined == nil { ContentUnavailableView("添加或拖入 PDF", systemImage: "doc.richtext", description: Text("按左侧顺序合并，或按页码提取页面")) } } }
                 }.frame(minWidth: 300)
-            }.dropDestination(for: URL.self) { urls, _ in load(urls); return true }
-        }
+            }.dropDestination(for: URL.self) { urls, _ in appendURLs(urls, persist: true); return true }
+        }.onAppear { restoreMedia() }
+    }
+    private func restoreMedia() {
+        guard let media = draft.media else { return }
+        showText = media.pdfShowText
+        let paths = media.filePaths.filter { FileManager.default.fileExists(atPath: $0) }
+        guard !paths.isEmpty, files.isEmpty else { return }
+        appendURLs(paths.map { URL(fileURLWithPath: $0) }, persist: false)
+    }
+    private func persistMedia() {
+        var state = draft.media ?? MediaWorkspaceState()
+        state.filePaths = files.map(\.path)
+        state.pdfShowText = showText
+        draft.media = state
+        store.scheduleSave()
     }
     private func load(_ urls: [URL]) {
+        appendURLs(urls, persist: true)
+    }
+    private func appendURLs(_ urls: [URL], persist: Bool) {
         do {
             var loaded: [PDFDocument] = []
             for url in urls {
                 guard let document = PDFDocument(url: url), !document.isLocked, document.pageCount > 0 else { throw ToolError("无法读取 \(url.lastPathComponent)，或文件需要密码。") }; loaded.append(document)
             }
             files += urls; documents += loaded; rebuild(); draft.error = nil
+            if persist { persistMedia() }
         } catch { draft.error = error.localizedDescription }
     }
     private func rebuild() {
-        guard !documents.isEmpty else { combined = nil; return }
+        guard !documents.isEmpty else { combined = nil; persistMedia(); return }
         let merged = PDFDocument()
         for document in documents { for index in 0..<document.pageCount { if let page = document.page(at: index)?.copy() as? PDFPage { merged.insert(page, at: merged.pageCount) } } }
         combined = merged; draft.status = "\(documents.count) 份文件 · 共 \(merged.pageCount) 页"
+        persistMedia()
     }
     private func export() {
         guard let combined else { return }

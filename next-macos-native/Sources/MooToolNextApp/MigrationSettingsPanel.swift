@@ -67,7 +67,7 @@ struct MigrationSettingsPanel: View {
             }
             Divider()
             Section("HTTP 请求集合（SQLite）") {
-                Text("从 Electron `MooToolNext.db` 或兼容的 `t_msg_http` 表合并保存的请求，不会删除已有条目；同名同集合会跳过。").font(.caption).foregroundStyle(.secondary)
+                Text("从 Electron `MooToolNext.db` 合并 `t_msg_http` 请求集合与 `t_http_request_history` 工具历史；同名同集合或重复历史会跳过。").font(.caption).foregroundStyle(.secondary)
                 HStack {
                     TextField("SQLite 数据库", text: $httpDatabasePath)
                     Button("选择…") { chooseDatabase() }
@@ -75,10 +75,11 @@ struct MigrationSettingsPanel: View {
                 HStack {
                     Button("扫描") { scanHttp() }.disabled(busy || httpDatabasePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     Button("合并导入…") { confirmHttpImport = true }
-                        .disabled(busy || (httpPreview?.requestCount ?? 0) == 0)
+                        .disabled(busy || ((httpPreview?.requestCount ?? 0) + (httpPreview?.historyCount ?? 0) == 0))
                 }
                 if let httpPreview {
                     LabeledContent("可导入请求", value: "\(httpPreview.requestCount)")
+                    LabeledContent("可导入历史", value: "\(httpPreview.historyCount)")
                     ForEach(httpPreview.warnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
                 }
             }
@@ -98,7 +99,7 @@ struct MigrationSettingsPanel: View {
         .confirmationDialog("导入 HTTP 请求集合？", isPresented: $confirmHttpImport) {
             Button("合并到当前工作区") { importHttp(from: URL(fileURLWithPath: httpDatabasePath)) }
         } message: {
-            Text("将把数据库中的请求追加到原生版 HTTP 工具「请求集合」，重复名称在同一集合下会跳过。")
+            Text("将合并 HTTP 请求集合与全局「历史记录」中的 HTTP 条目；重复项会跳过。")
         }
     }
 
@@ -142,8 +143,14 @@ struct MigrationSettingsPanel: View {
             let items = try ElectronHttpImport.loadRequests(at: url, collection: collection)
             let result = ElectronHttpImport.merge(importing: items, into: store.httpRequests)
             store.httpRequests = result.merged
+            let historyItems = try ElectronHttpImport.loadHttpHistory(at: url)
+            let historyResult = ElectronHttpImport.mergeHistory(importing: historyItems, into: store.history)
+            store.history = historyResult.merged
+            let favorites = store.history.filter(\.favorite)
+            let ordinary = Array(store.history.filter { !$0.favorite }.prefix(100))
+            store.history = (favorites + ordinary).sorted { $0.date > $1.date }
             store.saveNow()
-            notice = "已合并 \(result.added) 条 HTTP 请求，跳过 \(result.skipped) 条重复项。"
+            notice = "请求 +\(result.added)（跳过 \(result.skipped)）；历史 +\(historyResult.added)（跳过 \(historyResult.skipped)）。"
             httpPreview = try ElectronHttpImport.preview(at: url, collection: collection)
             error = nil
         } catch {

@@ -19,6 +19,7 @@ final class ToolDraft {
     var noteOptions: QuickNoteOptions? { didSet { documentChanged?(); changed?() } }
     var noteWorkspace: QuickNoteWorkspaceOptions? { didSet { changed?() } }
     var messageBoard: MessageBoardOptions? { didSet { changed?() } }
+    var media: MediaWorkspaceState? { didSet { changed?() } }
     var cryptoAsymmetric = "RSA" { didSet { changed?() } }
     var inputEditor: EditorViewState? { didSet { changed?() } }
     var outputEditor: EditorViewState? { didSet { changed?() } }
@@ -49,6 +50,7 @@ final class ToolDraft {
         reformat = record.reformat; textDiff = record.textDiff
         noteOptions = record.noteOptions; noteWorkspace = record.noteWorkspace
         messageBoard = record.messageBoard
+        media = record.media
         cryptoAsymmetric = record.cryptoAsymmetric
         inputEditor = record.inputEditor; outputEditor = record.outputEditor
         editorRevision += 1
@@ -61,6 +63,7 @@ final class ToolDraft {
         value.reformat = reformat; value.textDiff = textDiff
         value.noteOptions = noteOptions; value.noteWorkspace = noteWorkspace
         value.messageBoard = messageBoard
+        value.media = media
         value.cryptoAsymmetric = cryptoAsymmetric
         value.inputEditor = inputEditor; value.outputEditor = outputEditor; return value
     }

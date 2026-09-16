@@ -4,6 +4,7 @@ import SQLite3
 public struct ElectronHttpImportPreview: Equatable, Sendable {
     public var databasePath: String
     public var requestCount: Int
+    public var historyCount: Int
     public var warnings: [String]
 }
 
@@ -17,13 +18,33 @@ public enum ElectronHttpImport {
             throw ToolError("未找到数据库文件。")
         }
         let count = try readRequests(at: url, collection: collection, limit: rowLimit, warnings: &warnings).count
-        if count == 0 { warnings.append("未在 t_msg_http 中找到可导入的请求。") }
-        return ElectronHttpImportPreview(databasePath: url.path, requestCount: count, warnings: warnings)
+        let historyCount = try readHistory(at: url, limit: rowLimit, warnings: &warnings).count
+        if count == 0 && historyCount == 0 { warnings.append("未找到可导入的 HTTP 集合或历史。") }
+        return ElectronHttpImportPreview(databasePath: url.path, requestCount: count, historyCount: historyCount, warnings: warnings)
     }
 
     public static func loadRequests(at url: URL, collection: String = defaultCollection, limit: Int = rowLimit) throws -> [SavedHTTPRequest] {
         var warnings: [String] = []
         return try readRequests(at: url, collection: collection, limit: limit, warnings: &warnings)
+    }
+
+    public static func loadHttpHistory(at url: URL, limit: Int = rowLimit) throws -> [HistoryRecord] {
+        var warnings: [String] = []
+        return try readHistory(at: url, limit: limit, warnings: &warnings)
+    }
+
+    public static func mergeHistory(importing items: [HistoryRecord], into existing: [HistoryRecord]) -> (merged: [HistoryRecord], added: Int, skipped: Int) {
+        var result = existing
+        var keys = Set(existing.map(historyFingerprint))
+        var added = 0, skipped = 0
+        for item in items {
+            let key = historyFingerprint(item)
+            if keys.contains(key) { skipped += 1; continue }
+            keys.insert(key)
+            result.append(item)
+            added += 1
+        }
+        return (result.sorted { $0.date > $1.date }, added, skipped)
     }
 
     public static func merge(importing items: [SavedHTTPRequest], into existing: [SavedHTTPRequest]) -> (merged: [SavedHTTPRequest], added: Int, skipped: Int) {
@@ -43,6 +64,12 @@ public enum ElectronHttpImport {
     private static func readRequests(at url: URL, collection: String, limit: Int, warnings: inout [String]) throws -> [SavedHTTPRequest] {
         try withCopiedDatabase(at: url) { copy in
             try queryRequests(copy, collection: collection, limit: limit, warnings: &warnings)
+        }
+    }
+
+    private static func readHistory(at url: URL, limit: Int, warnings: inout [String]) throws -> [HistoryRecord] {
+        try withCopiedDatabase(at: url) { copy in
+            try queryHistory(copy, limit: limit, warnings: &warnings)
         }
     }
 
@@ -74,30 +101,129 @@ public enum ElectronHttpImport {
             let name = sqliteColumnText(statement, index: 0).trimmingCharacters(in: .whitespacesAndNewlines)
             let urlText = sqliteColumnText(statement, index: 2).trimmingCharacters(in: .whitespacesAndNewlines)
             if name.isEmpty && urlText.isEmpty { continue }
-            let method = parseMethod(sqliteColumnText(statement, index: 1))
-            let params = parseFields(sqliteColumnText(statement, index: 3))
-            let headers = parseFields(sqliteColumnText(statement, index: 4))
-            let cookies = parseFields(sqliteColumnText(statement, index: 5))
-            let body = sqliteColumnText(statement, index: 6)
-            let bodyType = sqliteColumnText(statement, index: 7)
-            var options = HTTPOptions()
-            options.params = params
-            options.cookies = cookies
-            options.bodyKind = bodyKind(bodyType: bodyType, body: body)
-            if options.bodyKind == .form {
-                options.form = parseFields(body)
-            }
-            var draft = DraftRecord()
-            draft.mode = method
-            draft.option = urlText
-            draft.input = body
-            draft.secondary = serializeHeaders(headers)
-            draft.http = options
+            let draft = buildDraft(
+                method: sqliteColumnText(statement, index: 1),
+                url: urlText,
+                paramsJSON: sqliteColumnText(statement, index: 3),
+                headersJSON: sqliteColumnText(statement, index: 4),
+                cookiesJSON: sqliteColumnText(statement, index: 5),
+                body: sqliteColumnText(statement, index: 6),
+                bodyType: sqliteColumnText(statement, index: 7),
+                responseBody: "",
+                responseHeaders: "",
+                responseCookies: "",
+                status: "",
+                costMillis: 0)
             var saved = SavedHTTPRequest(name: name.isEmpty ? urlText : name, collection: collection, draft: draft)
             saved.modified = parseLegacyTime(sqliteColumnText(statement, index: 8))
             items.append(saved)
         }
         return items
+    }
+
+    private static func queryHistory(_ url: URL, limit: Int, warnings: inout [String]) throws -> [HistoryRecord] {
+        var database: OpaquePointer?
+        guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY, nil) == SQLITE_OK, let database else {
+            throw ToolError("无法打开 SQLite 数据库。")
+        }
+        defer { sqlite3_close(database) }
+        guard tableExists(database, name: "t_http_request_history") else {
+            warnings.append("数据库中没有 t_http_request_history 表。")
+            return []
+        }
+        let sql = """
+        SELECT title, method, url, params, headers, cookies, body, body_type,
+               response_body, response_headers, response_cookies, status, cost_time, create_time
+        FROM t_http_request_history ORDER BY id DESC LIMIT \(max(1, min(limit, rowLimit)))
+        """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK, let statement else {
+            throw ToolError(String(cString: sqlite3_errmsg(database)))
+        }
+        defer { sqlite3_finalize(statement) }
+        var items: [HistoryRecord] = []
+        while sqlite3_step(statement) == SQLITE_ROW {
+            let urlText = sqliteColumnText(statement, index: 2).trimmingCharacters(in: .whitespacesAndNewlines)
+            let responseBody = sqliteColumnText(statement, index: 8)
+            if urlText.isEmpty && responseBody.isEmpty { continue }
+            let draft = historySized(buildDraft(
+                method: sqliteColumnText(statement, index: 1),
+                url: urlText,
+                paramsJSON: sqliteColumnText(statement, index: 3),
+                headersJSON: sqliteColumnText(statement, index: 4),
+                cookiesJSON: sqliteColumnText(statement, index: 5),
+                body: sqliteColumnText(statement, index: 6),
+                bodyType: sqliteColumnText(statement, index: 7),
+                responseBody: responseBody,
+                responseHeaders: sqliteColumnText(statement, index: 9),
+                responseCookies: sqliteColumnText(statement, index: 10),
+                status: sqliteColumnText(statement, index: 11),
+                costMillis: Int(sqlite3_column_int64(statement, 12))))
+            var record = HistoryRecord(toolID: "http", draft: draft)
+            record.date = parseLegacyTime(sqliteColumnText(statement, index: 13))
+            items.append(record)
+        }
+        return items
+    }
+
+    private static func buildDraft(
+        method: String,
+        url: String,
+        paramsJSON: String,
+        headersJSON: String,
+        cookiesJSON: String,
+        body: String,
+        bodyType: String,
+        responseBody: String,
+        responseHeaders: String,
+        responseCookies: String,
+        status: String,
+        costMillis: Int
+    ) -> DraftRecord {
+        let params = parseFields(paramsJSON)
+        let headers = parseFields(headersJSON)
+        let cookies = parseFields(cookiesJSON)
+        var options = HTTPOptions()
+        options.params = params
+        options.cookies = cookies
+        options.bodyKind = bodyKind(bodyType: bodyType, body: body)
+        if options.bodyKind == .form { options.form = parseFields(body) }
+        var draft = DraftRecord()
+        draft.mode = parseMethod(method)
+        draft.option = url
+        draft.input = body
+        draft.secondary = serializeHeaders(headers)
+        draft.http = options
+        draft.output = responseBody
+        if !responseBody.isEmpty || !status.isEmpty {
+            let code = parseStatusCode(status)
+            draft.httpResult = HTTPResultMetadata(
+                status: code,
+                headers: responseHeaders,
+                cookies: responseCookies,
+                url: url,
+                elapsed: Double(max(0, costMillis)) / 1000,
+                bytes: responseBody.utf8.count)
+        }
+        return draft
+    }
+
+    private static func historySized(_ draft: DraftRecord) -> DraftRecord {
+        var value = draft
+        let limit = 120_000
+        if value.input.utf8.count > limit { value.input = String(value.input.prefix(limit)) }
+        if value.output.utf8.count > limit { value.output = String(value.output.prefix(limit)) }
+        return value
+    }
+
+    private static func historyFingerprint(_ record: HistoryRecord) -> String {
+        let output = record.draft.output.prefix(240)
+        return "\(record.toolID)\u{0}\(record.draft.mode)\u{0}\(record.draft.option)\u{0}\(output)"
+    }
+
+    private static func parseStatusCode(_ raw: String) -> Int {
+        let token = raw.split(separator: " ").first.map(String.init) ?? raw
+        return Int(token.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
     }
 
     private static func tableExists(_ database: OpaquePointer, name: String) -> Bool {

@@ -132,7 +132,7 @@ struct SettingsView: View {
         case .migration:
             Section("数据迁移") {
                 Button("从 Electron 导入工作台设置…") { migrationOpen = true }
-                Text("合并 Electron 工作台与代理/编辑器偏好；可从 MooToolNext.db 或 Java `t_msg_http` 合并 HTTP 请求集合。不包含笔记/JSON 文档、工具历史或收藏。").font(.caption).foregroundStyle(.secondary)
+                Text("合并 Electron 工作台与代理/编辑器偏好；可从 SQLite 合并 HTTP 请求集合与 HTTP 历史。不包含笔记/JSON 文档、其他工具历史或收藏。").font(.caption).foregroundStyle(.secondary)
             }
         case .shortcuts:
             Section("常用快捷键") {
