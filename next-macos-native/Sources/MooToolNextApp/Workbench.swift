@@ -307,7 +307,8 @@ struct HistoryView: View {
                                 let options = ReformatOptions.migrating(item.draft)
                                 Text(options.tab == .file ? (options.fileSource.isEmpty ? item.draft.output : options.fileSource) : (item.draft.input.isEmpty ? item.draft.output : item.draft.input))
                                     .lineLimit(2).font(.system(.body, design: .monospaced))
-                                Text("\(options.type.title) · \(options.tab == .file ? "文件" : "文本") · \(item.date.formatted())")
+                                let tabKey = options.tab == .file ? "history.reformat.file" : "history.reformat.text"
+                                Text("\(options.type.title) · \(AppLocalization.string(tabKey, language: language)) · \(item.date.formatted())")
                                     .font(.caption).foregroundStyle(.secondary)
                             } else if toolID == "timeConvert" {
                                 Text(item.draft.input).lineLimit(1).font(.system(.body, design: .monospaced))

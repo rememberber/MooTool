@@ -101,7 +101,10 @@ struct ColorTool: View {
     }
     private func parse() {
         let text = draft.input.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
-        guard text.count == 6, let value = UInt32(text, radix: 16) else { draft.error = "请输入六位 HEX，如 #4F83CC。"; return }
+        guard text.count == 6, let value = UInt32(text, radix: 16) else {
+            draft.error = AppLocalization.string("color.hexInvalid", language: language)
+            return
+        }
         color = Color(red: Double((value >> 16) & 255) / 255, green: Double((value >> 8) & 255) / 255, blue: Double(value & 255) / 255); update()
     }
     private func update() {

@@ -51,6 +51,11 @@ struct SettingsView: View {
     @State private var navigationToolsOpen = false
     @State private var migrationOpen = false
 
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+    private func locf(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: AppLocalization.string(key, language: language), arguments: arguments)
+    }
+
     var body: some View {
         PersistedHSplit(toolID: "settings-page", defaultLeading: 220, minLeading: 180, maxLeading: 360) {
             List(SettingsCategory.allCases, selection: $category) { item in
@@ -63,11 +68,11 @@ struct SettingsView: View {
         .sheet(isPresented: $customGroupsOpen) { CustomGroupsSettings().environment(store) }
         .sheet(isPresented: $navigationToolsOpen) { NavigationToolVisibilitySettings().environment(store) }
         .sheet(isPresented: $migrationOpen) { MigrationSettingsPanel().environment(store).environment(\.appLanguage, language) }
-        .confirmationDialog("恢复原生版工作区？", isPresented: $confirmRestore) {
-            Button("保存当前副本并恢复") {
+        .confirmationDialog(loc("settings.restore.title"), isPresented: $confirmRestore) {
+            Button(loc("settings.restore.confirm")) {
                 guard let value = pendingBackup else { return }
                 do {
-                    if store.persistenceBlocked { throw ToolError("当前工作区文件读取失败。请先在 Finder 中备份并处理原文件后重启，再导入备份。") }
+                    if store.persistenceBlocked { throw ToolError(loc("settings.error.workspaceBlocked")) }
                     let backup = store.repository.directory.appendingPathComponent("before-restore-\(UUID().uuidString).json")
                     try FileManager.default.createDirectory(at: store.repository.directory, withIntermediateDirectories: true)
                     try store.repository.backup(store.snapshot()).write(to: backup, options: .atomic)
@@ -76,7 +81,14 @@ struct SettingsView: View {
                     store.restore(restored); store.saveNow(); pendingBackup = nil
                 } catch { FilePanels.error(error) }
             }
-        } message: { Text("备份包含 \(pendingBackup?.documents.count ?? 0) 份文档、\(pendingBackup?.noteAttachments?.count ?? 0) 张图片和 \(pendingBackup?.history.count ?? 0) 条历史记录。") }
+        } message: {
+            Text(locf(
+                "settings.restore.message",
+                pendingBackup?.documents.count ?? 0,
+                pendingBackup?.noteAttachments?.count ?? 0,
+                pendingBackup?.history.count ?? 0
+            ))
+        }
     }
 
     @ViewBuilder private var detail: some View {
@@ -103,17 +115,17 @@ struct SettingsView: View {
                     get: { store.showRecent },
                     set: { store.showRecent = $0; store.scheduleSave() }))
                 LabeledContent(AppLocalization.string("settings.sidebarWidth", language: language), value: "\(Int(store.sidebarWidth)) pt")
-                Text("在主窗口侧栏右缘拖动调整宽度，双击恢复默认 215 pt。").font(.caption).foregroundStyle(.secondary)
+                Text(loc("settings.hint.sidebarWidth")).font(.caption).foregroundStyle(.secondary)
                 Toggle(AppLocalization.string("settings.trayEnabled", language: language), isOn: $trayEnabled)
                     .onChange(of: trayEnabled) { _, _ in NotificationCenter.default.post(name: .menuBarTrayRefresh, object: nil) }
-                Text("与 Electron「系统托盘」相同：提供打开主窗口、设置、屏幕取色、区域截图、翻译与 Host 配置切换；不含自定义全局热键。").font(.caption).foregroundStyle(.secondary)
+                Text(loc("settings.hint.tray")).font(.caption).foregroundStyle(.secondary)
                 Picker(AppLocalization.string("settings.closeWindow", language: language), selection: $closeBehavior) {
                     Text(AppLocalization.string("settings.close.ask", language: language)).tag("ask")
                     Text(AppLocalization.string("settings.close.hide", language: language)).tag("hide")
                     Text(AppLocalization.string("settings.close.quit", language: language)).tag("quit")
                 }
                 Toggle(AppLocalization.string("settings.autoDownloadPref", language: language), isOn: $autoDownloadUpdates)
-                Text("关闭行为与 Electron `general.closeBehavior` 一致；自动下载偏好会随 Electron 设置迁移，原生版仍需在「检查更新」中手动获取安装包。").font(.caption).foregroundStyle(.secondary)
+                Text(loc("settings.hint.closeBehavior")).font(.caption).foregroundStyle(.secondary)
             }
         case .proxy:
             Section(SettingsCategory.proxy.title(language: language)) {
@@ -122,7 +134,7 @@ struct SettingsView: View {
                 Stepper(value: $proxyPort, in: 1...65535) { Text("\(AppLocalization.string("settings.port", language: language))：\(proxyPort)") }.disabled(!proxyEnabled)
                 TextField(AppLocalization.string("settings.usernameOptional", language: language), text: $proxyUsername).disabled(!proxyEnabled)
                 SecureField(AppLocalization.string("settings.passwordOptional", language: language), text: $proxyPassword).disabled(!proxyEnabled)
-                Text("与 Electron 设置相同：HTTP / HTTPS 请求经此代理发送（含 HTTP 工具与网络诊断中的 HTTP 类调用）。不支持 SOCKS 与系统代理自动发现。").font(.caption).foregroundStyle(.secondary)
+                Text(loc("settings.hint.proxy")).font(.caption).foregroundStyle(.secondary)
             }
         case .appearance:
             Section(SettingsCategory.appearance.title(language: language)) {
@@ -138,20 +150,20 @@ struct SettingsView: View {
             Section(SettingsCategory.vault.title(language: language)) {
                 Toggle(AppLocalization.string("settings.vaultAutoCommit", language: language), isOn: $vaultAutoCommit)
                 Stepper(value: $vaultAutoCommitIdleSeconds, in: 5...3600, step: 5) {
-                    Text("编辑空闲提交：\(vaultAutoCommitIdleSeconds) 秒")
+                    Text(locf("settings.vault.idleCommit", vaultAutoCommitIdleSeconds))
                 }.disabled(!vaultAutoCommit)
                 Stepper(value: $vaultAutoCommitInactiveSeconds, in: 5...3600, step: 5) {
-                    Text("窗口失焦提交：\(vaultAutoCommitInactiveSeconds) 秒")
+                    Text(locf("settings.vault.inactiveCommit", vaultAutoCommitInactiveSeconds))
                 }.disabled(!vaultAutoCommit)
                 Stepper(value: $vaultAutoPullMinutes, in: 0...1440, step: 5) {
-                    Text(vaultAutoPullMinutes == 0 ? "自动 Pull：关闭" : "自动 Pull：每 \(vaultAutoPullMinutes) 分钟")
+                    Text(vaultAutoPullMinutes == 0 ? loc("settings.vault.autoPullOff") : locf("settings.vault.autoPullEvery", vaultAutoPullMinutes))
                 }
-                Text("与 Electron 相同：在 JSON / 随手记文档库已初始化 Git 且编辑器已保存到工作区后，空闲或失焦时自动 commit；配置远程后会尝试 push。自动 Pull 仅在无本地未保存修改且工作区干净时执行。").font(.caption).foregroundStyle(.secondary)
+                Text(loc("settings.hint.vaultGit")).font(.caption).foregroundStyle(.secondary)
             }
         case .migration:
             Section(SettingsCategory.migration.title(language: language)) {
                 Button(AppLocalization.string("settings.importElectron", language: language)) { migrationOpen = true }
-                Text("合并 Electron 工作台与代理/编辑器/语言偏好；SQLite 与磁盘 `quick-notes` / `json-vault` 可合并文档与附件。").font(.caption).foregroundStyle(.secondary)
+                Text(loc("settings.hint.migration")).font(.caption).foregroundStyle(.secondary)
             }
         case .shortcuts:
             Section(SettingsCategory.shortcuts.title(language: language)) {
@@ -162,7 +174,7 @@ struct SettingsView: View {
                 shortcutRow(AppLocalization.string("settings.shortcut.compareDiff", language: language), "⌘↩")
                 shortcutRow(AppLocalization.string("settings.shortcut.formatTool", language: language), "⌘⇧F")
                 shortcutRow(AppLocalization.string("settings.shortcut.findReplace", language: language), "⌘F")
-                Text("与 Electron 设置页相同：只读展示主要快捷键（可从 Electron 设置迁移）；不提供自定义绑定或托盘全局热键。").font(.caption).foregroundStyle(.secondary)
+                Text(loc("settings.hint.shortcuts")).font(.caption).foregroundStyle(.secondary)
             }
         case .backup:
             Section(SettingsCategory.backup.title(language: language)) {
@@ -192,7 +204,7 @@ struct SettingsView: View {
                     }
                 }.disabled(backupBusy)
                 if backupBusy { ProgressView().controlSize(.small) }
-                Text("原生版拥有独立的应用标识、偏好设置与数据目录，可与 Java、Electron、Tauri 版同时安装。备份包含本产品工作区及已登记的图片附件；恢复前保存当前工作区和附件副本。").font(.caption).foregroundStyle(.secondary)
+                Text(loc("settings.hint.backup")).font(.caption).foregroundStyle(.secondary)
             }
         case .about:
             Section(SettingsCategory.about.title(language: language)) {
@@ -200,7 +212,7 @@ struct SettingsView: View {
                 LabeledContent(AppLocalization.string("settings.tech", language: language), value: "SwiftUI · AppKit · macOS 14+")
                 Link(AppLocalization.string("settings.viewProject", language: language), destination: URL(string: "https://github.com/rememberber/MooTool")!)
                 Button(AppLocalization.string("app.menu.checkUpdate", language: language)) { UpdateChecker.runManual() }
-                Text("通过 GitHub Releases API 检查新版本；有更新时可打开下载页面。不含 Electron 安装包后台下载与静默安装。").font(.caption).foregroundStyle(.secondary)
+                Text(loc("settings.hint.about")).font(.caption).foregroundStyle(.secondary)
             }
         }
     }
