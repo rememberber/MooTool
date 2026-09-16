@@ -126,13 +126,17 @@ struct SettingsView: View {
             }
         case .appearance:
             Section(SettingsCategory.appearance.title(language: language)) {
-                Picker("主题", selection: $appearance) { Text("跟随系统").tag("system"); Text("浅色").tag("light"); Text("深色").tag("dark") }.pickerStyle(.segmented)
-                HStack { Text("编辑器字号"); Slider(value: $editorSize, in: 11...22, step: 1); Text("\(Int(editorSize)) pt").monospacedDigit().frame(width: 42) }
-                Toggle("编辑器自动换行", isOn: $wrapLines)
+                Picker(AppLocalization.string("settings.theme", language: language), selection: $appearance) {
+                    Text(AppLocalization.string("settings.theme.system", language: language)).tag("system")
+                    Text(AppLocalization.string("settings.theme.light", language: language)).tag("light")
+                    Text(AppLocalization.string("settings.theme.dark", language: language)).tag("dark")
+                }.pickerStyle(.segmented)
+                HStack { Text(AppLocalization.string("settings.editorFontSize", language: language)); Slider(value: $editorSize, in: 11...22, step: 1); Text("\(Int(editorSize)) pt").monospacedDigit().frame(width: 42) }
+                Toggle(AppLocalization.string("settings.wrapLines", language: language), isOn: $wrapLines)
             }
         case .vault:
             Section(SettingsCategory.vault.title(language: language)) {
-                Toggle("编辑空闲后自动创建检查点", isOn: $vaultAutoCommit)
+                Toggle(AppLocalization.string("settings.vaultAutoCommit", language: language), isOn: $vaultAutoCommit)
                 Stepper(value: $vaultAutoCommitIdleSeconds, in: 5...3600, step: 5) {
                     Text("编辑空闲提交：\(vaultAutoCommitIdleSeconds) 秒")
                 }.disabled(!vaultAutoCommit)
@@ -146,7 +150,7 @@ struct SettingsView: View {
             }
         case .migration:
             Section(SettingsCategory.migration.title(language: language)) {
-                Button("从 Electron 导入工作台设置…") { migrationOpen = true }
+                Button(AppLocalization.string("settings.importElectron", language: language)) { migrationOpen = true }
                 Text("合并 Electron 工作台与代理/编辑器/语言偏好；SQLite 与磁盘 `quick-notes` / `json-vault` 可合并文档与附件。").font(.caption).foregroundStyle(.secondary)
             }
         case .shortcuts:
@@ -192,9 +196,9 @@ struct SettingsView: View {
             }
         case .about:
             Section(SettingsCategory.about.title(language: language)) {
-                LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Development")
-                LabeledContent("技术", value: "SwiftUI · AppKit · macOS 14+")
-                Link("查看项目与反馈问题 ↗", destination: URL(string: "https://github.com/rememberber/MooTool")!)
+                LabeledContent(AppLocalization.string("settings.version", language: language), value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Development")
+                LabeledContent(AppLocalization.string("settings.tech", language: language), value: "SwiftUI · AppKit · macOS 14+")
+                Link(AppLocalization.string("settings.viewProject", language: language), destination: URL(string: "https://github.com/rememberber/MooTool")!)
                 Button(AppLocalization.string("app.menu.checkUpdate", language: language)) { UpdateChecker.runManual() }
                 Text("通过 GitHub Releases API 检查新版本；有更新时可打开下载页面。不含 Electron 安装包后台下载与静默安装。").font(.caption).foregroundStyle(.secondary)
             }
