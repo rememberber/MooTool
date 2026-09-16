@@ -2,7 +2,7 @@ import SwiftUI
 import MooToolNextCore
 
 private enum SettingsCategory: String, CaseIterable, Identifiable {
-    case sidebar, proxy, appearance, vault, migration, backup, about
+    case sidebar, proxy, appearance, vault, migration, backup, shortcuts, about
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -12,6 +12,7 @@ private enum SettingsCategory: String, CaseIterable, Identifiable {
         case .vault: return "文档库 Git"
         case .migration: return "数据迁移"
         case .backup: return "工作区与备份"
+        case .shortcuts: return "快捷键"
         case .about: return "关于"
         }
     }
@@ -23,6 +24,7 @@ private enum SettingsCategory: String, CaseIterable, Identifiable {
         case .vault: return "arrow.triangle.branch"
         case .migration: return "arrow.down.doc"
         case .backup: return "externaldrive"
+        case .shortcuts: return "command"
         case .about: return "info.circle"
         }
     }
@@ -132,6 +134,17 @@ struct SettingsView: View {
                 Button("从 Electron 导入工作台设置…") { migrationOpen = true }
                 Text("合并侧栏布局、自定义分组、分栏宽度、HTTP 代理、编辑器字号/换行与文档库 Git 自动检查点。不包含文档、历史或 Java 版 SQLite 数据。").font(.caption).foregroundStyle(.secondary)
             }
+        case .shortcuts:
+            Section("常用快捷键") {
+                shortcutRow("搜索工具", "⌘K")
+                shortcutRow("设置", "⌘,")
+                shortcutRow("JSON / 随手记保存", "⌘S")
+                shortcutRow("JSON 格式化", "⌘↩")
+                shortcutRow("文本对比比较", "⌘↩")
+                shortcutRow("格式化工具", "⌘⇧F")
+                shortcutRow("查找替换", "⌘F")
+                Text("与 Electron 设置页相同：展示主要全局/工具快捷键；暂不支持自定义绑定或系统托盘全局热键。").font(.caption).foregroundStyle(.secondary)
+            }
         case .backup:
             Section("工作区与备份") {
                 LabeledContent("产品线", value: "MooTool Next macOS Native")
@@ -169,5 +182,9 @@ struct SettingsView: View {
                 Link("查看项目与反馈问题 ↗", destination: URL(string: "https://github.com/rememberber/MooTool")!)
             }
         }
+    }
+
+    private func shortcutRow(_ title: String, _ keys: String) -> some View {
+        LabeledContent(title) { Text(keys).font(.body.monospaced()).foregroundStyle(.secondary) }
     }
 }
