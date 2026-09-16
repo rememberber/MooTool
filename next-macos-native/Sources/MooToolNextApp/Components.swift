@@ -209,6 +209,7 @@ struct CodeEditor: NSViewRepresentable {
 }
 
 struct EditorPane: View {
+    @Environment(\.appLanguage) private var language
     let title: String
     @Binding var text: String
     var editable = true
@@ -218,13 +219,13 @@ struct EditorPane: View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
                 Text(title).font(.system(size: 12, weight: .medium)).lineLimit(1).layoutPriority(1); Spacer(minLength: 0)
-                Text("\(text.count) 字符").font(.system(size: 10, design: .monospaced)).foregroundStyle(.tertiary).lineLimit(1)
+                Text("\(text.count) \(AppLocalization.string("editor.chars", language: language))").font(.system(size: 10, design: .monospaced)).foregroundStyle(.tertiary).lineLimit(1)
                 if editable {
-                    Button { if let value = NSPasteboard.general.string(forType: .string) { text = value } } label: { Image(systemName: "doc.on.clipboard") }.help("粘贴")
-                    Button { FilePanels.readText { text = $0 } } label: { Image(systemName: "folder") }.help("打开文本文件")
+                    Button { if let value = NSPasteboard.general.string(forType: .string) { text = value } } label: { Image(systemName: "doc.on.clipboard") }.help(AppLocalization.string("editor.paste", language: language))
+                    Button { FilePanels.readText { text = $0 } } label: { Image(systemName: "folder") }.help(AppLocalization.string("editor.openFile", language: language))
                 }
-                Button { FilePanels.copy(text) } label: { Image(systemName: "doc.on.doc") }.help("复制")
-                Button { FilePanels.saveText(text) } label: { Image(systemName: "square.and.arrow.up") }.help("导出文本")
+                Button { FilePanels.copy(text) } label: { Image(systemName: "doc.on.doc") }.help(AppLocalization.string("editor.copy", language: language))
+                Button { FilePanels.saveText(text) } label: { Image(systemName: "square.and.arrow.up") }.help(AppLocalization.string("editor.export", language: language))
             }.buttonStyle(.borderless).padding(.horizontal, 14).frame(height: 37).background(.quaternary.opacity(0.25))
             Divider()
             CodeEditor(text: $text, editable: editable, syntax: syntax, persistence: persistence)
@@ -235,17 +236,19 @@ struct EditorPane: View {
     }
 }
 struct ToolPage<Controls: View, Content: View>: View {
+    @Environment(\.appLanguage) private var language
     let tool: Tool
     @Bindable var draft: ToolDraft
     var showsHeading = true
     @ViewBuilder var controls: () -> Controls
     @ViewBuilder var content: () -> Content
+    private var displayTool: Tool { tool.localized(in: language) }
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             if showsHeading { HStack {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(tool.title).font(.system(size: 23, weight: .semibold))
-                    Text(tool.subtitle).font(.system(size: 12)).foregroundStyle(.secondary)
+                    Text(displayTool.title).font(.system(size: 23, weight: .semibold))
+                    Text(displayTool.subtitle).font(.system(size: 12)).foregroundStyle(.secondary)
                 }
                 Spacer()
                 if draft.busy { ProgressView().controlSize(.small) }
@@ -258,7 +261,7 @@ struct ToolPage<Controls: View, Content: View>: View {
             HStack {
                 Image(systemName: draft.error == nil ? "checkmark.circle" : "exclamationmark.circle")
                     .foregroundStyle(draft.error == nil ? Color.secondary : .red)
-                Text(draft.error ?? (draft.status.isEmpty ? "就绪" : draft.status))
+                Text(draft.error ?? (draft.status.isEmpty ? AppLocalization.string("tool.ready", language: language) : draft.status))
                     .foregroundStyle(draft.error == nil ? Color.secondary : .red).lineLimit(3).textSelection(.enabled)
                 Spacer()
             }.font(.system(size: 11)).frame(minHeight: 18)

@@ -3,6 +3,7 @@ import MooToolNextCore
 
 struct Workbench: View {
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @Environment(\.openWindow) private var openWindow
     @State private var visibility: NavigationSplitViewVisibility = .all
     @State private var query = ""
@@ -10,23 +11,23 @@ struct Workbench: View {
         @Bindable var store = store
         NavigationSplitView(columnVisibility: $visibility) {
             List(selection: Binding(get: { store.selected }, set: { store.select($0) })) {
-                row(Catalog.tools[0])
+                row(Catalog.localizedTool(Catalog.tools[0].id, language: language))
                 if !store.pinned.isEmpty {
-                    Section("常用") { ForEach(store.pinned.filter { navigationVisible($0) && Catalog.tool($0).matches(query) }, id: \.self) { row(Catalog.tool($0)) } }
+                    Section(AppLocalization.string("workbench.pinned", language: language)) { ForEach(store.pinned.filter { navigationVisible($0) && Catalog.tool($0).matches(query) }, id: \.self) { row(Catalog.localizedTool($0, language: language)) } }
                 }
                 ForEach(store.customGroups) { custom in
-                    let tools = custom.toolIds.compactMap { id in Catalog.tools.first { $0.id == id } }.filter { navigationVisible($0.id) && $0.matches(query) }
+                    let tools = custom.toolIds.compactMap { id in Catalog.tools.first { $0.id == id } }.filter { navigationVisible($0.id) && $0.matches(query) }.map { $0.localized(in: language) }
                     if !tools.isEmpty {
                         Section(custom.name) { ForEach(tools) { row($0) } }
                             .listSectionSeparator(store.showNavigationSeparators ? .visible : .hidden)
                     }
                 }
                 ForEach(Catalog.groups, id: \.self) { group in
-                    let tools = Catalog.tools.filter { $0.group == group && navigationVisible($0.id) && $0.matches(query) }
-                    if !tools.isEmpty { Section(group) { ForEach(tools) { row($0) } } }
+                    let tools = Catalog.tools.filter { $0.group == group && navigationVisible($0.id) && $0.matches(query) }.map { $0.localized(in: language) }
+                    if !tools.isEmpty { Section(AppLocalization.groupTitle(group, language: language)) { ForEach(tools) { row($0) } } }
                 }
                 if store.showRecent && !store.recent.isEmpty && query.isEmpty {
-                    Section("最近使用") { ForEach(store.recent.filter { navigationVisible($0) }.prefix(5), id: \.self) { row(Catalog.tool($0)) } }
+                    Section(AppLocalization.string("app.nav.recent", language: language)) { ForEach(store.recent.filter { navigationVisible($0) }.prefix(5), id: \.self) { row(Catalog.localizedTool($0, language: language)) } }
                 }
             }.listStyle(.sidebar)
                 .navigationSplitViewColumnWidth(
@@ -44,7 +45,7 @@ struct Workbench: View {
                             onReset: { store.sidebarWidth = 215; store.scheduleSave() })
                     }
                 }
-                .searchable(text: $query, placement: .sidebar, prompt: "搜索工具")
+                .searchable(text: $query, placement: .sidebar, prompt: AppLocalization.string("app.search.placeholder", language: language))
                 .safeAreaInset(edge: .bottom) {
                     HStack(spacing: 9) {
                         Image(nsImage: NSImage(contentsOf: AppResources.bundle.url(forResource: "Brand", withExtension: "png")!)!).resizable().frame(width: 24, height: 24)
@@ -54,27 +55,27 @@ struct Workbench: View {
                             store.hideNavigationTitles.toggle(); store.scheduleSave()
                         } label: {
                             Image(systemName: store.hideNavigationTitles ? "sidebar.left" : "sidebar.right")
-                        }.buttonStyle(.plain).help(store.hideNavigationTitles ? "展开导航标题" : "仅显示图标")
-                        SettingsLink { Image(systemName: "gearshape") }.buttonStyle(.plain).help("设置 · ⌘,")
+                        }.buttonStyle(.plain).help(store.hideNavigationTitles ? AppLocalization.string("workbench.sidebar.expand", language: language) : AppLocalization.string("workbench.sidebar.iconsOnly", language: language))
+                        SettingsLink { Image(systemName: "gearshape") }.buttonStyle(.plain).help(AppLocalization.string("workbench.settingsHelp", language: language))
                     }.padding(14).background(.bar)
                 }
         } detail: {
             ToolRouter(id: store.selected)
-                .navigationTitle(Catalog.tool(store.selected).title)
+                .navigationTitle(Catalog.localizedTool(store.selected, language: language).title)
                 .toolbar {
                     ToolbarItemGroup {
-                        Button { store.searchPresented = true } label: { Label("搜索工具", systemImage: "magnifyingglass") }.help("搜索工具 · ⌘K")
+                        Button { store.searchPresented = true } label: { Label(AppLocalization.string("workbench.search", language: language), systemImage: "magnifyingglass") }.help("\(AppLocalization.string("workbench.search", language: language)) · ⌘K")
                         if store.selected != "mootool" {
-                            Button { store.togglePin(store.selected) } label: { Label("常用", systemImage: store.pinned.contains(store.selected) ? "star.fill" : "star") }.help("添加或移出常用工具")
-                            Button { store.historyPresented = true } label: { Label("历史记录", systemImage: "clock.arrow.circlepath") }
-                            Button { openWindow(id: "tool", value: store.selected) } label: { Label("独立窗口", systemImage: "rectangle.on.rectangle") }
+                            Button { store.togglePin(store.selected) } label: { Label(AppLocalization.string("workbench.pinned", language: language), systemImage: store.pinned.contains(store.selected) ? "star.fill" : "star") }.help(AppLocalization.string("workbench.pinHelp", language: language))
+                            Button { store.historyPresented = true } label: { Label(AppLocalization.string("workbench.history", language: language), systemImage: "clock.arrow.circlepath") }
+                            Button { openWindow(id: "tool", value: store.selected) } label: { Label(AppLocalization.string("workbench.detach", language: language), systemImage: "rectangle.on.rectangle") }
                         }
                     }
                 }
         }.frame(minWidth: 940, minHeight: 630)
-            .sheet(isPresented: $store.searchPresented) { CommandPalette().environment(store) }
+            .sheet(isPresented: $store.searchPresented) { CommandPalette().environment(store).environment(\.appLanguage, language) }
             .sheet(isPresented: $store.historyPresented) { HistoryView(toolID: store.selected).environment(store) }
-            .alert("工作区提示", isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) { Button("好") { store.error = nil } } message: { Text(store.error ?? "") }
+            .alert(AppLocalization.string("workbench.alert.title", language: language), isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) { Button(AppLocalization.string("workbench.alert.ok", language: language)) { store.error = nil } } message: { Text(store.error ?? "") }
     }
     private func navigationVisible(_ id: String) -> Bool {
         id == "mootool" || !store.hiddenNavigationToolIds.contains(id)
@@ -104,6 +105,7 @@ private struct HomePerson: Identifiable {
 
 struct HomeView: View {
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     private let contributors = [
         HomePerson(title: "CassianFlorin", url: "https://github.com/CassianFlorin"),
         HomePerson(title: "felixcn", url: "https://github.com/felixcn"),
@@ -127,37 +129,37 @@ struct HomeView: View {
                             Text("Next Native").font(.caption).padding(.horizontal, 9).padding(.vertical, 4).background(.quaternary, in: Capsule())
                             Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.8.0")").font(.caption).foregroundStyle(.tertiary)
                         }
-                        Text("开发与日常，得心应手。").font(.system(size: 15)).foregroundStyle(.secondary)
-                        Text("由 Zhou Bo 创作").font(.caption).foregroundStyle(.tertiary)
+                        Text(AppLocalization.string("home.tagline", language: language)).font(.system(size: 15)).foregroundStyle(.secondary)
+                        Text(AppLocalization.string("home.byAuthor", language: language)).font(.caption).foregroundStyle(.tertiary)
                         Link("mootool.luoboduner.com ↗", destination: URL(string: "https://mootool.luoboduner.com")!).font(.caption)
                     }
                 }
-                homeSection("关于") {
-                    Text("MooTool 是面向开发者与日常效率的桌面工具箱。原生版保留 26 个工具入口与工作区，数据独立保存在本机。").font(.system(size: 13)).foregroundStyle(.secondary).lineSpacing(4)
+                homeSection(AppLocalization.string("home.section.about", language: language)) {
+                    Text(AppLocalization.string("home.aboutBody", language: language)).font(.system(size: 13)).foregroundStyle(.secondary).lineSpacing(4)
                 }
-                homeSection("贡献者") {
+                homeSection(AppLocalization.string("home.section.contributors", language: language)) {
                     FlowLayout(spacing: 10) {
                         ForEach(contributors) { person in
                             Link(person.title, destination: URL(string: person.url)!).font(.system(size: 12, weight: .medium))
                         }
                     }
-                    Text("感谢每一位为 MooTool 生态贡献想法、代码与反馈的朋友。").font(.caption).foregroundStyle(.tertiary).padding(.top, 6)
+                    Text(AppLocalization.string("home.contributorsThanks", language: language)).font(.caption).foregroundStyle(.tertiary).padding(.top, 6)
                 }
-                homeSection("赞赏") {
-                    Text("如果 MooTool 对你有帮助，欢迎请作者喝杯咖啡。").font(.system(size: 13)).foregroundStyle(.secondary)
+                homeSection(AppLocalization.string("home.section.sponsor", language: language)) {
+                    Text(AppLocalization.string("home.sponsorText", language: language)).font(.system(size: 13)).foregroundStyle(.secondary)
                     if let sponsor = AppResources.bundle.url(forResource: "wx-zanshang", withExtension: "jpg") {
                         Image(nsImage: NSImage(contentsOf: sponsor)!).resizable().scaledToFit().frame(width: 139).clipShape(RoundedRectangle(cornerRadius: 4))
                     }
-                    Text("微信赞赏码").font(.caption).foregroundStyle(.tertiary)
+                    Text(AppLocalization.string("home.sponsorCaption", language: language)).font(.caption).foregroundStyle(.tertiary)
                 }
-                homeSection("源码与反馈") {
+                homeSection(AppLocalization.string("home.section.source", language: language)) {
                     VStack(alignment: .leading, spacing: 6) {
                         Link("GitHub ↗", destination: URL(string: "https://github.com/rememberber/MooTool")!)
                         Link("Gitee ↗", destination: URL(string: "https://gitee.com/zhoubochina/MooTool")!)
                         Link("提交问题 ↗", destination: URL(string: "https://github.com/rememberber/MooTool/issues")!)
                     }
                 }
-                homeSection("其他作品") {
+                homeSection(AppLocalization.string("home.section.otherWorks", language: language)) {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(works, id: \.0) { work in
                             Link("\(work.0) ↗", destination: URL(string: work.2)!)
@@ -166,14 +168,14 @@ struct HomeView: View {
                     }
                 }
                 Button { store.searchPresented = true } label: {
-                    HStack { Image(systemName: "magnifyingglass"); Text("查找你需要的工具"); Spacer(); Text("⌘ K").font(.system(size: 11, design: .monospaced)).padding(5).background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 5)) }
+                    HStack { Image(systemName: "magnifyingglass"); Text(AppLocalization.string("home.searchTools", language: language)); Spacer(); Text("⌘ K").font(.system(size: 11, design: .monospaced)).padding(5).background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 5)) }
                         .foregroundStyle(.secondary).padding(16).background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
                         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.quaternary))
                 }.buttonStyle(.plain)
                 VStack(alignment: .leading, spacing: 13) {
-                    Text("常用工具").font(.headline)
+                    Text(AppLocalization.string("workbench.pinned", language: language)).font(.headline)
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 195), spacing: 12)], spacing: 12) {
-                        ForEach(store.pinned.isEmpty ? Array(Catalog.tools.dropFirst().prefix(6)) : store.pinned.map(Catalog.tool)) { tool in
+                        ForEach(homePinnedTools) { tool in
                             Button { store.select(tool.id) } label: {
                                 VStack(alignment: .leading, spacing: 12) {
                                     Image(systemName: tool.symbol).font(.system(size: 22, weight: .light)).foregroundStyle(.tint)
@@ -187,15 +189,23 @@ struct HomeView: View {
                 }
                 Divider()
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("为 Mac 而生").font(.headline)
-                    Text("熟悉的 MooTool 工作方式，原生的 macOS 体验。通过侧边栏探索文本、开发、网络、编码和日常工具，也可以把工具单独打开，让工作区更从容。").font(.system(size: 13)).foregroundStyle(.secondary).lineSpacing(5)
+                    Text(AppLocalization.string("home.forMac.title", language: language)).font(.headline)
+                    Text(AppLocalization.string("home.forMac.body", language: language)).font(.system(size: 13)).foregroundStyle(.secondary).lineSpacing(5)
                     HStack(spacing: 18) {
-                        Label("本地保存", systemImage: "internaldrive"); Label("独立安装", systemImage: "square.stack.3d.up"); Label("原生快捷键", systemImage: "command")
+                        Label(AppLocalization.string("home.localSave", language: language), systemImage: "internaldrive")
+                        Label(AppLocalization.string("home.standaloneInstall", language: language), systemImage: "square.stack.3d.up")
+                        Label(AppLocalization.string("home.nativeShortcuts", language: language), systemImage: "command")
                     }.font(.caption).foregroundStyle(.secondary)
                 }
                 Text("MIT License").font(.caption).foregroundStyle(.tertiary)
             }.frame(maxWidth: 820).padding(44).frame(maxWidth: .infinity)
         }.background(Color(nsColor: .windowBackgroundColor))
+    }
+    private var homePinnedTools: [Tool] {
+        if store.pinned.isEmpty {
+            return Array(Catalog.tools.dropFirst().prefix(6)).map { $0.localized(in: language) }
+        }
+        return store.pinned.map { Catalog.localizedTool($0, language: language) }
     }
     @ViewBuilder private func homeSection(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -246,20 +256,21 @@ private struct FlowLayout: Layout {
 
 struct CommandPalette: View {
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
     @State private var selection: String?
     @FocusState private var focused: Bool
-    var results: [Tool] { Catalog.tools.filter { $0.matches(query) } }
+    var results: [Tool] { Catalog.localizedTools(language).filter { $0.matches(query) } }
     var body: some View {
         VStack(spacing: 0) {
-            HStack { Image(systemName: "magnifyingglass").foregroundStyle(.secondary); TextField("搜索工具、名称或关键词", text: $query).textFieldStyle(.plain).font(.title3).focused($focused).onSubmit(open); Button("取消") { dismiss() }.keyboardShortcut(.cancelAction) }.padding(20)
+            HStack { Image(systemName: "magnifyingglass").foregroundStyle(.secondary); TextField(AppLocalization.string("app.search.placeholder", language: language), text: $query).textFieldStyle(.plain).font(.title3).focused($focused).onSubmit(open); Button(AppLocalization.string("palette.cancel", language: language)) { dismiss() }.keyboardShortcut(.cancelAction) }.padding(20)
             Divider()
             List(results, selection: $selection) { tool in
                 HStack(spacing: 13) { Image(systemName: tool.symbol).frame(width: 25).foregroundStyle(.tint); VStack(alignment: .leading, spacing: 3) { Text(tool.title); Text(tool.subtitle).font(.caption).foregroundStyle(.secondary) }; Spacer(); Text(tool.group).font(.caption).foregroundStyle(.tertiary) }.padding(.vertical, 5).tag(tool.id)
                     .contentShape(Rectangle()).onTapGesture { store.select(tool.id); dismiss() }
             }.listStyle(.inset).onSubmit(open)
-            HStack { Text("↑ ↓ 选择 · ↩ 打开 · Esc 关闭"); Spacer(); Text("\(results.count) 个工具") }.font(.caption).foregroundStyle(.secondary).padding(12)
+            HStack { Text(AppLocalization.string("palette.hint", language: language)); Spacer(); Text("\(results.count) \(AppLocalization.string("palette.count", language: language))") }.font(.caption).foregroundStyle(.secondary).padding(12)
         }.frame(width: 560, height: 430).onAppear { focused = true; selection = results.first?.id }
             .onChange(of: query) { selection = results.first?.id }
             .onMoveCommand { direction in

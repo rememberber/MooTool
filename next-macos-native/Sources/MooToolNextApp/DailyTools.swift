@@ -4,6 +4,7 @@ import MooToolNextCore
 
 struct MessageBoardTool: View {
     @Bindable var draft: ToolDraft
+    @Environment(\.appLanguage) private var language
     @State private var presenter = MessageBoardFullscreenPresenter()
     private var board: Binding<MessageBoardOptions> {
         Binding(
@@ -42,7 +43,7 @@ struct MessageBoardTool: View {
                 .frame(width: 90)
             Slider(value: Binding(get: { board.wrappedValue.fontSize }, set: { board.wrappedValue.fontSize = $0 }), in: 28...160)
                 .frame(width: 130)
-            PrimaryButton(title: "全屏展示", symbol: "arrow.up.left.and.arrow.down.right") {
+            PrimaryButton(title: AppLocalization.string("tool.fullscreen", language: language), symbol: "arrow.up.left.and.arrow.down.right") {
                 presenter.present(
                     text: draft.input,
                     size: board.wrappedValue.fontSize,
@@ -89,13 +90,14 @@ struct BoardDisplay: View {
 
 struct TranslationTool: View {
     @Bindable var draft: ToolDraft
+    @Environment(\.appLanguage) private var language
     @State private var tab = "translate"
     var body: some View {
         VStack(spacing: 0) {
             Picker("翻译视图", selection: $tab) {
-                Text("翻译").tag("translate")
-                Text("词库").tag("words")
-                Text("历史").tag("history")
+                Text(AppLocalization.string("translation.tab.translate", language: language)).tag("translate")
+                Text(AppLocalization.string("translation.tab.words", language: language)).tag("words")
+                Text(AppLocalization.string("translation.tab.history", language: language)).tag("history")
             }.pickerStyle(.segmented).padding(.horizontal, 16).padding(.top, 8)
             Group {
                 switch tab {
@@ -128,21 +130,22 @@ private struct ModernTranslationTool: View {
     @Bindable var draft: ToolDraft
     @State private var configuration: TranslationSession.Configuration?
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     var body: some View {
         ToolPage(tool: Catalog.tool("translation"), draft: draft) {
             Picker("目标语言", selection: $draft.mode) { Text("简体中文").tag("zh-Hans"); Text("English").tag("en"); Text("日本語").tag("ja"); Text("한국어").tag("ko"); Text("Français").tag("fr"); Text("Deutsch").tag("de") }.frame(width: 200)
-            PrimaryButton(title: "翻译", symbol: "character.bubble") {
+            PrimaryButton(title: AppLocalization.string("tool.translate", language: language), symbol: "character.bubble") {
                 guard !draft.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { draft.error = "请输入需要翻译的文本。"; return }
                 draft.error = nil
                 if configuration?.target == Locale.Language(identifier: draft.mode) { configuration?.invalidate() }
                 else { configuration = .init(source: nil, target: Locale.Language(identifier: draft.mode)) }
             }
-            Button("系统词典") { openDictionary(draft.input) }
+            Button(AppLocalization.string("translation.systemDictionary", language: language)) { openDictionary(draft.input) }
         } content: {
             PersistedHSplit(toolID: "translation", defaultLeading: 360, minLeading: 240, maxLeading: 720) {
-                EditorPane(title: "原文 · 自动识别语言", text: $draft.input)
+                EditorPane(title: AppLocalization.string("translation.sourceAuto", language: language), text: $draft.input)
             } trailing: {
-                EditorPane(title: "译文", text: $draft.output, editable: false)
+                EditorPane(title: AppLocalization.string("translation.target", language: language), text: $draft.output, editable: false)
             }
         }.onAppear { if draft.mode.isEmpty { draft.mode = "zh-Hans" } }
             .translationTask(configuration) { session in

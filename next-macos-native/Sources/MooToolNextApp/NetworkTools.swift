@@ -5,19 +5,20 @@ struct SystemTool: View {
     let id: String
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     var body: some View {
         ToolPage(tool: Catalog.tool(id), draft: draft) {
             if id == "java" {
                 Picker("语言", selection: $draft.mode) { ForEach(["Python", "JavaScript", "Swift", "Java", "Groovy"], id: \.self) { Text($0) } }.frame(width: 165)
-                PrimaryButton(title: "运行代码", action: run)
-                Button("示例") { draft.input = example }
+                PrimaryButton(title: AppLocalization.string("tool.runCode", language: language), action: run)
+                Button(AppLocalization.string("tool.example", language: language)) { draft.input = example }
                 Text("使用本机运行时 · 最长 20 秒").font(.caption).foregroundStyle(.secondary)
             } else if id == "net" {
                 Picker("工具", selection: $draft.mode) { ForEach(["DNS", "Ping", "Whois", "网络接口"], id: \.self) { Text($0) } }.frame(width: 150)
                 TextField("域名或 IP", text: $draft.input).textFieldStyle(.roundedBorder).frame(minWidth: 180, maxWidth: 400)
-                PrimaryButton(title: "查询", action: run)
+                PrimaryButton(title: AppLocalization.string("tool.query", language: language), action: run)
             } else {
-                PrimaryButton(title: "刷新系统信息", symbol: "arrow.clockwise", action: run)
+                PrimaryButton(title: AppLocalization.string("tool.refreshSystemInfo", language: language), symbol: "arrow.clockwise", action: run)
                 Button("详细硬件报告") { draft.mode = "详细"; run() }
             }
         } content: {

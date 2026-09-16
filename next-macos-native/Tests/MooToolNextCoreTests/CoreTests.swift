@@ -1073,6 +1073,108 @@ final class CoreTests: XCTestCase {
         state.toolFavorites = favorites
         XCTAssertEqual(try WorkspaceRepository.decode(WorkspaceRepository.encode(state)).toolFavorites?.first?.value, "[0-9]+")
         try? FileManager.default.removeItem(at: favoriteDB)
+        XCTAssertEqual(LegacyToolIdMapper.normalize("JsonBeauty"), "json")
+        XCTAssertEqual(LegacyToolIdMapper.normalize("qr"), "qrCode")
+        let funcDB = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-func-history-\(UUID().uuidString).db")
+        let funcSQL = """
+        CREATE TABLE t_func_history (id INTEGER PRIMARY KEY, func_type TEXT, summary TEXT, input_text TEXT, output_text TEXT, extra_data TEXT, create_time TEXT);
+        INSERT INTO t_func_history VALUES (1, 'regex', 'Digits', '^[0-9]+$', 'match', NULL, '2024-03-01T10:00:00');
+        """
+        let funcProcess = Process()
+        funcProcess.executableURL = URL(fileURLWithPath: "/usr/bin/sqlite3")
+        funcProcess.arguments = [funcDB.path]
+        let funcPipe = Pipe()
+        funcProcess.standardInput = funcPipe
+        try funcProcess.run()
+        funcPipe.fileHandleForWriting.write(Data(funcSQL.utf8))
+        funcPipe.fileHandleForWriting.closeFile()
+        funcProcess.waitUntilExit()
+        let funcHistory = try ElectronFuncHistoryImport.load(at: funcDB)
+        XCTAssertEqual(funcHistory.first?.toolID, "regex")
+        XCTAssertEqual(funcHistory.first?.draft.option, "t_func_history:1")
+        let funcMerge = ElectronFuncHistoryImport.merge(importing: funcHistory, into: funcHistory)
+        XCTAssertEqual(funcMerge.added, 0)
+        XCTAssertEqual(funcMerge.skipped, 1)
+        try? FileManager.default.removeItem(at: funcDB)
+        let contentDB = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-func-content-\(UUID().uuidString).db")
+        let contentSQL = """
+        CREATE TABLE t_func_content (id INTEGER PRIMARY KEY, func TEXT, content TEXT, remark TEXT, create_time TEXT, modified_time TEXT);
+        INSERT INTO t_func_content VALUES (1, 'regex', '^draft$', 'Legacy draft', '2024-01-01', '2024-01-02');
+        """
+        let contentProcess = Process()
+        contentProcess.executableURL = URL(fileURLWithPath: "/usr/bin/sqlite3")
+        contentProcess.arguments = [contentDB.path]
+        let contentPipe = Pipe()
+        contentProcess.standardInput = contentPipe
+        try contentProcess.run()
+        contentPipe.fileHandleForWriting.write(Data(contentSQL.utf8))
+        contentPipe.fileHandleForWriting.closeFile()
+        contentProcess.waitUntilExit()
+        let contentRows = try ElectronFuncContentImport.load(at: contentDB)
+        XCTAssertEqual(contentRows.first?.dedupeKey, "t_func_content:1")
+        let applied = LegacyToolDraftApplier.apply(rows: contentRows, merging: [:])
+        XCTAssertEqual(applied.drafts["regex"]?.input, "^draft$")
+        XCTAssertEqual(applied.applied, 1)
+        try? FileManager.default.removeItem(at: contentDB)
+        let vaultDB = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-vault-\(UUID().uuidString).db")
+        let vaultSQL = """
+        CREATE TABLE t_quick_note (id INTEGER PRIMARY KEY, name TEXT, content TEXT, create_time TEXT, modified_time TEXT, color TEXT, style TEXT, font_name TEXT, font_size TEXT, syntax TEXT, line_wrap TEXT);
+        INSERT INTO t_quick_note VALUES (1, 'Database Note', 'Database note body', '2024-01-01', '2024-01-02', 'blue', '', 'Monaco', '15', 'text/plain', '1');
+        CREATE TABLE t_json_beauty (id INTEGER PRIMARY KEY, name TEXT, content TEXT);
+        INSERT INTO t_json_beauty VALUES (1, 'api.json', '{"ok":true}');
+        """
+        let vaultProcess = Process()
+        vaultProcess.executableURL = URL(fileURLWithPath: "/usr/bin/sqlite3")
+        vaultProcess.arguments = [vaultDB.path]
+        let vaultPipe = Pipe()
+        vaultProcess.standardInput = vaultPipe
+        try vaultProcess.run()
+        vaultPipe.fileHandleForWriting.write(Data(vaultSQL.utf8))
+        vaultPipe.fileHandleForWriting.closeFile()
+        vaultProcess.waitUntilExit()
+        let notes = try ElectronVaultSqliteImport.loadQuickNotes(at: vaultDB)
+        XCTAssertEqual(notes.first?.options.color, .blue)
+        XCTAssertEqual(try ElectronVaultSqliteImport.loadJsonDocuments(at: vaultDB).first?.content, "{\"ok\":true}")
+        let existing = [SavedDocument(toolID: "quickNote", title: "Database Note.md", content: "Database note body")]
+        XCTAssertTrue(ElectronVaultSqliteImport.filterNewQuickNotes(notes, existing: existing).isEmpty)
+        try? FileManager.default.removeItem(at: vaultDB)
+        let folderRoot = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-electron-vault-\(UUID().uuidString)", isDirectory: true)
+        let quickRoot = folderRoot.appendingPathComponent("quick-notes", isDirectory: true)
+        let jsonRoot = folderRoot.appendingPathComponent("json-vault", isDirectory: true)
+        try FileManager.default.createDirectory(at: quickRoot.appendingPathComponent("attachments"), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: jsonRoot, withIntermediateDirectories: true)
+        try noteImageData().write(to: quickRoot.appendingPathComponent("attachments/pixel.png"))
+        let noteBody = "---\ntitle: Disk\ncolor: blue\nsyntax: text/markdown\n---\n# Hello\n\n![pic](attachments/pixel.png)\n"
+        try noteBody.write(to: quickRoot.appendingPathComponent("Disk.md"), atomically: true, encoding: .utf8)
+        try "{\"a\":1}".write(to: jsonRoot.appendingPathComponent("api.json"), atomically: true, encoding: .utf8)
+        let diskNotes = try ElectronVaultFolderImport.loadQuickNotes(at: quickRoot)
+        XCTAssertEqual(diskNotes.first?.options.color, .blue)
+        let rewritten = try ElectronVaultFolderImport.rewriteElectronAttachments(in: diskNotes[0].content, quickNoteRoot: quickRoot, existingManifest: [])
+        XCTAssertTrue(rewritten.content.contains("attachments/"))
+        XCTAssertFalse(rewritten.content.contains("attachments/pixel.png"))
+        XCTAssertEqual(rewritten.payloads.count, 1)
+        XCTAssertEqual(try ElectronVaultFolderImport.loadJsonItems(at: jsonRoot).count, 1)
+        try? FileManager.default.removeItem(at: folderRoot)
+        XCTAssertEqual(GitHubUpdateService.compare("0.8.0", "0.9.0"), .orderedAscending)
+        XCTAssertEqual(GitHubUpdateService.compare("1.0.0", "0.9.9"), .orderedDescending)
+        XCTAssertEqual(AppLocalization.toolTitle("quickNote", language: .enUS), "Quick Note")
+        XCTAssertEqual(AppLocalization.string("http.tab.params", language: .enUS), "Params")
+        XCTAssertEqual(AppLocalization.string("tool.send", language: .jaJP), "送信")
+        XCTAssertEqual(AppLanguage.normalized("en-US"), .enUS)
+        let javaRoot = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-java-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: javaRoot.appendingPathComponent("config"), withIntermediateDirectories: true)
+        try """
+        [func.quickNote]
+        quickNoteVaultPath=notes-custom
+        [func.jsonBeauty]
+        jsonBeautyVaultPath=json-custom
+        """.write(to: javaRoot.appendingPathComponent("config/config.setting"), atomically: true, encoding: .utf8)
+        let roots = try LegacyJavaVaultPaths.vaultDirectoryRoots(at: javaRoot)
+        XCTAssertEqual(roots.quickNote.lastPathComponent, "notes-custom")
+        XCTAssertEqual(roots.json.lastPathComponent, "json-custom")
+        try? FileManager.default.removeItem(at: javaRoot)
+        XCTAssertEqual(ElectronShortcutFormat.display("CommandOrControl+K"), "⌘K")
+        XCTAssertEqual(ElectronShortcutFormat.display("CommandOrControl+,"), "⌘,")
     }
     func testHTTPRedirectPolicyAndSessionIsolation() async throws {
         let fixture = try HTTPFixture()

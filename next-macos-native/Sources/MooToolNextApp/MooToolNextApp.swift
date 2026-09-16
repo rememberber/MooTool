@@ -6,35 +6,52 @@ struct MooToolNextApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @State private var store = AppStore(directory: ProcessInfo.processInfo.environment["MOOTOOL_NATIVE_TEST_DATA"].map { URL(fileURLWithPath: $0) } ?? Product.dataDirectory)
     @AppStorage("appearance", store: nativeDefaults) private var appearance = "system"
+    @AppStorage("general.language", store: nativeDefaults) private var languageCode = "zh-CN"
+    private var language: AppLanguage { AppLanguage.normalized(languageCode) }
     var scheme: ColorScheme? { appearance == "dark" ? .dark : appearance == "light" ? .light : nil }
     var body: some Scene {
         Window("MooTool Next Native", id: "main") {
-            Workbench().environment(store).preferredColorScheme(scheme)
-                .onAppear { delegate.store = store; store.startVaultFilesystemWatcher() }
+            Workbench().environment(store).environment(\.appLanguage, language).environment(\.locale, language.locale).preferredColorScheme(scheme)
+                .background(MainWindowAccessor { delegate.attachMainWindow($0) })
+                .onAppear {
+                    delegate.attachStore(store)
+                    store.startVaultFilesystemWatcher()
+                    UpdateChecker.runAutomaticIfEnabled()
+                }
         }
         .defaultSize(width: 1200, height: 800).windowStyle(.titleBar).windowToolbarStyle(.unified)
         .commands {
             CommandGroup(replacing: .appInfo) {
-                Button("关于 MooTool Next Native") {
+                Button(AppLocalization.string("app.menu.about", language: language)) {
                     NSApplication.shared.orderFrontStandardAboutPanel(options: [.applicationName: Product.name, .applicationVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Development", .credits: NSAttributedString(string: "MooTool · macOS 原生工具箱\n作者：Zhou Bo · MIT License")])
                 }
             }
-            CommandGroup(after: .newItem) { Button("搜索工具…") { store.searchPresented = true }.keyboardShortcut("k") }
-            CommandMenu("工具") {
-                ForEach(Catalog.tools) { tool in Button(tool.title) { store.select(tool.id) } }
+            CommandGroup(after: .newItem) { Button(AppLocalization.string("app.menu.searchTools", language: language)) { store.searchPresented = true }.keyboardShortcut("k") }
+            CommandGroup(replacing: .help) {
+                Button(AppLocalization.string("app.menu.checkUpdate", language: language)) { UpdateChecker.runManual() }
+            }
+            CommandMenu(AppLocalization.string("app.menu.tools", language: language)) {
+                ForEach(Catalog.localizedTools(language)) { tool in Button(tool.title) { store.select(tool.id) } }
             }
         }
         WindowGroup("工具", id: "tool", for: String.self) { $id in
-            ToolRouter(id: id ?? "json").environment(store).preferredColorScheme(scheme)
-                .navigationTitle(Catalog.tool(id ?? "json").title)
+            ToolRouter(id: id ?? "json").environment(store).environment(\.appLanguage, language).environment(\.locale, language.locale).preferredColorScheme(scheme)
+                .navigationTitle(Catalog.localizedTool(id ?? "json", language: language).title)
                 .frame(minWidth: 680, minHeight: 500)
         }.defaultSize(width: 1000, height: 730)
-        Settings { SettingsView().environment(store).preferredColorScheme(scheme) }
+        Settings { SettingsView().environment(store).environment(\.appLanguage, language).environment(\.locale, language.locale).preferredColorScheme(scheme) }
     }
 }
 
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
     weak var store: AppStore?
+    weak var mainWindow: NSWindow?
+    var isQuitting = false
+    private let menuTray = MenuBarTray()
+    func attachStore(_ store: AppStore) {
+        self.store = store
+        menuTray.attach(store: store)
+    }
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         if let url = AppResources.bundle.url(forResource: "AppIcon", withExtension: "icns") { NSApp.applicationIconImage = NSImage(contentsOf: url) }

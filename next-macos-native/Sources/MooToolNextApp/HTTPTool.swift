@@ -5,8 +5,9 @@ import MooToolNextCore
 struct HTTPTool: View {
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
-    @State private var requestTab = "参数"
-    @State private var responseTab = "正文"
+    @Environment(\.appLanguage) private var language
+    @State private var requestTab: HTTPRequestTab = .params
+    @State private var responseTab: HTTPResponseTab = .body
     @State private var pretty = true
     @State private var formattedResponse = ""
     @State private var formattedSource = ""
@@ -19,27 +20,28 @@ struct HTTPTool: View {
         ToolPage(tool: Catalog.tool("http"), draft: draft) {
             Picker("方法", selection: $draft.mode) { ForEach(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"], id: \.self) { Text($0) } }.labelsHidden().frame(width: 96)
             TextField("https://example.com/api", text: $draft.option).textFieldStyle(.roundedBorder).frame(minWidth: 180).onSubmit(send)
-            PrimaryButton(title: "发送", symbol: "paperplane.fill", action: send)
+            PrimaryButton(title: AppLocalization.string("tool.send", language: language), symbol: "paperplane.fill", action: send)
             Menu {
-                Button("导入 cURL…") { sheet = .curl }
-                Button("复制为 cURL") { do { FilePanels.copy(try CurlCommand.export(draft.record)); draft.status = "已复制 cURL" } catch { draft.error = error.localizedDescription } }
+                Button(AppLocalization.string("http.importCurl", language: language)) { sheet = .curl }
+                Button(AppLocalization.string("http.copyCurl", language: language)) { do { FilePanels.copy(try CurlCommand.export(draft.record)); draft.status = "已复制 cURL" } catch { draft.error = error.localizedDescription } }
                 Divider()
-                Button("保存到请求集合…") { sheet = .save }
-                Button("打开请求集合…") { sheet = .library }
+                Button(AppLocalization.string("http.saveToCollection", language: language)) { sheet = .save }
+                Button(AppLocalization.string("http.openCollection", language: language)) { sheet = .library }
                 Divider()
-                Button("新建请求") { draft.apply(DraftRecord()); draft.mode = "GET" }
-            } label: { Image(systemName: "ellipsis.circle") }.help("cURL 与请求集合")
+                Button(AppLocalization.string("http.newRequest", language: language)) { draft.apply(DraftRecord()); draft.mode = "GET" }
+            } label: { Image(systemName: "ellipsis.circle") }.help(AppLocalization.string("http.menuHelp", language: language))
         } content: {
             VStack(spacing: 12) {
                 HStack {
-                    Button { sheet = .library } label: { Label("请求集合 · \(store.httpRequests.count)", systemImage: "folder") }.disabled(draft.busy)
-                    Button { sheet = .save } label: { Image(systemName: "square.and.arrow.down") }.help("保存当前请求").disabled(draft.busy)
+                    Button { sheet = .library } label: { Label("\(AppLocalization.string("http.collection", language: language)) · \(store.httpRequests.count)", systemImage: "folder") }.disabled(draft.busy)
+                    Button { sheet = .save } label: { Image(systemName: "square.and.arrow.down") }.help(AppLocalization.string("http.saveRequest", language: language)).disabled(draft.busy)
                     Spacer()
-                    if draft.busy { ProgressView().controlSize(.small); Button("取消请求") { draft.httpTask?.cancel() } }
+                    if draft.busy { ProgressView().controlSize(.small); Button(AppLocalization.string("http.cancelRequest", language: language)) { draft.httpTask?.cancel() } }
                     else {
-                        Toggle("跟随重定向", isOn: option(\.followRedirects)).toggleStyle(.checkbox)
-                        Picker("超时", selection: option(\.timeout)) {
-                            ForEach(Array(Set([5.0, 10, 30, 60, 120, draft.http?.timeout ?? 30])).sorted(), id: \.self) { Text("\($0.formatted()) 秒").tag($0) }
+                        Toggle(AppLocalization.string("http.followRedirects", language: language), isOn: option(\.followRedirects)).toggleStyle(.checkbox)
+                        Picker(AppLocalization.string("http.timeout", language: language), selection: option(\.timeout)) {
+                            let unit = AppLocalization.string("http.seconds", language: language)
+                            ForEach(Array(Set([5.0, 10, 30, 60, 120, draft.http?.timeout ?? 30])).sorted(), id: \.self) { Text("\($0.formatted()) \(unit)").tag($0) }
                         }.frame(width: 118)
                     }
                 }.font(.caption).controlSize(.small)
@@ -57,7 +59,7 @@ struct HTTPTool: View {
         }
         .sheet(item: $sheet) { item in
             switch item {
-            case .curl: CurlImportSheet { imported in draft.apply(imported); requestTab = imported.input.isEmpty ? "参数" : "正文"; draft.status = "已导入 cURL，请检查后发送" }
+            case .curl: CurlImportSheet { imported in draft.apply(imported); requestTab = imported.input.isEmpty ? .params : .body; draft.status = "已导入 cURL，请检查后发送" }
             case .library: HTTPRequestLibrary { draft.apply($0) }.environment(store)
             case .save: SaveHTTPRequestSheet(draft: draft.record).environment(store)
             }
@@ -65,14 +67,14 @@ struct HTTPTool: View {
     }
     private var requestPane: some View {
         VStack(spacing: 10) {
-            HStack { Text("请求").font(.headline); Spacer(); Button("导入 cURL") { sheet = .curl }.controlSize(.small) }
-            Picker("请求内容", selection: $requestTab) { ForEach(["参数", "请求头", "Cookie", "正文"], id: \.self) { Text($0) } }.pickerStyle(.segmented).labelsHidden()
+            HStack { Text(AppLocalization.string("http.request", language: language)).font(.headline); Spacer(); Button(AppLocalization.string("http.importCurlShort", language: language)) { sheet = .curl }.controlSize(.small) }
+            Picker("请求内容", selection: $requestTab) { ForEach(HTTPRequestTab.allCases) { tab in Text(tab.title(language: language)).tag(tab) } }.pickerStyle(.segmented).labelsHidden()
             Group {
                 switch requestTab {
-                case "参数": HTTPFieldsEditor(fields: option(\.params), description: "参数追加到 URL，保留已有参数与重复键。", keyHint: "参数名")
-                case "Cookie": HTTPFieldsEditor(fields: option(\.cookies), description: "仅发送启用的 Cookie；每次请求使用独立会话。", keyHint: "Cookie 名")
-                case "请求头": EditorPane(title: "请求头 · Name: Value", text: $draft.secondary)
-                default:
+                case .params: HTTPFieldsEditor(fields: option(\.params), description: "参数追加到 URL，保留已有参数与重复键。", keyHint: "参数名")
+                case .cookies: HTTPFieldsEditor(fields: option(\.cookies), description: "仅发送启用的 Cookie；每次请求使用独立会话。", keyHint: "Cookie 名")
+                case .headers: EditorPane(title: "请求头 · Name: Value", text: $draft.secondary)
+                case .body:
                     VStack(spacing: 10) {
                         Picker("正文类型", selection: option(\.bodyKind)) { ForEach(HTTPBodyKind.allCases, id: \.self) { Text($0.title).tag($0) } }
                         if ["GET", "HEAD"].contains(draft.mode) { Text("\(draft.mode) 不发送正文；可在“参数”中编辑查询条件。").font(.caption).foregroundStyle(.secondary) }
@@ -92,25 +94,25 @@ struct HTTPTool: View {
     private var responsePane: some View {
         VStack(spacing: 10) {
             HStack {
-                Text("响应").font(.headline); Spacer()
+                Text(AppLocalization.string("http.response", language: language)).font(.headline); Spacer()
                 if let result = draft.httpResult {
                     Text("\(result.status)").font(.system(.caption, design: .monospaced).bold()).foregroundStyle(result.status >= 400 ? Color.red : result.status >= 300 ? .orange : .green)
                     Text("\(Int(result.elapsed * 1000)) ms · \(ByteCountFormatter.string(fromByteCount: Int64(result.bytes), countStyle: .file))").font(.caption).foregroundStyle(.secondary)
                 }
             }.frame(height: 22)
             HStack(spacing: 8) {
-                Picker("响应内容", selection: $responseTab) { ForEach(["正文", "响应头", "Cookie"], id: \.self) { Text($0) } }.pickerStyle(.segmented).labelsHidden()
-                if responseTab == "正文" { Toggle(isOn: $pretty) { Image(systemName: "text.alignleft") }.toggleStyle(.button).help("JSON 格式化显示") }
+                Picker("响应内容", selection: $responseTab) { ForEach(HTTPResponseTab.allCases) { tab in Text(tab.title(language: language)).tag(tab) } }.pickerStyle(.segmented).labelsHidden()
+                if responseTab == .body { Toggle(isOn: $pretty) { Image(systemName: "text.alignleft") }.toggleStyle(.button).help(AppLocalization.string("http.prettyJson", language: language)) }
             }
-            EditorPane(title: responseTab, text: .constant(responseText), editable: false, syntax: responseTab == "正文")
+            EditorPane(title: responseTab.title(language: language), text: .constant(responseText), editable: false, syntax: responseTab == .body)
             if let result = draft.httpResult { Text(result.url).font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary).lineLimit(1).help(result.url) }
         }.padding(.leading, 7)
     }
     private var responseText: String {
         switch responseTab {
-        case "响应头": return draft.httpResult?.headers ?? ""
-        case "Cookie": return draft.httpResult?.cookies ?? ""
-        default: return pretty && formattedSource == draft.output ? formattedResponse : draft.output
+        case .headers: return draft.httpResult?.headers ?? ""
+        case .cookies: return draft.httpResult?.cookies ?? ""
+        case .body: return pretty && formattedSource == draft.output ? formattedResponse : draft.output
         }
     }
     private func send() {

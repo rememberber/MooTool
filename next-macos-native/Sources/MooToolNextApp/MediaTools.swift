@@ -8,11 +8,12 @@ import MooToolNextCore
 
 struct QRTool: View {
     @Bindable var draft: ToolDraft
+    @Environment(\.appLanguage) private var language
     @State private var image: NSImage?
     @State private var png: Data?
     var body: some View {
         ToolPage(tool: Catalog.tool("qrCode"), draft: draft) {
-            PrimaryButton(title: "生成二维码", symbol: "qrcode", action: generate)
+            PrimaryButton(title: AppLocalization.string("tool.generateQr", language: language), symbol: "qrcode", action: generate)
             Picker("纠错", selection: $draft.mode) { ForEach(["L", "M", "Q", "H"], id: \.self) { Text($0) } }.frame(width: 120)
             Button("保存 PNG") { if let png { FilePanels.save(png, name: "qrcode.png") } }.disabled(png == nil)
             Button("识别图片…") { FilePanels.open(types: [.image]) { recognize($0[0]) } }
@@ -118,6 +119,7 @@ struct ColorTool: View {
 struct ImageTool: View {
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @State private var original: CGImage?
     @State private var preview: NSImage?
     @State private var sourcePath = ""
@@ -126,7 +128,7 @@ struct ImageTool: View {
     @State private var watermark = ""
     var body: some View {
         ToolPage(tool: Catalog.tool("image"), draft: draft) {
-            PrimaryButton(title: "打开图片", symbol: "folder") { FilePanels.open(types: [.image]) { load($0[0]) } }
+            PrimaryButton(title: AppLocalization.string("tool.openImage", language: language), symbol: "folder") { FilePanels.open(types: [.image]) { load($0[0]) } }
             Button("截图") {
                 let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
                 Task {
@@ -226,13 +228,14 @@ struct NativePDFView: NSViewRepresentable {
 struct PDFTool: View {
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @State private var files: [URL] = []
     @State private var documents: [PDFDocument] = []
     @State private var combined: PDFDocument?
     @State private var showText = false
     var body: some View {
         ToolPage(tool: Catalog.tool("pdf"), draft: draft) {
-            PrimaryButton(title: "添加 PDF", symbol: "plus") { FilePanels.open(types: [.pdf], multiple: true) { load($0) } }
+            PrimaryButton(title: AppLocalization.string("tool.addPdf", language: language), symbol: "plus") { FilePanels.open(types: [.pdf], multiple: true) { load($0) } }
             TextField("页码：1-3,5（留空为全部）", text: $draft.option).textFieldStyle(.roundedBorder).frame(minWidth: 180, maxWidth: 270)
             Button("导出 PDF", action: export).disabled(combined == nil)
             Button(showText ? "预览 PDF" : "提取文本") {

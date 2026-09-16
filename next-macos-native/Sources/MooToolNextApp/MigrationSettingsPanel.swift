@@ -16,6 +16,11 @@ struct MigrationSettingsPanel: View {
     @AppStorage("vaultAutoCommitIdleSeconds", store: nativeDefaults) private var vaultAutoCommitIdleSeconds = 30
     @AppStorage("vaultAutoCommitInactiveSeconds", store: nativeDefaults) private var vaultAutoCommitInactiveSeconds = 120
     @AppStorage("vaultAutoPullMinutes", store: nativeDefaults) private var vaultAutoPullMinutes = 0
+    @AppStorage("general.trayEnabled", store: nativeDefaults) private var trayEnabled = true
+    @AppStorage("general.closeBehavior", store: nativeDefaults) private var closeBehavior = "ask"
+    @AppStorage("general.autoDownloadUpdates", store: nativeDefaults) private var autoDownloadUpdates = true
+    @AppStorage("general.autoCheckUpdates", store: nativeDefaults) private var autoCheckUpdates = true
+    @AppStorage("general.language", store: nativeDefaults) private var languageCode = "zh-CN"
     @State private var storePath = ElectronStoreImport.defaultStoreURL()?.path ?? ""
     @State private var preview: ElectronImportPreview?
     @State private var busy = false
@@ -30,15 +35,24 @@ struct MigrationSettingsPanel: View {
     @State private var favoriteColorCount = 0
     @State private var favoriteRegexCount = 0
     @State private var favoriteCronCount = 0
+    @State private var funcHistoryCount = 0
+    @State private var funcContentCount = 0
+    @State private var vaultQuickNoteCount = 0
+    @State private var vaultJsonCount = 0
+    @State private var vaultImportWarnings: [String] = []
+    @State private var vaultFolderPreview: ElectronVaultFolderImportPreview?
     @State private var confirmHttpImport = false
+    @State private var confirmVaultFolderImport = false
+    @State private var javaVaultFolderPreview: ElectronVaultFolderImportPreview?
+    @State private var confirmJavaVaultFolderImport = false
     private var knownToolIDs: Set<String> { Set(Catalog.tools.map(\.id)) }
     private var importableSqliteCount: Int {
-        (httpPreview?.requestCount ?? 0) + (httpPreview?.historyCount ?? 0) + hostProfileCount + translationWordCount + translationHistoryCount + favoriteColorCount + favoriteRegexCount + favoriteCronCount
+        (httpPreview?.requestCount ?? 0) + (httpPreview?.historyCount ?? 0) + hostProfileCount + translationWordCount + translationHistoryCount + favoriteColorCount + favoriteRegexCount + favoriteCronCount + funcHistoryCount + funcContentCount + vaultQuickNoteCount + vaultJsonCount
     }
 
     var body: some View {
         Form {
-            Text("从 next Electron 的 `mootool-next.json` 合并工作台布局、HTTP 代理、编辑器与文档库 Git 设置。SQLite 区域可合并 HTTP/Host/翻译等表，不会导入笔记/JSON 文档或加密密钥。")
+            Text("从 next Electron 的 `mootool-next.json` 合并工作台布局、HTTP 代理、编辑器与文档库 Git 设置；并可从 Electron 磁盘目录 `quick-notes` / `json-vault` 导入文档与 `attachments/` 图片。SQLite 可合并 HTTP/Host/翻译/历史/草稿及表内文档正文；不含加密密钥。")
                 .font(.caption).foregroundStyle(.secondary).padding(.vertical, 4)
             HStack {
                 TextField("Electron 数据文件", text: $storePath)
@@ -48,6 +62,8 @@ struct MigrationSettingsPanel: View {
                 Button("扫描") { scan() }.disabled(busy || storePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 Button("导入布局与代理…") { confirmImport = true }
                     .disabled(busy || preview == nil)
+                Button("导入磁盘文档库…") { confirmVaultFolderImport = true }
+                    .disabled(busy || vaultFolderPreview == nil || vaultFolderImportableCount == 0)
             }
             if busy { ProgressView().controlSize(.small) }
             if let error { Text(error).foregroundStyle(.red).font(.caption) }
@@ -58,25 +74,41 @@ struct MigrationSettingsPanel: View {
                 LabeledContent("分栏键", value: "\(preview.paneKeyCount)")
                 ForEach(preview.warnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
             }
+            if let vaultFolderPreview {
+                LabeledContent("磁盘随手记", value: "\(vaultFolderPreview.quickNoteFileCount)")
+                LabeledContent("磁盘 JSON", value: "\(vaultFolderPreview.jsonFileCount)")
+                LabeledContent("磁盘图片", value: "\(vaultFolderPreview.attachmentFileCount)")
+                ForEach(vaultFolderPreview.warnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
+            }
             Divider()
-            Section("Java 版数据（仅提示）") {
+            Section("Java 版数据") {
                 let root = LegacyJavaDataPaths.defaultDirectory
                 LabeledContent("默认目录", value: root.path)
                 if LegacyJavaDataPaths.hasLegacyInstall(at: root) {
-                    Text("检测到旧版 SQLite。笔记/JSON/收藏请用 Compose 迁移或文档库批量导入；HTTP 请求可用下方按钮从 t_msg_http 合并。").font(.caption).foregroundStyle(.secondary)
+                    Text("可从 `quick-notes` / `json-beauty` 磁盘目录或 SQLite 合并数据；完整遗留迁移服务仍以 Compose/Electron 为准。").font(.caption).foregroundStyle(.secondary)
                 } else {
                     Text("未在默认目录找到 Java 版数据库。若数据在其他位置，请用 Compose 迁移或手动复制文件到文档库。").font(.caption).foregroundStyle(.secondary)
+                }
+                HStack {
+                    Button("扫描磁盘文档库") { scanJavaVaultFolders() }
+                    Button("导入 Java 磁盘文档库…") { confirmJavaVaultFolderImport = true }
+                        .disabled(busy || javaVaultImportableCount == 0)
+                }
+                if let javaVaultFolderPreview {
+                    LabeledContent("Java 磁盘随手记", value: "\(javaVaultFolderPreview.quickNoteFileCount)")
+                    LabeledContent("Java 磁盘 JSON", value: "\(javaVaultFolderPreview.jsonFileCount)")
+                    LabeledContent("Java 磁盘图片", value: "\(javaVaultFolderPreview.attachmentFileCount)")
+                    ForEach(javaVaultFolderPreview.warnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
                 }
                 Button("在 Finder 中打开…") { NSWorkspace.shared.open(root) }
                 if let javaDB = LegacyJavaDataPaths.legacyDatabaseURL(in: root) {
                     Divider()
-                    Text("也可从 Java 版数据库导入 HTTP 请求集合（t_msg_http）。").font(.caption).foregroundStyle(.secondary)
                     Button("从 Java 数据库导入 HTTP…") { importHttp(from: javaDB) }
                 }
             }
             Divider()
             Section("HTTP 请求集合（SQLite）") {
-                Text("从 Electron `MooToolNext.db` 合并 HTTP、Host、翻译词条/历史等 SQLite 表；重复项会跳过。").font(.caption).foregroundStyle(.secondary)
+                Text("从 Electron/Java SQLite 合并 HTTP、Host、翻译、历史、草稿与文档库正文（`t_quick_note` / `t_json_beauty`）；重复标题+正文会跳过。").font(.caption).foregroundStyle(.secondary)
                 HStack {
                     TextField("SQLite 数据库", text: $httpDatabasePath)
                     Button("选择…") { chooseDatabase() }
@@ -93,16 +125,21 @@ struct MigrationSettingsPanel: View {
                     LabeledContent("可导入翻译词条", value: "\(translationWordCount)")
                     LabeledContent("可导入翻译历史", value: "\(translationHistoryCount)")
                     LabeledContent("可导入颜色/正则/Cron 收藏", value: "\(favoriteColorCount)/\(favoriteRegexCount)/\(favoriteCronCount)")
-                    ForEach(httpPreview.warnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
+                    LabeledContent("可导入通用工具历史", value: "\(funcHistoryCount)")
+                    LabeledContent("可导入工具草稿", value: "\(funcContentCount)")
+                    LabeledContent("可导入随手记文档", value: "\(vaultQuickNoteCount)")
+                    LabeledContent("可导入 JSON 文档", value: "\(vaultJsonCount)")
+                    ForEach(httpPreview.warnings + vaultImportWarnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
                 }
             }
         }
-        .formStyle(.grouped).frame(width: 560, height: 480)
+        .formStyle(.grouped).frame(width: 560, height: 600)
         .onAppear {
             if storePath.isEmpty { storePath = ElectronStoreImport.defaultStoreURL()?.path ?? "" }
             if httpDatabasePath.isEmpty || !FileManager.default.fileExists(atPath: httpDatabasePath) {
                 httpDatabasePath = ElectronDataPaths.defaultDatabaseURL.path
             }
+            scanJavaVaultFolders()
         }
         .confirmationDialog("导入 Electron 设置？", isPresented: $confirmImport) {
             Button("合并到当前原生工作区") { importSettings() }
@@ -112,8 +149,26 @@ struct MigrationSettingsPanel: View {
         .confirmationDialog("导入 HTTP 请求集合？", isPresented: $confirmHttpImport) {
             Button("合并到当前工作区") { importHttp(from: URL(fileURLWithPath: httpDatabasePath)) }
         } message: {
-            Text("将合并 HTTP 请求集合与全局「历史记录」中的 HTTP 条目；重复项会跳过。")
+            Text("将合并 HTTP 集合、各工具历史（含 t_func_history）与 Host/翻译/收藏；重复项会跳过。")
         }
+        .confirmationDialog("导入 Electron 磁盘文档库？", isPresented: $confirmVaultFolderImport) {
+            Button("合并到当前原生工作区") { importVaultFolders() }
+        } message: {
+            Text("从 Electron 的 quick-notes 与 json-vault 目录复制文本文件；随手记正文中的 attachments/ 图片会转为原生附件。重复标题+正文会跳过。")
+        }
+        .confirmationDialog("导入 Java 磁盘文档库？", isPresented: $confirmJavaVaultFolderImport) {
+            Button("合并到当前原生工作区") { importJavaVaultFolders() }
+        } message: {
+            Text("从 Java 版 `quick-notes` 与 `json-beauty` 目录合并文本与 attachments/ 图片；重复标题+正文会跳过。")
+        }
+    }
+
+    private var vaultFolderImportableCount: Int {
+        (vaultFolderPreview?.quickNoteFileCount ?? 0) + (vaultFolderPreview?.jsonFileCount ?? 0)
+    }
+
+    private var javaVaultImportableCount: Int {
+        (javaVaultFolderPreview?.quickNoteFileCount ?? 0) + (javaVaultFolderPreview?.jsonFileCount ?? 0)
     }
 
     private func chooseDatabase() {
@@ -149,6 +204,12 @@ struct MigrationSettingsPanel: View {
             favoriteColorCount = favorites.colorCount
             favoriteRegexCount = favorites.regexCount
             favoriteCronCount = favorites.cronCount
+            funcHistoryCount = try ElectronFuncHistoryImport.preview(at: url).count
+            funcContentCount = try ElectronFuncContentImport.preview(at: url).count
+            let vaultPreview = try ElectronVaultSqliteImport.preview(at: url)
+            vaultQuickNoteCount = vaultPreview.quickNoteCount
+            vaultJsonCount = vaultPreview.jsonCount
+            vaultImportWarnings = vaultPreview.warnings
             error = nil
         } catch {
             httpPreview = nil
@@ -158,6 +219,11 @@ struct MigrationSettingsPanel: View {
             favoriteColorCount = 0
             favoriteRegexCount = 0
             favoriteCronCount = 0
+            funcHistoryCount = 0
+            funcContentCount = 0
+            vaultQuickNoteCount = 0
+            vaultJsonCount = 0
+            vaultImportWarnings = []
             self.error = error.localizedDescription
         }
     }
@@ -182,14 +248,41 @@ struct MigrationSettingsPanel: View {
             let translationHistory = try ElectronTranslationImport.loadHistory(at: url)
             let translationHistoryResult = ElectronHttpImport.mergeHistory(importing: translationHistory, into: mergedHistory)
             mergedHistory = translationHistoryResult.merged
+            let funcHistory = try ElectronFuncHistoryImport.load(at: url)
+            let funcHistoryResult = ElectronFuncHistoryImport.merge(importing: funcHistory, into: mergedHistory)
+            mergedHistory = funcHistoryResult.merged
+            let contentRows = try ElectronFuncContentImport.load(at: url)
+            let draftsBeforeImport = store.snapshot().drafts
+            let draftApply = LegacyToolDraftApplier.apply(rows: contentRows, merging: draftsBeforeImport, existingHistory: mergedHistory)
+            mergedHistory = draftApply.history
+            for (toolID, record) in draftApply.drafts where draftsBeforeImport[toolID] != record {
+                store.draft(toolID).apply(record)
+            }
             let favorites = mergedHistory.filter(\.favorite)
             let ordinary = Array(mergedHistory.filter { !$0.favorite }.prefix(100))
             store.history = (favorites + ordinary).sorted { $0.date > $1.date }
             let favoriteItems = try ElectronFavoriteImport.loadFavorites(at: url)
             let favoriteResult = ElectronFavoriteImport.merge(importing: favoriteItems, into: store.toolFavorites)
             store.toolFavorites = favoriteResult.merged
+            var vaultNoteAdded = 0, vaultJsonAdded = 0
+            let noteRows = ElectronVaultSqliteImport.filterNewQuickNotes(try ElectronVaultSqliteImport.loadQuickNotes(at: url), existing: store.documents)
+            if !noteRows.isEmpty {
+                let ids = try store.importVaultDocuments(ElectronVaultSqliteImport.documentImportItems(from: noteRows), toolID: "quickNote", parent: nil)
+                vaultNoteAdded = ids.count
+                for (id, row) in zip(ids, noteRows) {
+                    if let index = store.documents.firstIndex(where: { $0.id == id }) {
+                        store.documents[index].noteOptions = row.options
+                        if let modified = row.modified { store.documents[index].modified = modified }
+                    }
+                }
+            }
+            let jsonRows = ElectronVaultSqliteImport.filterNewJson(try ElectronVaultSqliteImport.loadJsonDocuments(at: url), existing: store.documents)
+            if !jsonRows.isEmpty {
+                vaultJsonAdded = try store.importVaultDocuments(ElectronVaultSqliteImport.documentImportItems(from: jsonRows), toolID: "json", parent: nil).count
+            }
             store.saveNow()
-            notice = "请求 +\(result.added)；HTTP 历史 +\(historyResult.added)；Host +\(hostResult.added)；词条 +\(wordResult.added)；翻译历史 +\(translationHistoryResult.added)；收藏 +\(favoriteResult.added)。"
+            NotificationCenter.default.post(name: .menuBarTrayRefresh, object: nil)
+            notice = "请求 +\(result.added)；HTTP 历史 +\(historyResult.added)；工具历史 +\(funcHistoryResult.added)；草稿回写 \(draftApply.applied)；随手记 +\(vaultNoteAdded)；JSON +\(vaultJsonAdded)；Host +\(hostResult.added)；词条 +\(wordResult.added)；翻译历史 +\(translationHistoryResult.added)；收藏 +\(favoriteResult.added)。"
             httpPreview = try ElectronHttpImport.preview(at: url, collection: collection)
             error = nil
         } catch {
@@ -222,10 +315,78 @@ struct MigrationSettingsPanel: View {
         do {
             let url = URL(fileURLWithPath: storePath.trimmingCharacters(in: .whitespacesAndNewlines))
             preview = try ElectronStoreImport.preview(at: url, knownToolIDs: knownToolIDs, currentPaneSizes: store.layoutPaneSizes)
+            let roots = try ElectronStoreImport.vaultDirectoryRoots(at: url)
+            vaultFolderPreview = try ElectronVaultFolderImport.preview(quickNoteRoot: roots.quickNote, jsonRoot: roots.json)
         } catch {
             preview = nil
+            vaultFolderPreview = nil
             self.error = error.localizedDescription
         }
+    }
+
+    private func scanJavaVaultFolders() {
+        do {
+            let roots = try LegacyJavaVaultPaths.vaultDirectoryRoots()
+            javaVaultFolderPreview = try ElectronVaultFolderImport.preview(quickNoteRoot: roots.quickNote, jsonRoot: roots.json)
+        } catch {
+            javaVaultFolderPreview = nil
+        }
+    }
+
+    private func importJavaVaultFolders() {
+        busy = true
+        defer { busy = false }
+        do {
+            let roots = try LegacyJavaVaultPaths.vaultDirectoryRoots()
+            try performVaultFolderImport(quickNoteRoot: roots.quickNote, jsonRoot: roots.json, label: "Java")
+            scanJavaVaultFolders()
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    private func importVaultFolders() {
+        busy = true
+        defer { busy = false }
+        do {
+            let url = URL(fileURLWithPath: storePath.trimmingCharacters(in: .whitespacesAndNewlines))
+            let roots = try ElectronStoreImport.vaultDirectoryRoots(at: url)
+            try performVaultFolderImport(quickNoteRoot: roots.quickNote, jsonRoot: roots.json, label: "Electron")
+            vaultFolderPreview = try ElectronVaultFolderImport.preview(quickNoteRoot: roots.quickNote, jsonRoot: roots.json)
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    private func performVaultFolderImport(quickNoteRoot: URL, jsonRoot: URL, label: String) throws {
+        let noteRows = ElectronVaultFolderImport.filterNewQuickNotes(try ElectronVaultFolderImport.loadQuickNotes(at: quickNoteRoot), existing: store.documents)
+        var preparedNotes: [ElectronVaultFolderQuickNote] = []
+        var attachmentPayloads: [NoteImagePayload] = []
+        var manifest = store.noteAttachments
+        for row in noteRows {
+            let rewritten = try ElectronVaultFolderImport.rewriteElectronAttachments(in: row.content, quickNoteRoot: quickNoteRoot, existingManifest: manifest)
+            manifest.append(contentsOf: rewritten.payloads.map(\.attachment))
+            attachmentPayloads.append(contentsOf: rewritten.payloads)
+            preparedNotes.append(ElectronVaultFolderQuickNote(relativePath: row.relativePath, content: rewritten.content, options: row.options, modified: row.modified))
+        }
+        try store.mergeNoteAttachmentPayloads(attachmentPayloads)
+        var vaultNoteAdded = 0
+        if !preparedNotes.isEmpty {
+            let ids = try store.importVaultDocuments(ElectronVaultFolderImport.documentImportItems(from: preparedNotes), toolID: "quickNote", parent: nil)
+            vaultNoteAdded = ids.count
+            for (id, row) in zip(ids, preparedNotes) {
+                if let index = store.documents.firstIndex(where: { $0.id == id }) {
+                    store.documents[index].noteOptions = row.options
+                    store.documents[index].content = row.content
+                    if let modified = row.modified { store.documents[index].modified = modified }
+                }
+            }
+        }
+        let jsonItems = ElectronVaultFolderImport.filterNewJson(try ElectronVaultFolderImport.loadJsonItems(at: jsonRoot), existing: store.documents)
+        let vaultJsonAdded = jsonItems.isEmpty ? 0 : try store.importVaultDocuments(jsonItems, toolID: "json", parent: nil).count
+        store.saveNow()
+        notice = "\(label) 磁盘文档库：随手记 +\(vaultNoteAdded)，JSON +\(vaultJsonAdded)，图片附件 +\(attachmentPayloads.count)。"
+        error = nil
     }
 
     private func importSettings() {
@@ -250,7 +411,15 @@ struct MigrationSettingsPanel: View {
             if let value = patch.vaultAutoCommitIdleSeconds { vaultAutoCommitIdleSeconds = value }
             if let value = patch.vaultAutoCommitInactiveSeconds { vaultAutoCommitInactiveSeconds = value }
             if let value = patch.vaultAutoPullMinutes { vaultAutoPullMinutes = value }
+            if let value = patch.trayEnabled { trayEnabled = value }
+            if let value = patch.closeBehavior { closeBehavior = value }
+            if let value = patch.autoDownloadUpdates { autoDownloadUpdates = value }
+            if let value = patch.autoCheckUpdates { autoCheckUpdates = value }
+            if let value = patch.language { languageCode = value }
+            if let value = patch.shortcutSearch { nativeDefaults.set(value, forKey: "shortcuts.search") }
+            if let value = patch.shortcutSettings { nativeDefaults.set(value, forKey: "shortcuts.settings") }
             store.saveNow()
+            NotificationCenter.default.post(name: .menuBarTrayRefresh, object: nil)
             notice = "已合并 Electron 工作台与网络/编辑器偏好。"
             preview = try ElectronStoreImport.preview(at: url, knownToolIDs: knownToolIDs, currentPaneSizes: store.layoutPaneSizes)
         } catch {

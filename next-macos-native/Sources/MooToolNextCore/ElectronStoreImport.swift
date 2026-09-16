@@ -27,6 +27,13 @@ public struct ElectronImportPatch: Equatable, Sendable {
     public var vaultAutoCommitIdleSeconds: Int?
     public var vaultAutoCommitInactiveSeconds: Int?
     public var vaultAutoPullMinutes: Int?
+    public var trayEnabled: Bool?
+    public var closeBehavior: String?
+    public var autoDownloadUpdates: Bool?
+    public var autoCheckUpdates: Bool?
+    public var language: String?
+    public var shortcutSearch: String?
+    public var shortcutSettings: String?
 }
 
 public enum ElectronStoreImport {
@@ -56,6 +63,42 @@ public enum ElectronStoreImport {
         try parseStore(at: url, knownToolIDs: knownToolIDs, currentPaneSizes: currentPaneSizes).patch
     }
 
+    /// Resolves Electron on-disk vault folders (`quick-notes`, `json-vault`) from `mootool-next.json`.
+    public static func vaultDirectoryRoots(at storeURL: URL) throws -> (quickNote: URL, json: URL) {
+        let root = try readJSONObject(at: storeURL)
+        guard let settings = root["settings"] as? [String: Any] else { throw ToolError("不是有效的 Electron 工作区文件（缺少 settings）。") }
+        let dataDirectory = resolveDataDirectory(settings: settings, storeURL: storeURL)
+        let vault = settings["vault"] as? [String: Any] ?? [:]
+        let quick = resolveConfiguredDirectory(vault["quickNotePath"], defaultRelativeTo: dataDirectory, fallbackName: "quick-notes")
+        let json = resolveConfiguredDirectory(vault["jsonPath"], defaultRelativeTo: dataDirectory, fallbackName: "json-vault")
+        return (quick, json)
+    }
+
+    private static func resolveDataDirectory(settings: [String: Any], storeURL: URL) -> URL {
+        let data = settings["data"] as? [String: Any] ?? [:]
+        if let text = data["directory"] as? String {
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                return URL(fileURLWithPath: NSString(string: trimmed).expandingTildeInPath, isDirectory: true).standardizedFileURL
+            }
+        }
+        return storeURL.deletingLastPathComponent().standardizedFileURL
+    }
+
+    private static func resolveConfiguredDirectory(_ value: Any?, defaultRelativeTo dataDirectory: URL, fallbackName: String) -> URL {
+        if let text = value as? String {
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                let expanded = NSString(string: trimmed).expandingTildeInPath
+                if (expanded as NSString).isAbsolutePath {
+                    return URL(fileURLWithPath: expanded, isDirectory: true).standardizedFileURL
+                }
+                return dataDirectory.appendingPathComponent(expanded, isDirectory: true).standardizedFileURL
+            }
+        }
+        return dataDirectory.appendingPathComponent(fallbackName, isDirectory: true).standardizedFileURL
+    }
+
     public static func apply(_ patch: ElectronImportPatch, to snapshot: inout WorkspaceSnapshot) throws {
         if let value = patch.showRecent { snapshot.showRecent = value }
         if let value = patch.hideNavigationTitles { snapshot.hideNavigationTitles = value }
@@ -79,6 +122,8 @@ public enum ElectronStoreImport {
         let network = settings["network"] as? [String: Any] ?? [:]
         let editor = settings["editor"] as? [String: Any] ?? [:]
         let vault = settings["vault"] as? [String: Any] ?? [:]
+        let general = settings["general"] as? [String: Any] ?? [:]
+        let shortcuts = settings["shortcuts"] as? [String: Any] ?? [:]
 
         let electronPanes = parsePaneSizes(layout["paneSizes"])
         let mergedPanes = electronPanes.isEmpty ? nil : ElectronPaneSizeImport.mergeElectronIntoNative(electronPanes, current: currentPaneSizes)
@@ -106,6 +151,18 @@ public enum ElectronStoreImport {
         if let idle = vault["autoCommitIdleSeconds"] as? Int { patch.vaultAutoCommitIdleSeconds = max(5, idle) }
         if let inactive = vault["autoCommitInactiveSeconds"] as? Int { patch.vaultAutoCommitInactiveSeconds = max(5, inactive) }
         if let pull = vault["autoPullMinutes"] as? Int { patch.vaultAutoPullMinutes = max(0, pull) }
+        if let value = general["trayEnabled"] as? Bool { patch.trayEnabled = value }
+        if let value = general["closeBehavior"] as? String {
+            let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            if ["ask", "hide", "quit"].contains(normalized) { patch.closeBehavior = normalized }
+        }
+        if let value = general["autoDownloadUpdates"] as? Bool { patch.autoDownloadUpdates = value }
+        if let value = general["autoCheckUpdates"] as? Bool { patch.autoCheckUpdates = value }
+        if let value = general["language"] as? String, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            patch.language = AppLanguage.normalized(value).rawValue
+        }
+        if let value = shortcuts["search"] as? String, !value.isEmpty { patch.shortcutSearch = value }
+        if let value = shortcuts["settings"] as? String, !value.isEmpty { patch.shortcutSettings = value }
         return LoadedStore(patch: patch, hasEncryptedSecrets: hasEncryptedSecrets)
     }
 

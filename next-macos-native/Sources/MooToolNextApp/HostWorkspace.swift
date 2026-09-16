@@ -4,6 +4,7 @@ import MooToolNextCore
 struct HostWorkspace: View {
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @State private var selectedID: UUID?
     @State private var profileName = ""
     @State private var search = ""
@@ -18,8 +19,8 @@ struct HostWorkspace: View {
 
     var body: some View {
         ToolPage(tool: Catalog.tool("host"), draft: draft) {
-            PrimaryButton(title: "新建配置", symbol: "plus") { createProfile() }
-            PrimaryButton(title: "保存配置", symbol: "square.and.arrow.down") { saveProfile() }.disabled(selectedID == nil)
+            PrimaryButton(title: AppLocalization.string("tool.newProfile", language: language), symbol: "plus") { createProfile() }
+            PrimaryButton(title: AppLocalization.string("tool.saveProfile", language: language), symbol: "square.and.arrow.down") { saveProfile() }.disabled(selectedID == nil)
             Button("删除配置", systemImage: "trash") { deleteProfile() }.disabled(selectedID == nil)
             Button("读取系统 Hosts", systemImage: "arrow.clockwise") { readSystemHosts() }
             Button("检查配置") { validateHosts() }

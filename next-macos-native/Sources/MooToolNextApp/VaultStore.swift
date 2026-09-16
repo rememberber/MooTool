@@ -100,6 +100,17 @@ extension AppStore {
         try commitVault(next, toolID: toolID, gitMessage: toolID == "json" ? "Import JSON Vault files" : "Import Quick Note files")
         if let first = ids.first { try openDocument(first) }; return ids
     }
+    func mergeNoteAttachmentPayloads(_ payloads: [NoteImagePayload]) throws {
+        guard !payloads.isEmpty else { return }
+        for payload in payloads { try repository.attachmentRepository.write(payload) }
+        var merged = noteAttachments
+        for payload in payloads where !merged.contains(where: { $0.sha256 == payload.attachment.sha256 }) {
+            merged.append(payload.attachment)
+        }
+        try NoteAttachmentRepository.validateManifest(merged)
+        noteAttachments = merged
+        attachmentGeneration += 1
+    }
     func editorPersistence(_ toolID: String, output: Bool = false) -> EditorPersistence {
         let draft = draft(toolID), documentID = draft.documentID
         let restoreGeneration = editorRestoreGeneration

@@ -12,7 +12,7 @@ import MooToolNextCore
             let output = URL(fileURLWithPath: directory)
             try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
             store.draft("json").input = "{\"name\":\"MooTool\",\"native\":true,\"tools\":[\"JSON\",\"HTTP\",\"随手记\"]}"
-            store.draft("json").input = try await JSONEngine.execute(JSONEngineRequest("format", input: store.draft("json").input)).value ?? store.draft("json").input
+            store.draft("json").input = try await JSONEngine.execute(JSONEngineRequest("format", input: store.draft("json").input), timeout: 10).value ?? store.draft("json").input
             store.draft("json").output = try TextServices.json(store.draft("json").input)
             store.draft("quickNote").input = "# 今天的想法\n\n让开发与日常，得心应手。\n\n- 整理 API 文档\n- 检查 JSON 响应\n- 记录一个好想法\n\nHello, **MooTool**.\n\n| 工具 | 状态 |\n| :--- | ---: |\n| JSON | 已对齐 |\n| HTTP | 可用 |\n\n- [x] 核对布局\n- [ ] 整理笔记\n\n```swift\nlet tool = \"MooTool\"\n```"
             var request = try CurlCommand.parse("curl --location 'https://example.com/api' --json '{\"name\":\"MooTool\",\"native\":true}' -b 'theme=dark' -H 'X-Client: MooTool Native'")

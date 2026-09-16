@@ -4,6 +4,7 @@ import MooToolNextCore
 struct TimeConvertView: View {
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @State private var now = Date()
     @State private var historyOpen = false
     @State private var clockOpen = false
@@ -14,8 +15,8 @@ struct TimeConvertView: View {
 
     var body: some View {
         ToolPage(tool: Catalog.tool("timeConvert"), draft: draft) {
-            Button { historyOpen = true } label: { Label("历史记录", systemImage: "clock.arrow.circlepath") }
-            Button { clockOpen = true } label: { Label("大时钟", systemImage: "arrow.up.left.and.arrow.down.right") }
+            Button { historyOpen = true } label: { Label(AppLocalization.string("workbench.history", language: language), systemImage: "clock.arrow.circlepath") }
+            Button { clockOpen = true } label: { Label(AppLocalization.string("tool.bigClock", language: language), systemImage: "arrow.up.left.and.arrow.down.right") }
             Spacer(minLength: 0)
         } content: {
             ScrollView {

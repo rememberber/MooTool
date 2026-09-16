@@ -18,6 +18,7 @@ private enum CryptoTab: String, CaseIterable, Identifiable {
 struct CryptoToolView: View {
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @State private var historyOpen = false
     @State private var randomUUID = ""
     @State private var randomDigits = ""
@@ -35,7 +36,7 @@ struct CryptoToolView: View {
             Picker("分类", selection: Binding(get: { tab }, set: { draft.mode = $0.rawValue })) {
                 ForEach(CryptoTab.allCases) { Text($0.title).tag($0) }
             }.pickerStyle(.segmented).frame(maxWidth: 520)
-            Button { historyOpen = true } label: { Label("历史记录", systemImage: "clock.arrow.circlepath") }
+            Button { historyOpen = true } label: { Label(AppLocalization.string("workbench.history", language: language), systemImage: "clock.arrow.circlepath") }
             Spacer(minLength: 0)
             Button { clearTab() } label: { Image(systemName: "trash") }.help("清空当前标签内容")
         } content: {
@@ -92,7 +93,7 @@ struct CryptoToolView: View {
                     Text("RSA").tag("RSA")
                     Text("SM2").tag("SM2")
                 }.frame(width: 140)
-                PrimaryButton(title: "生成密钥对", symbol: "key") { generateAsymmetricKeys() }
+                PrimaryButton(title: AppLocalization.string("tool.genKeyPair", language: language), symbol: "key") { generateAsymmetricKeys() }
                 Spacer()
             }
             PersistedHSplit(toolID: "crypto", paneIndex: 0, defaultLeading: 280, minLeading: 200, maxLeading: 520) {
@@ -122,7 +123,7 @@ struct CryptoToolView: View {
                 if digestAlgorithm.wrappedValue == "HMAC-SHA256" {
                     SecureField("HMAC 密钥", text: $draft.secondary).textFieldStyle(.roundedBorder).frame(maxWidth: 220)
                 }
-                PrimaryButton(title: "文本摘要", symbol: "play.fill") { digestText() }
+                PrimaryButton(title: AppLocalization.string("tool.digestText", language: language), symbol: "play.fill") { digestText() }
                 Button("文件摘要") { digestFile() }
                 if !digestFileName.isEmpty { Text(digestFileName).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
             }

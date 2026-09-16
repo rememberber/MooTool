@@ -45,7 +45,7 @@ import MooToolNextCore
         let bridge = NativeEditorBridge(); bridge.view = editor
         var replacement = JSONEngineRequest("replaceAll", input: editor.string)
         replacement.query = "MooTool"; replacement.replacement = "Native"
-        let changed = try await JSONEngine.execute(replacement)
+        let changed = try await JSONEngine.execute(replacement, timeout: 10)
         let beforeReplacement = editor.string
         try check(bridge.replace(changed.value!, expected: beforeReplacement, action: "全部替换"), "查找替换未应用")
         try await settle(window)

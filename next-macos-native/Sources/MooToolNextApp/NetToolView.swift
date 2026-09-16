@@ -4,6 +4,7 @@ import MooToolNextCore
 struct NetToolView: View {
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @State private var pingHost = "127.0.0.1"
     @State private var ipRange = "192.168.1"
     @State private var portHost = "127.0.0.1"
@@ -15,7 +16,7 @@ struct NetToolView: View {
     @State private var longValue = ""
     var body: some View {
         ToolPage(tool: Catalog.tool("net"), draft: draft) {
-            PrimaryButton(title: "停止", symbol: "stop.fill") { draft.busy = false }.disabled(!draft.busy)
+            PrimaryButton(title: AppLocalization.string("tool.stop", language: language), symbol: "stop.fill") { draft.busy = false }.disabled(!draft.busy)
             Text("网络探测使用本机命令与 TCP 连接，请遵守网络策略。").font(.caption).foregroundStyle(.secondary)
         } content: {
             PersistedHSplit(toolID: "net", defaultLeading: 300, minLeading: 240, maxLeading: 480) {

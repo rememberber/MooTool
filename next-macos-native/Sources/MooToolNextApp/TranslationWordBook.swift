@@ -4,6 +4,7 @@ import MooToolNextCore
 struct TranslationWordBook: View {
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @State private var selectedID: UUID?
     @State private var search = ""
     @State private var sourceText = ""
@@ -46,13 +47,13 @@ struct TranslationWordBook: View {
                     TextField("源语言", text: $sourceLang).textFieldStyle(.roundedBorder).frame(width: 100)
                     TextField("目标语言", text: $targetLang).textFieldStyle(.roundedBorder).frame(width: 100)
                     Spacer()
-                    Button("新建") { createWord() }
-                    Button("保存") { saveWord() }.disabled(selectedID == nil && sourceText.isEmpty)
-                    Button("删除") { deleteWord() }.disabled(selectedID == nil)
-                    Button("填入翻译页") { applyToDraft() }.disabled(sourceText.isEmpty)
+                    Button(AppLocalization.string("tool.new", language: language)) { createWord() }
+                    Button(AppLocalization.string("tool.save", language: language)) { saveWord() }.disabled(selectedID == nil && sourceText.isEmpty)
+                    Button(AppLocalization.string("tool.delete", language: language)) { deleteWord() }.disabled(selectedID == nil)
+                    Button(AppLocalization.string("translation.applyToTranslate", language: language)) { applyToDraft() }.disabled(sourceText.isEmpty)
                 }.font(.caption)
-                EditorPane(title: "原文", text: $sourceText)
-                EditorPane(title: "译文", text: $targetText)
+                EditorPane(title: AppLocalization.string("translation.source", language: language), text: $sourceText)
+                EditorPane(title: AppLocalization.string("translation.target", language: language), text: $targetText)
                 TextField("备注", text: $remark).textFieldStyle(.roundedBorder)
             }
         }

@@ -34,6 +34,7 @@ struct TextTool: View {
     let id: String
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @State private var regexFlags = ""
     @State private var favoritesOpen = false
     private var tool: Tool { Catalog.tool(id) }
@@ -63,7 +64,7 @@ struct TextTool: View {
                     if id == "json" && draft.json?.showsTree == true {
                         JSONTreePane(text: draft.input, path: $draft.option)
                     } else {
-                        EditorPane(title: "结果", text: $draft.output, editable: false, syntax: ["json", "uaParse", "ymlProperties", "protobuf", "regex"].contains(id), persistence: id == "json" ? store.editorPersistence(id, output: true) : nil)
+                        EditorPane(title: AppLocalization.string("tool.output", language: language), text: $draft.output, editable: false, syntax: ["json", "uaParse", "ymlProperties", "protobuf", "regex"].contains(id), persistence: id == "json" ? store.editorPersistence(id, output: true) : nil)
                     }
                 }
             }
@@ -76,7 +77,8 @@ struct TextTool: View {
     }
     private var inputTitle: String {
         if id == "variables" { return "运行变量 · KEY=value（仅用于原生版代码运行）" }
-        return id == "host" ? "Hosts 配置草稿" : "输入"
+        if id == "host" { return "Hosts 配置草稿" }
+        return AppLocalization.string("tool.input", language: language)
     }
     private var modes: [String] {
         switch id {
@@ -93,8 +95,8 @@ struct TextTool: View {
         if !modes.isEmpty { Picker("模式", selection: $draft.mode) { ForEach(modes, id: \.self) { Text($0) } }.labelsHidden().frame(width: id == "crypto" ? 200 : id == "ymlProperties" ? 185 : 145) }
         switch id {
         case "json":
-            PrimaryButton(title: "格式化", symbol: "text.alignleft") { execute("format") }
-            Button("压缩") { execute("minify") }
+            PrimaryButton(title: AppLocalization.string("tool.format", language: language), symbol: "text.alignleft") { execute("format") }
+            Button(AppLocalization.string("tool.minify", language: language)) { execute("minify") }
             Menu {
                 Picker("缩进", selection: jsonOption(\.indent)) { Text("2 个空格").tag(2); Text("4 个空格").tag(4) }
                 Toggle("按键名排序", isOn: jsonOption(\.sortKeys))
@@ -105,30 +107,31 @@ struct TextTool: View {
             } label: { Image(systemName: "slider.horizontal.3") }.help("格式与转换选项")
             Toggle(isOn: jsonOption(\.showsTree)) { Image(systemName: "list.bullet.indent") }.toggleStyle(.button).help("显示 JSON 结构树")
             TextField("$.key[0] 或 /key/0", text: $draft.option).textFieldStyle(.roundedBorder).frame(minWidth: 130, idealWidth: 180, maxWidth: 230)
-            Button("查询") { execute("query") }
+            Button(AppLocalization.string("tool.query", language: language)) { execute("query") }
         case "encode":
-            PrimaryButton(title: "编码") { execute("encode") }; Button("解码") { execute("decode") }
+            PrimaryButton(title: AppLocalization.string("tool.encode", language: language)) { execute("encode") }
+            Button(AppLocalization.string("tool.decode", language: language)) { execute("decode") }
             Button { swap(&draft.input, &draft.output) } label: { Image(systemName: "arrow.left.arrow.right") }.help("交换输入和结果")
         case "timeConvert":
-            PrimaryButton(title: "转换") { execute() }
-            Button("此刻") { draft.input = String(Int64(Date().timeIntervalSince1970 * 1000)); execute() }
+            PrimaryButton(title: AppLocalization.string("tool.convert", language: language)) { execute() }
+            Button(AppLocalization.string("tool.now", language: language)) { draft.input = String(Int64(Date().timeIntervalSince1970 * 1000)); execute() }
             Picker("时区", selection: $draft.option) {
                 ForEach(Array(Set([TimeZone.current.identifier, "UTC", "Asia/Shanghai", "Asia/Tokyo", "America/New_York", "America/Los_Angeles", "Europe/London"])).sorted(), id: \.self) { Text($0) }
             }.frame(width: 240)
         case "variables":
-            PrimaryButton(title: "查看当前环境", symbol: "arrow.clockwise") { execute() }
+            PrimaryButton(title: AppLocalization.string("tool.refreshEnv", language: language), symbol: "arrow.clockwise") { execute() }
             Button("导出 .env") { FilePanels.saveText(draft.input, name: ".env") }
         case "cron":
-            PrimaryButton(title: "预览执行时间", symbol: "calendar") { execute() }
+            PrimaryButton(title: AppLocalization.string("tool.cronPreview", language: language), symbol: "calendar") { execute() }
             Menu("常用表达式") { ForEach(["*/5 * * * *", "0 9 * * 1-5", "0 0 1 * *"], id: \.self) { expression in Button(expression) { draft.input = expression; execute() } } }
         case "regex":
             PrimaryButton(title: draft.mode) { execute() }
-            Button("收藏", systemImage: "star") { favoritesOpen = true }
-        default: PrimaryButton(title: "运行") { execute() }
+            Button(AppLocalization.string("tool.favorites", language: language), systemImage: "star") { favoritesOpen = true }
+        default: PrimaryButton(title: AppLocalization.string("tool.run", language: language)) { execute() }
         }
-        Button("示例") { draft.input = example; if id == "regex" { draft.secondary = #"([\w.]+)@([\w.]+)"# }; if id == "textDiff" { draft.secondary = "MooTool\nNative for macOS\nHello, SwiftUI" } }
+        Button(AppLocalization.string("tool.example", language: language)) { draft.input = example; if id == "regex" { draft.secondary = #"([\w.]+)@([\w.]+)"# }; if id == "textDiff" { draft.secondary = "MooTool\nNative for macOS\nHello, SwiftUI" } }
         Spacer(minLength: 0)
-        Button { draft.input = ""; draft.output = ""; draft.error = nil } label: { Image(systemName: "trash") }.help("清空输入和结果")
+        Button { draft.input = ""; draft.output = ""; draft.error = nil } label: { Image(systemName: "trash") }.help(AppLocalization.string("tool.clear", language: language))
     }
     private var example: String {
         switch id {

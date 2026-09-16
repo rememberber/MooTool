@@ -4,12 +4,13 @@ import MooToolNextCore
 struct CronToolView: View {
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @State private var fields = CronFieldDraft()
     @State private var favoritesOpen = false
     private let zones = Array(Set([TimeZone.current.identifier, "UTC", "Asia/Shanghai", "Asia/Tokyo", "Europe/London", "America/New_York"])).sorted()
     var body: some View {
         ToolPage(tool: Catalog.tool("cron"), draft: draft) {
-            PrimaryButton(title: "解析", symbol: "play.fill") { parse() }
+            PrimaryButton(title: AppLocalization.string("tool.parse", language: language), symbol: "play.fill") { parse() }
             Menu("常用表达式") {
                 ForEach(CronFieldDraft.presets, id: \.1) { preset in
                     Button(preset.0) { apply(preset.1) }
@@ -18,10 +19,10 @@ struct CronToolView: View {
             Picker("时区", selection: Binding(get: { draft.option.isEmpty ? TimeZone.current.identifier : draft.option }, set: { draft.option = $0 })) {
                 ForEach(zones, id: \.self) { Text($0) }
             }.frame(width: 220)
-            Button("示例") { apply("0 */15 * * * ?") }
-            Button("收藏", systemImage: "star") { favoritesOpen = true }
+            Button(AppLocalization.string("tool.example", language: language)) { apply("0 */15 * * * ?") }
+            Button(AppLocalization.string("tool.favorites", language: language), systemImage: "star") { favoritesOpen = true }
             Spacer(minLength: 0)
-            Button { draft.input = ""; draft.output = ""; draft.error = nil } label: { Image(systemName: "trash") }.help("清空")
+            Button { draft.input = ""; draft.output = ""; draft.error = nil } label: { Image(systemName: "trash") }.help(AppLocalization.string("tool.clear", language: language))
         } content: {
             PersistedHSplit(toolID: "cron", defaultLeading: 320, minLeading: 260, maxLeading: 520) {
                 VStack(alignment: .leading, spacing: 10) {

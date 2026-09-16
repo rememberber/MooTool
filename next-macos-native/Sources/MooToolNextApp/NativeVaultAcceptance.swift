@@ -31,7 +31,7 @@ import MooToolNextCore
         if let scroll = editorA.enclosingScrollView {
             scroll.contentView.scroll(to: NSPoint(x: 0, y: 360)); scroll.reflectScrolledClipView(scroll.contentView)
         }
-        try await Task.sleep(for: .milliseconds(100))
+        try await settle(window)
         let expectedA = store.draft("quickNote").inputEditor
         try check(expectedA?.location == 28 && (expectedA?.scrollY ?? 0) > 100, "真实编辑器没有记录选择和滚动位置")
         try store.openDocument(b); try await settle(window)

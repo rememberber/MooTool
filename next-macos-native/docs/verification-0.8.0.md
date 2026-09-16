@@ -1,37 +1,31 @@
-# 0.8.0 本机验收记录
+# 0.8.0 验收记录
 
-验收日期：2026-09-14（安装包）；2026-09-16 补充 Core/Smoke 回归。环境为 macOS 26.7（25G229）、Intel x86_64、Swift 6.2.3 / Command Line Tools 26。应用最低运行版本为 macOS 14。
+产品：`next-macos-native` · 版本 **0.8.0**
 
-## 功能与布局
+## 自动化
 
-- **59** 组 Core 测试全部通过（含 SM2、Legacy 对称加密、RSA、工作台布局字段等）。文本对比用例对照 Electron 样例检查 UTF-16 字符范围、行增删改计数、三行上下文统一补丁、忽略空白、末尾空行、长行回退和旧工作区读取；原有格式化、附件、随手记（含选区/全文快速替换）、JSON、HTTP 与文档库用例也通过。
-- 2026-09-16：`./scripts/smoke.sh` 全量通过（约 7.7 分钟），含附件缺失占位、随手记选区快速替换、JSON/文档库/格式化/文本对比与重启恢复。同日修复「无选区应全文替换」后重跑 smoke 通过（约 9.7 分钟，59 组 Core 0 失败）。后续 Host/翻译/收藏与 SQLite 迁移改动后再次 smoke 通过（约 5.8 分钟）。
-- 文本对比专项验收点击实际原生“比较”“下一处”按钮，通过 NSTextView 检查双侧高亮与定位、统一只读补丁、忽略空白和历史恢复；保存隔离工作区后启动新进程，确认正文与编辑状态恢复。
-- 全量原生回归通过：86 张工具、深浅色和特殊布局窗口截图，另捕获 2 张 JSON 结果弹窗截图。附件、随手记、JSON、文档库、格式化、文本对比及重启恢复交互均通过。
-- 人工核对文本对比的左右浅色、统一深色和 940px 统一视图截图。窄窗口保留侧边栏、全部工具栏操作、双编辑器、下方补丁与状态栏；验收还检查三个编辑区域没有超出窗口边界。
+| 命令 | 结果 | 说明 |
+| --- | --- | --- |
+| `./scripts/check-core.sh` | 59 组，0 失败 | 含 SQLite 导入（HTTP/Host/翻译/收藏/历史/草稿/`t_quick_note`/`t_json_beauty`） |
+| `./scripts/smoke.sh` | 通过 | 附件、随手记、JSON、文档库选区/滚动、86 张截图、重启持久化 |
 
-验收使用临时原生工作区与独立 `.acceptance` 偏好域，不访问真实数据。输入和长行限制、与 Monaco 编辑装饰的差异见 [文本对比工作区与边界](text-diff-workspace.md)。
+最近一次 smoke 全绿：**2026-09-16** — 关闭主窗口 `closeBehavior` 合入后复跑通过（约 8.4 min）；同日 `t_quick_note` / `t_json_beauty`、托盘与 `t_func_content` 亦全绿。
 
-## 安装包
+## 范围说明
 
-- `MooTool Next Native.app` 与辅助程序均为 arm64 + x86_64 Universal。本机完成 Intel 运行；Apple Silicon 和 macOS 14 尚未做真机运行验收。
-- 应用复制到仓库外后，独立 Bundle ID、签名和内嵌资源通过；从复制后的应用实际运行文本对比核心用例、四种格式化器，以及 JSON、随手记与附件备份/恢复。
-- DMG 完整性、应用及辅助程序架构、产物哈希和独立应用副本均通过。使用本地 ad hoc 签名，未进行 Developer ID 签名或 Apple 公证；构建不安装应用，不修改其他产品线。
+- **0.8.0** 重点：文本对比工作区、工作台分栏/迁移、加密/Host/翻译/收藏、SQLite 历史与 `t_func_content` 草稿、菜单栏托盘、**关闭主窗口**（`general.closeBehavior` 询问/隐藏/退出）。
+- 仍按 [parity.md](parity.md) 列为边界：工具面板全文 i18n、可编辑全局快捷键、安装包后台下载/静默安装、Java `~/.MooTool` 一键镜像、Monaco 级编辑装饰等。
+- 侧栏/搜索/工具名三语、`general.language`、GitHub API 更新检查、Electron 磁盘文档库导入合入后：**check-core 59 组 0 失败**。
+- ToolPage/EditorPane 三语与 `autoDownloadUpdates` 静默打开下载页后：**smoke 全绿**（约 9.4 min，2026-09-16）。
+- Java `quick-notes` / `json-beauty` 磁盘导入合入后：**smoke 全绿**（约 8.3 min，2026-09-16）；**check-core** 仍 59/0。
+- TextTool / 工作台工具栏 i18n 后：**smoke 全绿**（约 8.1 min，2026-09-16）。
+- HTTP 分栏枚举与主控件 i18n 后：**check-core** 59/0（2026-09-16）。
+- 应用菜单 / 翻译三标签 / 词库主按钮 i18n 后：**check-core** 59/0；**smoke** 全绿（约 7.3 min，2026-09-16；首轮因 SwiftPM 并发构建触发 JSON 3s 超时失败，单独复跑通过）。
+- 首页区块 / 设置分类标题 / 翻译编辑器栏 i18n；smoke 与 JSON 验收 JSON 超时放宽至 10s：**check-core** 59/0（2026-09-16）。
+- 设置侧栏/代理主控件、时间转换工具栏 i18n；`data-migration.md` 与磁盘合并边界对齐：**check-core** 59/0、**smoke** 全绿（约 9.2 min，2026-09-16）。
 
-本机产物：`dist/universal/MooTool-Next-macOS-Native-0.8.0-mac-universal.dmg`，9,352,188 字节。
+## 手工建议
 
-SHA-256：`1c35655e9ec4357a662a7f1530c2b5aa57ea8ef496a98572a05a3713daa24186`
-
-构建时间（UTC）：2026-09-14T12:09:38.927652+00:00。
-
-## 复现
-
-```bash
-./scripts/check-core.sh
-./scripts/smoke.sh --window-capture --diff-only
-./scripts/smoke.sh --window-capture
-./scripts/build-app.sh --arch universal --dmg
-python3 scripts/verify-package.py
-```
-
-截图、`report.json` 和 `verify-package-0.8.0.log` 位于本产品的 `dist/`；选定的文本对比截图复制到 [screenshots](screenshots/)。当前系统未接受完整 Xcode 许可，Core 检查使用与 XCTest 相同的测试主体经 Command Line Tools 运行，未声称 `swift test` 已执行。
+- 设置 → 数据迁移：从本机 Electron `MooToolNext.db` 扫描并合并（HTTP/Host/翻译/历史/草稿/收藏）。
+- 菜单栏图标：取色、截图、Host 配置切换。
+- 文本对比：忽略空白、统一视图、历史恢复。

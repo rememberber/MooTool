@@ -6,7 +6,7 @@
 
 | 工具 | 当前原生实现 | 尚未覆盖 / 明确边界 |
 | --- | --- | --- |
-| 首页 | 品牌、快捷搜索、常用工具、贡献者、赞赏、源码链接、其他作品、项目链接 | 与 Electron 完全一致的文案/i18n 与动效 |
+| 首页 | 品牌、快捷搜索、常用工具（工具名随语言）、贡献者、赞赏、源码链接、其他作品、项目链接；主要区块标题与导语支持 zh-CN / en-US / ja-JP | 与 Electron 完全一致的动效；「其他作品」描述与赞赏文案未全量 i18n |
 | 随手记 | 文档库、正文检索/排序、批量导入、自动保存、按文档恢复光标/滚动与字体/字号/颜色/行距/换行/语法；编辑/分栏/预览保留撤销；24 项选区/全文快速替换、JavaScript 查找替换、列表前缀、JSON/XML 格式化；Markdown 表格对齐、任务/有序/无序列表、标题/引用/代码块/行内预览；图片选择/粘贴/多图拖入、缩放/长图预览、附件导出及备份恢复；保存时镜像正文与引用的 `attachments/*` 到 `quick-notes/`（可纳入 Git）、Finder 定位、Git 面板（含 Diff、丢弃、合并/变基中止与继续、冲突 ours/theirs）；FSEvents 监听、外部增删改自动合并或冲突提示、「从磁盘刷新」；设置中可开启自动检查点（含 push）与定时自动 Pull | 外部拉取的 Electron 风格附件文件名与磁盘双向同步；其余语法格式化、列编辑及完整编辑装饰；远端图片、HTML、脚注与完整嵌套块尚未支持；GIF/WebP 预览首帧。细节见 [随手记工作区与边界](quick-note-workspace.md) |
 | 文本对比 | 对照 Electron 的比较/清空/交换/复制、上一处/下一处、忽略空白、行与字符/仅字符/仅行高亮、左右/统一视图与历史布局；双编辑器同步滚动、自动比较、UTF-16 字符范围、三行上下文统一补丁、增删改统计、草稿与视图状态恢复 | 原生 NSTextView 高亮覆盖文本行与字符，不含 Monaco 完整边缘标记；总输入限 50 万 UTF-16 单元、行数乘积限 1000 万，单对长行超过 4000 单元改用行级高亮。详见 [文本对比工作区](text-diff-workspace.md) |
 | 格式化 | 与 Electron 的文本 / 文件两个标签及顶部类型、缩进、格式化、历史、复制、导出、清空布局对应；Nginx、Java、XML、HTML；原生版额外保留 JSON 兼容旧草稿。文本原位格式化且可撤销；文件原文与只读结果双栏、UTF-8 导入、新文件导出；历史及本产品工作区恢复 | 仅支持 Electron 格式化页的四种类型，JavaScript、SQL 属于其他编辑能力范围；使用原生文本编辑器，不含 Monaco 完整装饰。输入限 2 MB，解析器 2.8 秒超时；文件导入为副本，不监听或回写原文件。详见 [格式化工作区与边界](reformat-workspace.md) |
@@ -16,7 +16,7 @@
 | Protobuf | Hex/Base64 wire 解码，varint/fixed32/fixed64/length-delimited、UTF-8 检查 | `.proto` schema、按 schema 编码、嵌套类型推断；不支持废弃 group wire 类型 |
 | 环境变量 | 查看进程环境、`.env` 草稿、导出、传给代码运行 | 不写入 shell profile、launchd 或其他应用环境 |
 | HTTP | cURL 导入/导出；方法、URL、启用/禁用查询参数和 Cookie；原始/JSON/URL 编码表单与 **multipart/form-data**（文本字段 + 本地文件，单文件/总正文 10 MB）；集合分组、搜索、保存/替换/删除；正文/响应头/Cookie 分栏（最终响应 `Set-Cookie` 含 Domain/Path/Expires）；JSON 显示格式化；超时、重定向、跨工具切换取消；临时 URLSession；**设置中的 HTTP 代理**（主机/端口/可选认证） | 完整 cURL 选项、Cookie 文件、SOCKS/系统代理；GET/HEAD 不附正文；响应上限 10 MB |
-| Host | 与 Electron 相同的配置列表 + 编辑器分栏（`host-workspace`）；读取 `/etc/hosts`、IP/映射校验、多配置保存/搜索、导出独立文件；配置写入 `workspace.json` | 不执行管理员提权覆盖系统 Hosts；可从 SQLite `t_host` 合并导入配置 |
+| Host | 与 Electron 相同的配置列表 + 编辑器分栏（`host-workspace`）；读取 `/etc/hosts`、IP/映射校验、多配置保存/搜索、导出独立文件；配置写入 `workspace.json`；菜单栏托盘可切换已保存配置；SQLite `t_host` 可合并导入 | 不执行管理员提权覆盖系统 Hosts |
 | 网络工具 | DNS（dig）、Ping、Whois、ifconfig/netstat、DNS 缓存刷新、主机解析、IPv4↔Long、/24 IP 段 Ping 探测、TCP 端口扫描（常见端口或自定义）、本机地址列表 | 与 Electron 相同的并发/取消细粒度控制；Windows/Linux 命令差异不适用本产品线 |
 | UA 解析 | Safari、Chrome、Edge、Firefox、Opera；常见 OS/设备规则 | 未集成完整 UA 数据库；伪装或罕见 UA 可能识别不准确 |
 | 编码转换 | UTF-8 Base64、Base32、URL component、Hex、Unicode UTF-16 转义、常用 HTML 实体 | 其他字符集、完整 HTML 命名实体库 |
@@ -26,7 +26,7 @@
 | 二维码 | Core Image 生成、四级纠错、含静区 PNG、Vision 图片识别 | 摄像头、Logo、批量或其他条码 |
 | 时间转换 | 与 Electron 对齐的当前时间带、时区选择与快捷区、时间戳↔本地时间双向转换（秒/毫秒单位）、大时钟浮层、历史记录；「详细解析」保留 ISO 8601/日期文本及秒毫秒/UTC 多行输出 | 独立全屏 Portal 动效；历史摘要文案与 i18n；13 位及以上数字按毫秒解析（与 Electron 一致），更短毫秒戳请用手动单位或 ISO |
 | 留言板 | 预设文案（含主题色）、字号、左/居中对齐、前景/背景、草稿持久化、自适应预览、独立全屏窗口、Esc 退出、展示时阻止显示器休眠 | 与 Electron 一致的完整主题面板、字号百分比自适应算法与入场动画 |
-| 翻译 | 与 Electron 相同的「翻译 / 词库 / 历史」标签；macOS 15+ 系统 Translation、分栏原文/译文（`translation`）与词库分栏（`translation-words`）；词条写入 `workspace.json`；系统词典入口 | 第三方翻译供应商；macOS 14 无系统 Translation，仍可使用词库/历史与词典；可从 SQLite 合并词条与翻译历史 |
+| 翻译 | 与 Electron 相同的「翻译 / 词库 / 历史」标签；macOS 15+ 系统 Translation、分栏原文/译文（`translation`）与词库分栏（`translation-words`）；词条写入 `workspace.json`；系统词典入口；SQLite 词条/历史可合并导入 | 第三方翻译供应商；macOS 14 无系统 Translation，仍可使用词库/历史与词典 |
 | 计算器 | 运算优先级、幂、科学计数、常用函数、常量、64 位进制转换 | 任意精度、单位换算；三角函数使用弧度 |
 | 调色板 | 系统 ColorPicker、屏幕取色、HEX/RGB/HSL/SwiftUI；颜色/正则/Cron **收藏**（`toolFavorites`，与 Electron 收藏夹语义一致） | 全部色彩空间和 Electron 的配色功能；收藏夹分组 UI 较简 |
 | 图片工具 | 拖放、预览、可拖动分栏（预览 / 导出选项）、比例缩放、PNG/JPEG/TIFF、JPEG 质量、文字水印、系统截图；分栏宽度写入 `workspace.json` | 批处理、多图库列表、矢量化、复杂编辑；导出新位图，不保留原 EXIF/色彩配置/动画帧 |
@@ -35,11 +35,11 @@
 
 ## 工作台
 
-已实现分组侧边栏、常用工具、**自定义分组**（设置中管理名称与工具列表，写入 `workspace.json`）、最近使用、⌘K 搜索、深浅色、原生编辑/文件对话框、独立工具窗口、草稿恢复、历史/收藏和本产品备份。工具窗口使用同一个原生版工作区状态，切换不会清空文本草稿。HTTP 配置/请求集合、JSON 格式/结构视图选项、格式化类型/缩进/文件内容与结果、文本对比视图/高亮/空白选项、随手记文档设置/查找替换面板选项、文档库层级/选择/搜索/排序/展开状态均随本产品工作区保存。0.1.0–0.7.0 备份无需转换即可读取，新字段按默认值初始化。
+已实现分组侧边栏、**界面语言**（zh-CN / en-US / ja-JP，侧栏与搜索）、**GitHub 更新检查**（`autoCheckUpdates`）、**菜单栏托盘**（打开/设置/取色/截图/翻译/Host 配置，设置中可关闭）、**关闭主窗口**（询问/隐藏/退出，与 Electron `closeBehavior` 一致）、常用工具、**自定义分组**（设置中管理名称与工具列表，写入 `workspace.json`）、最近使用、⌘K 搜索、深浅色、原生编辑/文件对话框、独立工具窗口、草稿恢复、历史/收藏和本产品备份。工具窗口使用同一个原生版工作区状态，切换不会清空文本草稿。HTTP 配置/请求集合、JSON 格式/结构视图选项、格式化类型/缩进/文件内容与结果、文本对比视图/高亮/空白选项、随手记文档设置/查找替换面板选项、文档库层级/选择/搜索/排序/展开状态均随本产品工作区保存。0.1.0–0.7.0 备份无需转换即可读取，新字段按默认值初始化。
 
 文档与文件夹通过稳定标识关联，移动或重命名不会改变打开的文档；失败的批量导入不会部分写入。删除活动文档时保留当前内容为草稿。编辑器状态使用 UTF-16 选择范围及滚动位置；切换文档时清理当前视图的撤销栈，重启不保留撤销历史。
 
-尚未覆盖多语言界面、托盘/可自定义全局快捷键、自动更新、Java/Electron 文档库与 SQLite **全量**迁移（随手记/JSON 文档、通用工具历史 `t_func_history` 等）。设置中提供与 Electron 同类的**快捷键说明**（固定 ⌘K / ⌘, 等，不可编辑）。**已实现**：设置「数据迁移」从 Electron `mootool-next.json` 合并工作台布局（侧栏、自定义分组、隐藏工具、`layoutPaneSizes` 映射）、HTTP 代理、编辑器字号/换行与文档库 Git 自动检查点/Pull 间隔；并检测 `~/.MooTool` 下 Java 版 SQLite。**HTTP 集合/历史、Host 配置、翻译词条/历史、颜色/正则/Cron 收藏**（`t_next_favorite` 或 Java `t_favorite_*`）可从 SQLite 合并导入（设置 → 数据迁移）；其余 SQLite 数据仍建议 Compose 迁移或文档库批量导入。Compose 中全部 pane 键名与三栏子面板的逐项恢复仍可能有差异。已实现 **显示最近使用**（`showRecent`，默认关闭，与 Compose `layout.showRecent` 一致）、**侧栏宽度**（`sidebarWidth`，185–300 pt 可拖动，双击恢复默认，与 Compose `layout.sidebarWidth` 同语义）、**仅显示导航图标**（`hideNavigationTitles`）、**按工具隐藏侧栏入口**（`hiddenNavigationToolIds`）与 **主要双栏宽度**（`layoutPaneSizes`：HTTP、Host、文本对比、JSON 编辑器/检查器/树、格式化文件双栏、JSON/随手记文档库树、随手记编辑/预览（`quick-note-editor-preview`）与快速替换侧栏（`quick-note-no-tree-replace`）、**设置页分类侧栏**（`settings-page`）、翻译、网络诊断、Cron、代码运行、编码/配置/正则/Protobuf 等输入结果栏、加密对称与非对称分栏、二维码、调色板、**图片预览/选项**、PDF 列表/预览、计算器等，与 Compose `LayoutSettings.paneSizes` 同语义），均写入 `workspace.json`。留言板字号/颜色/对齐写入工具草稿；随手记快速替换在点击面板按钮时保留选区（与 Electron「有选区处理选区」一致）。当前界面为中文。图片/PDF 的已打开文件路径、导出选项与 PDF 文本预览开关写入工具草稿 `media`，重启后若原文件仍在磁盘则自动恢复（不含 Electron 多图资源库）。
+尚未覆盖**完整**多语言界面（侧栏/搜索/设置导航与 26 个工具名已支持 zh-CN / en-US / ja-JP；**工作台**工具栏/侧栏底栏/常用分组、**ToolPage 标题/副标题、共享编辑器栏**、**TextTool 通用控件**及 HTTP **发送/请求·响应分栏/集合与 cURL 菜单**、**应用菜单**（搜索/检查更新/工具列表）、翻译**三标签与词库主按钮**、**首页主要区块**、**设置分类标题与侧栏/代理主控件**、代码运行/系统信息、Host/Cron/加密/二维码/留言板/翻译等**主操作按钮**随语言切换；多数表单标签、次级菜单与错误提示仍为中文）、全局快捷键（与 Electron **相同**：设置页只读展示，可从 `mootool-next.json` 迁移 `shortcuts.*` 显示；应用菜单仍为 ⌘K / ⌘,，**不提供**自定义绑定或托盘全局热键）、**后台安装包下载与静默安装**（已实现 GitHub Releases API 检查与启动时 `autoCheckUpdates`；手动「检查更新」可提示新版本并打开下载页）、Java 版 **Compose/Electron 遗留迁移服务级一键镜像**（原生版支持从 `~/.MooTool` 的 `quick-notes` / `json-beauty` **磁盘目录合并导入**，与 SQLite 合并互补）；原生版可从 Electron **`quick-notes` / `json-vault` 文件夹**合并导入文本与 `attachments/` 图片（设置 → 数据迁移 → 扫描 `mootool-next.json`），SQLite 表 `t_quick_note` / `t_json_beauty` 正文亦可合并；不含双向实时镜像与 Electron 风格附件路径；代码运行多语言草稿仅恢复最后一次出现的运行时）。设置中提供与 Electron 同类的**快捷键说明**（固定 ⌘K / ⌘, 等，不可编辑）。**已实现**：设置「数据迁移」从 Electron `mootool-next.json` 合并工作台布局（侧栏、自定义分组、隐藏工具、`layoutPaneSizes` 映射）、HTTP 代理、编辑器字号/换行与文档库 Git 自动检查点/Pull 间隔；并检测 `~/.MooTool` 下 Java 版 SQLite。**HTTP 集合/历史、Host 配置、翻译词条/历史、通用工具历史 `t_func_history`、Java/Electron 工具草稿 `t_func_content`（回写正则/JSON/文本对比/时间/计算器/二维码/代码运行等编辑区）、SQLite 文档正文 `t_quick_note` / `t_json_beauty`、颜色/正则/Cron 收藏**（`t_next_favorite` 或 Java `t_favorite_*`）可从 SQLite 合并导入（设置 → 数据迁移）；其余 SQLite 数据仍建议 Compose 迁移或文档库批量导入。Compose 中全部 pane 键名与三栏子面板的逐项恢复仍可能有差异。已实现 **显示最近使用**（`showRecent`，默认关闭，与 Compose `layout.showRecent` 一致）、**侧栏宽度**（`sidebarWidth`，185–300 pt 可拖动，双击恢复默认，与 Compose `layout.sidebarWidth` 同语义）、**仅显示导航图标**（`hideNavigationTitles`）、**按工具隐藏侧栏入口**（`hiddenNavigationToolIds`）与 **主要双栏宽度**（`layoutPaneSizes`：HTTP、Host、文本对比、JSON 编辑器/检查器/树、格式化文件双栏、JSON/随手记文档库树、随手记编辑/预览（`quick-note-editor-preview`）与快速替换侧栏（`quick-note-no-tree-replace`）、**设置页分类侧栏**（`settings-page`）、翻译、网络诊断、Cron、代码运行、编码/配置/正则/Protobuf 等输入结果栏、加密对称与非对称分栏、二维码、调色板、**图片预览/选项**、PDF 列表/预览、计算器等，与 Compose `LayoutSettings.paneSizes` 同语义），均写入 `workspace.json`。留言板字号/颜色/对齐写入工具草稿；随手记快速替换在点击面板按钮时保留选区（与 Electron「有选区处理选区」一致）。**界面语言**（`general.language`）可切换侧栏/搜索/工具名三语；各工具面板控件与错误提示仍以中文为主。图片/PDF 的已打开文件路径、导出选项与 PDF 文本预览开关写入工具草稿 `media`，重启后若原文件仍在磁盘则自动恢复（不含 Electron 多图资源库）。
 
 ## 验证口径
 
