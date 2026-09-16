@@ -11,7 +11,12 @@ let package = Package(
     ],
     dependencies: [.package(url: "https://github.com/jpsim/Yams.git", exact: "6.2.2")],
     targets: [
-        .target(name: "MooToolNextCore", dependencies: [.product(name: "Yams", package: "Yams")], resources: [.process("Resources")]),
+        .target(
+            name: "MooToolNextCore",
+            dependencies: [.product(name: "Yams", package: "Yams")],
+            resources: [.process("Resources")],
+            linkerSettings: [.linkedLibrary("sqlite3")]
+        ),
         .executableTarget(name: "MooToolJSONWorker", dependencies: ["MooToolNextCore"]),
         .executableTarget(name: "MooToolNextApp", dependencies: ["MooToolNextCore"], resources: [.process("Resources")]),
         .testTarget(name: "MooToolNextCoreTests", dependencies: ["MooToolNextCore"])

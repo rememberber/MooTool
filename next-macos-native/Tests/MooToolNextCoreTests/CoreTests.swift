@@ -956,6 +956,32 @@ final class CoreTests: XCTestCase {
         FileManager.default.createFile(atPath: legacyRoot.appendingPathComponent("MooTool.db").path, contents: Data())
         XCTAssertTrue(LegacyJavaDataPaths.hasLegacyInstall(at: legacyRoot))
         try? FileManager.default.removeItem(at: legacyRoot)
+        let httpDB = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-http-\(UUID().uuidString).db")
+        let sql = """
+        CREATE TABLE t_msg_http (id INTEGER PRIMARY KEY, msg_name TEXT, method TEXT, url TEXT, params TEXT, headers TEXT, cookies TEXT, body TEXT, body_type TEXT, create_time TEXT, modified_time TEXT);
+        INSERT INTO t_msg_http VALUES (1, 'Demo', 'POST', 'https://example.com/api', '[{"name":"q","value":"1","enabled":true}]', '[{"name":"X-Test","value":"v","enabled":true}]', '[]', '{"a":1}', 'application/json', '2024-01-01', '2024-01-02');
+        """
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/sqlite3")
+        process.arguments = [httpDB.path]
+        let pipe = Pipe()
+        process.standardInput = pipe
+        try process.run()
+        pipe.fileHandleForWriting.write(Data(sql.utf8))
+        pipe.fileHandleForWriting.closeFile()
+        process.waitUntilExit()
+        XCTAssertEqual(process.terminationStatus, 0)
+        let preview = try ElectronHttpImport.preview(at: httpDB)
+        XCTAssertEqual(preview.requestCount, 1)
+        let loaded = try ElectronHttpImport.loadRequests(at: httpDB)
+        XCTAssertEqual(loaded.first?.name, "Demo")
+        XCTAssertEqual(loaded.first?.draft.mode, "POST")
+        XCTAssertEqual(loaded.first?.draft.http?.bodyKind, .json)
+        XCTAssertTrue(loaded.first?.draft.secondary.contains("X-Test: v") ?? false)
+        let httpMerge = ElectronHttpImport.merge(importing: loaded, into: [loaded[0]])
+        XCTAssertEqual(httpMerge.added, 0)
+        XCTAssertEqual(httpMerge.skipped, 1)
+        try? FileManager.default.removeItem(at: httpDB)
     }
     func testHTTPRedirectPolicyAndSessionIsolation() async throws {
         let fixture = try HTTPFixture()

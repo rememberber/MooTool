@@ -22,6 +22,9 @@ struct MigrationSettingsPanel: View {
     @State private var error: String?
     @State private var notice: String?
     @State private var confirmImport = false
+    @State private var httpDatabasePath = ElectronDataPaths.defaultDatabaseURL.path
+    @State private var httpPreview: ElectronHttpImportPreview?
+    @State private var confirmHttpImport = false
     private var knownToolIDs: Set<String> { Set(Catalog.tools.map(\.id)) }
 
     var body: some View {
@@ -51,21 +54,100 @@ struct MigrationSettingsPanel: View {
                 let root = LegacyJavaDataPaths.defaultDirectory
                 LabeledContent("默认目录", value: root.path)
                 if LegacyJavaDataPaths.hasLegacyInstall(at: root) {
-                    Text("检测到旧版 SQLite 数据库。原生版暂不支持一键导入笔记/JSON/收藏；请使用 Compose 桌面版的迁移面板，或通过文档库批量导入 Markdown/JSON 文件。").font(.caption).foregroundStyle(.secondary)
+                    Text("检测到旧版 SQLite。笔记/JSON/收藏请用 Compose 迁移或文档库批量导入；HTTP 请求可用下方按钮从 t_msg_http 合并。").font(.caption).foregroundStyle(.secondary)
                 } else {
                     Text("未在默认目录找到 Java 版数据库。若数据在其他位置，请用 Compose 迁移或手动复制文件到文档库。").font(.caption).foregroundStyle(.secondary)
                 }
                 Button("在 Finder 中打开…") { NSWorkspace.shared.open(root) }
+                if let javaDB = LegacyJavaDataPaths.legacyDatabaseURL(in: root) {
+                    Divider()
+                    Text("也可从 Java 版数据库导入 HTTP 请求集合（t_msg_http）。").font(.caption).foregroundStyle(.secondary)
+                    Button("从 Java 数据库导入 HTTP…") { importHttp(from: javaDB) }
+                }
+            }
+            Divider()
+            Section("HTTP 请求集合（SQLite）") {
+                Text("从 Electron `MooToolNext.db` 或兼容的 `t_msg_http` 表合并保存的请求，不会删除已有条目；同名同集合会跳过。").font(.caption).foregroundStyle(.secondary)
+                HStack {
+                    TextField("SQLite 数据库", text: $httpDatabasePath)
+                    Button("选择…") { chooseDatabase() }
+                }
+                HStack {
+                    Button("扫描") { scanHttp() }.disabled(busy || httpDatabasePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    Button("合并导入…") { confirmHttpImport = true }
+                        .disabled(busy || (httpPreview?.requestCount ?? 0) == 0)
+                }
+                if let httpPreview {
+                    LabeledContent("可导入请求", value: "\(httpPreview.requestCount)")
+                    ForEach(httpPreview.warnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
+                }
             }
         }
-        .formStyle(.grouped).frame(width: 560, height: 360)
+        .formStyle(.grouped).frame(width: 560, height: 480)
         .onAppear {
             if storePath.isEmpty { storePath = ElectronStoreImport.defaultStoreURL()?.path ?? "" }
+            if httpDatabasePath.isEmpty || !FileManager.default.fileExists(atPath: httpDatabasePath) {
+                httpDatabasePath = ElectronDataPaths.defaultDatabaseURL.path
+            }
         }
         .confirmationDialog("导入 Electron 设置？", isPresented: $confirmImport) {
             Button("合并到当前原生工作区") { importSettings() }
         } message: {
             Text("将覆盖匹配的工作台字段，并写入 HTTP 代理与编辑器偏好。导入前会自动保存当前工作区。")
+        }
+        .confirmationDialog("导入 HTTP 请求集合？", isPresented: $confirmHttpImport) {
+            Button("合并到当前工作区") { importHttp(from: URL(fileURLWithPath: httpDatabasePath)) }
+        } message: {
+            Text("将把数据库中的请求追加到原生版 HTTP 工具「请求集合」，重复名称在同一集合下会跳过。")
+        }
+    }
+
+    private func chooseDatabase() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = [UTType(filenameExtension: "db") ?? .data, .database]
+        panel.prompt = "选择"
+        if !httpDatabasePath.isEmpty { panel.directoryURL = URL(fileURLWithPath: httpDatabasePath).deletingLastPathComponent() }
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            httpDatabasePath = url.path
+            httpPreview = nil
+        }
+    }
+
+    private func httpCollection(for url: URL) -> String {
+        url.path.contains(".MooTool") ? "Java 导入" : ElectronHttpImport.defaultCollection
+    }
+
+    private func scanHttp() {
+        busy = true
+        defer { busy = false }
+        do {
+            let url = URL(fileURLWithPath: httpDatabasePath.trimmingCharacters(in: .whitespacesAndNewlines))
+            httpPreview = try ElectronHttpImport.preview(at: url, collection: httpCollection(for: url))
+            error = nil
+        } catch {
+            httpPreview = nil
+            self.error = error.localizedDescription
+        }
+    }
+
+    private func importHttp(from url: URL) {
+        busy = true
+        defer { busy = false }
+        do {
+            let collection = httpCollection(for: url)
+            let items = try ElectronHttpImport.loadRequests(at: url, collection: collection)
+            let result = ElectronHttpImport.merge(importing: items, into: store.httpRequests)
+            store.httpRequests = result.merged
+            store.saveNow()
+            notice = "已合并 \(result.added) 条 HTTP 请求，跳过 \(result.skipped) 条重复项。"
+            httpPreview = try ElectronHttpImport.preview(at: url, collection: collection)
+            error = nil
+        } catch {
+            self.error = error.localizedDescription
         }
     }
 
