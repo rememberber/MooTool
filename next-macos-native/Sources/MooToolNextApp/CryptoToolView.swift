@@ -4,15 +4,20 @@ import MooToolNextCore
 private enum CryptoTab: String, CaseIterable, Identifiable {
     case symmetric, asymmetric, digest, base, random
     var id: String { rawValue }
-    var title: String {
+    func title(language: AppLanguage) -> String {
         switch self {
-        case .symmetric: return "对称"
-        case .asymmetric: return "非对称"
-        case .digest: return "摘要"
-        case .base: return "编码"
-        case .random: return "随机"
+        case .symmetric: return AppLocalization.string("crypto.tab.symmetric", language: language)
+        case .asymmetric: return AppLocalization.string("crypto.tab.asymmetric", language: language)
+        case .digest: return AppLocalization.string("crypto.tab.digest", language: language)
+        case .base: return AppLocalization.string("crypto.tab.base", language: language)
+        case .random: return AppLocalization.string("crypto.tab.random", language: language)
         }
     }
+}
+
+private enum CryptoKeyPairMarker {
+    static let publicKey = "MOOTOOL_PUBLIC_KEY"
+    static let privateKey = "MOOTOOL_PRIVATE_KEY"
 }
 
 struct CryptoToolView: View {
@@ -30,15 +35,16 @@ struct CryptoToolView: View {
     private var tab: CryptoTab {
         CryptoTab(rawValue: draft.mode) ?? .digest
     }
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
 
     var body: some View {
         ToolPage(tool: Catalog.tool("crypto"), draft: draft, showsHeading: false) {
-            Picker("分类", selection: Binding(get: { tab }, set: { draft.mode = $0.rawValue })) {
-                ForEach(CryptoTab.allCases) { Text($0.title).tag($0) }
+            Picker(loc("crypto.tabPicker"), selection: Binding(get: { tab }, set: { draft.mode = $0.rawValue })) {
+                ForEach(CryptoTab.allCases) { Text($0.title(language: language)).tag($0) }
             }.pickerStyle(.segmented).frame(maxWidth: 520)
             Button { historyOpen = true } label: { Label(AppLocalization.string("workbench.history", language: language), systemImage: "clock.arrow.circlepath") }
             Spacer(minLength: 0)
-            Button { clearTab() } label: { Image(systemName: "trash") }.help("清空当前标签内容")
+            Button { clearTab() } label: { Image(systemName: "trash") }.help(loc("crypto.clearTab"))
         } content: {
             Group {
                 switch tab {
@@ -51,7 +57,7 @@ struct CryptoToolView: View {
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .onAppear(perform: migrateLegacyDraft)
-        .sheet(isPresented: $historyOpen) { HistoryView(toolID: "crypto").environment(store) }
+        .sheet(isPresented: $historyOpen) { HistoryView(toolID: "crypto").environment(store).environment(\.appLanguage, language) }
     }
 
     private let symmetricAlgorithms = ["AES-GCM", "AES-ECB", "DES-ECB", "SM4-ECB"]
@@ -59,20 +65,20 @@ struct CryptoToolView: View {
     private var symmetricPanel: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Picker("算法", selection: symmetricAlgorithm) {
+                Picker(loc("crypto.algorithm"), selection: symmetricAlgorithm) {
                     ForEach(symmetricAlgorithms, id: \.self) { Text($0) }
                 }.frame(width: 220)
                 if symmetricAlgorithm.wrappedValue == "AES-GCM" {
-                    SecureField("Hex 密钥 · 16 / 24 / 32 字节", text: $draft.secondary).textFieldStyle(.roundedBorder).frame(maxWidth: 320)
+                    SecureField(loc("crypto.keyHexGCM"), text: $draft.secondary).textFieldStyle(.roundedBorder).frame(maxWidth: 320)
                 } else {
-                    TextField("密钥（UTF-8，按字符截断/补 0）", text: $draft.secondary).textFieldStyle(.roundedBorder).frame(maxWidth: 320)
+                    TextField(loc("crypto.keyUtf8"), text: $draft.secondary).textFieldStyle(.roundedBorder).frame(maxWidth: 320)
                 }
             }
             if symmetricAlgorithm.wrappedValue == "AES-GCM" {
-                cryptoIO(plainTitle: "明文", cipherTitle: "密文 (Base64)",
+                cryptoIO(plainTitle: loc("crypto.plainText"), cipherTitle: loc("crypto.cipherBase64"),
                          encrypt: { symCrypt(encrypt: true) }, decrypt: { symCrypt(encrypt: false) })
             } else {
-                cryptoIO(plainTitle: "明文", cipherTitle: "密文 (Hex)",
+                cryptoIO(plainTitle: loc("crypto.plainText"), cipherTitle: loc("crypto.cipherHex"),
                          encrypt: { symCrypt(encrypt: true) }, decrypt: { symCrypt(encrypt: false) })
             }
         }
@@ -89,7 +95,7 @@ struct CryptoToolView: View {
     private var asymmetricPanel: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Picker("算法", selection: $draft.cryptoAsymmetric) {
+                Picker(loc("crypto.algorithm"), selection: $draft.cryptoAsymmetric) {
                     Text("RSA").tag("RSA")
                     Text("SM2").tag("SM2")
                 }.frame(width: 140)
@@ -97,18 +103,18 @@ struct CryptoToolView: View {
                 Spacer()
             }
             PersistedHSplit(toolID: "crypto", paneIndex: 0, defaultLeading: 280, minLeading: 200, maxLeading: 520) {
-                EditorPane(title: draft.cryptoAsymmetric == "SM2" ? "公钥 (Base64)" : "公钥 (Base64 DER)", text: $draft.option, syntax: true)
+                EditorPane(title: draft.cryptoAsymmetric == "SM2" ? loc("crypto.publicKeySm2") : loc("crypto.publicKeyDer"), text: $draft.option, syntax: true)
             } trailing: {
-                EditorPane(title: draft.cryptoAsymmetric == "SM2" ? "私钥 (Base64)" : "私钥 (Base64 DER)", text: $draft.secondary, syntax: true)
+                EditorPane(title: draft.cryptoAsymmetric == "SM2" ? loc("crypto.privateKeySm2") : loc("crypto.privateKeyDer"), text: $draft.secondary, syntax: true)
             }.frame(minHeight: 120, maxHeight: 180)
-            cryptoIO(plainTitle: "明文 / 待验签内容", cipherTitle: "密文 / 签名 (Base64)",
+            cryptoIO(plainTitle: loc("crypto.plainOrSign"), cipherTitle: loc("crypto.cipherOrSignature"),
                      encrypt: { asymmetric(.encrypt) }, decrypt: { asymmetric(.decrypt) })
             HStack(spacing: 8) {
-                Button("签名") { asymmetric(.sign) }
-                Button("验签") { asymmetric(.verify) }
+                Button(loc("crypto.sign")) { asymmetric(.sign) }
+                Button(loc("crypto.verify")) { asymmetric(.verify) }
                 if draft.cryptoAsymmetric == "RSA" {
-                    Button("私钥加密") { asymmetric(.privateEncrypt) }
-                    Button("公钥解密") { asymmetric(.publicDecrypt) }
+                    Button(loc("crypto.privateEncrypt")) { asymmetric(.privateEncrypt) }
+                    Button(loc("crypto.publicDecrypt")) { asymmetric(.publicDecrypt) }
                 }
             }
         }
@@ -117,30 +123,30 @@ struct CryptoToolView: View {
     private var digestPanel: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Picker("算法", selection: digestAlgorithm) {
+                Picker(loc("crypto.algorithm"), selection: digestAlgorithm) {
                     ForEach(["MD5", "SHA-1", "SHA-256", "SHA-384", "SHA-512", "SM3", "HMAC-SHA256"], id: \.self) { Text($0) }
                 }.frame(width: 200)
                 if digestAlgorithm.wrappedValue == "HMAC-SHA256" {
-                    SecureField("HMAC 密钥", text: $draft.secondary).textFieldStyle(.roundedBorder).frame(maxWidth: 220)
+                    SecureField(loc("crypto.hmacKey"), text: $draft.secondary).textFieldStyle(.roundedBorder).frame(maxWidth: 220)
                 }
                 PrimaryButton(title: AppLocalization.string("tool.digestText", language: language), symbol: "play.fill") { digestText() }
-                Button("文件摘要") { digestFile() }
+                Button(loc("crypto.fileDigest")) { digestFile() }
                 if !digestFileName.isEmpty { Text(digestFileName).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
             }
             PersistedHSplit(toolID: "crypto", paneIndex: 1, defaultLeading: 360, minLeading: 240, maxLeading: 720) {
-                EditorPane(title: "输入", text: $draft.input)
+                EditorPane(title: loc("tool.input"), text: $draft.input)
             } trailing: {
-                EditorPane(title: "摘要结果", text: $draft.output, editable: false, syntax: true)
+                EditorPane(title: loc("crypto.digestResult"), text: $draft.output, editable: false, syntax: true)
             }
         }
     }
 
     private var basePanel: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("算法", selection: baseAlgorithm) {
+            Picker(loc("crypto.algorithm"), selection: baseAlgorithm) {
                 ForEach(["Base64", "Base32", "Hex"], id: \.self) { Text($0) }
             }.frame(width: 160)
-            cryptoIO(plainTitle: "原文", cipherTitle: baseAlgorithm.wrappedValue,
+            cryptoIO(plainTitle: loc("crypto.sourceText"), cipherTitle: baseAlgorithm.wrappedValue,
                      encrypt: { baseCodec(encode: true) }, decrypt: { baseCodec(encode: false) })
         }
     }
@@ -148,15 +154,15 @@ struct CryptoToolView: View {
     private var randomPanel: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("长度").foregroundStyle(.secondary)
+                Text(loc("crypto.length")).foregroundStyle(.secondary)
                 TextField("16", value: $randomLength, format: .number).textFieldStyle(.roundedBorder).frame(width: 72)
-                Text("（数字 / 字符串 / 密码）").font(.caption).foregroundStyle(.tertiary)
+                Text(loc("crypto.lengthHint")).font(.caption).foregroundStyle(.tertiary)
             }
-            randomRow("UUID", value: randomUUID) { generateRandom(.uuid) }
-            randomRow("数字", value: randomDigits) { generateRandom(.digits) }
-            randomRow("字符串", value: randomString) { generateRandom(.string) }
-            randomRow("密码", value: randomPassword) { generateRandom(.password) }
-            randomRow("32 字节 Hex", value: draft.output) { generateRandom(.bytes32) }
+            randomRow(loc("crypto.random.uuid"), value: randomUUID) { generateRandom(.uuid) }
+            randomRow(loc("crypto.random.digits"), value: randomDigits) { generateRandom(.digits) }
+            randomRow(loc("crypto.random.string"), value: randomString) { generateRandom(.string) }
+            randomRow(loc("crypto.random.password"), value: randomPassword) { generateRandom(.password) }
+            randomRow(loc("crypto.random.bytes32"), value: draft.output) { generateRandom(.bytes32) }
         }.padding(.top, 4)
     }
 
@@ -165,7 +171,7 @@ struct CryptoToolView: View {
             Text(title).frame(width: 88, alignment: .leading).foregroundStyle(.secondary)
             Text(value.isEmpty ? "—" : value).font(.system(.body, design: .monospaced)).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
             Button { FilePanels.copy(value) } label: { Image(systemName: "doc.on.doc") }.disabled(value.isEmpty)
-            Button("生成", action: generate)
+            Button(loc("crypto.generate"), action: generate)
         }
     }
 
@@ -173,8 +179,8 @@ struct CryptoToolView: View {
         HSplitView {
             EditorPane(title: plainTitle, text: $draft.input)
             VStack(spacing: 10) {
-                Button { encrypt() } label: { Label("加密 →", systemImage: "arrow.right") }.buttonStyle(.borderedProminent)
-                Button { decrypt() } label: { Label("← 解密", systemImage: "arrow.left") }
+                Button { encrypt() } label: { Label(loc("crypto.encryptForward"), systemImage: "arrow.right") }.buttonStyle(.borderedProminent)
+                Button { decrypt() } label: { Label(loc("crypto.decryptBack"), systemImage: "arrow.left") }
             }.frame(width: 110).padding(.vertical, 40)
             EditorPane(title: cipherTitle, text: $draft.output, syntax: true)
         }
@@ -303,9 +309,7 @@ struct CryptoToolView: View {
         let sm2 = draft.cryptoAsymmetric == "SM2"
         store.run("crypto") { _ in
             let pair = sm2 ? try CryptoServices.sm2GenerateKeyPair() : try CryptoServices.rsaGenerateKeyPair()
-            let publicLabel = sm2 ? "公钥 (Base64)" : "公钥 (Base64 DER)"
-            let privateLabel = sm2 ? "私钥 (Base64)" : "私钥 (Base64 DER)"
-            return "\(publicLabel):\n\(pair.publicKey)\n\n\(privateLabel):\n\(pair.privateKey)"
+            return "\(CryptoKeyPairMarker.publicKey):\n\(pair.publicKey)\n\n\(CryptoKeyPairMarker.privateKey):\n\(pair.privateKey)"
         }
         Task { @MainActor in
             for _ in 0..<30 where draft.busy { try? await Task.sleep(for: .milliseconds(100)) }
@@ -315,10 +319,10 @@ struct CryptoToolView: View {
 
     private func parseKeyPair(from text: String) {
         let lines = text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-        if let pubIndex = lines.firstIndex(where: { $0.contains("公钥") }), pubIndex + 1 < lines.count {
+        if let pubIndex = lines.firstIndex(where: { $0.hasPrefix(CryptoKeyPairMarker.publicKey) }), pubIndex + 1 < lines.count {
             draft.option = lines[pubIndex + 1].trimmingCharacters(in: .whitespaces)
         }
-        if let privIndex = lines.firstIndex(where: { $0.contains("私钥") }), privIndex + 1 < lines.count {
+        if let privIndex = lines.firstIndex(where: { $0.hasPrefix(CryptoKeyPairMarker.privateKey) }), privIndex + 1 < lines.count {
             draft.secondary = lines[privIndex + 1].trimmingCharacters(in: .whitespaces)
         }
     }
@@ -334,7 +338,7 @@ struct CryptoToolView: View {
             guard let url = urls.first else { return }
             do {
                 let data = try Data(contentsOf: url)
-                guard data.count <= 10 * 1024 * 1024 else { throw ToolError("文件超过 10 MB。") }
+                guard data.count <= 10 * 1024 * 1024 else { throw ToolError(loc("crypto.error.fileTooLarge")) }
                 let algorithm = digestAlgorithm.wrappedValue
                 let text = String(decoding: data, as: UTF8.self)
                 draft.input = text
@@ -382,7 +386,7 @@ struct CryptoToolView: View {
             case .password: randomPassword = value
             default: break
             }
-            draft.status = "已生成随机\(kind == .password ? "密码" : kind == .digits ? "数字" : "字符串")"
+            draft.status = kind == .password ? loc("crypto.status.randomPassword") : kind == .digits ? loc("crypto.status.randomDigits") : loc("crypto.status.randomString")
             store.record("crypto")
         default: break
         }
