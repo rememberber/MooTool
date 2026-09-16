@@ -1,6 +1,32 @@
 import Foundation
+#if canImport(Darwin)
+import Darwin
+#endif
 
 public enum DeveloperServices {
+    public static func isValidHostIP(_ text: String) -> Bool {
+        text.withCString { cString in
+            var ipv4 = in_addr()
+            var ipv6 = in6_addr()
+            return inet_pton(AF_INET, cString, &ipv4) == 1 || inet_pton(AF_INET6, cString, &ipv6) == 1
+        }
+    }
+
+    public static func validateHostsContent(_ text: String) throws -> String {
+        let lines = text.components(separatedBy: .newlines)
+        var entries: [String] = []
+        for (index, raw) in lines.enumerated() {
+            let line = raw.components(separatedBy: "#")[0].trimmingCharacters(in: .whitespaces)
+            if line.isEmpty { continue }
+            let parts = line.split(whereSeparator: \.isWhitespace).map(String.init)
+            guard parts.count >= 2 else { throw ToolError("第 \(index + 1) 行格式无效。") }
+            let ip = parts[0]
+            guard isValidHostIP(ip) else { throw ToolError("第 \(index + 1) 行 IP 无效：\(ip)") }
+            entries.append("\(ip) → \(parts.dropFirst().joined(separator: " "))")
+        }
+        return entries.isEmpty ? "无有效映射（空文件或仅有注释）。" : "有效映射：\(entries.count) 行\n\n" + entries.joined(separator: "\n")
+    }
+
     public static func timestamp(_ input: String, zone: String) throws -> String {
         guard let timezone = TimeZone(identifier: zone) else { throw ToolError("无效时区：\(zone)") }
         let value = input.trimmingCharacters(in: .whitespacesAndNewlines)

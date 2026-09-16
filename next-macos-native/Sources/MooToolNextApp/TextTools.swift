@@ -12,6 +12,7 @@ struct ToolRouter: View {
             case "reformat": ReformatWorkspace(draft: store.draft(id))
             case "textDiff": TextDiffWorkspace(draft: store.draft(id))
             case "http": HTTPTool(draft: store.draft(id))
+            case "host": HostWorkspace(draft: store.draft(id))
             case "net": NetToolView(draft: store.draft(id))
             case "java", "hardware": SystemTool(id: id, draft: store.draft(id))
             case "qrCode": QRTool(draft: store.draft(id))
@@ -108,11 +109,6 @@ struct TextTool: View {
             Picker("时区", selection: $draft.option) {
                 ForEach(Array(Set([TimeZone.current.identifier, "UTC", "Asia/Shanghai", "Asia/Tokyo", "America/New_York", "America/Los_Angeles", "Europe/London"])).sorted(), id: \.self) { Text($0) }
             }.frame(width: 240)
-        case "host":
-            PrimaryButton(title: "读取系统 Hosts", symbol: "arrow.clockwise") {
-                do { draft.input = try String(contentsOfFile: "/etc/hosts", encoding: .utf8); draft.status = "已读取 /etc/hosts，可编辑后导出独立配置。" } catch { draft.error = error.localizedDescription }
-            }
-            Button("检查配置") { execute() }; Button("导出 hosts") { FilePanels.saveText(draft.input, name: "hosts") }
         case "variables":
             PrimaryButton(title: "查看当前环境", symbol: "arrow.clockwise") { execute() }
             Button("导出 .env") { FilePanels.saveText(draft.input, name: ".env") }
@@ -176,18 +172,7 @@ struct TextTool: View {
                 return "DEC  \(value)\nHEX  \(String(value, radix: 16).uppercased())\nOCT  \(String(value, radix: 8))\nBIN  \(String(value, radix: 2))"
             case "cron": return try CronExpression(d.input).next(after: Date()).enumerated().map { "\($0.offset + 1).  \($0.element.formatted(date: .complete, time: .standard))" }.joined(separator: "\n")
             case "variables": return ProcessInfo.processInfo.environment.keys.sorted().map { "\($0)=\(ProcessInfo.processInfo.environment[$0]!)" }.joined(separator: "\n")
-            case "host":
-                let lines = d.input.components(separatedBy: .newlines)
-                var entries: [String] = []
-                for (index, raw) in lines.enumerated() {
-                    let line = raw.components(separatedBy: "#")[0].trimmingCharacters(in: .whitespaces)
-                    if line.isEmpty { continue }
-                    let parts = line.split(whereSeparator: \.isWhitespace)
-                    guard parts.count >= 2 else { throw ToolError("第 \(index + 1) 行需包含 IP 和主机名。") }
-                    var ipv4 = in_addr(); var ipv6 = in6_addr()
-                    guard inet_pton(AF_INET, String(parts[0]), &ipv4) == 1 || inet_pton(AF_INET6, String(parts[0]), &ipv6) == 1 else { throw ToolError("第 \(index + 1) 行不是有效 IP。") }
-                    entries.append("\(parts[0]) → \(parts.dropFirst().joined(separator: ", "))")
-                }; return "有效映射：\(entries.count) 行\n\n" + entries.joined(separator: "\n")
+            case "host": return try HostWorkspace.validateContent(d.input)
             default: throw ToolError("没有找到此工具。")
             }
         }

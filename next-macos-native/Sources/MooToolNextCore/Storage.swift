@@ -64,6 +64,7 @@ public struct WorkspaceSnapshot: Codable, Equatable {
     public var documents: [SavedDocument] = []
     public var history: [HistoryRecord] = []
     public var httpRequests: [SavedHTTPRequest]?
+    public var hostProfiles: [SavedHostProfile]?
     public var folders: [DocumentFolder]?
     public var vaultPreferences: [String: VaultPreferences]?
     public var scratchDrafts: [String: DraftRecord]?
@@ -85,7 +86,10 @@ public struct WorkspaceSnapshot: Codable, Equatable {
               (scratchDrafts ?? [:]).allSatisfy({ ["json", "quickNote"].contains($0.key) && $0.value.documentID == nil }) else { throw ToolError("文档库设置或草稿无效。") }
         guard Set(documents.map(\.id)).count == documents.count,
               Set(history.map(\.id)).count == history.count,
-              Set((httpRequests ?? []).map(\.id)).count == (httpRequests ?? []).count else { throw ToolError("备份包含重复记录。") }
+              Set((httpRequests ?? []).map(\.id)).count == (httpRequests ?? []).count,
+              Set((hostProfiles ?? []).map(\.id)).count == (hostProfiles ?? []).count else { throw ToolError("备份包含重复记录。") }
+        for profile in hostProfiles ?? [] { try profile.validate() }
+        guard (hostProfiles ?? []).count <= 200 else { throw ToolError("Host 配置数量过多。") }
         for draft in Array(drafts.values) + history.map(\.draft) + (httpRequests ?? []).map(\.draft) + Array((scratchDrafts ?? [:]).values) {
             try draft.noteOptions?.validate(); try draft.noteWorkspace?.validate()
             try draft.messageBoard?.validate()

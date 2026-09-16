@@ -1010,6 +1010,25 @@ final class CoreTests: XCTestCase {
         XCTAssertEqual(try WorkspaceRepository.decode(WorkspaceRepository.encode(state)).drafts["image"]?.media?.exportWidth, "800")
         try? FileManager.default.removeItem(at: httpDB)
         try? FileManager.default.removeItem(at: historyDB)
+        let hostDB = FileManager.default.temporaryDirectory.appendingPathComponent("mootool-host-\(UUID().uuidString).db")
+        let hostSQL = """
+        CREATE TABLE t_host (id INTEGER PRIMARY KEY, name TEXT, content TEXT, create_time TEXT, modified_time TEXT);
+        INSERT INTO t_host VALUES (1, 'Dev', '127.0.0.1 api.local', '2024-01-01', '2024-01-02');
+        """
+        let hostProcess = Process()
+        hostProcess.executableURL = URL(fileURLWithPath: "/usr/bin/sqlite3")
+        hostProcess.arguments = [hostDB.path]
+        let hostPipe = Pipe()
+        hostProcess.standardInput = hostPipe
+        try hostProcess.run()
+        hostPipe.fileHandleForWriting.write(Data(hostSQL.utf8))
+        hostPipe.fileHandleForWriting.closeFile()
+        hostProcess.waitUntilExit()
+        let hosts = try ElectronHostImport.loadProfiles(at: hostDB)
+        XCTAssertEqual(hosts.first?.name, "Dev")
+        state.hostProfiles = hosts
+        XCTAssertEqual(try WorkspaceRepository.decode(WorkspaceRepository.encode(state)).hostProfiles?.count, 1)
+        try? FileManager.default.removeItem(at: hostDB)
     }
     func testHTTPRedirectPolicyAndSessionIsolation() async throws {
         let fixture = try HTTPFixture()

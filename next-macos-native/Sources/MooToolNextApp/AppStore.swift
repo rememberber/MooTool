@@ -89,6 +89,7 @@ final class AppStore {
     var attachmentGeneration = 0
     var history: [HistoryRecord] = []
     var httpRequests: [SavedHTTPRequest] = []
+    var hostProfiles: [SavedHostProfile] = []
     var searchPresented = false
     var historyPresented = false
     var error: String?
@@ -182,7 +183,8 @@ final class AppStore {
         value.documents = documents; value.folders = folders; value.vaultPreferences = vaultPreferences
         value.scratchDrafts = scratchDrafts
         value.noteAttachments = noteAttachments.isEmpty ? nil : noteAttachments
-        value.history = history; value.httpRequests = httpRequests; value.drafts = drafts.mapValues(\.record); return value
+        value.history = history; value.httpRequests = httpRequests; value.hostProfiles = hostProfiles.isEmpty ? nil : hostProfiles
+        value.drafts = drafts.mapValues(\.record); return value
     }
     func restore(_ value: WorkspaceSnapshot) {
         editorRestoreGeneration += 1
@@ -195,6 +197,7 @@ final class AppStore {
         hiddenNavigationToolIds = value.hiddenNavigationToolIds
         layoutPaneSizes = value.layoutPaneSizes
         documents = value.documents; history = value.history; httpRequests = value.httpRequests ?? []
+        hostProfiles = value.hostProfiles ?? []
         folders = value.folders ?? []; vaultPreferences = value.vaultPreferences ?? [:]
         scratchDrafts = value.scratchDrafts ?? [:]
         noteAttachments = value.noteAttachments ?? []; attachmentGeneration += 1
