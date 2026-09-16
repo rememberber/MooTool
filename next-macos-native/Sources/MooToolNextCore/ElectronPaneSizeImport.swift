@@ -33,6 +33,7 @@ public enum ElectronPaneSizeImport {
         mapIoThree(electron["encode-panes"], paneKey: "encode", minLeft: 240, maxLeft: 700, minMiddle: 120, maxMiddle: 280, into: &result)
         mapIoThree(electron["config-convert"], paneKey: "ymlProperties", minLeft: 240, maxLeft: 700, minMiddle: 110, maxMiddle: 280, into: &result)
         mapIoThree(electron["config-validate"], paneKey: "ymlProperties", minLeft: 240, maxLeft: 700, minMiddle: 110, maxMiddle: 280, into: &result)
+        mapTwoColumn(electron["settings-page"], paneKey: "settings-page", minFirst: 180, maxFirst: 360, defaultSecond: 420, into: &result, current: current)
         mapTwoColumn(electron["color-board"], paneKey: "colorBoard", minFirst: 240, maxFirst: 700, defaultSecond: 420, into: &result, current: current)
         mapIoThree(electron["protobuf-wire"], paneKey: "protobuf", minLeft: 240, maxLeft: 700, minMiddle: 110, maxMiddle: 280, into: &result)
         mapIoThree(electron["protobuf-convert"], paneKey: "protobuf", minLeft: 240, maxLeft: 700, minMiddle: 110, maxMiddle: 280, into: &result)
