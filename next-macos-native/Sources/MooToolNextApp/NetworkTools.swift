@@ -6,30 +6,31 @@ struct SystemTool: View {
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
     @Environment(\.appLanguage) private var language
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
     var body: some View {
         ToolPage(tool: Catalog.tool(id), draft: draft) {
             if id == "java" {
-                Picker("语言", selection: $draft.mode) { ForEach(["Python", "JavaScript", "Swift", "Java", "Groovy"], id: \.self) { Text($0) } }.frame(width: 165)
+                Picker(loc("codeRun.language"), selection: $draft.mode) { ForEach(["Python", "JavaScript", "Swift", "Java", "Groovy"], id: \.self) { Text($0) } }.frame(width: 165)
                 PrimaryButton(title: AppLocalization.string("tool.runCode", language: language), action: run)
                 Button(AppLocalization.string("tool.example", language: language)) { draft.input = example }
-                Text("使用本机运行时 · 最长 20 秒").font(.caption).foregroundStyle(.secondary)
+                Text(loc("codeRun.runtimeHint")).font(.caption).foregroundStyle(.secondary)
             } else if id == "net" {
-                Picker("工具", selection: $draft.mode) { ForEach(["DNS", "Ping", "Whois", "网络接口"], id: \.self) { Text($0) } }.frame(width: 150)
-                TextField("域名或 IP", text: $draft.input).textFieldStyle(.roundedBorder).frame(minWidth: 180, maxWidth: 400)
+                Picker(loc("net.tool"), selection: $draft.mode) { ForEach(["DNS", "Ping", "Whois", "网络接口"], id: \.self) { Text($0) } }.frame(width: 150)
+                TextField(loc("net.hostPlaceholder"), text: $draft.input).textFieldStyle(.roundedBorder).frame(minWidth: 180, maxWidth: 400)
                 PrimaryButton(title: AppLocalization.string("tool.query", language: language), action: run)
             } else {
                 PrimaryButton(title: AppLocalization.string("tool.refreshSystemInfo", language: language), symbol: "arrow.clockwise", action: run)
-                Button("详细硬件报告") { draft.mode = "详细"; run() }
+                Button(loc("hardware.detailedReport")) { draft.mode = "详细"; run() }
             }
         } content: {
             if id == "java" {
                 PersistedHSplit(toolID: "java", defaultLeading: 420, minLeading: 280, maxLeading: 900) {
-                    EditorPane(title: "代码", text: $draft.input)
+                    EditorPane(title: loc("tool.input"), text: $draft.input)
                 } trailing: {
-                    EditorPane(title: "输出", text: $draft.output, editable: false)
+                    EditorPane(title: loc("tool.output"), text: $draft.output, editable: false)
                 }
             } else {
-                EditorPane(title: id == "hardware" ? "此 Mac" : "输出", text: $draft.output, editable: false)
+                EditorPane(title: id == "hardware" ? loc("hardware.thisMac") : loc("tool.output"), text: $draft.output, editable: false)
             }
         }.onAppear {
             if draft.mode.isEmpty { draft.mode = id == "java" ? "Python" : "DNS" }
@@ -87,7 +88,7 @@ struct SystemTool: View {
                     if mode == "详细" { text += "\n" + (try await ProcessRunner.run(executable: "/usr/sbin/system_profiler", arguments: ["SPHardwareDataType", "SPDisplaysDataType"], timeout: 30)) }
                     output = text
                 }
-                draft.output = output; draft.status = "已完成"; if id != "hardware" { store.record(id) }
+                draft.output = output; draft.status = loc("tool.status.done"); if id != "hardware" { store.record(id) }
             } catch { draft.error = error.localizedDescription }
         }
     }
