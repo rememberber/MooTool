@@ -166,11 +166,11 @@ struct SettingsView: View {
             }
         case .backup:
             Section(SettingsCategory.backup.title(language: language)) {
-                LabeledContent("产品线", value: "MooTool Next macOS Native")
+                LabeledContent(AppLocalization.string("settings.productLine", language: language), value: "MooTool Next macOS Native")
                 Text(store.repository.directory.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                 HStack {
-                    Button("在 Finder 中显示") { try? FileManager.default.createDirectory(at: store.repository.directory, withIntermediateDirectories: true); NSWorkspace.shared.open(store.repository.directory) }
-                    Button("导出备份") {
+                    Button(AppLocalization.string("settings.showInFinder", language: language)) { try? FileManager.default.createDirectory(at: store.repository.directory, withIntermediateDirectories: true); NSWorkspace.shared.open(store.repository.directory) }
+                    Button(AppLocalization.string("settings.exportBackup", language: language)) {
                         let snapshot = store.snapshot(), repository = store.repository; backupBusy = true
                         Task {
                             defer { backupBusy = false }
@@ -180,7 +180,7 @@ struct SettingsView: View {
                             } catch { FilePanels.error(error) }
                         }
                     }
-                    Button("导入备份…") {
+                    Button(AppLocalization.string("settings.importBackup", language: language)) {
                         FilePanels.open(types: [.json]) { urls in
                             backupBusy = true
                             Task {

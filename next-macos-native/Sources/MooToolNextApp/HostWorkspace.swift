@@ -21,10 +21,10 @@ struct HostWorkspace: View {
         ToolPage(tool: Catalog.tool("host"), draft: draft) {
             PrimaryButton(title: AppLocalization.string("tool.newProfile", language: language), symbol: "plus") { createProfile() }
             PrimaryButton(title: AppLocalization.string("tool.saveProfile", language: language), symbol: "square.and.arrow.down") { saveProfile() }.disabled(selectedID == nil)
-            Button("删除配置", systemImage: "trash") { deleteProfile() }.disabled(selectedID == nil)
-            Button("读取系统 Hosts", systemImage: "arrow.clockwise") { readSystemHosts() }
-            Button("检查配置") { validateHosts() }
-            Button("导出 hosts") { FilePanels.saveText(draft.input, name: "hosts") }
+            Button(AppLocalization.string("tool.delete", language: language), systemImage: "trash") { deleteProfile() }.disabled(selectedID == nil)
+            Button(AppLocalization.string("host.readSystem", language: language), systemImage: "arrow.clockwise") { readSystemHosts() }
+            Button(AppLocalization.string("host.validate", language: language)) { validateHosts() }
+            Button(AppLocalization.string("host.export", language: language)) { FilePanels.saveText(draft.input, name: "hosts") }
         } content: {
             PersistedHSplit(toolID: "host", defaultLeading: 220, minLeading: 170, maxLeading: 360) {
                 VStack(alignment: .leading, spacing: 8) {
