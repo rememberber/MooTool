@@ -18,7 +18,7 @@ import MooToolNextCore
         guard let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: .command, timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil, characters: "\r", charactersIgnoringModifiers: "\r", isARepeat: false, keyCode: 36) else { throw ToolError("无法创建 JSON 格式化键盘事件。") }
         _ = window.performKeyEquivalent(with: event)
         try await settle(window)
-        for _ in 0..<30 where store.draft("json").busy { try await Task.sleep(for: .milliseconds(100)) }
+        for _ in 0..<60 where store.draft("json").busy { try await Task.sleep(for: .milliseconds(150)) }
         try check(store.draft("json").input.contains("\n  \"z\": 1"), "⌘Return 没有在主编辑器中格式化")
         try check(store.documents.first { $0.id == a }?.content == store.draft("json").input, "格式化结果没有自动保存")
         try check(editor.undoManager?.canUndo == true, "格式化不可撤销")
@@ -39,6 +39,7 @@ import MooToolNextCore
         guard let conversion = allViews(window).compactMap({ $0 as? NSTextView }).first(where: { $0.isEditable && $0.identifier == nil && $0.enclosingScrollView != nil }) else { throw ToolError("找不到 XML 转换输入框。") }
         conversion.insertText("<tool><name>Native</name></tool>", replacementRange: NSRange(location: 0, length: (conversion.string as NSString).length))
         try press("转换", in: window); try await finishOperation(store, window: window)
+        try await waitForInput(store, window: window) { $0.contains("\"tool\"") }
         try check(store.draft("json").input.contains("\"tool\""), "输入转换未替换主编辑器")
         editor.undoManager?.undo(); try await settle(window)
         try check(store.draft("json").input == beforeConversion, "输入转换不可撤销")
@@ -120,8 +121,19 @@ import MooToolNextCore
 
     private static func finishOperation(_ store: AppStore, window: NSWindow) async throws {
         try await settle(window)
-        for _ in 0..<40 where store.draft("json").busy { try await Task.sleep(for: .milliseconds(100)) }
+        for _ in 0..<60 where store.draft("json").busy { try await Task.sleep(for: .milliseconds(150)) }
         try await settle(window)
+    }
+    private static func waitForInput(_ store: AppStore, window: NSWindow, match: (String) -> Bool) async throws {
+        for _ in 0..<50 {
+            if match(store.draft("json").input) {
+                try await settle(window)
+                return
+            }
+            try await Task.sleep(for: .milliseconds(150))
+            try await settle(window)
+        }
+        throw ToolError("JSON 原生验收：等待正文更新超时")
     }
     private static func captureOutput(_ window: NSWindow) async throws {
         guard CommandLine.arguments.contains("--window-capture"), let directory = ProcessInfo.processInfo.environment["MOOTOOL_NATIVE_SCREENSHOTS"] else { return }
