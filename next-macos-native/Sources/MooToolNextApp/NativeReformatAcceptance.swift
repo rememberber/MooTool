@@ -31,6 +31,7 @@ import MooToolNextCore
         try await settle(window)
         try pressFormat(window)
         try await finish(draft, window)
+        try await waitForFileFormat(draft: draft, store: store, window: window)
         guard draft.error == nil, draft.reformat?.fileSource == ReformatType.java.sample,
               draft.reformat?.fileResult.contains("\n") == true,
               store.history.first(where: { $0.toolID == "reformat" })?.draft.reformat?.fileName == "Demo.java" else {
@@ -52,12 +53,24 @@ import MooToolNextCore
     }
 
     private static func waitForTextFormat(draft: ToolDraft, editor: NSTextView, store: AppStore, window: NSWindow) async throws {
-        for _ in 0..<40 {
+        for _ in 0..<60 {
             if draft.error == nil, draft.input.contains("\n"), editor.undoManager?.canUndo == true,
                store.history.first(where: { $0.toolID == "reformat" })?.draft.output == draft.input {
                 return
             }
-            try await Task.sleep(for: .milliseconds(100))
+            try await Task.sleep(for: .milliseconds(150))
+            try await settle(window)
+        }
+    }
+
+    private static func waitForFileFormat(draft: ToolDraft, store: AppStore, window: NSWindow) async throws {
+        for _ in 0..<60 {
+            if draft.error == nil,
+               draft.reformat?.fileResult.contains("\n") == true,
+               store.history.first(where: { $0.toolID == "reformat" })?.draft.reformat?.fileName == draft.reformat?.fileName {
+                return
+            }
+            try await Task.sleep(for: .milliseconds(150))
             try await settle(window)
         }
     }

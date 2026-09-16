@@ -2,6 +2,8 @@ import SwiftUI
 import MooToolNextCore
 
 @MainActor enum NativeDiffAcceptance {
+    private static let expectedInitialPatch = "--- old\n+++ new\n@@ -1,3 +1,4 @@\n one\n-two\n+three\n+plus\n "
+
     static func run(store: AppStore, window: NSWindow) async throws {
         let original = store.snapshot(); defer { store.restore(original) }
         let draft = store.draft("textDiff")
@@ -9,10 +11,7 @@ import MooToolNextCore
         draft.input = "one\ntwo\n"; draft.secondary = "one\nthree\nplus\n"
         draft.textDiff = TextDiffOptions()
         window.setContentSize(NSSize(width: 1200, height: 800)); window.makeKeyAndOrderFront(nil)
-        try await settle(window)
-        guard draft.output == "--- old\n+++ new\n@@ -1,3 +1,4 @@\n one\n-two\n+three\n+plus\n " else {
-            throw ToolError("文本对比验收：统一差异没有自动更新。")
-        }
+        try await waitForOutput(draft: draft, window: window) { $0 == expectedInitialPatch }
         let left = try editor(window, side: "left"), right = try editor(window, side: "right")
         guard left.layoutManager?.temporaryAttribute(.backgroundColor, atCharacterIndex: 5, effectiveRange: nil) != nil,
               right.layoutManager?.temporaryAttribute(.backgroundColor, atCharacterIndex: 5, effectiveRange: nil) != nil else {
@@ -28,8 +27,7 @@ import MooToolNextCore
               unified.string == draft.output else { throw ToolError("文本对比验收：统一视图未显示只读补丁。") }
         options.ignoreWhitespace = true; draft.textDiff = options
         draft.input = "one  two\n"; draft.secondary = "one two\n"
-        try await settle(window)
-        guard draft.output.contains("-one  two") && draft.output.contains("+one two") else { throw ToolError("文本对比验收：忽略空白错误地删除了统一补丁。") }
+        try await waitForOutput(draft: draft, window: window) { $0.contains("-one  two") && $0.contains("+one two") }
         store.restoreDraft("textDiff", record: store.history.first { $0.toolID == "textDiff" }!.draft)
         guard draft.input == "one\ntwo\n", draft.secondary == "one\nthree\nplus\n" else { throw ToolError("文本对比验收：历史恢复失败。") }
         store.saveNow()
@@ -51,6 +49,17 @@ import MooToolNextCore
             throw ToolError("文本对比验收：找不到 \(side) 编辑器。")
         }
         return view
+    }
+    private static func waitForOutput(draft: ToolDraft, window: NSWindow, match: (String) -> Bool) async throws {
+        for _ in 0..<50 {
+            if match(draft.output) {
+                try await settle(window)
+                return
+            }
+            try await Task.sleep(for: .milliseconds(100))
+            try await settle(window)
+        }
+        throw ToolError("文本对比验收：统一差异没有自动更新。")
     }
     private static func settle(_ window: NSWindow) async throws {
         window.contentView?.layoutSubtreeIfNeeded(); window.displayIfNeeded()

@@ -244,6 +244,10 @@ struct PDFTool: View {
     @Bindable var draft: ToolDraft
     @Environment(AppStore.self) private var store
     @Environment(\.appLanguage) private var language
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+    private func locf(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: AppLocalization.string(key, language: language), arguments: arguments)
+    }
     @State private var files: [URL] = []
     @State private var documents: [PDFDocument] = []
     @State private var combined: PDFDocument?
@@ -251,9 +255,9 @@ struct PDFTool: View {
     var body: some View {
         ToolPage(tool: Catalog.tool("pdf"), draft: draft) {
             PrimaryButton(title: AppLocalization.string("tool.addPdf", language: language), symbol: "plus") { FilePanels.open(types: [.pdf], multiple: true) { load($0) } }
-            TextField("页码：1-3,5（留空为全部）", text: $draft.option).textFieldStyle(.roundedBorder).frame(minWidth: 180, maxWidth: 270)
-            Button("导出 PDF", action: export).disabled(combined == nil)
-            Button(showText ? "预览 PDF" : "提取文本") {
+            TextField(loc("pdf.pagesPlaceholder"), text: $draft.option).textFieldStyle(.roundedBorder).frame(minWidth: 180, maxWidth: 270)
+            Button(loc("pdf.export"), action: export).disabled(combined == nil)
+            Button(showText ? loc("pdf.preview") : loc("pdf.extractText")) {
                 draft.output = combined?.string ?? ""
                 showText.toggle()
                 persistMedia()
@@ -261,11 +265,11 @@ struct PDFTool: View {
         } content: {
             PersistedHSplit(toolID: "pdf", defaultLeading: 200, minLeading: 160, maxLeading: 320) {
                 VStack(alignment: .leading) {
-                    Text("合并顺序").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 10)
+                    Text(loc("pdf.mergeOrder")).font(.caption).foregroundStyle(.secondary).padding(.horizontal, 10)
                     List(Array(files.enumerated()), id: \.offset) { index, url in
                         VStack(alignment: .leading, spacing: 7) {
                             Text(url.lastPathComponent).font(.caption).lineLimit(2)
-                            HStack { Text("\(documents[index].pageCount) 页").foregroundStyle(.secondary); Spacer()
+                            HStack { Text(locf("pdf.pageCount", documents[index].pageCount)).foregroundStyle(.secondary); Spacer()
                                 Button { if index > 0 { files.swapAt(index, index - 1); documents.swapAt(index, index - 1); rebuild() } } label: { Image(systemName: "arrow.up") }.disabled(index == 0)
                                 Button { files.remove(at: index); documents.remove(at: index); rebuild() } label: { Image(systemName: "xmark") }
                             }.font(.caption).buttonStyle(.borderless)
@@ -274,8 +278,8 @@ struct PDFTool: View {
                 }
             } trailing: {
                 Group {
-                    if showText { EditorPane(title: "PDF 文本", text: $draft.output, editable: false) }
-                    else { NativePDFView(document: combined).overlay { if combined == nil { ContentUnavailableView("添加或拖入 PDF", systemImage: "doc.richtext", description: Text("按左侧顺序合并，或按页码提取页面")) } } }
+                    if showText { EditorPane(title: loc("pdf.textTitle"), text: $draft.output, editable: false) }
+                    else { NativePDFView(document: combined).overlay { if combined == nil { ContentUnavailableView(loc("pdf.empty.title"), systemImage: "doc.richtext", description: Text(loc("pdf.empty.description"))) } } }
                 }.frame(minWidth: 300)
             }.dropDestination(for: URL.self) { urls, _ in appendURLs(urls, persist: true); return true }
         }.onAppear { restoreMedia() }
@@ -311,7 +315,7 @@ struct PDFTool: View {
         guard !documents.isEmpty else { combined = nil; persistMedia(); return }
         let merged = PDFDocument()
         for document in documents { for index in 0..<document.pageCount { if let page = document.page(at: index)?.copy() as? PDFPage { merged.insert(page, at: merged.pageCount) } } }
-        combined = merged; draft.status = "\(documents.count) 份文件 · 共 \(merged.pageCount) 页"
+        combined = merged; draft.status = locf("pdf.status.summary", documents.count, merged.pageCount)
         persistMedia()
     }
     private func export() {
