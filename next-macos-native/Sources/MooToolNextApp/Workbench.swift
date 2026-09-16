@@ -285,10 +285,16 @@ struct CommandPalette: View {
 struct HistoryView: View {
     let toolID: String
     @Environment(AppStore.self) private var store
+    @Environment(\.appLanguage) private var language
     @Environment(\.dismiss) private var dismiss
+    private var toolTitle: String { Catalog.localizedTool(toolID, language: language).title }
     var body: some View {
         VStack(alignment: .leading) {
-            HStack { Text("\(Catalog.tool(toolID).title) · 历史记录").font(.title2); Spacer(); Button("完成") { dismiss() }.keyboardShortcut(.cancelAction) }.padding()
+            HStack {
+                Text("\(toolTitle) · \(AppLocalization.string("workbench.history", language: language))").font(.title2)
+                Spacer()
+                Button(AppLocalization.string("common.done", language: language)) { dismiss() }.keyboardShortcut(.cancelAction)
+            }.padding()
             List {
                 ForEach(store.history.filter { $0.toolID == toolID }) { item in
                     HStack {
@@ -310,10 +316,17 @@ struct HistoryView: View {
                         }
                         Spacer()
                         Button { if let index = store.history.firstIndex(where: { $0.id == item.id }) { store.history[index].favorite.toggle(); store.scheduleSave() } } label: { Image(systemName: item.favorite ? "star.fill" : "star") }
-                        Button("恢复") { store.restoreDraft(toolID, record: item.draft); dismiss() }.disabled(store.draft(toolID).busy)
+                        Button(AppLocalization.string("history.restore", language: language)) { store.restoreDraft(toolID, record: item.draft); dismiss() }.disabled(store.draft(toolID).busy)
                     }
                 }
-            }.overlay { if !store.history.contains(where: { $0.toolID == toolID }) { ContentUnavailableView("暂无历史记录", systemImage: "clock", description: Text("运行工具后，结果会保存在这里。")) } }
+            }.overlay {
+                if !store.history.contains(where: { $0.toolID == toolID }) {
+                    ContentUnavailableView(
+                        AppLocalization.string("history.empty.title", language: language),
+                        systemImage: "clock",
+                        description: Text(AppLocalization.string("history.empty.description", language: language)))
+                }
+            }
         }.frame(width: 680, height: 470)
     }
 }
