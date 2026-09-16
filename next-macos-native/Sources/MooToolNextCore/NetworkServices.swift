@@ -10,12 +10,16 @@ public struct HTTPResponse {
     public let url: String
     public var metadata: HTTPResultMetadata { HTTPResultMetadata(status: status, headers: headers, cookies: cookies, url: url, elapsed: elapsed, bytes: bytes) }
 }
+
 public enum NetworkServices {
-    public static func request(_ draft: DraftRecord) throws -> URLRequest {
+    public static func request(
+        _ draft: DraftRecord,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws -> URLRequest {
         let options = draft.http ?? HTTPOptions()
-        guard options.timeout.isFinite, (1...120).contains(options.timeout) else { throw ToolError("请求超时需在 1 至 120 秒之间。") }
-        for fields in [options.params, options.cookies, options.form] { guard fields.count <= 1000 else { throw ToolError("每组最多支持 1000 个参数。") } }
-        guard options.multipart.count <= 1000 else { throw ToolError("Multipart 最多支持 1000 个字段。") }
+        guard options.timeout.isFinite, (1...120).contains(options.timeout) else { throw err("http.error.timeoutRange", language) }
+        for fields in [options.params, options.cookies, options.form] { guard fields.count <= 1000 else { throw err("http.error.fieldLimit", language) } }
+        guard options.multipart.count <= 1000 else { throw err("http.error.multipartLimit", language) }
         let url = try HTTPFields.appendingQuery(HTTPFields.query(options.params), to: draft.option)
         var body = draft.input
         var bodyData: Data?
@@ -28,8 +32,8 @@ public enum NetworkServices {
             bodyData = encoded.0
             multipartType = encoded.1
         }
-        guard body.utf8.count + (bodyData?.count ?? 0) + draft.secondary.utf8.count <= 10 * 1024 * 1024 else { throw ToolError("请求正文和请求头超过 10 MB。") }
-        var result = try request(method: draft.mode.isEmpty ? "GET" : draft.mode, url: url, headers: draft.secondary, body: body, bodyData: bodyData)
+        guard body.utf8.count + (bodyData?.count ?? 0) + draft.secondary.utf8.count <= 10 * 1024 * 1024 else { throw err("http.error.bodyTooLarge", language) }
+        var result = try request(method: draft.mode.isEmpty ? "GET" : draft.mode, url: url, headers: draft.secondary, body: body, bodyData: bodyData, language: language)
         result.timeoutInterval = options.timeout
         if let multipartType {
             if result.value(forHTTPHeaderField: "Content-Type") == nil { result.setValue(multipartType, forHTTPHeaderField: "Content-Type") }
@@ -41,7 +45,7 @@ public enum NetworkServices {
             let nameAllowed = CharacterSet(charactersIn: "!#$%&'*+-.^_`|~0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
             guard field.name.unicodeScalars.allSatisfy(nameAllowed.contains), field.value.unicodeScalars.allSatisfy({ scalar in
                 let n = scalar.value; return n == 33 || (35...43).contains(n) || (45...58).contains(n) || (60...91).contains(n) || (93...126).contains(n)
-            }) else { throw ToolError("Cookie 名称或值包含无效字符；中文和空格请先进行 URL 编码。") }
+            }) else { throw err("http.error.cookieInvalid", language) }
             return field.name + "=" + field.value
         }
         if !cookies.isEmpty {
@@ -50,10 +54,18 @@ public enum NetworkServices {
         }
         return result
     }
-    public static func request(method: String, url: String, headers: String, body: String, bodyData: Data? = nil) throws -> URLRequest {
+
+    public static func request(
+        method: String,
+        url: String,
+        headers: String,
+        body: String,
+        bodyData: Data? = nil,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws -> URLRequest {
         guard let url = URL(string: url.trimmingCharacters(in: .whitespacesAndNewlines)),
-              ["http", "https"].contains(url.scheme?.lowercased() ?? ""), let host = url.host, !host.isEmpty else { throw ToolError("请输入有效的 HTTP / HTTPS URL。") }
-        guard ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"].contains(method) else { throw ToolError("不支持的 HTTP 方法。") }
+              ["http", "https"].contains(url.scheme?.lowercased() ?? ""), let host = url.host, !host.isEmpty else { throw err("http.error.urlInvalid", language) }
+        guard ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"].contains(method) else { throw err("http.error.methodUnsupported", language) }
         var request = URLRequest(url: url, timeoutInterval: 30); request.httpMethod = method
         for (key, value) in try HTTPFields.headerLines(headers) {
             if key.lowercased() == "cookie", let previous = request.value(forHTTPHeaderField: key) { request.setValue(previous + "; " + value, forHTTPHeaderField: key) }
@@ -63,8 +75,13 @@ public enum NetworkServices {
         else if !body.isEmpty && method != "GET" && method != "HEAD" { request.httpBody = Data(body.utf8) }
         return request
     }
-    public static func send(_ request: URLRequest, followRedirects: Bool = true, proxy: NetworkProxySettings? = nil) async throws -> HTTPResponse {
-        // No shared cookies, disk cache, or credentials with other applications.
+
+    public static func send(
+        _ request: URLRequest,
+        followRedirects: Bool = true,
+        proxy: NetworkProxySettings? = nil,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) async throws -> HTTPResponse {
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForResource = request.timeoutInterval
         if let dictionary = (proxy ?? NetworkProxySettings.current()).connectionProxyDictionary() {
@@ -75,10 +92,10 @@ public enum NetworkServices {
         let start = Date(); let (stream, response) = try await session.bytes(for: request)
         var data = Data()
         for try await byte in stream {
-            if data.count >= 10 * 1024 * 1024 { throw ToolError("响应超过 10 MB，请改用文件下载工具。") }
+            if data.count >= 10 * 1024 * 1024 { throw err("http.error.responseTooLarge", language) }
             data.append(byte)
         }
-        guard let http = response as? HTTPURLResponse else { throw ToolError("服务器没有返回 HTTP 响应。") }
+        guard let http = response as? HTTPURLResponse else { throw err("http.error.noHttpResponse", language) }
         let fields = http.allHeaderFields.reduce(into: [String: String]()) { $0[String(describing: $1.key)] = String(describing: $1.value) }
         let formatter = ISO8601DateFormatter()
         let cookies = HTTPCookie.cookies(withResponseHeaderFields: fields, for: http.url ?? request.url!).map { cookie in
@@ -88,10 +105,15 @@ public enum NetworkServices {
             if cookie.isHTTPOnly { lines.append("  HttpOnly") }
             return lines.joined(separator: "\n")
         }.joined(separator: "\n\n")
+        let binaryPrefix = AppLocalization.string("http.error.binaryResponse", language: language)
         return HTTPResponse(status: http.statusCode,
             headers: http.allHeaderFields.map { "\($0.key): \($0.value)" }.sorted().joined(separator: "\n"),
-            body: String(data: data, encoding: .utf8) ?? "二进制响应（Base64）\n" + data.base64EncodedString(),
+            body: String(data: data, encoding: .utf8) ?? binaryPrefix + "\n" + data.base64EncodedString(),
             elapsed: Date().timeIntervalSince(start), bytes: data.count, cookies: cookies, url: http.url?.absoluteString ?? "")
+    }
+
+    private static func err(_ key: String, _ language: AppLanguage) -> ToolError {
+        ToolError(AppLocalization.string(key, language: language))
     }
 }
 
@@ -103,16 +125,35 @@ private final class RedirectPolicy: NSObject, URLSessionTaskDelegate, @unchecked
 
 /// Runs only on explicit user action. Arguments are never interpolated into a shell command.
 public enum ProcessRunner {
-    public static func runSync(executable: String, arguments: [String], environment: [String: String] = [:], timeout: TimeInterval = 20) throws -> String {
-        try runSynchronously(executable: executable, arguments: arguments, environment: environment, timeout: timeout)
+    public static func runSync(
+        executable: String,
+        arguments: [String],
+        environment: [String: String] = [:],
+        timeout: TimeInterval = 20,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) throws -> String {
+        try runSynchronously(executable: executable, arguments: arguments, environment: environment, timeout: timeout, language: language)
     }
-    public static func run(executable: String, arguments: [String], environment: [String: String] = [:], timeout: TimeInterval = 20) async throws -> String {
+
+    public static func run(
+        executable: String,
+        arguments: [String],
+        environment: [String: String] = [:],
+        timeout: TimeInterval = 20,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) async throws -> String {
         try await Task.detached(priority: .userInitiated) {
-            try runSynchronously(executable: executable, arguments: arguments, environment: environment, timeout: timeout)
+            try runSynchronously(executable: executable, arguments: arguments, environment: environment, timeout: timeout, language: language)
         }.value
     }
-    private static func runSynchronously(executable: String, arguments: [String], environment: [String: String], timeout: TimeInterval) throws -> String {
-        // A file-backed stream prevents a spawned descendant holding a pipe open from hanging the UI.
+
+    private static func runSynchronously(
+        executable: String,
+        arguments: [String],
+        environment: [String: String],
+        timeout: TimeInterval,
+        language: AppLanguage
+    ) throws -> String {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(Product.id + "-process-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -137,17 +178,20 @@ public enum ProcessRunner {
         defer { argv.forEach { free($0) }; envp.forEach { free($0) } }
         var pid: pid_t = 0
         let spawned = posix_spawn(&pid, executable, &actions, &attributes, &argv, &envp)
-        guard spawned == 0 else { throw ToolError("无法启动进程：" + String(cString: strerror(spawned))) }
-        // Every invocation owns a process group, so timeout also stops its child processes.
+        guard spawned == 0 else {
+            throw ToolError(String(format: AppLocalization.string("process.error.spawnFailed", language: language), String(cString: strerror(spawned))))
+        }
         defer { kill(-pid, SIGKILL) }
         let deadline = Date().addingTimeInterval(timeout)
         var stopReason: String?; var status: Int32 = 0
         while true {
             let result = waitpid(pid, &status, WNOHANG)
             if result == pid { break }
-            if result < 0 && errno != EINTR { throw ToolError("无法读取进程退出状态。") }
-            if Date() > deadline { stopReason = "运行超过 \(timeout) 秒，已停止。" }
-            if (try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0 > 2 * 1024 * 1024 { stopReason = "输出超过 2 MB，已停止。" }
+            if result < 0 && errno != EINTR { throw ToolError(AppLocalization.string("process.error.waitFailed", language: language)) }
+            if Date() > deadline { stopReason = String(format: AppLocalization.string("process.error.timeout", language: language), timeout) }
+            if (try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0 > 2 * 1024 * 1024 {
+                stopReason = AppLocalization.string("process.error.outputTooLarge", language: language)
+            }
             if stopReason != nil {
                 kill(-pid, SIGTERM)
                 Thread.sleep(forTimeInterval: 0.1)
@@ -162,6 +206,7 @@ public enum ProcessRunner {
         let data = try reader.read(upToCount: 2 * 1024 * 1024) ?? Data()
         let text = String(decoding: data, as: UTF8.self)
         if let stopReason { throw ToolError(stopReason + "\n" + text) }
-        return text + "\n\n进程退出码：\(exitStatus)"
+        let footer = String(format: AppLocalization.string("process.error.exitCode", language: language), exitStatus)
+        return text + "\n\n" + footer
     }
 }

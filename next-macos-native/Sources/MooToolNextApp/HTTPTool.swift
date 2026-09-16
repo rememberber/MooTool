@@ -123,12 +123,15 @@ struct HTTPTool: View {
         guard !draft.busy else { return }
         do {
             let snapshot = draft.record
-            let request = try NetworkServices.request(snapshot)
+            let request = try NetworkServices.request(snapshot, language: language)
             draft.busy = true; draft.error = nil; draft.status = loc("http.status.requesting")
             draft.httpTask = Task {
                 defer { draft.busy = false; draft.httpTask = nil }
                 do {
-                    let response = try await NetworkServices.send(request, followRedirects: snapshot.http?.followRedirects ?? true)
+                    let response = try await NetworkServices.send(
+                        request,
+                        followRedirects: snapshot.http?.followRedirects ?? true,
+                        language: language)
                     try Task.checkCancellation()
                     draft.status = "HTTP \(response.status) · \(Int(response.elapsed * 1000)) ms · \(response.bytes) bytes"
                     draft.output = response.body; draft.httpResult = response.metadata

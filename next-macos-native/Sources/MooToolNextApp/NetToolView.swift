@@ -33,31 +33,34 @@ struct NetToolView: View {
                         }
                         section(loc("net.ping")) {
                             TextField(loc("net.host"), text: $pingHost).textFieldStyle(.roundedBorder)
-                            Button(loc("net.ping")) { run { try await ProcessRunner.run(executable: pingHost.contains(":") ? "/sbin/ping6" : "/sbin/ping", arguments: ["-c", "4", pingHost], timeout: 12) } }
+                            Button(loc("net.ping")) { run { try await ProcessRunner.run(executable: pingHost.contains(":") ? "/sbin/ping6" : "/sbin/ping", arguments: ["-c", "4", pingHost], timeout: 12, language: language) } }
                         }
                         section(loc("net.ipRangeScan")) {
                             TextField(loc("net.ipRangePlaceholder"), text: $ipRange).textFieldStyle(.roundedBorder)
-                            Button(loc("net.scan")) { run { try await NetworkDiagnostics.scanIPv4Range(ipRange) } }
+                            Button(loc("net.scan")) { run { try await NetworkDiagnostics.scanIPv4Range(ipRange, language: language) } }
                             Text(loc("net.ipRangeHint")).font(.caption).foregroundStyle(.secondary)
                         }
                         section(loc("net.portScan")) {
                             TextField(loc("net.portScanTargetPlaceholder"), text: $portHost).textFieldStyle(.roundedBorder)
                             TextField(loc("net.portScanPortsPlaceholder"), text: $portSpec).textFieldStyle(.roundedBorder)
-                            Button(loc("net.scan")) { run { try await NetworkDiagnostics.scanPorts(host: portHost, portSpec: portSpec) } }
+                            Button(loc("net.scan")) { run { try await NetworkDiagnostics.scanPorts(host: portHost, portSpec: portSpec, language: language) } }
                         }
                         section(loc("net.section.resolve")) {
                             TextField(loc("net.resolveHost"), text: $resolveHost).textFieldStyle(.roundedBorder)
-                            Button(loc("net.resolveAction")) { run { try NetworkDiagnostics.resolveHost(resolveHost) } }
+                            Button(loc("net.resolveAction")) { run { try NetworkDiagnostics.resolveHost(resolveHost, language: language) } }
                             TextField(loc("net.whois"), text: $whoisHost).textFieldStyle(.roundedBorder)
-                            Button(loc("net.whoisQuery")) { run { try await ProcessRunner.run(executable: "/usr/bin/whois", arguments: [whoisHost]) } }
+                            Button(loc("net.whoisQuery")) { run { try await ProcessRunner.run(executable: "/usr/bin/whois", arguments: [whoisHost], language: language) } }
                             TextField(loc("net.dnsQuery"), text: $dnsHost).textFieldStyle(.roundedBorder)
-                            Button(loc("net.digQuery")) { run { try await ProcessRunner.run(executable: "/usr/bin/dig", arguments: ["+time=3", "+tries=1", dnsHost]) } }
-                            Button(loc("net.flushDns")) { run { try await ProcessRunner.run(executable: "/usr/bin/dscacheutil", arguments: ["-flushcache"]) + "\n" + (try await ProcessRunner.run(executable: "/usr/bin/killall", arguments: ["-HUP", "mDNSResponder"])) } }
+                            Button(loc("net.digQuery")) { run { try await ProcessRunner.run(executable: "/usr/bin/dig", arguments: ["+time=3", "+tries=1", dnsHost], language: language) } }
+                            Button(loc("net.flushDns")) { run {
+                                try await ProcessRunner.run(executable: "/usr/bin/dscacheutil", arguments: ["-flushcache"], language: language) + "\n"
+                                    + (try await ProcessRunner.run(executable: "/usr/bin/killall", arguments: ["-HUP", "mDNSResponder"], language: language))
+                            } }
                         }
                         section(loc("net.section.local")) {
-                            Button(loc("net.localAddresses")) { run { NetworkDiagnostics.localAddresses() } }
-                            Button(loc("net.ifconfig")) { run { try await ProcessRunner.run(executable: "/sbin/ifconfig", arguments: []) } }
-                            Button(loc("net.netstat")) { run { try await ProcessRunner.run(executable: "/usr/sbin/netstat", arguments: ["-nat"]) } }
+                            Button(loc("net.localAddresses")) { run { NetworkDiagnostics.localAddresses(language: language) } }
+                            Button(loc("net.ifconfig")) { run { try await ProcessRunner.run(executable: "/sbin/ifconfig", arguments: [], language: language) } }
+                            Button(loc("net.netstat")) { run { try await ProcessRunner.run(executable: "/usr/sbin/netstat", arguments: ["-nat"], language: language) } }
                         }
                     }.padding()
                 }
@@ -73,10 +76,10 @@ struct NetToolView: View {
         }.padding(12).background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 10)).overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.quaternary))
     }
     private func convertFromIPv4() {
-        do { longValue = String(try NetworkDiagnostics.ipv4ToLong(ipv4)) } catch { draft.error = error.localizedDescription }
+        do { longValue = String(try NetworkDiagnostics.ipv4ToLong(ipv4, language: language)) } catch { draft.error = error.localizedDescription }
     }
     private func convertFromLong() {
-        do { ipv4 = try NetworkDiagnostics.longToIPv4(longValue) } catch { draft.error = error.localizedDescription }
+        do { ipv4 = try NetworkDiagnostics.longToIPv4(longValue, language: language) } catch { draft.error = error.localizedDescription }
     }
     private func run(_ operation: @escaping () async throws -> String) {
         guard !draft.busy else { return }

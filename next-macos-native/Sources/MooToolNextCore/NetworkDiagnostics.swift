@@ -16,44 +16,47 @@ public enum NetworkDiagnostics {
         11211: "memcached", 27017: "mongodb"
     ]
 
-    public static func ipv4ToLong(_ value: String) throws -> UInt32 {
+    public static func ipv4ToLong(_ value: String, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> UInt32 {
+        func err(_ key: String) -> ToolError { ToolError(AppLocalization.string(key, language: language)) }
         let parts = value.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: ".")
         guard parts.count == 4, parts.allSatisfy({ $0.range(of: #"^\d{1,3}$"#, options: .regularExpression) != nil }) else {
-            throw ToolError("IPv4 地址无效。")
+            throw err("net.error.ipv4Invalid")
         }
         var result: UInt32 = 0
         for part in parts {
             let octet = Int(part)!
-            guard octet <= 255 else { throw ToolError("IPv4 地址无效。") }
+            guard octet <= 255 else { throw err("net.error.ipv4Invalid") }
             result = (result << 8) + UInt32(octet)
         }
         return result
     }
 
-    public static func longToIPv4(_ value: String) throws -> String {
+    public static func longToIPv4(_ value: String, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> String {
         guard let number = UInt32(value.trimmingCharacters(in: .whitespacesAndNewlines)), number <= 0xffff_ffff else {
-            throw ToolError("IPv4 数值无效。")
+            throw ToolError(AppLocalization.string("net.error.ipv4NumberInvalid", language: language))
         }
         return [24, 16, 8, 0].map { shift in String((number >> UInt32(shift)) & 0xff) }.joined(separator: ".")
     }
 
-    public static func parseIPv4Range(_ value: String) throws -> [String] {
+    public static func parseIPv4Range(_ value: String, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> [String] {
+        func err(_ key: String) -> ToolError { ToolError(AppLocalization.string(key, language: language)) }
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         let regex = try NSRegularExpression(pattern: #"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.?$"#)
         let range = NSRange(trimmed.startIndex..., in: trimmed)
         guard let match = regex.firstMatch(in: trimmed, range: range), match.numberOfRanges == 4 else {
-            throw ToolError("IP 段格式应为 192.168.1 或 192.168.1.")
+            throw err("net.error.ipv4RangeFormat")
         }
         let octets = (1...3).map { index -> Int in
             let r = match.range(at: index)
             return Int(trimmed[Range(r, in: trimmed)!])!
         }
-        guard octets.allSatisfy({ $0 <= 255 }) else { throw ToolError("IP 段无效。") }
+        guard octets.allSatisfy({ $0 <= 255 }) else { throw err("net.error.ipv4RangeInvalid") }
         let prefix = octets.map(String.init).joined(separator: ".")
         return (1...254).map { "\(prefix).\($0)" }
     }
 
-    public static func parsePortSpec(_ value: String) throws -> [Int] {
+    public static func parsePortSpec(_ value: String, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> [Int] {
+        func err(_ key: String) -> ToolError { ToolError(AppLocalization.string(key, language: language)) }
         let input = value.trimmingCharacters(in: .whitespacesAndNewlines)
         if input.isEmpty { return commonPorts.keys.sorted() }
         var ports = Set<Int>()
@@ -61,25 +64,31 @@ public enum NetworkDiagnostics {
             let piece = token.trimmingCharacters(in: .whitespaces)
             if piece.contains("-") {
                 let bounds = piece.split(separator: "-", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
-                guard bounds.count == 2 else { throw ToolError("端口范围无效。") }
-                let start = try validPort(bounds[0]), end = try validPort(bounds[1])
-                guard start <= end, end - start + 1 <= maxCustomPorts else { throw ToolError("端口范围过大或无效。") }
+                guard bounds.count == 2 else { throw err("net.error.portRangeInvalid") }
+                let start = try validPort(bounds[0], language: language), end = try validPort(bounds[1], language: language)
+                guard start <= end, end - start + 1 <= maxCustomPorts else { throw err("net.error.portRangeTooLarge") }
                 for port in start...end { ports.insert(port) }
             } else {
-                ports.insert(try validPort(piece))
+                ports.insert(try validPort(piece, language: language))
             }
-            guard ports.count <= maxCustomPorts else { throw ToolError("端口数量超过 \(maxCustomPorts)。") }
+            guard ports.count <= maxCustomPorts else {
+                throw ToolError(String(format: AppLocalization.string("net.error.portCountExceeded", language: language), maxCustomPorts))
+            }
         }
         return ports.sorted()
     }
 
-    public static func resolveHost(_ host: String) throws -> String {
+    public static func resolveHost(_ host: String, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> String {
         let trimmed = host.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.range(of: #"^[A-Za-z0-9.:_-]+$"#, options: .regularExpression) != nil else { throw ToolError("主机名无效。") }
+        guard trimmed.range(of: #"^[A-Za-z0-9.:_-]+$"#, options: .regularExpression) != nil else {
+            throw ToolError(AppLocalization.string("net.error.hostnameInvalid", language: language))
+        }
         var hints = addrinfo(ai_flags: AI_ADDRCONFIG, ai_family: AF_UNSPEC, ai_socktype: SOCK_STREAM, ai_protocol: IPPROTO_TCP, ai_addrlen: 0, ai_canonname: nil, ai_addr: nil, ai_next: nil)
         var result: UnsafeMutablePointer<addrinfo>?
         let code = getaddrinfo(trimmed, nil, &hints, &result)
-        guard code == 0, let result else { throw ToolError("解析失败：\(String(cString: gai_strerror(code)))") }
+        guard code == 0, let result else {
+            throw ToolError(String(format: AppLocalization.string("net.error.resolveFailed", language: language), String(cString: gai_strerror(code))))
+        }
         defer { freeaddrinfo(result) }
         var lines: [String] = []
         var pointer: UnsafeMutablePointer<addrinfo>? = result
@@ -92,13 +101,15 @@ public enum NetworkDiagnostics {
             }
             pointer = node.pointee.ai_next
         }
-        guard !lines.isEmpty else { throw ToolError("未解析到地址。") }
+        guard !lines.isEmpty else { throw ToolError(AppLocalization.string("net.error.noAddresses", language: language)) }
         return lines.joined(separator: "\n")
     }
 
-    public static func localAddresses() -> String {
+    public static func localAddresses(language: AppLanguage = AppLocalization.preferredLanguage()) -> String {
         var ifaddr: UnsafeMutablePointer<ifaddrs>?
-        guard getifaddrs(&ifaddr) == 0, let first = ifaddr else { return "无法读取网络接口。" }
+        guard getifaddrs(&ifaddr) == 0, let first = ifaddr else {
+            return AppLocalization.string("net.error.interfacesUnreadable", language: language)
+        }
         defer { freeifaddrs(ifaddr) }
         var ipv4: [String] = [], ipv6: [String] = []
         var pointer: UnsafeMutablePointer<ifaddrs>? = first
@@ -118,10 +129,17 @@ public enum NetworkDiagnostics {
         return ["IPv4", ipv4.isEmpty ? "（无）" : ipv4.joined(separator: "\n"), "", "IPv6", ipv6.isEmpty ? "（无）" : ipv6.joined(separator: "\n")].joined(separator: "\n")
     }
 
-    public static func scanPorts(host: String, portSpec: String, timeoutMs: Int = 500) async throws -> String {
+    public static func scanPorts(
+        host: String,
+        portSpec: String,
+        timeoutMs: Int = 500,
+        language: AppLanguage = AppLocalization.preferredLanguage()
+    ) async throws -> String {
         let trimmed = host.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.range(of: #"^[A-Za-z0-9.:_-]+$"#, options: .regularExpression) != nil else { throw ToolError("主机无效。") }
-        let ports = try parsePortSpec(portSpec)
+        guard trimmed.range(of: #"^[A-Za-z0-9.:_-]+$"#, options: .regularExpression) != nil else {
+            throw ToolError(AppLocalization.string("net.error.hostInvalid", language: language))
+        }
+        let ports = try parsePortSpec(portSpec, language: language)
         let timeout = max(100, min(timeoutMs, 2_000))
         var open: [(Int, String?)] = []
         try await withThrowingTaskGroup(of: (Int, Bool).self) { group in
@@ -142,8 +160,8 @@ public enum NetworkDiagnostics {
             .joined(separator: "\n")
     }
 
-    public static func scanIPv4Range(_ range: String) async throws -> String {
-        let addresses = try parseIPv4Range(range)
+    public static func scanIPv4Range(_ range: String, language: AppLanguage = AppLocalization.preferredLanguage()) async throws -> String {
+        let addresses = try parseIPv4Range(range, language: language)
         var reachable: [String] = []
         try await withThrowingTaskGroup(of: (String, Bool).self) { group in
             for address in addresses {
@@ -157,9 +175,9 @@ public enum NetworkDiagnostics {
             .joined(separator: "\n")
     }
 
-    private static func validPort(_ text: String) throws -> Int {
+    private static func validPort(_ text: String, language: AppLanguage) throws -> Int {
         guard text.range(of: #"^\d{1,5}$"#, options: .regularExpression) != nil, let port = Int(text), (1...65535).contains(port) else {
-            throw ToolError("端口无效：\(text)")
+            throw ToolError(String(format: AppLocalization.string("net.error.portInvalid", language: language), text))
         }
         return port
     }

@@ -65,6 +65,8 @@
 - Electron 设置/SQLite 导入与备份校验（`migration.error.*`、`backup.error.*`、`workspace.error.*`；迁移面板传 `language`）：**check-core** **59/0**（约 3.2 min，2026-09-16）。
 - 迁移 **warnings**（`migration.warning.*`）、收藏/翻译词条/媒体/自定义分组校验与 `vault.error.documentMissing`：**check-core** **59/0**（约 2.9 min，2026-09-17）；**smoke** 首轮随手记查找计数验收失败（`随手记查找计数没有更新为 3`），与历史 flake 同类，需单独复跑确认。
 - RSA/SM2/`RSAOpenSSLBridge` 用户可见错误与验签结果（`crypto.error.*`、`crypto.verify.*`）：**check-core** **59/0**（约 2.5 min，2026-09-17）；**smoke** 复跑仍失败于格式化验收（`JSON 操作超过 3 秒`），随手记查找计数段未再报错（已加长 `waitForFind` 等待）。
+- 格式化 worker 超时改为 10s（`dc5f1049`）后 **smoke** 单次全绿（约 3.7 min，2026-09-17；含附件/随手记/JSON/Vault/86 截图与重启恢复）。
+- HTTP/`ProcessRunner`/网络诊断校验错误（`http.error.*`、`process.error.*`、`net.error.*`）：**check-core** **59/0**（约 1.5 min，2026-09-17）。
 
 ## 手工建议
 
