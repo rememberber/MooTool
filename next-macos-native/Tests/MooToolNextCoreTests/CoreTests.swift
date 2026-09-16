@@ -945,6 +945,7 @@ final class CoreTests: XCTestCase {
         XCTAssertTrue(imported.showRecent)
         XCTAssertEqual(imported.hiddenNavigationToolIds, ["pdf"])
         try? FileManager.default.removeItem(at: url)
+        XCTAssertEqual(LegacyJavaDataPaths.defaultDirectory.lastPathComponent, ".MooTool")
     }
     func testHTTPRedirectPolicyAndSessionIsolation() async throws {
         let fixture = try HTTPFixture()

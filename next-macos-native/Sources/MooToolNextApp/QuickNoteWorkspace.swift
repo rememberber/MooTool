@@ -192,7 +192,9 @@ struct QuickNoteWorkspace: View {
         }
         let live = editor.view?.selectedRange() ?? editor.selection
         if live.length > 0 { return clamped(live) }
-        if let state = draft.inputEditor {
+        // Keep selection when a panel button steals focus; honor collapsed caret when the editor is still first responder.
+        if let view = editor.view, view.window?.firstResponder as? NSTextView !== view,
+           let state = draft.inputEditor {
             let persisted = NSRange(location: state.location, length: state.length)
             if persisted.length > 0 { return clamped(persisted) }
         }

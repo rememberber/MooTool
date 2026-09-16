@@ -46,6 +46,17 @@ struct MigrationSettingsPanel: View {
                 LabeledContent("分栏键", value: "\(preview.paneKeyCount)")
                 ForEach(preview.warnings, id: \.self) { warning in Text("· \(warning)").font(.caption).foregroundStyle(.secondary) }
             }
+            Divider()
+            Section("Java 版数据（仅提示）") {
+                let root = LegacyJavaDataPaths.defaultDirectory
+                LabeledContent("默认目录", value: root.path)
+                if LegacyJavaDataPaths.hasLegacyInstall(at: root) {
+                    Text("检测到旧版 SQLite 数据库。原生版暂不支持一键导入笔记/JSON/收藏；请使用 Compose 桌面版的迁移面板，或通过文档库批量导入 Markdown/JSON 文件。").font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Text("未在默认目录找到 Java 版数据库。若数据在其他位置，请用 Compose 迁移或手动复制文件到文档库。").font(.caption).foregroundStyle(.secondary)
+                }
+                Button("在 Finder 中打开…") { NSWorkspace.shared.open(root) }
+            }
         }
         .formStyle(.grouped).frame(width: 560, height: 360)
         .onAppear {
