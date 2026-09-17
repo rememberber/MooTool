@@ -420,7 +420,11 @@ fun VaultGitDialog(
                         MooButton(
                             container.t("git.continue"),
                             p5Toolbar = true,
-                            enabled = !busy && GitOperationPresentation.continueOperationEnabled(status.merging, status.conflicts),
+                            enabled = GitMergeProductFlowPresentation.mergeContinueActionEnabled(
+                                status.merging,
+                                status.conflicts,
+                                busy,
+                            ),
                             onClick = {
                                 runAction(workingTree = GitVaultFlushAction.ContinueOperation) {
                                     GitEngine.continueOperation(root, identity())

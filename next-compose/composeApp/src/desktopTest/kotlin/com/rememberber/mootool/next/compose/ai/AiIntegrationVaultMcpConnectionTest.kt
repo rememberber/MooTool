@@ -359,4 +359,106 @@ class AiIntegrationVaultMcpConnectionTest {
             productRoot.toFile().deleteRecursively()
         }
     }
+
+    @Test
+    fun subprocessNotesSearchHonorsSearchOffset() {
+        val notesRoot = Files.createTempDirectory("mootool-mcp-vault-notes-search-offset-")
+        val productRoot = Files.createTempDirectory("mootool-mcp-vault-notes-search-offset-product-")
+        try {
+            notesRoot.resolve("alpha.md").writeText(
+                "---\ntitle: a\nsyntax: text/markdown\n---\n566-alpha",
+            )
+            notesRoot.resolve("beta.md").writeText(
+                "---\ntitle: b\nsyntax: text/markdown\n---\n566-beta",
+            )
+            val directories = com.rememberber.mootool.next.compose.app.AppPaths
+                .resolve(productRoot.toString())
+                .also { it.ensureCreated() }
+            val accessFile = McpLaunchResolver.accessFile(directories).also { path ->
+                path.parent.createDirectories()
+                path.writeText(
+                    """{"version":1,"notes":"${notesRoot.toRealPath()}","json":null}""",
+                )
+            }
+            val launch = desktopTestMcpLaunch(accessFile)
+            val transport = StdioClientTransport(
+                ServerParameters.builder(launch.command).args(launch.args).build(),
+                McpJsonDefaults.getMapper(),
+            )
+            McpClient.sync(transport).requestTimeout(Duration.ofSeconds(15)).build().use { client ->
+                client.initialize()
+                val page = client.callTool(
+                    McpSchema.CallToolRequest.builder()
+                        .name("mootool_notes_search")
+                        .arguments(mapOf("query" to "566", "limit" to 1, "offset" to 1))
+                        .build(),
+                )
+                assertFalse(page.isError)
+                val text = page.content.firstOrNull()?.let {
+                    if (it is McpSchema.TextContent) it.text else null
+                } ?: ""
+                assertTrue(text.contains("beta.md") || text.contains("566-beta"))
+                assertFalse(text.contains("alpha.md"))
+            }
+        } finally {
+            notesRoot.toFile().deleteRecursively()
+            productRoot.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun subprocessDualVaultReadAfterSearch() {
+        val notesRoot = Files.createTempDirectory("mootool-mcp-vault-dual-read-notes-")
+        val jsonRoot = Files.createTempDirectory("mootool-mcp-vault-dual-read-json-")
+        val productRoot = Files.createTempDirectory("mootool-mcp-vault-dual-read-product-")
+        try {
+            notesRoot.resolve("note.md").writeText(
+                "---\ntitle: dual-read\nsyntax: text/markdown\n---\nnotes-body-566",
+            )
+            jsonRoot.resolve("doc.json").writeText("""{"read":"566-json"}""")
+            val directories = com.rememberber.mootool.next.compose.app.AppPaths
+                .resolve(productRoot.toString())
+                .also { it.ensureCreated() }
+            val accessFile = McpLaunchResolver.accessFile(directories).also { path ->
+                path.parent.createDirectories()
+                path.writeText(
+                    """{"version":1,"notes":"${notesRoot.toRealPath()}","json":"${jsonRoot.toRealPath()}"}""",
+                )
+            }
+            val launch = desktopTestMcpLaunch(accessFile)
+            val transport = StdioClientTransport(
+                ServerParameters.builder(launch.command).args(launch.args).build(),
+                McpJsonDefaults.getMapper(),
+            )
+            McpClient.sync(transport).requestTimeout(Duration.ofSeconds(15)).build().use { client ->
+                client.initialize()
+                val notesRead = client.callTool(
+                    McpSchema.CallToolRequest.builder()
+                        .name("mootool_notes_read")
+                        .arguments(mapOf("path" to "note.md", "offset" to 0, "length" to 200))
+                        .build(),
+                )
+                assertFalse(notesRead.isError)
+                val jsonRead = client.callTool(
+                    McpSchema.CallToolRequest.builder()
+                        .name("mootool_json_documents_read")
+                        .arguments(mapOf("path" to "doc.json", "offset" to 0, "length" to 200))
+                        .build(),
+                )
+                assertFalse(jsonRead.isError)
+                val notesText = notesRead.content.firstOrNull()?.let {
+                    if (it is McpSchema.TextContent) it.text else null
+                }.orEmpty()
+                val jsonText = jsonRead.content.firstOrNull()?.let {
+                    if (it is McpSchema.TextContent) it.text else null
+                }.orEmpty()
+                assertTrue(notesText.contains("notes-body-566"))
+                assertTrue(jsonText.contains("566-json"))
+            }
+        } finally {
+            notesRoot.toFile().deleteRecursively()
+            jsonRoot.toFile().deleteRecursively()
+            productRoot.toFile().deleteRecursively()
+        }
+    }
 }

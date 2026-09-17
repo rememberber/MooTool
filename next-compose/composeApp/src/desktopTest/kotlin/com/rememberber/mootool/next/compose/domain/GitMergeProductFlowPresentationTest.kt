@@ -85,4 +85,29 @@ class GitMergeProductFlowPresentationTest {
             ),
         )
     }
+
+    @Test
+    fun mergeContinueRequiresResolvedConflictsAndIdle() {
+        assertTrue(
+            GitMergeProductFlowPresentation.mergeContinueActionEnabled(
+                merging = true,
+                conflicts = 0,
+                busy = false,
+            ),
+        )
+        assertFalse(
+            GitMergeProductFlowPresentation.mergeContinueActionEnabled(
+                merging = true,
+                conflicts = 1,
+                busy = false,
+            ),
+        )
+        assertFalse(
+            GitMergeProductFlowPresentation.mergeContinueActionEnabled(
+                merging = true,
+                conflicts = 0,
+                busy = true,
+            ),
+        )
+    }
 }

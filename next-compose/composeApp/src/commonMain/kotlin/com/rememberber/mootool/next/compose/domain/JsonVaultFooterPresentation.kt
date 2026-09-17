@@ -16,4 +16,12 @@ object JsonVaultFooterPresentation {
 
     fun canShowVaultActions(path: String, isDirectory: Boolean?): Boolean =
         showFooter(path) && canRename(isDirectory)
+
+    /** Vault Git 操作前 flush：无打开文件或文档已干净时跳过写盘（对齐 Electron `prepareGitAction`）。 */
+    fun gitFlushSkipsWhenClean(currentFile: String, editorDirty: Boolean): Boolean =
+        currentFile.isBlank() || !editorDirty
+
+    /** 无 Vault 文件但编辑器有非示例内容时阻止 Git 操作（返回 i18n 键 `git.flush.untitled`）。 */
+    fun gitUntitledBlockKey(currentFile: String, editorHasUserDraft: Boolean): String? =
+        if (currentFile.isBlank() && editorHasUserDraft) "git.flush.untitled" else null
 }

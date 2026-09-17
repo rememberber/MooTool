@@ -17,4 +17,18 @@ object TranslationResponsePresentation {
 
     fun shouldShowError(errorCode: TranslationErrorCode?): Boolean =
         errorCode != null && errorCode != TranslationErrorCode.ABORTED
+
+    /** 译文区底栏：有 provider 或 fallback 标记时才展示（对齐 Electron 结果条）。 */
+    fun showResultFooter(providerUsed: String, fallbackUsed: Boolean): Boolean =
+        providerUsed.isNotBlank() || fallbackUsed
+
+    fun resultFooterText(providerUsed: String, fallbackUsed: Boolean, fallbackLabel: String): String {
+        if (providerUsed.isBlank()) return if (fallbackUsed) fallbackLabel else ""
+        val providerLabel = when (providerUsed.lowercase()) {
+            "google" -> "Google"
+            "bing" -> "Bing"
+            else -> providerUsed
+        }
+        return if (fallbackUsed) "$providerLabel · $fallbackLabel" else providerLabel
+    }
 }

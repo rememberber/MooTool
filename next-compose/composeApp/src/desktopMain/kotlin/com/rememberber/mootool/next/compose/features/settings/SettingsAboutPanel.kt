@@ -18,11 +18,13 @@ import com.rememberber.mootool.next.compose.app.InstallIdentity
 import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.app.UpdateUiState
 import com.rememberber.mootool.next.compose.domain.UpdateAboutPresentation
+import com.rememberber.mootool.next.compose.domain.UpdateInstallApplyPresentation
 import com.rememberber.mootool.next.compose.domain.UpdateCheckResult
 import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooSettingsAboutHero
+import com.rememberber.mootool.next.compose.ui.components.mooSettingsOpenInstallerButton
 import com.rememberber.mootool.next.compose.ui.components.mooSettingsUpdateActionsRow
 import com.rememberber.mootool.next.compose.ui.components.mooSettingsUpdateResult
 import com.rememberber.mootool.next.compose.ui.components.mooSettingsUpdateResultFile
@@ -36,6 +38,7 @@ fun SettingsAboutPanel(
     update: UpdateUiState,
     checkButtonModifier: Modifier = Modifier,
     downloadButtonModifier: Modifier = Modifier,
+    openInstallerButtonModifier: Modifier = Modifier,
 ) {
     val colors = MooTheme.colors
     val result = update.result
@@ -53,9 +56,17 @@ fun SettingsAboutPanel(
     }
     Text(container.t("settings.update.current", mapOf("version" to ProductIdentity.VERSION)), color = colors.textSecondary)
     if (UpdateAboutPresentation.showUpdateResultSection(result != null) && result != null) {
-        SettingsUpdateResultCard(container, update, result, settings, checkButtonModifier, downloadButtonModifier)
+        SettingsUpdateResultCard(
+            container,
+            update,
+            result,
+            settings,
+            checkButtonModifier,
+            downloadButtonModifier,
+            openInstallerButtonModifier,
+        )
     } else {
-        SettingsUpdateActionsRow(container, settings, update, checkButtonModifier, downloadButtonModifier)
+        SettingsUpdateActionsRow(container, settings, update, checkButtonModifier, downloadButtonModifier, openInstallerButtonModifier)
         Text(updateStatusLabel(container, update), color = if (update.error.isNotBlank()) colors.danger else colors.textPrimary)
         Text(container.t("settings.update.manualInstall"), color = colors.warning, fontSize = 12.sp)
     }
@@ -69,6 +80,7 @@ fun SettingsUpdateResultCard(
     settings: AppSettings,
     checkButtonModifier: Modifier = Modifier,
     downloadButtonModifier: Modifier = Modifier,
+    openInstallerButtonModifier: Modifier = Modifier,
 ) {
     val colors = MooTheme.colors
     val statusName = result.status.name.lowercase()
@@ -108,7 +120,7 @@ fun SettingsUpdateResultCard(
             Text(updateStatusLabel(container, update), color = colors.textPrimary, fontSize = 12.sp)
         }
         if (UpdateAboutPresentation.showAvailableDetail(statusName)) {
-            SettingsUpdateActionsRow(container, settings, update, checkButtonModifier, downloadButtonModifier)
+            SettingsUpdateActionsRow(container, settings, update, checkButtonModifier, downloadButtonModifier, openInstallerButtonModifier)
             if (UpdateAboutPresentation.showDownloadFileLine(result.download != null, result.download?.fileName)) {
                 Text(
                     result.download!!.fileName,
@@ -133,9 +145,9 @@ fun SettingsUpdateResultCard(
             }
         } else if (result.latestVersion.isNotBlank() && statusName != "unpublished") {
             Text(container.t("settings.update.latest", mapOf("version" to result.latestVersion)), color = colors.textSecondary, fontSize = 12.sp)
-            SettingsUpdateActionsRow(container, settings, update, checkButtonModifier, downloadButtonModifier)
+            SettingsUpdateActionsRow(container, settings, update, checkButtonModifier, downloadButtonModifier, openInstallerButtonModifier)
         } else {
-            SettingsUpdateActionsRow(container, settings, update, checkButtonModifier, downloadButtonModifier)
+            SettingsUpdateActionsRow(container, settings, update, checkButtonModifier, downloadButtonModifier, openInstallerButtonModifier)
         }
         Text(container.t("settings.update.manualInstall"), color = colors.warning, fontSize = 12.sp)
     }
@@ -148,6 +160,7 @@ private fun SettingsUpdateActionsRow(
     update: UpdateUiState,
     checkButtonModifier: Modifier = Modifier,
     downloadButtonModifier: Modifier = Modifier,
+    openInstallerButtonModifier: Modifier = Modifier,
 ) {
     val result = update.result
     val progress = update.progress
@@ -193,8 +206,12 @@ private fun SettingsUpdateActionsRow(
             MooButton(
                 container.t("settings.update.openInstaller"),
                 prominent = true,
-                enabled = !update.busy,
+                enabled = UpdateInstallApplyPresentation.canOpenInstaller(
+                    update.busy,
+                    installerReady = update.downloaded != null,
+                ),
                 onClick = { container.updates.openInstaller() },
+                modifier = openInstallerButtonModifier.mooSettingsOpenInstallerButton(),
             )
         }
         MooButton(container.t("settings.update.openRelease"), onClick = { container.updates.openReleasePage() })

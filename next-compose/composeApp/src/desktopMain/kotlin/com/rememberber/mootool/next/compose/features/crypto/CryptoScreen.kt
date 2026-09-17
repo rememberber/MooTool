@@ -69,6 +69,7 @@ import com.rememberber.mootool.next.compose.ui.components.IoThreePaneRow
 import com.rememberber.mootool.next.compose.ui.components.IoTwoPaneRow
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooCryptoAsymActions
+import com.rememberber.mootool.next.compose.ui.components.mooCryptoRandomRow
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
@@ -639,7 +640,7 @@ private fun RandomPanel(container: AppContainer, session: CryptoSession, modifie
 private fun RandomRow(container: AppContainer, label: String, value: String, onGenerate: () -> Unit) {
     val colors = MooTheme.colors
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(vertical = 6.dp),
+        Modifier.fillMaxWidth().mooCryptoRandomRow().padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {

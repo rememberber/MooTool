@@ -1,6 +1,7 @@
 package com.rememberber.mootool.next.compose.domain
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -43,5 +44,15 @@ class TranslationResponsePresentationTest {
     fun abortedErrorsAreNotShown() {
         assertFalse(TranslationResponsePresentation.shouldShowError(TranslationErrorCode.ABORTED))
         assertTrue(TranslationResponsePresentation.shouldShowError(TranslationErrorCode.TIMEOUT))
+    }
+
+    @Test
+    fun resultFooterTextIncludesFallbackMarker() {
+        assertFalse(TranslationResponsePresentation.showResultFooter("", fallbackUsed = false))
+        assertTrue(TranslationResponsePresentation.showResultFooter("google", fallbackUsed = false))
+        assertEquals(
+            "Google · fb",
+            TranslationResponsePresentation.resultFooterText("google", fallbackUsed = true, fallbackLabel = "fb"),
+        )
     }
 }

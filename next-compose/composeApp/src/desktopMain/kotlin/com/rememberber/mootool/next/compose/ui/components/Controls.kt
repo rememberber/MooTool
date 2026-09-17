@@ -1635,6 +1635,34 @@ fun Modifier.mooRegexMatchCard(): Modifier = padding(10.dp)
 @Composable
 fun Modifier.mooMessageBoardFormatRow(): Modifier = heightIn(min = 38.dp)
 
+/** F09 响应区标题行（Tab/查找/复制），对齐 Electron `.http-response-head`。 */
+@Composable
+fun Modifier.mooHttpResponseHead(): Modifier = fillMaxWidth().heightIn(min = 34.dp)
+
+/** F09 发送失败/在途时展示「上次响应」时的标题行强调。 */
+@Composable
+fun Modifier.mooHttpPreviousResponseHead(): Modifier = mooHttpResponseHead().padding(horizontal = 2.dp)
+
+/** F20 译文侧栏（源/目标分栏 + 底栏 provider 行）。 */
+@Composable
+fun Modifier.mooTranslationResultPane(): Modifier = heightIn(min = 200.dp)
+
+/** F20 译文区底栏 provider / fallback 行。 */
+@Composable
+fun Modifier.mooTranslationResultFooter(): Modifier = heightIn(min = 34.dp)
+
+/** A03 关于页「打开安装包」主按钮密度。 */
+@Composable
+fun Modifier.mooSettingsOpenInstallerButton(): Modifier = heightIn(min = 34.dp)
+
+/** F01 随手记 Vault 底栏操作行（对齐 JSON `mooJsonVaultFooterActions`）。 */
+@Composable
+fun Modifier.mooQuickNoteVaultFooterActions(): Modifier = mooJsonVaultFooterActions()
+
+/** F14 随机串 Tab 单行（标签/结果/生成）。 */
+@Composable
+fun Modifier.mooCryptoRandomRow(): Modifier = heightIn(min = 56.dp)
+
 /** Electron UA 解析结果格。 */
 @Composable
 fun Modifier.mooUaResultCell(): Modifier = heightIn(min = 72.dp)

@@ -74,6 +74,7 @@ import com.rememberber.mootool.next.compose.features.git.rememberVaultGitChangeC
 import com.rememberber.mootool.next.compose.domain.QuickNoteVaultFooterPresentation
 import com.rememberber.mootool.next.compose.features.vault.QuickNoteVaultConflictOverlay
 import com.rememberber.mootool.next.compose.ui.components.mooQuickNoteVaultFooter
+import com.rememberber.mootool.next.compose.ui.components.mooQuickNoteVaultFooterActions
 import com.rememberber.mootool.next.compose.features.vault.RebBaselineVaultMonitorOnSessionReload
 import com.rememberber.mootool.next.compose.features.vault.dismissVaultScopedOverlays
 import com.rememberber.mootool.next.compose.features.vault.vaultMoveFolderOptions
@@ -927,7 +928,7 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                 if (QuickNoteVaultFooterPresentation.showFooter(vaultFooterPath)) {
                     val footerEntry = vaultItems.find { it.relativePath == vaultFooterPath }
                     Row(
-                        modifier = Modifier.mooQuickNoteVaultFooter(),
+                        modifier = Modifier.mooQuickNoteVaultFooter().mooQuickNoteVaultFooterActions(),
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         MooButton(container.t("quickNote.rename"), onClick = {

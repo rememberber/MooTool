@@ -44,9 +44,9 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.toHttpProxyConfig
 import com.rememberber.mootool.next.compose.domain.TranslationAutoPresentation
-import com.rememberber.mootool.next.compose.domain.TranslationResponsePresentation
 import com.rememberber.mootool.next.compose.domain.TranslationEngine
 import com.rememberber.mootool.next.compose.domain.TranslationHistoryRestore
+import com.rememberber.mootool.next.compose.domain.TranslationResponsePresentation
 import com.rememberber.mootool.next.compose.domain.TranslationWiringPresentation
 import com.rememberber.mootool.next.compose.domain.TranslationErrorCode
 import com.rememberber.mootool.next.compose.domain.TranslationProvider
@@ -73,6 +73,8 @@ import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.components.mooTranslationEditorSeam
+import com.rememberber.mootool.next.compose.ui.components.mooTranslationResultFooter
+import com.rememberber.mootool.next.compose.ui.components.mooTranslationResultPane
 import com.rememberber.mootool.next.compose.ui.components.mooTranslationHistoryArticle
 import com.rememberber.mootool.next.compose.ui.components.mooTranslationAutoRow
 import com.rememberber.mootool.next.compose.ui.components.mooTranslationLangBar
@@ -532,7 +534,14 @@ private fun TranslatePane(
                 onDelta = { container.setPaneSize(TRANSLATION_EDITOR_PANE_KEY, 0, sourceWidth + it, 1) },
                 onReset = { container.setPaneSize(TRANSLATION_EDITOR_PANE_KEY, 0, defaultSource, 1) }
             )
-            Column(Modifier.weight(1f).widthIn(min = 280.dp).fillMaxHeight().mooTranslationEditorSeam()) {
+            Column(
+                Modifier
+                    .weight(1f)
+                    .widthIn(min = 280.dp)
+                    .fillMaxHeight()
+                    .mooTranslationResultPane()
+                    .mooTranslationEditorSeam(),
+            ) {
                 SelectionContainer(Modifier.weight(1f).fillMaxWidth()) {
                     MooTextField(
                         if (session.translating) container.t("translation.translating") else session.target,
@@ -545,20 +554,21 @@ private fun TranslatePane(
                 }
                 Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
                 Row(
-                    Modifier.fillMaxWidth().height(34.dp).mooToolbarBackground().padding(horizontal = 12.dp),
+                    Modifier.fillMaxWidth().mooTranslationResultFooter().mooToolbarBackground().padding(horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    val providerLabel = when (session.providerUsed) {
-                        "google" -> "Google"
-                        "bing" -> "Bing"
-                        else -> ""
+                    if (TranslationResponsePresentation.showResultFooter(session.providerUsed, session.fallbackUsed)) {
+                        Text(
+                            TranslationResponsePresentation.resultFooterText(
+                                session.providerUsed,
+                                session.fallbackUsed,
+                                container.t("translation.fallback"),
+                            ),
+                            color = colors.textMuted,
+                            fontSize = 10.sp,
+                        )
                     }
-                    Text(
-                        if (providerLabel.isEmpty()) "" else providerLabel + if (session.fallbackUsed) " · ${container.t("translation.fallback")}" else "",
-                        color = colors.textMuted,
-                        fontSize = 10.sp
-                    )
                     Text("${session.source.length} / ${TranslationEngine.MAX_TEXT_UNITS}", color = colors.textMuted, fontSize = 10.sp)
                 }
             }

@@ -105,6 +105,8 @@ import com.rememberber.mootool.next.compose.ui.components.mooHttpCollectionHeade
 import com.rememberber.mootool.next.compose.ui.components.mooHttpEntryHead
 import com.rememberber.mootool.next.compose.ui.components.mooHttpEntryRow
 import com.rememberber.mootool.next.compose.ui.components.mooHttpRequestPane
+import com.rememberber.mootool.next.compose.ui.components.mooHttpPreviousResponseHead
+import com.rememberber.mootool.next.compose.ui.components.mooHttpResponseHead
 import com.rememberber.mootool.next.compose.ui.components.mooHttpResponsePane
 import com.rememberber.mootool.next.compose.ui.components.mooHttpSavedItem
 import com.rememberber.mootool.next.compose.ui.components.mooHttpTimeoutChip
@@ -674,7 +676,15 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                         .mooHttpResponsePane(),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = if (showingPrevious) {
+                        Modifier.mooHttpPreviousResponseHead()
+                    } else {
+                        Modifier.mooHttpResponseHead()
+                    },
+                ) {
                     Text(
                         if (showingPrevious) container.t("http.previousResponse") else container.t("http.response"),
                         color = colors.textSecondary,

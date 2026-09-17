@@ -1,6 +1,7 @@
 package com.rememberber.mootool.next.compose.app
 
 import com.rememberber.mootool.next.compose.domain.UpdateAutoDownloadTrigger
+import com.rememberber.mootool.next.compose.domain.UpdateInstallApplyPresentation
 import com.rememberber.mootool.next.compose.domain.UpdateCheckSurfacing
 import com.rememberber.mootool.next.compose.domain.UpdateBytesFetcher
 import com.rememberber.mootool.next.compose.domain.UpdateCancelled
@@ -137,7 +138,12 @@ class UpdateCoordinator(
     fun openInstaller() {
         val path = _state.value.downloaded ?: return
         runCatching { opener(path) }
-            .onFailure { _state.value = _state.value.copy(error = it.message ?: "Unable to open installer") }
+            .onFailure { error ->
+                val message = error.message ?: "Unable to open installer"
+                if (UpdateInstallApplyPresentation.shouldRecordOpenFailure(_state.value.error, message)) {
+                    _state.value = _state.value.copy(error = message)
+                }
+            }
     }
 
     fun openReleasePage() {

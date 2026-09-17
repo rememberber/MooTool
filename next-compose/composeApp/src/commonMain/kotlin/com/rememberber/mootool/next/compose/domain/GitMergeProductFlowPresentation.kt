@@ -38,4 +38,8 @@ object GitMergeProductFlowPresentation {
         selectedConflict: Boolean,
         busy: Boolean,
     ): Boolean = !busy && showResolveActions(merging, selectedConflict)
+
+    /** 产品主窗 merge 走查：全部冲突已标记后继续合并（§B continue 钮）。 */
+    fun mergeContinueActionEnabled(merging: Boolean, conflicts: Int, busy: Boolean): Boolean =
+        GitOperationPresentation.continueOperationEnabled(merging, conflicts) && !busy
 }

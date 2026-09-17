@@ -3,6 +3,7 @@ package com.rememberber.mootool.next.compose.domain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class JsonVaultFooterPresentationTest {
@@ -25,5 +26,22 @@ class JsonVaultFooterPresentationTest {
         assertFalse(JsonVaultFooterPresentation.canRename(isDirectory = true))
         assertFalse(JsonVaultFooterPresentation.canShowVaultActions("dir/", isDirectory = true))
         assertTrue(JsonVaultFooterPresentation.canShowVaultActions("a.json", isDirectory = false))
+    }
+
+    @Test
+    fun gitFlushSkipsWhenNoFileOrClean() {
+        assertTrue(JsonVaultFooterPresentation.gitFlushSkipsWhenClean("", editorDirty = true))
+        assertTrue(JsonVaultFooterPresentation.gitFlushSkipsWhenClean("a.json", editorDirty = false))
+        assertFalse(JsonVaultFooterPresentation.gitFlushSkipsWhenClean("a.json", editorDirty = true))
+    }
+
+    @Test
+    fun gitUntitledBlockWhenDraftWithoutVaultFile() {
+        assertEquals(
+            "git.flush.untitled",
+            JsonVaultFooterPresentation.gitUntitledBlockKey("", editorHasUserDraft = true),
+        )
+        assertNull(JsonVaultFooterPresentation.gitUntitledBlockKey("a.json", editorHasUserDraft = true))
+        assertNull(JsonVaultFooterPresentation.gitUntitledBlockKey("", editorHasUserDraft = false))
     }
 }

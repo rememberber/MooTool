@@ -1,6 +1,7 @@
 package com.rememberber.mootool.next.compose.features.json
 
 import com.rememberber.mootool.next.compose.app.AppContainer
+import com.rememberber.mootool.next.compose.domain.JsonVaultFooterPresentation
 import com.rememberber.mootool.next.compose.domain.VaultGitCheckpointMessages
 import com.rememberber.mootool.next.compose.domain.VaultChangeKind
 import com.rememberber.mootool.next.compose.domain.VaultConflictEngine
@@ -252,13 +253,14 @@ internal fun jsonGitFlushBeforeAction(
     monitor: VaultRevisionMonitor?,
     onConflict: (VaultConflictState) -> Unit,
 ): String? {
-    if (session.currentFile.isBlank()) {
-        if (session.editor.text.isNotBlank() && session.editor.text != JsonSession.SAMPLE_JSON) {
-            return container.t("git.flush.untitled")
-        }
+    val editorHasUserDraft =
+        session.editor.text.isNotBlank() && session.editor.text != JsonSession.SAMPLE_JSON
+    JsonVaultFooterPresentation.gitUntitledBlockKey(session.currentFile, editorHasUserDraft)?.let {
+        return container.t(it)
+    }
+    if (JsonVaultFooterPresentation.gitFlushSkipsWhenClean(session.currentFile, session.isVaultEditorDirty())) {
         return null
     }
-    if (!session.isVaultEditorDirty()) return null
     return saveJsonVault(container, session, monitor, showToast = false, onConflict = onConflict)
         .fold(
             onSuccess = { null },
