@@ -158,6 +158,12 @@ class PdfEngineTest {
             assertEquals(1, PdfEngine.inspect(splitPath).pageCount)
             assertEquals(info.formFieldCount, outputStructure.formFieldCount)
             assertEquals(info.signatureFieldCount, outputStructure.signatureFieldCount)
+            assertEquals(
+                0,
+                PdfEngine.inspect(splitPath).bookmarkCount,
+                "importPage subset does not copy document outline (Electron pdf-lib copyPages)",
+            )
+            assertTrue(PdfEngine.ELECTRON_PARITY_OUTLINES_NOT_COPIED)
         } finally {
             directory.listDirectoryEntries().forEach { Files.deleteIfExists(it) }
             Files.deleteIfExists(directory)

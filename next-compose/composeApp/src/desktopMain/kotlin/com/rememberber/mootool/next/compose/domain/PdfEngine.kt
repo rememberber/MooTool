@@ -48,6 +48,9 @@ class PdfException(val code: String, message: String) : RuntimeException(message
 object PdfEngine {
     const val MAX_TASKS = 20
 
+    /** Document outlines/bookmarks are not copied on split/merge (same as Electron `pdf-lib` `copyPages`). */
+    const val ELECTRON_PARITY_OUTLINES_NOT_COPIED = true
+
     fun parsePageSelection(expression: String, maxPage: Int): List<Int> {
         if (maxPage < 1) throw PdfException("no-pages", "PDF has no pages")
         val value = expression.trim().replace(Regex("[，,]"), ";").replace(Regex("\\s+"), "")

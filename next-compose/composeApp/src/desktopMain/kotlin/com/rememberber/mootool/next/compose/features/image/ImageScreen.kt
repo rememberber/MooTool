@@ -55,8 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.storage.VaultPathConfig
-import com.rememberber.mootool.next.compose.domain.ColorException
-import com.rememberber.mootool.next.compose.domain.ScreenCaptureAccess
+import com.rememberber.mootool.next.compose.domain.ScreenCaptureFailureMessages
 import com.rememberber.mootool.next.compose.domain.CompressImageOptions
 import com.rememberber.mootool.next.compose.domain.ImageEngine
 import com.rememberber.mootool.next.compose.domain.ImageException
@@ -1105,22 +1104,8 @@ private class ImageSelection(private val image: BufferedImage) : Transferable {
 private fun ByteArray.toImageBitmap(): ImageBitmap =
     SkiaImage.makeFromEncoded(this).toComposeImageBitmap()
 
-private fun messageFor(container: AppContainer, error: Throwable): String {
-    val image = error as? ImageException
-    val color = error as? ColorException
-    return when {
-        image?.code == "invalid-base64" -> container.t("image.error.base64")
-        image?.code == "invalid-image" || image?.code == "unsupported" -> container.t("image.error.image")
-        image?.code == "watermark-text" -> container.t("image.error.watermark")
-        image?.code == "too-large" -> container.t("image.error.large")
-        image?.code == "too-many" -> container.t("image.error.tooMany")
-        image?.code == "cancelled" -> container.t("image.cancelled")
-        image?.code == "missing" -> container.t("image.error.missing")
-        image?.code == "exists" -> container.t("image.error.exists")
-        color?.code == "permission" || color?.code == "picker" -> ScreenCaptureAccess.userMessage({ container.t(it) }, error)
-        else -> error.message ?: container.t("image.error.generic")
-    }
-}
+private fun messageFor(container: AppContainer, error: Throwable): String =
+    ScreenCaptureFailureMessages.imageOperationMessage({ container.t(it) }, error)
 
 private fun formatKey(format: ImageOutputFormat) = when (format) {
     ImageOutputFormat.Auto -> "image.format.auto"

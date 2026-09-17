@@ -2,7 +2,7 @@ package com.rememberber.mootool.next.compose.app
 
 import com.rememberber.mootool.next.compose.domain.ColorEngine
 import com.rememberber.mootool.next.compose.domain.ImageEngine
-import com.rememberber.mootool.next.compose.domain.ScreenCaptureAccess
+import com.rememberber.mootool.next.compose.domain.ScreenCaptureFailureMessages
 import com.rememberber.mootool.next.compose.domain.ScreenColorPicker
 import com.rememberber.mootool.next.compose.domain.ScreenColorSampler
 import com.rememberber.mootool.next.compose.domain.ScreenPickerCopy
@@ -48,7 +48,7 @@ object TrayDesktopActions {
                 }.onFailure { error ->
                     session.picking = false
                     session.notice = ""
-                    session.error = ScreenCaptureAccess.userMessage({ container.t(it) }, error)
+                    session.error = ScreenCaptureFailureMessages.trayCaptureMessage({ container.t(it) }, error)
                     container.sessionManager.bump()
                 }
             }
@@ -89,7 +89,7 @@ object TrayDesktopActions {
                     )
                 }.onFailure { error ->
                     session.notice = ""
-                    session.error = ScreenCaptureAccess.userMessage({ container.t(it) }, error)
+                    session.error = ScreenCaptureFailureMessages.trayCaptureMessage({ container.t(it) }, error)
                     container.sessionManager.bump()
                 }
             }

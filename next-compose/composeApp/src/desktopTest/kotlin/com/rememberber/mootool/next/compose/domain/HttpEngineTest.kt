@@ -414,6 +414,23 @@ class HttpEngineTest {
     }
 
     @Test
+    fun preparePostsMultipartBodyUnmodifiedWhenContentTypeHeaderPresent() {
+        val boundary = "MooToolTestBoundary"
+        val body =
+            "--$boundary\r\nContent-Disposition: form-data; name=\"field\"\r\n\r\nvalue\r\n--$boundary--\r\n"
+        val draft = HttpEngine.emptyDraft().copy(
+            method = HttpMethod.POST,
+            url = "http://127.0.0.1/post",
+            headers = listOf(HttpEngine.pair("Content-Type", "multipart/form-data; boundary=$boundary")),
+            body = body,
+        )
+        val prepared = HttpEngine.prepare(draft)
+        assertEquals(body, String(requireNotNull(prepared.body), Charsets.UTF_8))
+        assertTrue(prepared.headers.any { it.first.equals("Content-Type", ignoreCase = true) })
+        assertEquals(null, prepared.contentType)
+    }
+
+    @Test
     fun publicSmokeAllowlistPermitsHttpBinAndLocalhostOnly() {
         assertTrue(HttpEngine.isPublicSmokeUrlAllowed("https://httpbin.org/get"))
         assertTrue(HttpEngine.isPublicSmokeUrlAllowed("http://127.0.0.1:8080/echo"))

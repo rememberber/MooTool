@@ -55,12 +55,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.ColorEngine
-import com.rememberber.mootool.next.compose.domain.ColorException
 import com.rememberber.mootool.next.compose.domain.ColorFormat
 import com.rememberber.mootool.next.compose.domain.ColorOperation
 import com.rememberber.mootool.next.compose.domain.ColorThemeId
 import com.rememberber.mootool.next.compose.domain.RgbColor
-import com.rememberber.mootool.next.compose.domain.ScreenCaptureAccess
+import com.rememberber.mootool.next.compose.domain.ScreenCaptureFailureMessages
 import com.rememberber.mootool.next.compose.domain.ScreenColorPicker
 import com.rememberber.mootool.next.compose.domain.ScreenColorSampler
 import com.rememberber.mootool.next.compose.domain.ScreenPickerCopy
@@ -803,14 +802,8 @@ private fun deleteFolder(container: AppContainer, session: ColorSession, onChang
     onChanged()
 }
 
-private fun messageFor(container: AppContainer, error: Throwable): String {
-    val code = (error as? ColorException)?.code
-    return when (code) {
-        "invalid-hex", "invalid-rgb" -> container.t("color.error.invalid")
-        "permission", "picker" -> ScreenCaptureAccess.userMessage({ container.t(it) }, error)
-        else -> error.message ?: container.t("color.error.generic")
-    }
-}
+private fun messageFor(container: AppContainer, error: Throwable): String =
+    ScreenCaptureFailureMessages.colorPickerMessage({ container.t(it) }, error)
 
 private fun copyText(value: String, container: AppContainer): String {
     if (value.isEmpty()) return container.t("color.nothingToCopy")
