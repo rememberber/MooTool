@@ -28,6 +28,9 @@ import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
+import com.rememberber.mootool.next.compose.ui.components.mooVaultConflictActions
+import com.rememberber.mootool.next.compose.ui.components.mooVaultConflictDiffPreview
+import com.rememberber.mootool.next.compose.ui.components.mooVaultConflictPathRow
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 
 @Composable
@@ -61,20 +64,33 @@ fun VaultConflictDialog(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             MooPageTitle(container.t("vault.conflict.title"))
-            Text(conflict.relativePath, color = colors.warning, fontSize = 12.sp)
+            Text(
+                conflict.relativePath,
+                color = colors.warning,
+                fontSize = 12.sp,
+                modifier = Modifier.mooVaultConflictPathRow(),
+            )
             Text(container.t(VaultConflictPresentation.hintMessageKey(conflict.deleted)), color = colors.textSecondary, fontSize = 12.sp)
+            val previewModifier = if (VaultConflictPresentation.showDiffPreview(conflict.deleted)) {
+                Modifier.weight(1f).mooVaultConflictDiffPreview().verticalScroll(rememberScrollState())
+            } else {
+                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+            }
             Text(
                 preview,
                 color = colors.textPrimary,
                 fontSize = 11.sp,
                 fontFamily = FontFamily.Monospace,
-                modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+                modifier = previewModifier,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.mooVaultConflictActions(),
+            ) {
                 if (VaultConflictPresentation.showReloadAction(conflict.deleted)) {
                     MooButton(
                         container.t("vault.conflict.reload"),
-                        prominent = true,
+                        prominent = VaultConflictPresentation.reloadProminent(conflict.deleted),
                         onClick = onReload,
                         modifier = reloadButtonModifier.semantics {
                             contentDescription = container.t("vault.conflict.reload")
@@ -83,6 +99,7 @@ fun VaultConflictDialog(
                 }
                 MooButton(
                     container.t("vault.conflict.saveCopy"),
+                    prominent = VaultConflictPresentation.saveCopyProminent(conflict.deleted),
                     onClick = onSaveCopy,
                     modifier = saveCopyButtonModifier.semantics {
                         contentDescription = container.t("vault.conflict.saveCopy")

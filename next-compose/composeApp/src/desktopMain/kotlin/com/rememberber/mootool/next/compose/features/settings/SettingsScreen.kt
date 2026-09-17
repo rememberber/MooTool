@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.storage.BackupInfo
 import com.rememberber.mootool.next.compose.storage.BackupOpenLocation
-import com.rememberber.mootool.next.compose.app.InstallIdentity
 import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.app.ToolRegistry
 import com.rememberber.mootool.next.compose.domain.GitRemoteCommitResult
@@ -54,8 +53,6 @@ import com.rememberber.mootool.next.compose.domain.SettingsVaultNumericNormalize
 import com.rememberber.mootool.next.compose.domain.SettingsVaultGitNormalize
 import com.rememberber.mootool.next.compose.domain.TimeoutCommitResult
 import com.rememberber.mootool.next.compose.domain.VaultNumericCommitResult
-import com.rememberber.mootool.next.compose.app.UpdateUiState
-import com.rememberber.mootool.next.compose.domain.UpdateAboutPresentation
 import com.rememberber.mootool.next.compose.model.AppLanguage
 import com.rememberber.mootool.next.compose.model.CloseBehavior
 import com.rememberber.mootool.next.compose.model.InterfaceStyle
@@ -553,73 +550,7 @@ fun SettingsScreen(container: AppContainer) {
                 }
                 SettingsNavCategory.About -> SettingsGroup(container.t("settings.about")) {
                     val update by container.updates.state.collectAsState()
-                    val result = update.result
-                    MooPageTitle(ProductIdentity.DISPLAY_NAME)
-                    Text("v${ProductIdentity.VERSION}", color = colors.textSecondary)
-                    Text(ProductIdentity.APPLICATION_ID, color = colors.textSecondary)
-                    Text(container.t("settings.about.bundle"), color = colors.textSecondary, fontSize = 12.sp)
-                    Text("${container.t("settings.about.upgradeCode")}: ${InstallIdentity.WINDOWS_UPGRADE_UUID}", color = colors.textSecondary, fontSize = 12.sp)
-                    Text("${container.t("settings.about.linuxPackage")}: ${InstallIdentity.LINUX_PACKAGE}", color = colors.textSecondary, fontSize = 12.sp)
-                    Text(container.t("settings.about.uninstallHint"), color = colors.textSecondary, fontSize = 12.sp)
-                    InstallIdentity.uninstallMustNotTouch().forEach { path ->
-                        Text("· $path", color = colors.textSecondary, fontSize = 11.sp)
-                    }
-                    Text(container.t("settings.update.current", mapOf("version" to ProductIdentity.VERSION)), color = colors.textSecondary)
-                    Text(updateStatusLabel(container, update), color = if (update.error.isNotBlank()) colors.danger else colors.textPrimary)
-                    if (result?.latestVersion?.isNotBlank() == true && result.status.name.lowercase() != "unpublished") {
-                        Text(container.t("settings.update.latest", mapOf("version" to result.latestVersion)), color = colors.textSecondary)
-                    }
-                    if (UpdateAboutPresentation.showReleaseNotes(result?.releaseNotes, result?.latestVersion, result?.status?.name)) {
-                        Label(container.t("settings.update.notes"))
-                        Text(result!!.releaseNotes, color = colors.textSecondary, fontSize = 12.sp)
-                    }
-                    val progress = update.progress
-                    if (progress != null && UpdateAboutPresentation.showDownloadProgress(update.status, hasProgress = true)) {
-                        Text(
-                            container.t(
-                                "settings.update.progress",
-                                mapOf(
-                                    "percent" to progress.percent.toString(),
-                                    "transferred" to progress.transferred.toString(),
-                                    "total" to progress.total.toString()
-                                )
-                            ),
-                            color = colors.textSecondary,
-                            fontSize = 12.sp
-                        )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        MooButton(
-                            container.t("settings.update.check"),
-                            enabled = UpdateAboutPresentation.canCheckForUpdates(update.busy),
-                            onClick = { container.updates.check(autoDownload = settings.general.autoDownloadUpdates) }
-                        )
-                        if (UpdateAboutPresentation.showDownloadAction(
-                                hasDownloadPack = result?.download != null,
-                                installerReady = update.downloaded != null,
-                            )
-                        ) {
-                            MooButton(
-                                container.t("settings.update.download"),
-                                prominent = true,
-                                enabled = !update.busy,
-                                onClick = { container.updates.download() }
-                            )
-                        }
-                        if (UpdateAboutPresentation.showCancelDownloadAction(update.status)) {
-                            MooButton(container.t("settings.update.cancel"), onClick = { container.updates.cancel() })
-                        }
-                        if (UpdateAboutPresentation.showOpenInstallerAction(update.downloaded != null)) {
-                            MooButton(
-                                container.t("settings.update.openInstaller"),
-                                prominent = true,
-                                enabled = !update.busy,
-                                onClick = { container.updates.openInstaller() }
-                            )
-                        }
-                        MooButton(container.t("settings.update.openRelease"), onClick = { container.updates.openReleasePage() })
-                    }
-                    Text(container.t("settings.update.manualInstall"), color = colors.warning, fontSize = 12.sp)
+                    SettingsAboutPanel(container, settings, update)
                 }
                 SettingsNavCategory.Ai -> AiIntegrationSettingsPanel(container)
                 SettingsNavCategory.Runtime -> RuntimeSettingsPanel(container)
@@ -1237,20 +1168,6 @@ private fun commitVaultPath(container: AppContainer, raw: String, apply: (String
             }
         }
         else -> apply(normalized)
-    }
-}
-
-private fun updateStatusLabel(container: AppContainer, state: UpdateUiState): String {
-    if (state.error.isNotBlank()) return state.error
-    val result = state.result
-    val key = UpdateAboutPresentation.statusMessageKey(
-        status = state.status,
-        hasDownloadPack = result?.download != null,
-    )
-    return if (key == "settings.update.available" && result != null) {
-        container.t(key, mapOf("version" to result.latestVersion))
-    } else {
-        container.t(key)
     }
 }
 

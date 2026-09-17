@@ -20,4 +20,11 @@ object VaultConflictPresentation {
         unifiedDiff.isNotBlank() -> unifiedDiff
         else -> noDiffMessage
     }
+
+    /** 外部删除时主操作是「另存副本」（对齐 Electron 无 reload 时的按钮权重）。 */
+    fun saveCopyProminent(deleted: Boolean): Boolean = deleted
+
+    fun reloadProminent(deleted: Boolean): Boolean = !deleted
+
+    fun showDiffPreview(deleted: Boolean): Boolean = !deleted
 }

@@ -1492,6 +1492,57 @@ fun Modifier.mooEnvStatusFooter(): Modifier = heightIn(min = 30.dp)
 @Composable
 fun Modifier.mooHardwareToolbarMeta(): Modifier = heightIn(min = 28.dp)
 
+/** Electron `.settings-about` 产品信息块。 */
+@Composable
+fun Modifier.mooSettingsAboutHero(): Modifier = padding(vertical = 8.dp)
+
+/** Electron `.settings-update-result` 更新结果区。 */
+@Composable
+fun Modifier.mooSettingsUpdateResult(): Modifier {
+    val colors = MooTheme.colors
+    return fillMaxWidth()
+        .padding(vertical = 12.dp)
+        .drawBehind {
+            drawLine(colors.borderSoft, Offset(0f, size.height - 0.5f), Offset(size.width, size.height - 0.5f), 1.dp.toPx())
+        }
+}
+
+/** Electron `.settings-update-result__notes` 发行说明滚动区。 */
+@Composable
+fun Modifier.mooSettingsUpdateResultNotes(): Modifier {
+    val colors = MooTheme.colors
+    val shape = RoundedCornerShape(6.dp)
+    return fillMaxWidth()
+        .heightIn(max = 280.dp)
+        .clip(shape)
+        .background(colors.surfaceSubtle)
+        .padding(12.dp)
+}
+
+/** Electron `.settings-update-result__file` 安装包文件名。 */
+@Composable
+fun Modifier.mooSettingsUpdateResultFile(): Modifier = padding(top = 4.dp)
+
+/** Vault 外部冲突相对路径行。 */
+@Composable
+fun Modifier.mooVaultConflictPathRow(): Modifier = heightIn(min = 18.dp)
+
+/** Vault 外部冲突 diff 预览区（等宽滚动）。 */
+@Composable
+fun Modifier.mooVaultConflictDiffPreview(): Modifier {
+    val colors = MooTheme.colors
+    val shape = RoundedCornerShape(6.dp)
+    return fillMaxWidth()
+        .clip(shape)
+        .background(colors.workspace)
+        .border(1.dp, colors.borderSoft, shape)
+        .padding(horizontal = 10.dp, vertical = 8.dp)
+}
+
+/** Vault 外部冲突操作钮行。 */
+@Composable
+fun Modifier.mooVaultConflictActions(): Modifier = fillMaxWidth().padding(top = 4.dp)
+
 /** Electron `.color-board` 色码侧栏宽。 */
 @Composable
 fun Modifier.mooColorHexColumn(): Modifier = widthIn(min = 136.dp)

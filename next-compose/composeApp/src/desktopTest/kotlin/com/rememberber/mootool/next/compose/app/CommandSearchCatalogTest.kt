@@ -273,6 +273,14 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun externalConflictKeywordsOpenVaultSettings() {
+        val hits = CommandSearchCatalog.search("savecopy", Translator(AppLanguage.EnUS)::t)
+        assertTrue(hits.any { it.categoryId == "vault" })
+        val external = CommandSearchCatalog.search("external", Translator(AppLanguage.EnUS)::t)
+        assertTrue(external.any { it.categoryId == "vault" })
+    }
+
+    @Test
     fun myersQueryOpensLayoutSettings() {
         val hits = CommandSearchCatalog.search("myers", Translator(AppLanguage.EnUS)::t)
         assertEquals("layout", hits.single().categoryId)

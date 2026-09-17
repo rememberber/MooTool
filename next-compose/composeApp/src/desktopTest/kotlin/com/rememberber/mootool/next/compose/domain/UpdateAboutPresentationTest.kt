@@ -47,4 +47,14 @@ class UpdateAboutPresentationTest {
         assertTrue(UpdateAboutPresentation.showDownloadProgress("downloading", hasProgress = true))
         assertFalse(UpdateAboutPresentation.showDownloadProgress("idle", hasProgress = true))
     }
+
+    @Test
+    fun updateResultCardVisibilityMatchesElectron() {
+        assertEquals("settings.update.available", UpdateAboutPresentation.resultHeadlineKey("available"))
+        assertEquals("settings.update.resultUpToDate", UpdateAboutPresentation.resultHeadlineKey("latest"))
+        assertTrue(UpdateAboutPresentation.showMissingDownloadLine("available", hasDownloadPack = false))
+        assertFalse(UpdateAboutPresentation.showMissingDownloadLine("available", hasDownloadPack = true))
+        assertTrue(UpdateAboutPresentation.showDownloadFileLine(hasDownloadPack = true, fileName = "pkg.dmg"))
+        assertEquals("network down", UpdateAboutPresentation.errorDisplayText("network down", "ignored"))
+    }
 }

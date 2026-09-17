@@ -132,12 +132,13 @@
 | `149-compose-command-palette-close-tab-focus.png` | Compose 场景命令盘关闭钮 Tab 焦点环（[DIFF-492](../../diff/492-command-palette-close-tab-focus.md)） |
 | `150-compose-modern-flatten-tool-shell.png` | Compose 场景 modern 非 p5 双栏 `mooToolShell` 压平（[DIFF-510](../../diff/510-settings-group-command-shell-capture.md)；非产品主窗） |
 | `151-compose-command-palette-search-row-tab.png` | Compose 场景命令盘搜索行（输入 + 关闭钮焦点环，[DIFF-510](../../diff/510-settings-group-command-shell-capture.md)；与 `140`/`149` 互补） |
+| `152-compose-settings-about-update-check-tab-focus.png` | Compose 场景设置 · 关于页更新结果区「检查更新」钮焦点环（[DIFF-558](../../diff/558-settings-about-vault-conflict-mcp-slice.md)；非产品主窗） |
 
 有窗口帧不等于该工具整行已验收。Vault/Git 冲突**产品主窗**步骤见 [2026-09-17-vault-conflict-product-window](../2026-09-17-vault-conflict-product-window/results.md)（未执行）。曾用 Unicode `type "中"` 插入 JSON，那不是系统 IME 预编辑，不能当 IME 验收。
 
 ## 未测
 
-- 首页以外其余工具页的产品窗 Tab 走查仍缺；已有设置语言/外观（产品窗 `85` + Compose `134`/`135`/`139`）、侧栏语言/搜索/导航项（Compose `136`–`138`）、命令盘结果行（Compose `140`）、Vault 外部冲突（Compose `141`/`143`）、Git 冲突操作（Compose `142`，产品主窗仍缺）、JSON Vault 搜索、HTTP 集合搜索、JSON「复制」、首页站点链接外描边，以及 Compose 回归帧 `127`–`148`（不能代替产品窗）
+- 首页以外其余工具页的产品窗 Tab 走查仍缺；已有设置语言/外观/关于更新（产品窗 `85` + Compose `134`/`135`/`139`/`152`）、侧栏语言/搜索/导航项（Compose `136`–`138`）、命令盘结果行（Compose `140`）、Vault 外部冲突（Compose `141`/`143`）、Git 冲突操作（Compose `142`，产品主窗仍缺）、JSON Vault 搜索、HTTP 集合搜索、JSON「复制」、首页站点链接外描边，以及 Compose 回归帧 `127`–`148`（不能代替产品窗）
 - 系统输入法预编辑窗口手势（`70-column-edit-jframe.png` 不能代替；产品窗 Unicode 注入也不能代替）
 - 托盘取色/截图 TCC 对话框手工
 - Electron 六套 CSS 逐选择器皮肤；DIFF-088～093 已补 P5 密度/壳/Host 正文/HTTP 响应/翻译/UA/环境作用域；系统 IME、托盘 TCC、产品窗 Tab 焦点帧仍待

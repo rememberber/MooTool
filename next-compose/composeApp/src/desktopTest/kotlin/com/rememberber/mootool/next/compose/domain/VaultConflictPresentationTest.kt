@@ -48,4 +48,12 @@ class VaultConflictPresentationTest {
             ),
         )
     }
+
+    @Test
+    fun primaryActionsFollowDeletedState() {
+        assertTrue(VaultConflictPresentation.saveCopyProminent(deleted = true))
+        assertFalse(VaultConflictPresentation.saveCopyProminent(deleted = false))
+        assertTrue(VaultConflictPresentation.reloadProminent(deleted = false))
+        assertFalse(VaultConflictPresentation.showDiffPreview(deleted = true))
+    }
 }

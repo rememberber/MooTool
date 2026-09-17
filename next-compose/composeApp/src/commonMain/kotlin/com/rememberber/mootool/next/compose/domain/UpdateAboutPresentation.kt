@@ -33,4 +33,31 @@ object UpdateAboutPresentation {
 
     fun showDownloadProgress(status: String, hasProgress: Boolean): Boolean =
         hasProgress && (status == "downloading" || status == "ready")
+
+    fun showUpdateResultSection(hasResult: Boolean): Boolean = hasResult
+
+    /** Electron `settings-update-result` 标题行（available 带版本，否则 up-to-date 文案）。 */
+    fun resultHeadlineKey(resultStatus: String): String =
+        if (resultStatus.equals("available", ignoreCase = true)) {
+            "settings.update.available"
+        } else {
+            "settings.update.resultUpToDate"
+        }
+
+    fun showAvailableDetail(resultStatus: String): Boolean =
+        resultStatus.equals("available", ignoreCase = true)
+
+    fun showTargetPlatformLine(hasResult: Boolean): Boolean = hasResult
+
+    fun showMissingDownloadLine(resultStatus: String, hasDownloadPack: Boolean): Boolean =
+        resultStatus.equals("available", ignoreCase = true) && !hasDownloadPack
+
+    fun showDownloadFileLine(hasDownloadPack: Boolean, fileName: String?): Boolean =
+        hasDownloadPack && !fileName.isNullOrBlank()
+
+    fun showErrorLine(error: String, message: String): Boolean =
+        error.isNotBlank() || message.isNotBlank()
+
+    fun errorDisplayText(error: String, message: String): String =
+        error.ifBlank { message }
 }
