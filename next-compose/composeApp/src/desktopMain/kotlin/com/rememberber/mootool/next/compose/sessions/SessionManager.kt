@@ -166,7 +166,17 @@ class JsonSession {
         dialogTarget = ""
     }
 
-    fun snapshot(): JsonSessionSnapshot = JsonSessionSnapshot(
+    /** Aligns persisted / in-memory inspector indent with Electron `JsonInspector` (only 2 or 4). */
+    fun coerceInspectorFormatOptions(): Boolean {
+        val normalized = formatOptions.normalizeInspectorIndent()
+        if (normalized == formatOptions) return false
+        formatOptions = normalized
+        return true
+    }
+
+    fun snapshot(): JsonSessionSnapshot {
+        val format = formatOptions.normalizeInspectorIndent()
+        return JsonSessionSnapshot(
         content = editor.text,
         wrap = wrap,
         inspectorOpen = inspectorOpen,
@@ -179,17 +189,18 @@ class JsonSession {
         findReplacedCount = findReplacedCount,
         jsonPath = jsonPath,
         currentFile = currentFile,
-        spaces = formatOptions.spaces,
-        sortKeys = formatOptions.sortKeys,
-        ignoreCase = formatOptions.ignoreCase,
-        checkDuplicateKeys = formatOptions.checkDuplicateKeys,
+        spaces = format.spaces,
+        sortKeys = format.sortKeys,
+        ignoreCase = format.ignoreCase,
+        checkDuplicateKeys = format.checkDuplicateKeys,
         vaultQuery = vaultQuery,
         includeContent = includeContent,
         vaultSort = vaultSort,
         className = className,
         pathResult = pathResult,
         vaultSelectedPath = vaultSelectedPath,
-    )
+        )
+    }
 
     fun restore(snapshot: JsonSessionSnapshot) {
         editor.setText(snapshot.content, recordUndo = false)
@@ -2026,13 +2037,20 @@ class SessionManager(private val store: SessionStore) {
             store.load(ToolId.Json.id)?.let { raw ->
                 runCatching { jsonCodec.decodeFromString<JsonSessionSnapshot>(raw) }
                     .getOrNull()
-                    ?.let(session::restore)
+                    ?.let { snap ->
+                        session.restore(snap)
+                        if (snap.spaces != session.formatOptions.spaces) {
+                            store.save(ToolId.Json.id, jsonCodec.encodeToString(session.snapshot()))
+                        }
+                    }
             }
         }
     }
 
     fun persistJson() {
-        store.save(ToolId.Json.id, jsonCodec.encodeToString(jsonSession().snapshot()))
+        val session = jsonSession()
+        session.coerceInspectorFormatOptions()
+        store.save(ToolId.Json.id, jsonCodec.encodeToString(session.snapshot()))
     }
 
     fun quickNoteSession(defaultWrap: Boolean = true): QuickNoteSession {

@@ -1369,9 +1369,9 @@ private fun InspectorPane(
             Spacer(Modifier.weight(1f))
             MooSegmented(
                 options = listOf("2" to "2", "4" to "4"),
-                value = session.formatOptions.spaces.toString(),
+                value = session.formatOptions.normalizeInspectorIndent().spaces.toString(),
                 onChange = {
-                    session.formatOptions = session.formatOptions.copy(spaces = it.toInt())
+                    session.formatOptions = session.formatOptions.copy(spaces = it.toInt()).normalizeInspectorIndent()
                     onChanged()
                 }
             )
