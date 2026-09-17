@@ -189,6 +189,18 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun oursQueryOpensVaultGitSettings() {
+        val hits = CommandSearchCatalog.search("ours", Translator(AppLanguage.EnUS)::t)
+        assertEquals("vault", hits.single().categoryId)
+    }
+
+    @Test
+    fun favoritesQueryOpensLayoutSettings() {
+        val hits = CommandSearchCatalog.search("favorites", Translator(AppLanguage.EnUS)::t)
+        assertEquals("layout", hits.single().categoryId)
+    }
+
+    @Test
     fun catalogCoversEverySettingsNavCategory() {
         val covered = CommandSearchCatalog.targets.map { it.categoryId }.toSet()
         SettingsNavCategory.entries.forEach { category ->

@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.CronEngine
+import com.rememberber.mootool.next.compose.domain.CronWiringPresentation
 import com.rememberber.mootool.next.compose.domain.CronException
 import com.rememberber.mootool.next.compose.domain.CronFields
 import com.rememberber.mootool.next.compose.domain.CronHistoryMetadata
@@ -61,6 +62,8 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooCronBuilder
+import com.rememberber.mootool.next.compose.ui.components.mooCronRunCell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
@@ -138,7 +141,7 @@ fun CronScreen(container: AppContainer, detached: Boolean) {
         Column(Modifier.weight(1f).fillMaxWidth()) {
             Row(Modifier.fillMaxWidth()) {
                 Column(
-                    Modifier.width(builderWidth.dp).widthIn(min = 460.dp).fillMaxHeight().padding(18.dp),
+                    Modifier.width(builderWidth.dp).widthIn(min = 460.dp).fillMaxHeight().mooCronBuilder(),
                     verticalArrangement = Arrangement.spacedBy(13.dp)
                 ) {
                     Text(container.t("cron.builder"), color = colors.textBody, fontSize = 12.sp)
@@ -238,7 +241,7 @@ fun CronScreen(container: AppContainer, detached: Boolean) {
                                         Row(
                                             Modifier
                                                 .weight(1f)
-                                                .heightIn(min = 38.dp)
+                                                .mooCronRunCell()
                                                 .background(colors.workspace)
                                                 .padding(horizontal = 12.dp),
                                             verticalAlignment = Alignment.CenterVertically,
@@ -337,7 +340,10 @@ private fun RowScope.FieldCell(container: AppContainer, labelKey: String, value:
 @Composable
 private fun ZonePicker(container: AppContainer, session: CronSession, onChanged: () -> Unit) {
     var open by remember { mutableStateOf(false) }
-    val zones = remember { (listOf(TimeEngine.systemZone()) + TimeEngine.commonTimezones).distinct() }
+    val zones =
+        remember {
+            CronWiringPresentation.timezoneMenu(TimeEngine.systemZone(), TimeEngine.commonTimezones)
+        }
     Box {
         MooButton("${container.t("time.timezone")} · ${session.zone}", onClick = { open = true }, p5Toolbar = true)
         MooMenu(expanded = open, onDismissRequest = { open = false }) {

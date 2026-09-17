@@ -44,7 +44,10 @@ mootool_evidence_print_vault_conflict_product_hint() {
 }
 
 mootool_evidence_print_git_merge_product_hint() {
-  echo "# Vault Git merge 产品窗 §B: F04 JSON → Vault Git → conflict.json → 解决冲突 → 继续合并"
+  echo "# Vault Git merge 产品窗 §B（对齐 GitMergeProductFlowPresentation / conflict.json）:"
+  echo "# 1) F04 JSON Vault 打开 Git 面板 → 变更列表应自动选中 conflict.json（脚本产物）"
+  echo "# 2) 对 conflict.json 使用 ours/theirs → 冲突计数归零"
+  echo "# 3) 「继续合并」完成 merge（仍须 runDistributable 手工 PNG）"
   echo "# 登记 PNG: docs/evidence/2026-09-17-vault-conflict-product-window/results.md §B"
 }
 

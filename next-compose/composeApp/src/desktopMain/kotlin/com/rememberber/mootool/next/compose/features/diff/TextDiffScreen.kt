@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.DiffEngine
+import com.rememberber.mootool.next.compose.domain.TextDiffPresentation
 import com.rememberber.mootool.next.compose.domain.DiffHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.DiffHistoryRestore
 import com.rememberber.mootool.next.compose.domain.DiffSegment
@@ -65,6 +66,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooDiffWorkspace
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
@@ -106,7 +108,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
         if (rightField.text != session.right) rightField = TextFieldValue(session.right)
     }
     LaunchedEffect(session.left, session.right, session.ignoreWhitespace) {
-        delay(160)
+        delay(TextDiffPresentation.AUTO_COMPARE_DEBOUNCE_MS)
         runCompare(container, session, saveHistory = false) { refresh() }
     }
 
@@ -278,7 +280,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                 session.mode = "unified"; refresh()
             })
         }
-        Row(Modifier.weight(1f).fillMaxWidth()) {
+        Row(Modifier.weight(1f).fillMaxWidth().mooDiffWorkspace()) {
             if (session.mode == "side") {
                 DiffEditorPane(
                     title = container.t("diff.left"),
@@ -509,7 +511,7 @@ private fun navigate(
     setRight: (TextFieldValue) -> Unit
 ) {
     if (visible.isEmpty()) return
-    val next = (session.navIndex + step + visible.size) % visible.size
+    val next = TextDiffPresentation.nextNavIndex(session.navIndex, step, visible.size)
     session.navIndex = next
     val segment = visible[next]
     if (segment.leftStart >= 0) setLeft(TextFieldValue(session.left, TextRange(segment.leftStart, segment.leftEnd.coerceAtLeast(segment.leftStart))))

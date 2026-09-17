@@ -44,6 +44,7 @@ import com.rememberber.mootool.next.compose.domain.GitEditorFlushPolicy
 import com.rememberber.mootool.next.compose.domain.GitVaultFlushAction
 import com.rememberber.mootool.next.compose.domain.GitEngine
 import com.rememberber.mootool.next.compose.domain.GitMergeConflictPresentation
+import com.rememberber.mootool.next.compose.domain.GitMergeProductFlowPresentation
 import com.rememberber.mootool.next.compose.domain.GitOperationPresentation
 import com.rememberber.mootool.next.compose.domain.GitRemoteCommitResult
 import com.rememberber.mootool.next.compose.domain.SettingsVaultGitNormalize
@@ -200,6 +201,22 @@ fun VaultGitDialog(
 
     LaunchedEffect(root) { load() }
 
+    LaunchedEffect(status.merging, status.conflicts, status.changes, busy) {
+        if (busy || !status.repository) return@LaunchedEffect
+        val pairs = status.changes.map { it.path to it.conflict }
+        GitMergeProductFlowPresentation.autoSelectConflictPath(
+            merging = status.merging,
+            conflicts = status.conflicts,
+            changes = pairs,
+            currentSelected = selected,
+        )?.let { path ->
+            if (selected != path) {
+                selected = path
+                loadFileDiffs(path = path)
+            }
+        }
+    }
+
     confirmDiscardPath?.let { discardPath ->
         MooOverlay(onDismiss = { confirmDiscardPath = null }) {
             Column(
@@ -324,6 +341,19 @@ fun VaultGitDialog(
                                 Text(
                                     container.t(hintKey),
                                     color = colors.danger,
+                                    fontSize = 11.sp,
+                                )
+                            }
+                            val selectedConflict =
+                                status.changes.any { it.path == selected && it.conflict }
+                            GitMergeProductFlowPresentation.productFlowHintKey(
+                                status.merging,
+                                status.conflicts,
+                                selectedConflict,
+                            )?.let { flowKey ->
+                                Text(
+                                    container.t(flowKey),
+                                    color = colors.textMuted,
                                     fontSize = 11.sp,
                                 )
                             }
@@ -531,7 +561,12 @@ fun VaultGitDialog(
                                             onClick = { confirmDiscardPath = selectedChange.path },
                                             leading = { GitPanelIcon(GitPanelIconKind.Undo, colors.danger) },
                                         )
-                                        if (selectedChange.conflict) {
+                                        if (
+                                            GitMergeProductFlowPresentation.showResolveActions(
+                                                status.merging,
+                                                selectedChange.conflict,
+                                            )
+                                        ) {
                                             MooButton(
                                                 container.t("git.ours"),
                                                 p5Toolbar = true,

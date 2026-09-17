@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.ReformatEngine
+import com.rememberber.mootool.next.compose.domain.ReformatWiringPresentation
 import com.rememberber.mootool.next.compose.domain.ReformatException
 import com.rememberber.mootool.next.compose.domain.ReformatType
 import com.rememberber.mootool.next.compose.domain.ReformatHistoryMetadata
@@ -59,6 +60,7 @@ import com.rememberber.mootool.next.compose.ui.components.mooToolTabsBackground
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooReformatFileLayout
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
@@ -274,7 +276,7 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
                 val maxLeft = (innerWidth - paneHandle - minPane).coerceAtLeast(minPane)
                 val defaultLeft = (innerWidth * 0.5f).coerceIn(minPane, maxLeft)
                 val leftWidth = settings.layout.pane(ToolId.Reformat.id, 0, defaultLeft, minPane, maxLeft)
-                Row(Modifier.weight(1f).fillMaxWidth()) {
+                Row(Modifier.weight(1f).fillMaxWidth().mooReformatFileLayout()) {
                     Column(
                         Modifier.width(leftWidth.dp).widthIn(min = 260.dp).fillMaxHeight().mooToolShell().padding(8.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -453,18 +455,11 @@ private fun saveResult(container: AppContainer, session: ReformatSession) {
         session.notice = container.t("reformat.nothingToSave")
         return
     }
-    val extension = when (session.type) {
-        ReformatType.Nginx -> "conf"
-        ReformatType.Java -> "java"
-        ReformatType.Xml -> "xml"
-        ReformatType.Html -> "html"
-    }
-    val base = session.fileName.replace(Regex("\\.[^.]+$"), "").ifEmpty { "formatted" }
     val file = chooseFileWithExportDirectory(
         container,
         save = true,
         title = container.t("reformat.save"),
-        defaultFileName = "$base.$extension",
+        defaultFileName = ReformatWiringPresentation.defaultSaveFileName(session.fileName, session.type),
     ) ?: return
     runCatching { file.writeText(content, StandardCharsets.UTF_8) }
         .onSuccess {

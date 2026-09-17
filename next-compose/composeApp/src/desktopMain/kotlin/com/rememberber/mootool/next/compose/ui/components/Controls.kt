@@ -1457,6 +1457,26 @@ fun Modifier.mooUaResultCell(): Modifier = heightIn(min = 72.dp)
 @Composable
 fun Modifier.mooProtobufWirePane(): Modifier = heightIn(min = 200.dp)
 
+/** Electron `.diff-workspace` 工作区最小高度。 */
+@Composable
+fun Modifier.mooDiffWorkspace(): Modifier = heightIn(min = 280.dp)
+
+/** Electron `.cron-builder` 构建器列。 */
+@Composable
+fun Modifier.mooCronBuilder(): Modifier = padding(18.dp)
+
+/** Electron `.cron-runs` 运行格最小高度。 */
+@Composable
+fun Modifier.mooCronRunCell(): Modifier = heightIn(min = 38.dp)
+
+/** Electron `.reformat-file-layout` 文件 Tab 双栏。 */
+@Composable
+fun Modifier.mooReformatFileLayout(): Modifier = heightIn(min = 320.dp)
+
+/** 配置转换校验/转换中栏行高。 */
+@Composable
+fun Modifier.mooConfigConvertPane(): Modifier = heightIn(min = 36.dp)
+
 @Composable
 fun Modifier.mooWorkspaceBackground(): Modifier {
     val colors = MooTheme.colors
