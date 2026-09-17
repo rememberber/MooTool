@@ -1,5 +1,6 @@
 package com.rememberber.mootool.next.compose.domain
 
+import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.pdmodel.PDPageContentStream
@@ -10,6 +11,7 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationWidget
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm
 import org.apache.pdfbox.pdmodel.interactive.form.PDSignatureField
 import org.apache.pdfbox.pdmodel.interactive.form.PDTextField
@@ -91,6 +93,54 @@ class PdfEngineTest {
     }
 
     @Test
+    fun structuredFixtureExposesWidgetsOnPageAndInAcroForm() {
+        val directory = Files.createTempDirectory("mootool-pdf-fixture-")
+        try {
+            val structured = writeStructuredPdf(directory.resolve("structured.pdf"))
+            Loader.loadPDF(structured.toFile()).use { document ->
+                assertEquals(2, document.getPage(0).annotations.size)
+                assertEquals(2, document.documentCatalog.acroForm.fields.size)
+            }
+            assertEquals(2, PdfEngine.inspect(structured).formFieldCount)
+        } finally {
+            directory.listDirectoryEntries().forEach { Files.deleteIfExists(it) }
+            Files.deleteIfExists(directory)
+        }
+    }
+
+    @Test
+    fun mergePreservesImportedPageFormAndSignatureWidgets() {
+        val directory = Files.createTempDirectory("mootool-pdf-merge-structure-")
+        try {
+            val structured = writeStructuredPdf(directory.resolve("structured.pdf"))
+            val plain = writeNumberedPdf(directory.resolve("plain.pdf"), 1)
+            val sourceInfo = PdfEngine.inspect(structured)
+            assertEquals(2, sourceInfo.formFieldCount)
+            assertEquals(1, sourceInfo.signatureFieldCount)
+            val merged = directory.resolve("merged.pdf")
+            PdfEngine.merge(
+                listOf(
+                    PdfEngine.MergeSource(structured.toString(), "1"),
+                    PdfEngine.MergeSource(plain.toString(), "1"),
+                ),
+                merged,
+            )
+            val mergedInfo = PdfEngine.inspect(merged)
+            assertEquals(2, mergedInfo.pageCount)
+            assertEquals(
+                sourceInfo.formFieldCount,
+                mergedInfo.formFieldCount,
+                "AcroFormDefaultFixup should register widgets copied with importPage",
+            )
+            assertEquals(sourceInfo.signatureFieldCount, mergedInfo.signatureFieldCount)
+            assertEquals(0, mergedInfo.bookmarkCount, "Page-only merge does not copy document outlines (same as Electron pdf-lib copyPages)")
+        } finally {
+            directory.listDirectoryEntries().forEach { Files.deleteIfExists(it) }
+            Files.deleteIfExists(directory)
+        }
+    }
+
+    @Test
     fun inspectCountsFormsBookmarksAndSignatureFields() {
         val directory = Files.createTempDirectory("mootool-pdf-structure-")
         try {
@@ -103,9 +153,11 @@ class PdfEngineTest {
             val split = PdfEngine.split(
                 listOf(PdfEngine.SplitTask(structured.toString(), "1", PdfSplitRule.Odd, ""))
             )
-            val outputStructure = PdfEngine.analyzeStructure(Path.of(split.outputs[0]))
-            assertEquals(1, PdfEngine.inspect(Path.of(split.outputs[0])).pageCount)
-            assertTrue(outputStructure.formFieldCount + outputStructure.bookmarkCount >= 0)
+            val splitPath = Path.of(split.outputs[0])
+            val outputStructure = PdfEngine.analyzeStructure(splitPath)
+            assertEquals(1, PdfEngine.inspect(splitPath).pageCount)
+            assertEquals(info.formFieldCount, outputStructure.formFieldCount)
+            assertEquals(info.signatureFieldCount, outputStructure.signatureFieldCount)
         } finally {
             directory.listDirectoryEntries().forEach { Files.deleteIfExists(it) }
             Files.deleteIfExists(directory)
@@ -153,7 +205,8 @@ class PdfEngineTest {
 
     private fun writeStructuredPdf(path: Path): Path {
         PDDocument().use { document ->
-            document.addPage(PDPage(PDRectangle.A4))
+            val page = PDPage(PDRectangle.A4)
+            document.addPage(page)
             val outline = PDDocumentOutline()
             document.documentCatalog.documentOutline = outline
             PDOutlineItem().also { item ->
@@ -165,14 +218,29 @@ class PdfEngineTest {
             PDTextField(acroForm).also { field ->
                 field.partialName = "name"
                 acroForm.fields.add(field)
+                attachFieldWidget(field, page, PDRectangle(50f, 650f, 250f, 30f))
             }
             PDSignatureField(acroForm).also { field ->
                 field.partialName = "sig"
                 acroForm.fields.add(field)
+                attachFieldWidget(field, page, PDRectangle(50f, 600f, 250f, 36f))
             }
             document.save(path.toFile())
         }
         return path
+    }
+
+    private fun attachFieldWidget(
+        field: org.apache.pdfbox.pdmodel.interactive.form.PDTerminalField,
+        page: PDPage,
+        rectangle: PDRectangle,
+    ) {
+        val widget = field.widgets.firstOrNull() ?: PDAnnotationWidget().also { field.widgets = listOf(it) }
+        widget.rectangle = rectangle
+        widget.page = page
+        if (!page.annotations.contains(widget)) {
+            page.annotations.add(widget)
+        }
     }
 
     private fun writeEncryptedPdf(path: Path): Path {

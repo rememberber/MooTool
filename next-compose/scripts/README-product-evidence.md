@@ -10,7 +10,7 @@
 | `prepare-git-merge-conflict-evidence.sh` | JSON Vault Git merge 冲突（§B） | 同上；会重建 Vault 内 `.git` |
 | `prepare-editor-ime-evidence.sh` | F01/F04 系统 IME 样本文件 | 同上 |
 | `verify-product-evidence-prep.sh` | 非交互校验上述三套脚本（无 GUI） | 无 |
-| `lib/product-evidence-common.sh` | 共享目录解析与 merge 冲突断言 | — |
+| `lib/product-evidence-common.sh` | 共享目录解析、merge 冲突断言、可选 HTTP 公网 smoke 提示 | — |
 
 推荐用法（输出均为 `#` 注释 + `export MOOTOOL_COMPOSE_DATA_DIR=…` 单行，**不要** `eval "$(./script)"`）：
 
@@ -27,5 +27,7 @@ cd /path/to/next-compose
 ```
 
 CI/本机无 GUI：`./scripts/verify-product-evidence-prep.sh` 或 `ProductEvidencePrepScriptTest`（见 [DIFF-513](../docs/diff/513-product-evidence-prep-verify.md)）。
+
+可选 F09 公网 smoke（仅 httpbin/localhost，默认 `desktopTest --offline` **不跑**）：`MOOTOOL_HTTP_PUBLIC_SMOKE=1` + `HttpEngineTest.optionalHttpBinPublicGetSmoke`（见 [DIFF-526](../docs/diff/526-http-pdf-merge-smoke-p7-slice.md)）。
 
 登记：`docs/evidence/2026-09-17-vault-conflict-product-window/results.md`、`docs/evidence/2026-09-16-editor-manual-acceptance/results.md`。

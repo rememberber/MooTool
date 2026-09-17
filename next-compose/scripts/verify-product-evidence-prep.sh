@@ -35,3 +35,6 @@ test -f "${IME_ROOT}/data/vaults/quick-note/ime-sample.md"
 echo "ok ime-sample files"
 
 echo "all product evidence prep checks passed"
+# shellcheck source=lib/product-evidence-common.sh
+source "${ROOT}/scripts/lib/product-evidence-common.sh"
+mootool_evidence_print_http_public_smoke_hint

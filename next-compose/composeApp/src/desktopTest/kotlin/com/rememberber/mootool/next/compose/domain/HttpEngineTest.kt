@@ -3,6 +3,7 @@ package com.rememberber.mootool.next.compose.domain
 import com.rememberber.mootool.next.compose.app.AppDirectories
 import com.rememberber.mootool.next.compose.storage.HttpCollectionStore
 import com.sun.net.httpserver.HttpServer
+import org.junit.Assume
 import java.net.InetSocketAddress
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -410,6 +411,36 @@ class HttpEngineTest {
         assertFalse(json.second)
         assertEquals(null, HttpEngine.downloadBytes(sampleResponse(true, 200, json.first)))
         assertTrue(HttpEngine.decodeBody(byteArrayOf(1, 2, 3), "application/pdf").second)
+    }
+
+    @Test
+    fun publicSmokeAllowlistPermitsHttpBinAndLocalhostOnly() {
+        assertTrue(HttpEngine.isPublicSmokeUrlAllowed("https://httpbin.org/get"))
+        assertTrue(HttpEngine.isPublicSmokeUrlAllowed("http://127.0.0.1:8080/echo"))
+        assertTrue(HttpEngine.isPublicSmokeUrlAllowed("http://localhost/health"))
+        assertFalse(HttpEngine.isPublicSmokeUrlAllowed("https://example.com/"))
+        assertFalse(HttpEngine.isPublicSmokeUrlAllowed("ftp://httpbin.org/get"))
+        assertEquals(HttpEngine.DEFAULT_PUBLIC_SMOKE_URL, HttpEngine.resolvePublicSmokeUrl())
+    }
+
+    @Test
+    fun optionalHttpBinPublicGetSmoke() {
+        Assume.assumeTrue(
+            "Set MOOTOOL_HTTP_PUBLIC_SMOKE=1 to run httpbin/localhost smoke",
+            System.getenv("MOOTOOL_HTTP_PUBLIC_SMOKE") == "1",
+        )
+        val url = HttpEngine.resolvePublicSmokeUrl()
+        val result = HttpEngine.send(
+            HttpEngine.emptyDraft().copy(url = url, method = HttpMethod.GET),
+            requestId = "public-smoke",
+            timeoutMs = 15_000,
+        )
+        Assume.assumeTrue(
+            "Network unavailable; record as 未测 in acceptance",
+            result.ok || result.errorCode != HttpErrorCode.NETWORK,
+        )
+        assertTrue(result.ok, "status=${result.status} error=${result.errorCode}")
+        assertTrue(result.body.contains("httpbin.org") || result.body.contains("mootool-next-compose"))
     }
 
     @Test

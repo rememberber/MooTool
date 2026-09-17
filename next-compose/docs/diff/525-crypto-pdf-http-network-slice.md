@@ -31,4 +31,4 @@ DIFF-524 已补 cURL urlencode、对称密钥字节 UI、PDF 加密 toast 与托
 
 ## 未做
 
-产品主窗 Git/设置截图、六套 CSS 皮肤、P7 安装、HTTP 公网大走查与 multipart 文件上传、PDF 表单/签名在合并后的完整保留验收、托盘取色/截图权限对话框手工验收、非对称 Tab 与 Electron 逐控件走查。
+产品主窗 Git/设置截图、六套 CSS 皮肤、P7 安装、HTTP 公网大走查与 multipart 文件上传、PDF 书签/安装镜像大走查、托盘取色/截图权限对话框手工验收、非对称 Tab 与 Electron 逐控件走查（合并页级 AcroForm 保留见 [DIFF-526](526-http-pdf-merge-smoke-p7-slice.md)）。

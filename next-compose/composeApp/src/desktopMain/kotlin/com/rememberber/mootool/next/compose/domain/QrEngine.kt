@@ -18,6 +18,7 @@ import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import javax.imageio.ImageIO
+import kotlin.math.roundToInt
 
 enum class QrErrorCorrection { L, M, Q, H }
 
@@ -36,6 +37,11 @@ object QrEngine {
     private val light = Color.WHITE
 
     fun normalizeSize(size: Int): Int = size.coerceIn(MIN_SIZE, MAX_SIZE)
+
+    fun normalizeSize(size: Double): Int {
+        if (!size.isFinite()) return DEFAULT_SIZE
+        return normalizeSize(size.roundToInt())
+    }
 
     fun generatePng(
         content: String,

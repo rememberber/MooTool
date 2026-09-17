@@ -26,6 +26,12 @@ mootool_evidence_print_run_distributable_hint() {
   echo "# cd ${compose_root} && MOOTOOL_COMPOSE_DATA_DIR=\"\${MOOTOOL_COMPOSE_DATA_DIR}\" ./gradlew :composeApp:runDistributable --offline"
 }
 
+mootool_evidence_print_http_public_smoke_hint() {
+  local compose_root
+  compose_root="$(mootool_evidence_compose_root)"
+  echo "# Optional F09 httpbin/localhost only (default CI skips): MOOTOOL_HTTP_PUBLIC_SMOKE=1 MOOTOOL_HTTP_SMOKE_URL=\"https://httpbin.org/get\" cd ${compose_root} && ./gradlew :composeApp:desktopTest --tests com.rememberber.mootool.next.compose.domain.HttpEngineTest.optionalHttpBinPublicGetSmoke --offline"
+}
+
 mootool_evidence_assert_file() {
   local path="$1"
   local label="$2"

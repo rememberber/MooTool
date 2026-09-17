@@ -1,8 +1,12 @@
 package com.rememberber.mootool.next.compose.domain
 
 import org.apache.pdfbox.Loader
+import org.apache.pdfbox.multipdf.PDFMergerUtility
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException
+import org.apache.pdfbox.pdmodel.fixup.AcroFormDefaultFixup
+import org.apache.pdfbox.pdmodel.fixup.processor.AcroFormOrphanWidgetsProcessor
+import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm
 import org.apache.pdfbox.pdmodel.interactive.form.PDSignatureField
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem
 import org.apache.pdfbox.text.PDFTextStripper
@@ -156,15 +160,21 @@ object PdfEngine {
         try {
             PDDocument().use { destination ->
                 var pageCount = 0
+                val merger = PDFMergerUtility()
                 opened.forEachIndexed { index, document ->
                     if (cancelled()) throw PdfException("cancelled", "Cancelled")
                     val pages = parsePageSelection(sources[index].pages, document.numberOfPages)
                     if (pages.isEmpty()) throw PdfException("empty-pages", "No pages selected")
-                    pages.forEach { destination.importPage(document.getPage(it - 1)) }
+                    PDDocument().use { subset ->
+                        pages.forEach { subset.importPage(document.getPage(it - 1)) }
+                        repairImportedInteractiveForms(subset)
+                        merger.appendDocument(destination, subset)
+                    }
                     pageCount += pages.size
                 }
                 if (pageCount == 0) throw PdfException("empty-pages", "No pages selected")
                 if (cancelled()) throw PdfException("cancelled", "Cancelled")
+                repairImportedInteractiveForms(destination)
                 outputPath.parent?.let { Files.createDirectories(it) }
                 destination.save(outputPath.toFile())
                 return PdfOperationResult(listOf(outputPath.toAbsolutePath().toString()), pageCount)
@@ -201,13 +211,27 @@ object PdfEngine {
 
     private fun writePages(source: PDDocument, pages: List<Int>, outputPath: Path, cancelled: () -> Boolean) {
         PDDocument().use { destination ->
-            pages.forEach { page ->
-                if (cancelled()) throw PdfException("cancelled", "Cancelled")
-                destination.importPage(source.getPage(page - 1))
+            PDDocument().use { subset ->
+                pages.forEach { page ->
+                    if (cancelled()) throw PdfException("cancelled", "Cancelled")
+                    subset.importPage(source.getPage(page - 1))
+                }
+                repairImportedInteractiveForms(subset)
+                PDFMergerUtility().appendDocument(destination, subset)
             }
             if (cancelled()) throw PdfException("cancelled", "Cancelled")
+            repairImportedInteractiveForms(destination)
             destination.save(outputPath.toFile())
         }
+    }
+
+    /** Re-link widget annotations after `importPage` so inspect/merge retain AcroForm fields. */
+    private fun repairImportedInteractiveForms(document: PDDocument) {
+        if (document.documentCatalog.acroForm == null) {
+            document.documentCatalog.acroForm = PDAcroForm(document)
+        }
+        AcroFormOrphanWidgetsProcessor(document).process()
+        AcroFormDefaultFixup(document).apply()
     }
 
     private fun ensurePdf(path: Path) {

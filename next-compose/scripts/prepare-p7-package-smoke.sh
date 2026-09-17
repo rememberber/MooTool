@@ -46,4 +46,9 @@ else
   echo "# Windows MSI / Linux DEB·RPM must be built on those OSes (not verified from macOS smoke)."
 fi
 echo ""
+echo ""
+echo "## Optional F09 public HTTP smoke (not part of default offline gate)"
+echo "# MOOTOOL_HTTP_PUBLIC_SMOKE=1 runs HttpEngineTest.optionalHttpBinPublicGetSmoke (httpbin/localhost allowlist only)."
+echo "# Without network, mark 未测 in docs/acceptance.md — see docs/diff/526-http-pdf-merge-smoke-p7-slice.md."
+echo ""
 echo "OK: smoke checks finished. Record results in docs/acceptance.md; P7 install/sign/notarize still manual."

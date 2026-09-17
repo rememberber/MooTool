@@ -99,6 +99,8 @@ class HttpException(val code: HttpErrorCode, message: String) : Exception(messag
 
 object HttpEngine {
     const val MAX_RESPONSE_BYTES = 10 * 1024 * 1024
+    const val DEFAULT_PUBLIC_SMOKE_URL = "https://httpbin.org/get?source=mootool-next-compose"
+    private val publicSmokeHosts = setOf("httpbin.org", "localhost", "127.0.0.1")
     val BODY_TYPES = listOf(
         "application/json",
         "text/plain",
@@ -330,6 +332,22 @@ object HttpEngine {
         if (tab != HttpResponseTab.Body) return org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_NONE
         val mime = contentTypeFromHeaders(result?.headers.orEmpty())
         return if (mime.isBlank()) org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_NONE else syntaxForMime(mime)
+    }
+
+    /** Only httpbin.org and localhost are allowed for optional public HTTP smoke (see `HttpEngineTest`). */
+    fun isPublicSmokeUrlAllowed(url: String): Boolean {
+        val uri = runCatching { URI(url.trim()) }.getOrNull() ?: return false
+        if (uri.scheme?.lowercase() !in setOf("http", "https")) return false
+        val host = uri.host?.lowercase() ?: return false
+        if (host in publicSmokeHosts) return true
+        return host.endsWith(".httpbin.org")
+    }
+
+    fun resolvePublicSmokeUrl(): String {
+        val configured = System.getenv("MOOTOOL_HTTP_SMOKE_URL")?.trim().orEmpty()
+        val candidate = configured.ifBlank { DEFAULT_PUBLIC_SMOKE_URL }
+        check(isPublicSmokeUrlAllowed(candidate)) { "Public smoke URL not allowlisted: $candidate" }
+        return candidate
     }
 
     fun send(

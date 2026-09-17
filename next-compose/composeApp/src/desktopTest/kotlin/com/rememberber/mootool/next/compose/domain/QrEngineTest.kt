@@ -36,6 +36,7 @@ class QrEngineTest {
     fun normalizesSizeAndRejectsEmptyOrBrokenImages() {
         assertEquals(120, QrEngine.normalizeSize(20))
         assertEquals(360, QrEngine.normalizeSize(360))
+        assertEquals(360, QrEngine.normalizeSize(360.4))
         assertEquals(2000, QrEngine.normalizeSize(9999))
         val empty = assertFailsWith<QrException> { QrEngine.generatePng("  ", 300, QrErrorCorrection.M) }
         assertEquals("empty", empty.code)
