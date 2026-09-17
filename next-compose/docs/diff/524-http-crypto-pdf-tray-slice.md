@@ -34,4 +34,4 @@ DIFF-523 已补 HTTP NUL/`--data-binary`、multipart 响应预览与更新调度
 
 ## 未做
 
-产品主窗 Git/设置截图、六套 CSS 皮肤、P7 安装、HTTP 联网大走查与 multipart 文件上传、PDF 表单/书签/签名、托盘取色/截图权限对话框手工验收、加解密非对称 Tab 大切片。
+产品主窗 Git/设置截图、六套 CSS 皮肤、P7 安装、HTTP 联网大走查与 multipart 文件上传、PDF 表单/书签/签名完整保留验收、托盘取色/截图权限对话框手工验收、加解密非对称 Tab 大切片（公钥还原/密钥状态/PDF 结构探测/HTTP Cookie 本机切片见 [DIFF-525](525-crypto-pdf-http-network-slice.md)）。

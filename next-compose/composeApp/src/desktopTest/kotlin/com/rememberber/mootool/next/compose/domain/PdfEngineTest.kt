@@ -8,6 +8,11 @@ import org.apache.pdfbox.pdmodel.encryption.AccessPermission
 import org.apache.pdfbox.pdmodel.encryption.StandardProtectionPolicy
 import org.apache.pdfbox.pdmodel.font.PDType1Font
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem
+import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm
+import org.apache.pdfbox.pdmodel.interactive.form.PDSignatureField
+import org.apache.pdfbox.pdmodel.interactive.form.PDTextField
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.listDirectoryEntries
@@ -86,6 +91,28 @@ class PdfEngineTest {
     }
 
     @Test
+    fun inspectCountsFormsBookmarksAndSignatureFields() {
+        val directory = Files.createTempDirectory("mootool-pdf-structure-")
+        try {
+            val structured = writeStructuredPdf(directory.resolve("structured.pdf"))
+            val info = PdfEngine.inspect(structured)
+            assertEquals(2, info.formFieldCount)
+            assertEquals(1, info.bookmarkCount)
+            assertEquals(1, info.signatureFieldCount)
+            assertTrue(info.hasSpecialObjects)
+            val split = PdfEngine.split(
+                listOf(PdfEngine.SplitTask(structured.toString(), "1", PdfSplitRule.Odd, ""))
+            )
+            val outputStructure = PdfEngine.analyzeStructure(Path.of(split.outputs[0]))
+            assertEquals(1, PdfEngine.inspect(Path.of(split.outputs[0])).pageCount)
+            assertTrue(outputStructure.formFieldCount + outputStructure.bookmarkCount >= 0)
+        } finally {
+            directory.listDirectoryEntries().forEach { Files.deleteIfExists(it) }
+            Files.deleteIfExists(directory)
+        }
+    }
+
+    @Test
     fun inspectRejectsEncryptedPdfWithStableCode() {
         val directory = Files.createTempDirectory("mootool-pdf-encrypted-")
         try {
@@ -122,6 +149,30 @@ class PdfEngineTest {
             directory.listDirectoryEntries().forEach { Files.deleteIfExists(it) }
             Files.deleteIfExists(directory)
         }
+    }
+
+    private fun writeStructuredPdf(path: Path): Path {
+        PDDocument().use { document ->
+            document.addPage(PDPage(PDRectangle.A4))
+            val outline = PDDocumentOutline()
+            document.documentCatalog.documentOutline = outline
+            PDOutlineItem().also { item ->
+                item.title = "Section"
+                outline.addLast(item)
+            }
+            val acroForm = PDAcroForm(document)
+            document.documentCatalog.acroForm = acroForm
+            PDTextField(acroForm).also { field ->
+                field.partialName = "name"
+                acroForm.fields.add(field)
+            }
+            PDSignatureField(acroForm).also { field ->
+                field.partialName = "sig"
+                acroForm.fields.add(field)
+            }
+            document.save(path.toFile())
+        }
+        return path
     }
 
     private fun writeEncryptedPdf(path: Path): Path {

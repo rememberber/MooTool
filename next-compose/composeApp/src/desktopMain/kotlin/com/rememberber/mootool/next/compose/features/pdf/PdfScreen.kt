@@ -468,6 +468,18 @@ private fun ingestPdfFiles(container: AppContainer, session: PdfSession, files: 
     files.take(remaining).forEach { file ->
         runCatching { PdfEngine.inspect(file.toPath()) }
             .onSuccess { info ->
+                if (info.hasSpecialObjects) {
+                    container.toastInfo(
+                        container.t(
+                            "pdf.structureNotice",
+                            mapOf(
+                                "forms" to info.formFieldCount.toString(),
+                                "bookmarks" to info.bookmarkCount.toString(),
+                                "signatures" to info.signatureFieldCount.toString(),
+                            )
+                        )
+                    )
+                }
                 if (session.tab == PdfTab.Split) {
                     if (session.splitRows.none { it.path == info.path }) {
                         session.splitRows = session.splitRows + PdfSplitRow(

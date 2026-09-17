@@ -8,3 +8,4 @@
 | random | `generates constrained random values` | `CryptoEngineTest.generatesConstrainedRandomValuesAndRejectsBadInput` |
 | rsa-sm2 | RSA/SM2 encrypt/sign tests | `CryptoEngineTest.consumesElectronRsaAndSm2Samples` / `generatesRsaAndSm2RoundTrips` |
 | key-bytes-ui | （Compose UI；Electron 无 vitest） | `CryptoEngineTest.symmetricKeyUtf8LengthMatchesNormalizationRules` + 对称 Tab `crypto.keyBytes`（[DIFF-524](../diff/524-http-crypto-pdf-tray-slice.md)） |
+| derive-public | （Electron 无独立 vitest；feature-parity 公钥还原） | `CryptoEngineTest.derivesPublicKeyFromPrivateForElectronSamplesAndRoundTrip`（[DIFF-525](../diff/525-crypto-pdf-http-network-slice.md)） |

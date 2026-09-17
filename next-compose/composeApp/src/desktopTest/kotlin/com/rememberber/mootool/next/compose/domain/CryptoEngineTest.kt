@@ -91,6 +91,42 @@ class CryptoEngineTest {
     }
 
     @Test
+    fun derivesPublicKeyFromPrivateForElectronSamplesAndRoundTrip() {
+        val rsaPublic = "MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAJxmdw437OuNcTuW2QmB3cZe5qFnn9z0BgzoKsxkFaIimxjbAUe92yHU/N4xIB4cNWooh5FkbeOmF1u0Q8fALskCAwEAAQ=="
+        val rsaPrivate = "MIIBOgIBAAJBAJxmdw437OuNcTuW2QmB3cZe5qFnn9z0BgzoKsxkFaIimxjbAUe92yHU/N4xIB4cNWooh5FkbeOmF1u0Q8fALskCAwEAAQJAeFa24G/TkeLA73LACHquI8Y9eo97B82TIjc5Rw7zPk5iKF1lRt0cKMQM64Ox8W/Hk1XS7A8qWSIwpyhGBw4miQIhAM6CrqTJK2hr0XQFEJsiNnRwa2tqT6aJMeWTDHgoz+A/AiEAweGLgFhXmnkCtB1Ix+PGMQ3lfTXib4YsDhPJXfI8rvcCIQCzjz17Ws+7g8QjNSQzP5RJulYsl8uZ6kDQdQOqlxHo0QIgR0N4/Eb8hEoAhWXSL674VWWPOdPJlEaUAOSi+oYkagcCIAkMXn057THqjyJM0dW8S++lHItKv7XtirCJzQTpXRp7"
+        val derivedRsa = CryptoEngine.deriveAsymmetricPublicKey(AsymmetricAlgorithm.RSA, rsaPrivate)
+        assertEquals(
+            "moo",
+            CryptoEngine.asymmetricDecrypt(
+                AsymmetricAlgorithm.RSA,
+                CryptoEngine.asymmetricEncrypt(AsymmetricAlgorithm.RSA, "moo", derivedRsa),
+                rsaPrivate
+            )
+        )
+        val sm2Public = "BKIlVD33k3zQPoXMFwbYCNlxMYbXkWuGTH95zjETCIP+sRSvl4776aFm2OQbJZUq/KGws7Og5M0kijj+AKlIPrM="
+        val sm2Private = "gLwDampri1xBKCTE3NiipyOneBMZ/QxntuSCNoOYlqk="
+        val derivedSm2 = CryptoEngine.deriveAsymmetricPublicKey(AsymmetricAlgorithm.SM2, sm2Private)
+        assertEquals(
+            "moo",
+            CryptoEngine.asymmetricDecrypt(
+                AsymmetricAlgorithm.SM2,
+                CryptoEngine.asymmetricEncrypt(AsymmetricAlgorithm.SM2, "moo", derivedSm2),
+                sm2Private
+            )
+        )
+        assertTrue(CryptoEngine.verifySignature(AsymmetricAlgorithm.SM2, "moo", "MEQCIBsBrgCe5e7uTx9g5lvc8/d+IMqKc4IZ8F6yQBpAEMytAiAwm32c1OVmneoL/li0abLEaB29bXHvK7TMHwas2UnL3w==", derivedSm2))
+        assertTrue(CryptoEngine.verifySignature(AsymmetricAlgorithm.RSA, "moo", "DkPQD820mMKcoivVjSKhQkYeNhu+PBmk4uF/+C3Ua+wtCt9jWB9vOLMaU/bIJ1cD3hBFuk+MjMcxCvCkGZss3Q==", derivedRsa))
+        val rsaStatus = CryptoEngine.asymmetricKeyStatus(AsymmetricAlgorithm.RSA, rsaPublic, rsaPrivate)
+        assertTrue(rsaStatus.publicReady)
+        assertTrue(rsaStatus.privateReady)
+        assertEquals(512, rsaStatus.rsaModulusBits)
+        val generated = CryptoEngine.generateAsymmetricKeyPair(AsymmetricAlgorithm.RSA, 512)
+        val restored = CryptoEngine.deriveAsymmetricPublicKey(AsymmetricAlgorithm.RSA, generated.privateKey)
+        val cipher = CryptoEngine.asymmetricEncrypt(AsymmetricAlgorithm.RSA, "moo", restored)
+        assertEquals("moo", CryptoEngine.asymmetricDecrypt(AsymmetricAlgorithm.RSA, cipher, generated.privateKey))
+    }
+
+    @Test
     fun symmetricKeyUtf8LengthMatchesNormalizationRules() {
         assertTrue(CryptoEngine.symmetricKeyUtf8Length(SymmetricAlgorithm.AES, CryptoEngine.SAMPLE_KEY).valid)
         assertEquals(16, CryptoEngine.symmetricKeyUtf8Length(SymmetricAlgorithm.AES, CryptoEngine.SAMPLE_KEY).current)

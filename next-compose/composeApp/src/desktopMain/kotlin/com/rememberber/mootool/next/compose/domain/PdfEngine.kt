@@ -3,6 +3,8 @@ package com.rememberber.mootool.next.compose.domain
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException
+import org.apache.pdfbox.pdmodel.interactive.form.PDSignatureField
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem
 import org.apache.pdfbox.text.PDFTextStripper
 import java.nio.file.Files
 import java.nio.file.Path
@@ -23,8 +25,14 @@ data class PdfFileInfo(
     val path: String,
     val name: String,
     val size: Long,
-    val pageCount: Int
-)
+    val pageCount: Int,
+    val formFieldCount: Int = 0,
+    val bookmarkCount: Int = 0,
+    val signatureFieldCount: Int = 0,
+) {
+    val hasSpecialObjects: Boolean
+        get() = formFieldCount > 0 || bookmarkCount > 0 || signatureFieldCount > 0
+}
 
 data class PdfOperationResult(
     val outputs: List<String>,
@@ -70,13 +78,36 @@ object PdfEngine {
     fun inspect(path: Path): PdfFileInfo {
         ensurePdf(path)
         return open(path).use { document ->
+            val structure = analyzeStructure(document)
             PdfFileInfo(
                 path = path.toAbsolutePath().toString(),
                 name = path.name,
                 size = path.fileSize(),
-                pageCount = document.numberOfPages
+                pageCount = document.numberOfPages,
+                formFieldCount = structure.formFieldCount,
+                bookmarkCount = structure.bookmarkCount,
+                signatureFieldCount = structure.signatureFieldCount,
             )
         }
+    }
+
+    fun analyzeStructure(path: Path): PdfStructureSummary = open(path).use { analyzeStructure(it) }
+
+    data class PdfStructureSummary(
+        val formFieldCount: Int,
+        val bookmarkCount: Int,
+        val signatureFieldCount: Int,
+    )
+
+    internal fun analyzeStructure(document: PDDocument): PdfStructureSummary {
+        val acroForm = document.documentCatalog.acroForm
+        val fields = acroForm?.fields.orEmpty()
+        val signatureFields = fields.count { it is PDSignatureField }
+        return PdfStructureSummary(
+            formFieldCount = fields.size,
+            bookmarkCount = countBookmarks(document.documentCatalog.documentOutline?.firstChild),
+            signatureFieldCount = signatureFields,
+        )
     }
 
     fun splitOutputPath(source: Path): Path =
@@ -182,6 +213,17 @@ object PdfEngine {
     private fun ensurePdf(path: Path) {
         if (!path.exists()) throw PdfException("missing", "File not found")
         if (path.extension.lowercase() != "pdf") throw PdfException("not-pdf", "Only PDF files are supported")
+    }
+
+    private fun countBookmarks(outline: PDOutlineItem?): Int {
+        var item: PDOutlineItem? = outline
+        var count = 0
+        while (item != null) {
+            count++
+            count += countBookmarks(item.firstChild)
+            item = item.nextSibling
+        }
+        return count
     }
 
     private fun open(path: Path): PDDocument {

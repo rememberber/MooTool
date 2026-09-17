@@ -271,6 +271,49 @@ class HttpEngineTest {
     }
 
     @Test
+    fun localServerEchoesRequestCookiesAndResponseSetCookie() {
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.executor = Executors.newCachedThreadPool()
+        server.createContext("/cookie") { exchange ->
+            val incoming = exchange.requestHeaders.getFirst("Cookie").orEmpty()
+            exchange.responseHeaders.add("Set-Cookie", "sid=abc; Path=/")
+            exchange.responseHeaders.add("Set-Cookie", "mode=dark; Path=/")
+            val payload = "cookie=$incoming"
+            val bytes = payload.toByteArray()
+            exchange.sendResponseHeaders(200, bytes.size.toLong())
+            exchange.responseBody.write(bytes)
+            exchange.close()
+        }
+        server.start()
+        try {
+            val origin = "http://127.0.0.1:${server.address.port}"
+            val result = HttpEngine.send(
+                HttpEngine.emptyDraft().copy(
+                    url = "$origin/cookie",
+                    cookies = listOf(
+                        HttpEngine.cookie("token", "secret"),
+                        HttpEngine.cookie("off", "x", enabled = false),
+                    ),
+                ),
+                requestId = "cookie-echo",
+                timeoutMs = 5_000,
+            )
+            assertEquals(200, result.status)
+            assertTrue(result.body.contains("token=secret"))
+            assertFalse(result.body.contains("off="))
+            assertTrue(result.cookies.contains("sid=abc"))
+            assertTrue(result.cookies.contains("mode=dark"))
+            val roundTrip = HttpEngine.parseCurl(HttpEngine.toCurl(HttpEngine.emptyDraft().copy(
+                url = "$origin/cookie",
+                cookies = listOf(HttpEngine.cookie("token", "secret")),
+            )))
+            assertEquals("token=secret", roundTrip.cookies.first().let { "${it.name}=${it.value}" })
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
     fun postBodyWithEmbeddedNullBytesRoundTripsOnLocalServer() {
         val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
         server.executor = Executors.newCachedThreadPool()

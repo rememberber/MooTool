@@ -56,6 +56,14 @@ data class SymmetricKeyUtf8Length(val current: Int, val required: Int) {
     val valid: Boolean get() = current == required
 }
 
+data class AsymmetricKeyStatus(
+    val publicReady: Boolean,
+    val privateReady: Boolean,
+    val rsaModulusBits: Int? = null,
+    val sm2PublicBytes: Int? = null,
+    val sm2PrivateBytes: Int? = null,
+)
+
 class CryptoException(val code: String, message: String) : RuntimeException(message)
 
 object CryptoEngine {
@@ -166,6 +174,60 @@ object CryptoEngine {
 
     fun generateAsymmetricKeyPair(algorithm: AsymmetricAlgorithm, rsaBits: Int = RSA_BITS): AsymmetricKeyPair {
         return if (algorithm == AsymmetricAlgorithm.SM2) generateSm2Pair() else generateRsaPair(rsaBits)
+    }
+
+    /** 从 PKCS#1/PKCS#8 RSA 或 SM2 私钥标量还原 Electron/Java 同款 Base64 公钥（feature-parity「公钥还原」）。 */
+    fun deriveAsymmetricPublicKey(algorithm: AsymmetricAlgorithm, privateKey: String): String {
+        return when (algorithm) {
+            AsymmetricAlgorithm.RSA -> {
+                val key = parseRsaPrivate(privateKey) as RSAPrivateCrtKey
+                encodeBase64(RSAPublicKey(key.modulus, key.publicExponent).encoded)
+            }
+            AsymmetricAlgorithm.SM2 -> {
+                val privateParams = parseSm2Private(privateKey)
+                val spec = sm2Spec()
+                val domain = ECDomainParameters(spec.curve, spec.g, spec.n, spec.h, spec.seed)
+                val point = domain.g.multiply(privateParams.d).normalize()
+                encodeBase64(point.getEncoded(false))
+            }
+        }
+    }
+
+    fun asymmetricKeyStatus(
+        algorithm: AsymmetricAlgorithm,
+        publicKey: String,
+        privateKey: String,
+    ): AsymmetricKeyStatus {
+        val publicReady = publicKey.isNotBlank() && runCatching {
+            if (algorithm == AsymmetricAlgorithm.RSA) parseRsaPublic(publicKey) else parseSm2Public(publicKey)
+        }.isSuccess
+        val privateReady = privateKey.isNotBlank() && runCatching {
+            if (algorithm == AsymmetricAlgorithm.RSA) parseRsaPrivate(privateKey) else parseSm2Private(privateKey)
+        }.isSuccess
+        val rsaBits = if (algorithm == AsymmetricAlgorithm.RSA && publicReady) {
+            runCatching { (parseRsaPublic(publicKey) as JcaRsaPublicKey).modulus.bitLength() }.getOrNull()
+        } else if (algorithm == AsymmetricAlgorithm.RSA && privateReady) {
+            runCatching { (parseRsaPrivate(privateKey) as RSAPrivateCrtKey).modulus.bitLength() }.getOrNull()
+        } else {
+            null
+        }
+        val sm2PublicBytes = if (algorithm == AsymmetricAlgorithm.SM2 && publicKey.isNotBlank()) {
+            runCatching { parseBase64(publicKey).size }.getOrNull()
+        } else {
+            null
+        }
+        val sm2PrivateBytes = if (algorithm == AsymmetricAlgorithm.SM2 && privateKey.isNotBlank()) {
+            runCatching { parseBase64(privateKey).size }.getOrNull()
+        } else {
+            null
+        }
+        return AsymmetricKeyStatus(
+            publicReady = publicReady,
+            privateReady = privateReady,
+            rsaModulusBits = rsaBits,
+            sm2PublicBytes = sm2PublicBytes,
+            sm2PrivateBytes = sm2PrivateBytes,
+        )
     }
 
     fun asymmetricEncrypt(algorithm: AsymmetricAlgorithm, content: String, publicKey: String): String {

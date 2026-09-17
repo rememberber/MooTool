@@ -315,6 +315,70 @@ private fun AsymmetricPanel(
                     }
                 }
             )
+            MooButton(
+                container.t("crypto.restorePublicKey"),
+                p5Toolbar = true,
+                enabled = session.privateKey.isNotBlank() && !session.asymBusy,
+                onClick = {
+                    session.error = ""
+                    runCatching {
+                        CryptoEngine.deriveAsymmetricPublicKey(session.asymAlgorithm, session.privateKey)
+                    }.onSuccess { restored ->
+                        session.publicKey = restored
+                        session.notice = container.t("crypto.publicKeyRestored")
+                        container.toastSuccess(container.t("crypto.publicKeyRestored"))
+                    }.onFailure { error ->
+                        session.notice = ""
+                        session.error = messageFor(container, error)
+                        container.toastError(session.error)
+                    }
+                    onChanged()
+                }
+            )
+        }
+        val asymKeys = CryptoEngine.asymmetricKeyStatus(session.asymAlgorithm, session.publicKey, session.privateKey)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                container.t(if (asymKeys.publicReady) "crypto.asymPublicReady" else "crypto.asymPublicMissing"),
+                color = if (asymKeys.publicReady) colors.textMuted else colors.warning,
+                fontSize = 10.sp
+            )
+            Text(
+                container.t(if (asymKeys.privateReady) "crypto.asymPrivateReady" else "crypto.asymPrivateMissing"),
+                color = if (asymKeys.privateReady) colors.textMuted else colors.warning,
+                fontSize = 10.sp
+            )
+            when (session.asymAlgorithm) {
+                AsymmetricAlgorithm.RSA -> asymKeys.rsaModulusBits?.let { bits ->
+                    Text(
+                        container.t("crypto.rsaBits", mapOf("bits" to bits.toString())),
+                        color = colors.textMuted,
+                        fontSize = 10.sp
+                    )
+                }
+                AsymmetricAlgorithm.SM2 -> {
+                    if (asymKeys.sm2PublicBytes != null) {
+                        Text(
+                            container.t(
+                                "crypto.sm2KeyBytes",
+                                mapOf("label" to "pub", "current" to asymKeys.sm2PublicBytes.toString(), "required" to "64/65")
+                            ),
+                            color = if (asymKeys.publicReady) colors.textMuted else colors.warning,
+                            fontSize = 10.sp
+                        )
+                    }
+                    if (asymKeys.sm2PrivateBytes != null) {
+                        Text(
+                            container.t(
+                                "crypto.sm2KeyBytes",
+                                mapOf("label" to "priv", "current" to asymKeys.sm2PrivateBytes.toString(), "required" to "32")
+                            ),
+                            color = if (asymKeys.privateReady) colors.textMuted else colors.warning,
+                            fontSize = 10.sp
+                        )
+                    }
+                }
+            }
         }
         IoTwoPaneRow(
             container = container,
