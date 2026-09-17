@@ -1362,6 +1362,30 @@ private fun InspectorPane(
                 Text("×", color = colors.textMuted, fontSize = 14.sp)
             }
         }
+        val inspectorText = session.editor.text
+        val structureAnalysis = remember(inspectorText, session.editor.revision) {
+            JsonEngine.analyzeStructure(inspectorText, translator)
+        }
+        val structureDuplicates = remember(
+            inspectorText,
+            session.editor.revision,
+            session.formatOptions.ignoreCase,
+        ) {
+            jsonInspectorDuplicateKeys(inspectorText, session.formatOptions.ignoreCase)
+        }
+        MooCard(Modifier.fillMaxWidth()) {
+            Text(container.t("json.panel.structure"), color = colors.textPrimary, fontSize = 12.sp)
+            JsonInspectorStructurePanel(
+                analysis = structureAnalysis,
+                duplicates = structureDuplicates,
+                rootTypeLabel = container.t("json.analysis.rootType"),
+                nodesLabel = container.t("json.analysis.nodes"),
+                keysLabel = container.t("json.analysis.keys"),
+                maxDepthLabel = container.t("json.analysis.maxDepth"),
+                duplicatesLabel = container.t("json.analysis.duplicates"),
+                utf8Label = container.t("json.analysis.utf8"),
+            )
+        }
         MooCard(Modifier.fillMaxWidth()) {
         Text(container.t("json.panel.format"), color = colors.textPrimary, fontSize = 12.sp)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

@@ -52,15 +52,15 @@ object JsonEngine {
         }
         return try {
             val node = parsePreserving(input, t)
-            val analysis = summarizeStructure(node)
+            val metrics = summarizeStructure(node)
             JsonStatus(
                 JsonStatus.Kind.Valid,
                 t.t(
                     "json.valid.summary",
                     mapOf(
-                        "type" to analysis.rootType,
-                        "nodes" to analysis.nodes.toString(),
-                        "depth" to analysis.maxDepth.toString(),
+                        "type" to metrics.rootType,
+                        "nodes" to metrics.nodes.toString(),
+                        "depth" to metrics.maxDepth.toString(),
                     ),
                 ),
             )
@@ -103,13 +103,27 @@ object JsonEngine {
     fun analyzeStructure(input: String, t: JsonTranslator): JsonAnalysis? {
         if (input.isBlank()) return null
         return try {
-            summarizeStructure(parsePreserving(input, t))
+            val metrics = summarizeStructure(parsePreserving(input, t))
+            JsonAnalysis(
+                metrics.rootType,
+                metrics.nodes,
+                metrics.keys,
+                metrics.maxDepth,
+                input.toByteArray(Charsets.UTF_8).size,
+            )
         } catch (_: Exception) {
             null
         }
     }
 
-    private fun summarizeStructure(node: JsonNode): JsonAnalysis {
+    private data class StructureMetrics(
+        val rootType: String,
+        val nodes: Int,
+        val keys: Int,
+        val maxDepth: Int,
+    )
+
+    private fun summarizeStructure(node: JsonNode): StructureMetrics {
         var nodes = 0
         var keys = 0
         var maxDepth = 0
@@ -125,7 +139,7 @@ object JsonEngine {
             }
         }
         visit(node, 0)
-        return JsonAnalysis(describeType(node), nodes, keys, maxDepth)
+        return StructureMetrics(describeType(node), nodes, keys, maxDepth)
     }
 
     fun escapeJsonString(input: String): String = mapper.writeValueAsString(input)

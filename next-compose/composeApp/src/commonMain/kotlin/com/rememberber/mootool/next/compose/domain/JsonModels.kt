@@ -15,6 +15,8 @@ data class JsonAnalysis(
     val nodes: Int,
     val keys: Int,
     val maxDepth: Int,
+    /** UTF-8 字节长度（对齐 Tauri `analyzeJson.bytes`）。 */
+    val bytes: Int,
 )
 
 data class JsonFormatOptions(

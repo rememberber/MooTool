@@ -6,6 +6,7 @@
 | escape-roundtrip | 同上 | 同上 | `JsonEngineTest.escapesAndRestoresJsonStrings` |
 | validate-idle-valid-error | 同上 | 同上 | `JsonEngineTest.reportsIdleValidAndInvalid` |
 | validate-structure-summary | next-tauri | `next-tauri/src/features/json/jsonTools.test.ts` `validates input and reports structural metrics` | `JsonEngineTest.analyzeStructure_matchesTauriFixture`（[DIFF-487](../diff/487-json-validate-structure-summary.md)） |
+| inspector-structure-panel | next-tauri | `JsonToolSurface.tsx` `json-analysis`（`analyzeJson` + `findDuplicateJsonKeys` + UTF-8） | `JsonInspectorStructureTest` + 检查器 `JsonInspectorStructurePanel`（[DIFF-488](../diff/488-json-inspector-structure-panel.md)） |
 | sort-duplicate-keys | 同上 | 同上 | `JsonEngineTest.sortsKeysAndDetectsDuplicates` |
 | xml-roundtrip | 同上 | 同上 | `JsonEngineTest.mirrorsElectronJsonToolsVitestBasics` / `convertsJsonAndXml` |
 | path-query-enumerate | 同上 | 同上 | `mirrorsElectronJsonToolsVitestBasics` / `queriesAndEnumeratesPaths` |

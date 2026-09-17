@@ -64,7 +64,7 @@ class JsonEngineTest {
     @Test
     fun analyzeStructure_matchesTauriFixture() {
         val analysis = JsonEngine.analyzeStructure("""{"items":[1,2]}""", t)
-        assertEquals(JsonAnalysis("Object", 4, 1, 2), analysis)
+        assertEquals(JsonAnalysis("Object", 4, 1, 2, 15), analysis)
         assertEquals(
             "valid Object · 4 nodes · depth 2",
             JsonEngine.validate("""{"items":[1,2]}""", t).message,
