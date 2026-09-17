@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -77,6 +78,8 @@ fun Sidebar(container: AppContainer, collapsed: Boolean, onToggle: () -> Unit) {
     val active by container.activeTool.collectAsState()
     val settings by container.settings.collectAsState()
     val hidden = settings.layout.hiddenNavigationToolIds.toSet()
+    val compactNav = settings.layout.compactNavigation
+    val showSeparators = settings.layout.showSeparators
     val scroll = rememberScrollState()
     Box(Modifier.fillMaxHeight()) {
     Column(
@@ -124,45 +127,53 @@ fun Sidebar(container: AppContainer, collapsed: Boolean, onToggle: () -> Unit) {
             Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(horizontal = 8.dp, vertical = 4.dp)) {
                 NavItem(container, ToolId.Mootool, collapsed, active == ToolId.Mootool && !container.showSettings.value)
                 if (settings.layout.showRecent && settings.workspace.recentToolIds.isNotEmpty()) {
-                    GroupLabel(container.t("app.nav.recent"), collapsed)
-                    settings.workspace.recentToolIds.mapNotNull { ToolId.fromId(it) }
-                        .filter { it != ToolId.Mootool }
-                        .forEach { id ->
-                        NavItem(container, id, collapsed, active == id)
+                    NavigationToolGroup(showSeparators, compactNav) {
+                        GroupLabel(container.t("app.nav.recent"), collapsed, compactNav)
+                        settings.workspace.recentToolIds.mapNotNull { ToolId.fromId(it) }
+                            .filter { it != ToolId.Mootool }
+                            .forEach { id ->
+                                NavItem(container, id, collapsed, active == id)
+                            }
                     }
                 }
                 settings.layout.customGroups.forEach { group ->
                     val items = group.toolIds.mapNotNull { ToolId.fromId(it) }.filter { it.id !in hidden }
                     if (items.isEmpty()) return@forEach
-                    if (settings.layout.showSeparators) GroupLabel(group.name, collapsed)
-                    items.forEach { id ->
-                        NavItem(container, id, collapsed, active == id && !container.showSettings.value)
+                    NavigationToolGroup(showSeparators, compactNav) {
+                        if (showSeparators) GroupLabel(group.name, collapsed, compactNav)
+                        items.forEach { id ->
+                            NavItem(container, id, collapsed, active == id && !container.showSettings.value)
+                        }
                     }
                 }
                 if (
                     settings.layout.customGroups.isNotEmpty() &&
-                    settings.layout.showSeparators &&
+                    showSeparators &&
                     NavigationToolVisibility.visibleNavigationToolCount(hidden) > 0
                 ) {
-                    GroupLabel(container.t("app.group.all"), collapsed)
+                    GroupLabel(container.t("app.group.all"), collapsed, compactNav)
                 }
                 ToolRegistry.groups.forEach { group ->
                     val items = group.toolIds.filter { it.id !in hidden }
                     if (items.isEmpty()) return@forEach
                     if (settings.layout.navigationStyle == "grouped" && !collapsed) {
-                        Column(
-                            Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(MooTheme.dimens.radius))
-                                .background(colors.surfaceSubtle).padding(6.dp)
-                        ) {
-                            if (settings.layout.showSeparators) GroupLabel(container.t(group.titleKey), collapsed)
-                            items.forEach { id ->
-                                NavItem(container, id, collapsed, active == id && !container.showSettings.value)
+                        NavigationToolGroup(showSeparators, compactNav) {
+                            Column(
+                                Modifier.fillMaxWidth().clip(RoundedCornerShape(MooTheme.dimens.radius))
+                                    .background(colors.surfaceSubtle).padding(6.dp)
+                            ) {
+                                if (showSeparators) GroupLabel(container.t(group.titleKey), collapsed, compactNav)
+                                items.forEach { id ->
+                                    NavItem(container, id, collapsed, active == id && !container.showSettings.value)
+                                }
                             }
                         }
                     } else {
-                        if (settings.layout.showSeparators) GroupLabel(container.t(group.titleKey), collapsed)
-                        items.forEach { id ->
-                            NavItem(container, id, collapsed, active == id && !container.showSettings.value)
+                        NavigationToolGroup(showSeparators, compactNav) {
+                            if (showSeparators) GroupLabel(container.t(group.titleKey), collapsed, compactNav)
+                            items.forEach { id ->
+                                NavItem(container, id, collapsed, active == id && !container.showSettings.value)
+                            }
                         }
                     }
                 }
@@ -173,10 +184,10 @@ fun Sidebar(container: AppContainer, collapsed: Boolean, onToggle: () -> Unit) {
             LanguageRow(container, collapsed)
             if (collapsed) {
                 MooTooltip(container.t("app.nav.settings"), enabled = true) {
-                    MooButton(container.t("app.nav.settings"), onClick = { container.openSettings(true) })
+                    MooButton(container.t("app.nav.settings"), dense = compactNav, onClick = { container.openSettings(true) })
                 }
             } else {
-                MooButton(container.t("app.nav.settings"), onClick = { container.openSettings(true) })
+                MooButton(container.t("app.nav.settings"), dense = compactNav, onClick = { container.openSettings(true) })
             }
         }
     }
@@ -213,16 +224,59 @@ fun Sidebar(container: AppContainer, collapsed: Boolean, onToggle: () -> Unit) {
 }
 
 @Composable
-private fun GroupLabel(text: String, collapsed: Boolean) {
+private fun NavigationToolGroup(
+    showSeparators: Boolean,
+    compactNavigation: Boolean,
+    content: @Composable () -> Unit
+) {
+    val colors = MooTheme.colors
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .then(
+                if (compactNavigation) {
+                    Modifier.padding(top = LayoutPolicy.navigationGroupTopPaddingDp(true).dp)
+                } else {
+                    Modifier
+                }
+            )
+            .then(
+                if (showSeparators) {
+                    Modifier
+                        .padding(bottom = 12.dp)
+                        .drawBehind {
+                            val y = size.height - 0.5f
+                            drawLine(
+                                color = colors.borderSoft,
+                                start = Offset(0f, y),
+                                end = Offset(size.width, y),
+                                strokeWidth = 1.dp.toPx()
+                            )
+                        }
+                } else {
+                    Modifier
+                }
+            )
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun GroupLabel(text: String, collapsed: Boolean, compactNavigation: Boolean) {
     if (collapsed) {
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(if (compactNavigation) 4.dp else 8.dp))
         return
     }
     Text(
         text,
         color = MooTheme.colors.textMuted,
         fontSize = 11.sp,
-        modifier = Modifier.padding(top = 10.dp, bottom = 4.dp, start = 6.dp)
+        modifier = Modifier.padding(
+            top = if (compactNavigation) 0.dp else 2.dp,
+            bottom = if (compactNavigation) 2.dp else 4.dp,
+            start = 6.dp
+        )
     )
 }
 
@@ -232,6 +286,9 @@ private fun NavItem(container: AppContainer, id: ToolId, collapsed: Boolean, sel
     val colors = MooTheme.colors
     val settings = container.settings.value
     val compact = settings.layout.compactNavigation
+    val navFontSize = LayoutPolicy.navigationItemFontSp(compact).sp
+    val navMinHeight = LayoutPolicy.navigationItemMinHeightDp(compact).dp
+    val navVerticalPadding = LayoutPolicy.navigationItemVerticalPaddingDp(compact).dp
     val card = settings.layout.navigationStyle == "card"
     val label = container.t(tool.titleKey)
     val detached by container.sessionManager.detached.collectAsState()
@@ -259,6 +316,7 @@ private fun NavItem(container: AppContainer, id: ToolId, collapsed: Boolean, sel
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .defaultMinSize(minHeight = navMinHeight)
             .padding(vertical = if (compact) 1.dp else 2.dp)
             .mooFocusOutline(focused, shape)
             .clip(shape)
@@ -287,7 +345,7 @@ private fun NavItem(container: AppContainer, id: ToolId, collapsed: Boolean, sel
                 interactionSource = interaction,
                 indication = LocalIndication.current
             ) { container.openTool(id) }
-            .padding(horizontal = 8.dp, vertical = if (compact) 4.dp else 8.dp),
+            .padding(horizontal = 8.dp, vertical = navVerticalPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (selected && (colors.styleId == "smartisan" || colors.styleId == "miui-v5")) {
@@ -300,7 +358,7 @@ private fun NavItem(container: AppContainer, id: ToolId, collapsed: Boolean, sel
             Text(
                 label,
                 color = if (selected) colors.navSelectedContent() else colors.textPrimary,
-                fontSize = 13.sp,
+                fontSize = navFontSize,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                 modifier = Modifier.weight(1f)
             )

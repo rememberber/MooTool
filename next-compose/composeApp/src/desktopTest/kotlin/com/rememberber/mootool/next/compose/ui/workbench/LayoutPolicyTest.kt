@@ -42,6 +42,16 @@ class LayoutPolicyTest {
     }
 
     @Test
+    fun compactNavigationDensityMatchesElectronShell() {
+        assertEquals(12f, LayoutPolicy.navigationItemFontSp(compactNavigation = true))
+        assertEquals(13f, LayoutPolicy.navigationItemFontSp(compactNavigation = false))
+        assertEquals(30f, LayoutPolicy.navigationItemMinHeightDp(compactNavigation = true))
+        assertEquals(34f, LayoutPolicy.navigationItemMinHeightDp(compactNavigation = false))
+        assertEquals(12, LayoutPolicy.navigationGroupTopPaddingDp(compactNavigation = true))
+        assertEquals(10, LayoutPolicy.navigationGroupTopPaddingDp(compactNavigation = false))
+    }
+
+    @Test
     fun compactAuxShowsOnePanelAtATime() {
         assertEquals("vault", LayoutPolicy.toggleAux("", "vault"))
         assertEquals("", LayoutPolicy.toggleAux("vault", "vault"))

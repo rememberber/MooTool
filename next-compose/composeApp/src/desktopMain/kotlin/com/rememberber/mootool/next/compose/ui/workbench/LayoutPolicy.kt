@@ -36,4 +36,14 @@ object LayoutPolicy {
 
     fun showReplace(compact: Boolean, compactAux: String, replaceOpen: Boolean): Boolean =
         if (compact) compactAux == "replace" else replaceOpen
+
+    /** Electron `.app-shell--compact-nav .tool-button` / `.recent-item` (min-height 30, font -1sp). */
+    fun navigationItemFontSp(compactNavigation: Boolean): Float = if (compactNavigation) 12f else 13f
+
+    fun navigationItemMinHeightDp(compactNavigation: Boolean): Float = if (compactNavigation) 30f else 34f
+
+    /** Electron `.app-shell--compact-nav .tool-group { margin-top: 12px; gap: 1px }`. */
+    fun navigationGroupTopPaddingDp(compactNavigation: Boolean): Int = if (compactNavigation) 12 else 10
+
+    fun navigationItemVerticalPaddingDp(compactNavigation: Boolean): Int = if (compactNavigation) 4 else 8
 }
