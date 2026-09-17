@@ -11,4 +11,11 @@ object HttpRequestPresentation {
     ): HttpResponseResult? = HttpResponsePresentation.usableResponse(current, previous)
 
     fun canSend(urlTrimmed: String, sending: Boolean): Boolean = urlTrimmed.isNotBlank() && !sending
+
+    fun runSend(
+        draft: HttpRequestDraft,
+        requestId: String,
+        timeoutMs: Int,
+        proxy: HttpProxyConfig = HttpProxyConfig(),
+    ): HttpResponseResult = HttpEngine.send(draft, requestId, timeoutMs, proxy)
 }

@@ -1,5 +1,7 @@
 package com.rememberber.mootool.next.compose.domain
 
+import java.nio.file.Path
+
 /** F24 任务列表/拆分合并守卫（可单测，对齐 Electron PDF 工具栏启用条件）。 */
 object PdfWiringPresentation {
     fun taskCount(tab: PdfTab, splitCount: Int, mergeCount: Int): Int =
@@ -20,4 +22,15 @@ object PdfWiringPresentation {
     fun canStartSplit(busy: Boolean, selectedCount: Int): Boolean = !busy && selectedCount > 0
 
     fun canStartMerge(busy: Boolean, selectedCount: Int): Boolean = !busy && selectedCount >= 2
+
+    sealed interface InspectOutcome {
+        data class Success(val info: PdfFileInfo) : InspectOutcome
+        data class Failure(val error: Throwable) : InspectOutcome
+    }
+
+    fun inspectFile(path: Path): InspectOutcome =
+        runCatching { PdfEngine.inspect(path) }.fold(
+            onSuccess = { InspectOutcome.Success(it) },
+            onFailure = { InspectOutcome.Failure(it) },
+        )
 }

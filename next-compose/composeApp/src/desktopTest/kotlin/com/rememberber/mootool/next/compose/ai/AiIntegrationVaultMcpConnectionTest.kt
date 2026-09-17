@@ -119,4 +119,56 @@ class AiIntegrationVaultMcpConnectionTest {
             productRoot.toFile().deleteRecursively()
         }
     }
+
+    @Test
+    fun subprocessSearchBothVaultKindsInOneAccessPolicy() {
+        val notesRoot = Files.createTempDirectory("mootool-mcp-vault-dual-notes-")
+        val jsonRoot = Files.createTempDirectory("mootool-mcp-vault-dual-json-")
+        val productRoot = Files.createTempDirectory("mootool-mcp-vault-dual-product-")
+        try {
+            notesRoot.resolve("note.md").writeText(
+                "---\ntitle: dual\nsyntax: text/markdown\n---\nnotes vault dual",
+            )
+            jsonRoot.resolve("data.json").writeText("""{"dual":true,"tag":"562"}""")
+            val directories = com.rememberber.mootool.next.compose.app.AppPaths
+                .resolve(productRoot.toString())
+                .also { it.ensureCreated() }
+            val accessFile = McpLaunchResolver.accessFile(directories).also { path ->
+                path.parent.createDirectories()
+                path.writeText(
+                    """{"version":1,"notes":"${notesRoot.toRealPath()}","json":"${jsonRoot.toRealPath()}"}""",
+                )
+            }
+            val launch = desktopTestMcpLaunch(accessFile)
+            val transport = StdioClientTransport(
+                ServerParameters.builder(launch.command).args(launch.args).build(),
+                McpJsonDefaults.getMapper(),
+            )
+            McpClient.sync(transport).requestTimeout(Duration.ofSeconds(15)).build().use { client ->
+                client.initialize()
+                val notesSearch = client.callTool(
+                    McpSchema.CallToolRequest.builder()
+                        .name("mootool_notes_search")
+                        .arguments(mapOf("query" to "dual", "limit" to 5, "offset" to 0))
+                        .build(),
+                )
+                assertFalse(notesSearch.isError)
+                val jsonSearch = client.callTool(
+                    McpSchema.CallToolRequest.builder()
+                        .name("mootool_json_documents_search")
+                        .arguments(mapOf("query" to "562", "limit" to 5, "offset" to 0))
+                        .build(),
+                )
+                assertFalse(jsonSearch.isError)
+                val jsonText = jsonSearch.content.firstOrNull()?.let {
+                    if (it is McpSchema.TextContent) it.text else null
+                } ?: ""
+                assertTrue(jsonText.contains("data.json"))
+            }
+        } finally {
+            notesRoot.toFile().deleteRecursively()
+            jsonRoot.toFile().deleteRecursively()
+            productRoot.toFile().deleteRecursively()
+        }
+    }
 }

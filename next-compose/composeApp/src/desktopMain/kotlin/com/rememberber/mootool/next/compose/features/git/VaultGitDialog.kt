@@ -54,6 +54,7 @@ import com.rememberber.mootool.next.compose.domain.GitStatus
 import com.rememberber.mootool.next.compose.domain.DocumentFormatEngine
 import com.rememberber.mootool.next.compose.domain.EditorSettingsLiveApply
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.mooGitVaultRemoteRow
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.icons.GitPanelIcon
 import com.rememberber.mootool.next.compose.ui.icons.GitPanelIconKind
@@ -431,7 +432,11 @@ fun VaultGitDialog(
             }
             if (status.available) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.mooGitVaultRemoteRow(),
+                ) {
                     Text(container.t("git.remote"), color = colors.textMuted, fontSize = 11.sp)
                     MooTextField(remote, { remote = it }, placeholder = container.t("git.remotePlaceholder"), modifier = Modifier.weight(1f))
                     val remoteTrimmed = remote.trim()

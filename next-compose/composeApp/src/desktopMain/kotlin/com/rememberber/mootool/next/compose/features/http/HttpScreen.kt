@@ -319,7 +319,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
         val draft = session.draft()
         val proxy = container.settings.value.network.toHttpProxyConfig()
         scope.launch(Dispatchers.IO) {
-            val result = HttpEngine.send(draft, requestId, timeout, proxy)
+            val result = HttpRequestPresentation.runSend(draft, requestId, timeout, proxy)
             withContext(Dispatchers.Main) {
                 if (!HttpRequestPresentation.shouldApplyResponse(session.requestId, result.requestId)) return@withContext
                 session.sending = false

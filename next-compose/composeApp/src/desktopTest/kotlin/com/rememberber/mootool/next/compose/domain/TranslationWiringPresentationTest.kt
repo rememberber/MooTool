@@ -42,4 +42,19 @@ class TranslationWiringPresentationTest {
         assertEquals(TranslationProvider.Bing, input.preferredProvider)
         assertEquals(1_000, input.timeoutMs)
     }
+
+    @Test
+    fun runTranslateRejectsOverlongTextWithoutNetwork() {
+        val input = TranslationWiringPresentation.buildInput(
+            requestId = "long",
+            text = "x".repeat(TranslationEngine.MAX_TEXT_UNITS + 1),
+            sourceLangWire = "en",
+            targetLangWire = "zh-CN",
+            providerWire = "google",
+            timeoutWire = 15_000,
+        )
+        val result = TranslationWiringPresentation.runTranslate(input)
+        assertEquals(false, result.ok)
+        assertEquals(TranslationErrorCode.INVALID_REQUEST, result.errorCode)
+    }
 }

@@ -23,4 +23,7 @@ object TranslationWiringPresentation {
             timeoutMs = TranslationEngine.clampTimeout(timeoutWire),
         )
     }
+
+    fun runTranslate(input: TranslationInput, proxy: HttpProxyConfig = HttpProxyConfig()): TranslationResult =
+        TranslationEngine.translate(input, proxy)
 }

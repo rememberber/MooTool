@@ -22,4 +22,10 @@ class PdfWiringPresentationTest {
     fun ingestRemainingSlotsRespectsTab() {
         assertEquals(5, PdfWiringPresentation.ingestRemainingSlots(PdfTab.Split, splitCount = 15, mergeCount = 0))
     }
+
+    @Test
+    fun inspectFileFailsForMissingPath() {
+        val outcome = PdfWiringPresentation.inspectFile(java.nio.file.Path.of("/nonexistent/mootool-562.pdf"))
+        assertTrue(outcome is PdfWiringPresentation.InspectOutcome.Failure)
+    }
 }

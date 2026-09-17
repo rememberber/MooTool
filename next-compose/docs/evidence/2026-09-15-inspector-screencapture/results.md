@@ -136,6 +136,7 @@
 | `153-compose-git-merge-flow-hint-tab-focus.png` | Compose 场景 Vault Git merge 进行中状态/冲突 hint +「刷新」钮焦点环（[DIFF-559](../../diff/559-css-f-tools-nav-json-host-translation-p7-slice.md)；非产品主窗 Git 面板） |
 | `154-compose-settings-runtime-category-nav-tab-focus.png` | Compose 场景设置「运行环境」分类导航项（带 glyph）焦点环（[DIFF-560](../../diff/560-f-tools-vault-git-mcp-settings-nav-slice.md)；与 `134` 互补） |
 | `155-compose-settings-about-update-download-tab-focus.png` | Compose 场景设置 · 关于页「下载更新」钮焦点环（[DIFF-561](../../diff/561-mcp-reformat-update-env-net-vault-css-slice.md)；与 `152` 互补） |
+| `156-compose-git-vault-remote-save-tab-focus.png` | Compose 场景 Vault Git remote 行「保存 remote」钮焦点环（[DIFF-562](../../diff/562-vault-mcp-f-tools-http-translate-pdf-git-css-slice.md)；非产品主窗） |
 
 有窗口帧不等于该工具整行已验收。Vault/Git 冲突**产品主窗**步骤见 [2026-09-17-vault-conflict-product-window](../2026-09-17-vault-conflict-product-window/results.md)（未执行）。曾用 Unicode `type "中"` 插入 JSON，那不是系统 IME 预编辑，不能当 IME 验收。
 

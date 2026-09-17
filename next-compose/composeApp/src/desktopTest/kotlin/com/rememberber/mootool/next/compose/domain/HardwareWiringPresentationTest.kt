@@ -24,4 +24,11 @@ class HardwareWiringPresentationTest {
         assertFalse(HardwareWiringPresentation.interfacesCommandEnabled(loading = false, running = true))
         assertTrue(HardwareWiringPresentation.interfacesCommandEnabled(loading = false, running = false))
     }
+
+    @Test
+    fun runCollectReturnsSnapshot() {
+        val outcome = HardwareWiringPresentation.runCollect(loadSampleMs = 0)
+        assertTrue(outcome is HardwareWiringPresentation.CollectOutcome.Success)
+        assertTrue((outcome as HardwareWiringPresentation.CollectOutcome.Success).snapshot.sections.isNotEmpty())
+    }
 }

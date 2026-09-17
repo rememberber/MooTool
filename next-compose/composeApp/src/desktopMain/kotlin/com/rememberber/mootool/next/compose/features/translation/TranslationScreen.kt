@@ -151,7 +151,7 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
             timeoutWire = settings.network.translationTimeoutMs,
         )
         scope.launch(Dispatchers.IO) {
-            val result = TranslationEngine.translate(input, proxy)
+            val result = TranslationWiringPresentation.runTranslate(input, proxy)
             withContext(Dispatchers.Main) {
                 if (
                     !TranslationResponsePresentation.shouldApplyResult(
@@ -373,7 +373,7 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
                     val requestId = "word-${UUID.randomUUID()}"
                     val proxy = settings.network.toHttpProxyConfig()
                     scope.launch(Dispatchers.IO) {
-                        val result = TranslationEngine.translate(
+                        val result = TranslationWiringPresentation.runTranslate(
                             TranslationWiringPresentation.buildInput(
                                 requestId = requestId,
                                 text = word.sourceText,

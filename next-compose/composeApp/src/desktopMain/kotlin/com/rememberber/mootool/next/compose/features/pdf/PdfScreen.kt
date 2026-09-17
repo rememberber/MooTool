@@ -500,8 +500,9 @@ private fun ingestPdfFiles(container: AppContainer, session: PdfSession, files: 
     )
     val errors = mutableListOf<String>()
     files.take(remaining).forEach { file ->
-        runCatching { PdfEngine.inspect(file.toPath()) }
-            .onSuccess { info ->
+        when (val inspected = PdfWiringPresentation.inspectFile(file.toPath())) {
+            is PdfWiringPresentation.InspectOutcome.Success -> {
+                val info = inspected.info
                 if (PdfImportPresentation.shouldShowStructureNotice(info)) {
                     container.toastInfo(
                         container.t("pdf.structureNotice", PdfImportPresentation.structureNoticeArgs(info)),
@@ -527,13 +528,15 @@ private fun ingestPdfFiles(container: AppContainer, session: PdfSession, files: 
                     )
                 }
             }
-            .onFailure { error ->
+            is PdfWiringPresentation.InspectOutcome.Failure -> {
+                val error = inspected.error
                 val message = messageFor(container, error)
                 if (PdfImportPresentation.showEncryptedImportToast(error)) {
                     container.toastError(message)
                 }
                 errors += message
             }
+        }
     }
     session.error = errors.firstOrNull().orEmpty()
     session.notice = if (session.error.isEmpty()) "" else session.notice

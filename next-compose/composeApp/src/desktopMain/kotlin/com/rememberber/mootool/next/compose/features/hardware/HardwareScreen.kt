@@ -74,16 +74,17 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
         session.error = ""
         persist()
         collectJob = scope.launch(Dispatchers.Default) {
-            val result = try {
-                Result.success(HardwareEngine.collect())
+            val outcome = try {
+                when (val collected = HardwareWiringPresentation.runCollect()) {
+                    is HardwareWiringPresentation.CollectOutcome.Success -> Result.success(collected.snapshot)
+                    is HardwareWiringPresentation.CollectOutcome.Failure -> Result.failure(collected.error)
+                }
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception) {
-                Result.failure(e)
             }
             withContext(Dispatchers.Main) {
                 session.loading = false
-                result.onSuccess {
+                outcome.onSuccess {
                     session.snapshot = it
                     session.error = ""
                     container.toastSuccess(container.t("hardware.refresh"))

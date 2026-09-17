@@ -37,4 +37,15 @@ class HttpRequestPresentationTest {
         assertFalse(HttpRequestPresentation.canSend("  ", sending = false))
         assertFalse(HttpRequestPresentation.canSend("https://example.com", sending = true))
     }
+
+    @Test
+    fun runSendRejectsBlankUrlDraft() {
+        val result = HttpRequestPresentation.runSend(
+            HttpEngine.emptyDraft().copy(url = "  "),
+            requestId = "http-test",
+            timeoutMs = 5_000,
+        )
+        assertFalse(result.ok)
+        assertEquals(HttpErrorCode.INVALID_REQUEST, result.errorCode)
+    }
 }

@@ -1489,6 +1489,10 @@ fun Modifier.mooJsonInspectorStructureRow(): Modifier = heightIn(min = 22.dp)
 @Composable
 fun Modifier.mooGitMergeFlowHint(): Modifier = padding(top = 4.dp)
 
+/** Electron Vault Git 面板 remote 输入行（`.git-remote-row`）。 */
+@Composable
+fun Modifier.mooGitVaultRemoteRow(): Modifier = fillMaxWidth().heightIn(min = 34.dp)
+
 /** Electron 环境变量底栏计数/路径行。 */
 @Composable
 fun Modifier.mooEnvStatusFooter(): Modifier = heightIn(min = 30.dp)
