@@ -28,4 +28,24 @@ object SettingsVaultGitNormalize {
         if (!GIT_REMOTE_PREFIX.containsMatchIn(remote)) return ""
         return remote
     }
+
+    /** Settings blur commit: empty clears; valid prefix accepted; invalid non-empty rejected (Electron `TextSetting` trim). */
+    fun commitGitRemote(raw: String): GitRemoteCommitResult {
+        val trimmed = raw.trim()
+        if (trimmed.isEmpty()) return GitRemoteCommitResult.Cleared
+        val sanitized = sanitizeGitRemote(trimmed)
+        return if (sanitized.isEmpty()) {
+            GitRemoteCommitResult.Rejected
+        } else {
+            GitRemoteCommitResult.Accepted(sanitized)
+        }
+    }
+}
+
+sealed class GitRemoteCommitResult {
+    data object Cleared : GitRemoteCommitResult()
+
+    data class Accepted(val remote: String) : GitRemoteCommitResult()
+
+    data object Rejected : GitRemoteCommitResult()
 }

@@ -39,4 +39,15 @@ class SettingsVaultGitNormalizeTest {
         assertEquals("", SettingsVaultGitNormalize.sanitizeGitRemote("ftp://bad"))
         assertEquals("https://x.test/r.git", SettingsVaultGitNormalize.sanitizeGitRemote("https://x.test/r.git"))
     }
+
+    @Test
+    fun commitGitRemoteMatchesSettingsBlurSemantics() {
+        assertEquals(GitRemoteCommitResult.Cleared, SettingsVaultGitNormalize.commitGitRemote("   "))
+        assertEquals(
+            GitRemoteCommitResult.Accepted("https://x.test/r.git"),
+            SettingsVaultGitNormalize.commitGitRemote("  https://x.test/r.git  "),
+        )
+        assertEquals(GitRemoteCommitResult.Rejected, SettingsVaultGitNormalize.commitGitRemote("ftp://bad.example/r.git"))
+        assertEquals(GitRemoteCommitResult.Rejected, SettingsVaultGitNormalize.commitGitRemote("javascript:alert(1)"))
+    }
 }

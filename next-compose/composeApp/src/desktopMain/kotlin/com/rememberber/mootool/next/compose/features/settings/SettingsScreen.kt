@@ -41,7 +41,9 @@ import com.rememberber.mootool.next.compose.storage.BackupOpenLocation
 import com.rememberber.mootool.next.compose.app.InstallIdentity
 import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.app.ToolRegistry
+import com.rememberber.mootool.next.compose.domain.GitRemoteCommitResult
 import com.rememberber.mootool.next.compose.domain.NavigationToolVisibility
+import com.rememberber.mootool.next.compose.domain.SettingsVaultGitNormalize
 import com.rememberber.mootool.next.compose.app.UpdateUiState
 import com.rememberber.mootool.next.compose.model.AppLanguage
 import com.rememberber.mootool.next.compose.model.CloseBehavior
@@ -66,6 +68,7 @@ import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.SettingRow
 import com.rememberber.mootool.next.compose.storage.VaultPathConfig
+import com.rememberber.mootool.next.compose.ui.components.SettingCommitTextField
 import com.rememberber.mootool.next.compose.ui.components.SettingTextField
 import com.rememberber.mootool.next.compose.ui.components.SettingsGroup
 import com.rememberber.mootool.next.compose.ui.components.SettingsNavItem
@@ -612,19 +615,62 @@ fun SettingsScreen(container: AppContainer) {
                     }
                     SettingsGroup(container.t("settings.group.git")) {
                     SettingRow(container.t("settings.vault.gitUsername")) {
-                        SettingTextField(settings.vault.gitUsername, {
-                            container.updateSettings { current -> current.copy(vault = current.vault.copy(gitUsername = it)) }
-                        }, placeholder = "MooTool Next Compose")
+                        SettingCommitTextField(
+                            settings.vault.gitUsername,
+                            onCommit = { draft ->
+                                container.updateSettings { current ->
+                                    current.copy(
+                                        vault = current.vault.copy(
+                                            gitUsername = draft.trim().take(128),
+                                        ),
+                                    )
+                                }
+                                true
+                            },
+                            placeholder = "MooTool Next Compose",
+                        )
                     }
                     SettingRow(container.t("settings.vault.gitRemote")) {
-                        SettingTextField(settings.vault.gitRemote, {
-                            container.updateSettings { current -> current.copy(vault = current.vault.copy(gitRemote = it)) }
-                        }, placeholder = container.t("git.remotePlaceholder"))
+                        SettingCommitTextField(
+                            settings.vault.gitRemote,
+                            onCommit = { draft ->
+                                when (val outcome = SettingsVaultGitNormalize.commitGitRemote(draft)) {
+                                    GitRemoteCommitResult.Cleared -> {
+                                        container.updateSettings { current ->
+                                            current.copy(vault = current.vault.copy(gitRemote = ""))
+                                        }
+                                        true
+                                    }
+                                    is GitRemoteCommitResult.Accepted -> {
+                                        container.updateSettings { current ->
+                                            current.copy(vault = current.vault.copy(gitRemote = outcome.remote))
+                                        }
+                                        true
+                                    }
+                                    GitRemoteCommitResult.Rejected -> {
+                                        container.toastError(container.t("settings.vault.gitRemoteInvalid"))
+                                        false
+                                    }
+                                }
+                            },
+                            placeholder = container.t("git.remotePlaceholder"),
+                        )
                     }
                     SettingRow(container.t("settings.vault.gitToken")) {
-                        SettingTextField(settings.vault.gitToken, {
-                            container.updateSettings { current -> current.copy(vault = current.vault.copy(gitToken = it)) }
-                        }, placeholder = container.t("settings.vault.gitTokenHint"))
+                        SettingCommitTextField(
+                            settings.vault.gitToken,
+                            onCommit = { draft ->
+                                container.updateSettings { current ->
+                                    current.copy(
+                                        vault = current.vault.copy(
+                                            gitToken = draft.trim().take(2048),
+                                        ),
+                                    )
+                                }
+                                true
+                            },
+                            placeholder = container.t("settings.vault.gitTokenHint"),
+                        )
                     }
                     Text(container.t("settings.vault.gitTokenHint"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
                     Toggle(container, container.t("settings.autoCommit"), settings.vault.autoCommit) {

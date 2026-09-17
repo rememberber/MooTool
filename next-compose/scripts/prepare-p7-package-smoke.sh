@@ -34,8 +34,16 @@ echo "## Unit/desktop tests (offline)"
 
 echo ""
 echo "## Current OS distributable (optional; may take several minutes)"
-echo "# Uncomment to build install tree on this machine:"
-echo "# ./gradlew :composeApp:packageDistributionForCurrentOS --offline"
-echo "# ./scripts/rename-dist-artifacts.sh <semver>"
+if [[ "${MOOTOOL_P7_BUILD_DIST:-}" == "1" ]]; then
+  echo "MOOTOOL_P7_BUILD_DIST=1 → building packageDistributionForCurrentOS on $(uname -s) only."
+  ./gradlew :composeApp:packageDistributionForCurrentOS --offline
+  if [[ -x "$ROOT/scripts/rename-dist-artifacts.sh" ]]; then
+    echo "# After build, rename artifacts if needed:"
+    echo "# ./scripts/rename-dist-artifacts.sh <semver>"
+  fi
+else
+  echo "# Set MOOTOOL_P7_BUILD_DIST=1 to also run packageDistributionForCurrentOS on this host."
+  echo "# Windows MSI / Linux DEB·RPM must be built on those OSes (not verified from macOS smoke)."
+fi
 echo ""
 echo "OK: smoke checks finished. Record results in docs/acceptance.md; P7 install/sign/notarize still manual."

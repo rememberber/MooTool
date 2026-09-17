@@ -4,7 +4,7 @@
 
 | 脚本 | 用途 | 环境变量 |
 | --- | --- | --- |
-| `prepare-p7-package-smoke.sh` | P7 打包前：toolchain、`printTooling`、`verifyNativePackageMetadata`、`desktopTest --offline`（不代替三平台安装验收） | `JAVA_HOME`（JDK 21） |
+| `prepare-p7-package-smoke.sh` | P7 打包前：toolchain、`printTooling`、`verifyNativePackageMetadata`、`desktopTest --offline`；`MOOTOOL_P7_BUILD_DIST=1` 时额外跑本机 `packageDistributionForCurrentOS`（Windows/Linux 安装包须在对应 OS 构建） | `JAVA_HOME`（JDK 21）、可选 `MOOTOOL_P7_BUILD_DIST=1` |
 | `prepare-vault-git-settings-evidence.sh` | 设置 Vault/Git 字段 + JSON Vault Git 面板走查（file:// bare remote） | 读取或创建 `MOOTOOL_COMPOSE_DATA_DIR` |
 | `prepare-vault-conflict-evidence.sh` | JSON Vault 外部磁盘冲突（§A） | 读取或创建 `MOOTOOL_COMPOSE_DATA_DIR` |
 | `prepare-git-merge-conflict-evidence.sh` | JSON Vault Git merge 冲突（§B） | 同上；会重建 Vault 内 `.git` |

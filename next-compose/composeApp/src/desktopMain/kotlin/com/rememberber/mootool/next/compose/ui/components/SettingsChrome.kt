@@ -26,12 +26,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
@@ -388,6 +390,35 @@ fun SettingTextField(
         modifier = Modifier.width(260.dp),
         placeholder = placeholder,
         enabled = enabled
+    )
+}
+
+/** Draft while focused; commits trimmed value on blur when changed (aligns with Electron `TextSetting`). */
+@Composable
+fun SettingCommitTextField(
+    value: String,
+    onCommit: (String) -> Boolean,
+    placeholder: String = "",
+    enabled: Boolean = true,
+) {
+    var draft by remember { mutableStateOf(value) }
+    LaunchedEffect(value) {
+        draft = value
+    }
+    MooTextField(
+        draft,
+        { draft = it },
+        modifier = Modifier
+            .width(260.dp)
+            .onFocusChanged { state ->
+                if (!state.isFocused && draft.trim() != value.trim()) {
+                    if (!onCommit(draft)) {
+                        draft = value
+                    }
+                }
+            },
+        placeholder = placeholder,
+        enabled = enabled,
     )
 }
 
