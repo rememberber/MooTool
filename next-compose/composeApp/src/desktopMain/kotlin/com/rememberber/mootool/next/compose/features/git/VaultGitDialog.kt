@@ -212,7 +212,7 @@ fun VaultGitDialog(
                         prominent = true,
                         danger = true,
                         p5Toolbar = true,
-                        enabled = !busy,
+                        enabled = GitOperationPresentation.abortConfirmEnabled(busy),
                         onClick = {
                             confirmDiscardPath = null
                             runAction(
@@ -240,7 +240,7 @@ fun VaultGitDialog(
                         prominent = true,
                         danger = true,
                         p5Toolbar = true,
-                        enabled = !busy,
+                        enabled = GitOperationPresentation.abortConfirmEnabled(busy),
                         onClick = {
                             confirmAbort = false
                             runAction(
@@ -287,7 +287,7 @@ fun VaultGitDialog(
                                     kind = if (status.conflicts > 0) MooStatusKind.Error else MooStatusKind.Valid,
                                 )
                             }
-                            if (status.merging || status.conflicts > 0) {
+                            if (GitOperationPresentation.showChangeCounts(status.merging, status.conflicts)) {
                                 Text(
                                     container.t(
                                         "git.counts",
@@ -304,7 +304,12 @@ fun VaultGitDialog(
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    MooButton(container.t("git.refresh"), p5Toolbar = true, enabled = !busy, onClick = { load() })
+                    MooButton(
+                        container.t("git.refresh"),
+                        p5Toolbar = true,
+                        enabled = GitOperationPresentation.refreshEnabled(busy),
+                        onClick = { load() },
+                    )
                     if (!status.repository) {
                         MooButton(
                             container.t("git.init"),
@@ -327,7 +332,6 @@ fun VaultGitDialog(
                             enabled = !busy && GitOperationPresentation.pullEnabled(
                                 remotePresent = status.remote.isNotBlank(),
                                 merging = status.merging,
-                                conflicts = status.conflicts,
                             ),
                             onClick = { runAction(workingTree = GitVaultFlushAction.Pull) { GitEngine.pull(root, token = token()) } }
                         )
@@ -346,11 +350,11 @@ fun VaultGitDialog(
                             container.t(GitOperationPresentation.abortButtonKey(status.operation)),
                             danger = true,
                             p5Toolbar = true,
-                            enabled = !busy,
+                            enabled = GitOperationPresentation.abortConfirmEnabled(busy),
                             onClick = { confirmAbort = true }
                         )
                     }
-                    if (status.merging && status.conflicts == 0) {
+                    if (GitOperationPresentation.showContinueAction(status.merging, status.conflicts)) {
                         MooButton(
                             container.t("git.continue"),
                             p5Toolbar = true,
@@ -488,18 +492,28 @@ fun VaultGitDialog(
                                             onClick = { confirmDiscardPath = selectedChange.path }
                                         )
                                         if (selectedChange.conflict) {
-                                            MooButton(container.t("git.ours"), p5Toolbar = true, enabled = !busy, onClick = {
-                                                runAction(
-                                                    workingTree = GitVaultFlushAction.ResolveConflict,
-                                                    afterSuccess = { clearDiffSelection() }
-                                                ) { GitEngine.resolveConflict(root, selectedChange.path, "ours") }
-                                            })
-                                            MooButton(container.t("git.theirs"), p5Toolbar = true, enabled = !busy, onClick = {
-                                                runAction(
-                                                    workingTree = GitVaultFlushAction.ResolveConflict,
-                                                    afterSuccess = { clearDiffSelection() }
-                                                ) { GitEngine.resolveConflict(root, selectedChange.path, "theirs") }
-                                            })
+                                            MooButton(
+                                                container.t("git.ours"),
+                                                p5Toolbar = true,
+                                                enabled = GitOperationPresentation.resolveConflictEnabled(busy),
+                                                onClick = {
+                                                    runAction(
+                                                        workingTree = GitVaultFlushAction.ResolveConflict,
+                                                        afterSuccess = { clearDiffSelection() },
+                                                    ) { GitEngine.resolveConflict(root, selectedChange.path, "ours") }
+                                                },
+                                            )
+                                            MooButton(
+                                                container.t("git.theirs"),
+                                                p5Toolbar = true,
+                                                enabled = GitOperationPresentation.resolveConflictEnabled(busy),
+                                                onClick = {
+                                                    runAction(
+                                                        workingTree = GitVaultFlushAction.ResolveConflict,
+                                                        afterSuccess = { clearDiffSelection() },
+                                                    ) { GitEngine.resolveConflict(root, selectedChange.path, "theirs") }
+                                                },
+                                            )
                                         }
                                     }
                                 }

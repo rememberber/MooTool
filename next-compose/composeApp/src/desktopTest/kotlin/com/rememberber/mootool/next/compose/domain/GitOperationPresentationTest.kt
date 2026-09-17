@@ -27,11 +27,12 @@ class GitOperationPresentationTest {
     }
 
     @Test
-    fun pullEnabledRequiresCleanRemoteState() {
-        assertTrue(GitOperationPresentation.pullEnabled(remotePresent = true, merging = false, conflicts = 0))
-        assertFalse(GitOperationPresentation.pullEnabled(remotePresent = false, merging = false, conflicts = 0))
-        assertFalse(GitOperationPresentation.pullEnabled(remotePresent = true, merging = true, conflicts = 0))
-        assertFalse(GitOperationPresentation.pullEnabled(remotePresent = true, merging = false, conflicts = 1))
+    fun pullEnabledMatchesElectronVaultGitDialog() {
+        assertTrue(GitOperationPresentation.pullEnabled(remotePresent = true, merging = false))
+        assertFalse(GitOperationPresentation.pullEnabled(remotePresent = false, merging = false))
+        assertFalse(GitOperationPresentation.pullEnabled(remotePresent = true, merging = true))
+        // Electron 未因 conflicts 禁用 pull；引擎 `GitEngine.pull` 仅拒绝 merging
+        assertTrue(GitOperationPresentation.pullEnabled(remotePresent = true, merging = false))
     }
 
     @Test
@@ -77,5 +78,19 @@ class GitOperationPresentationTest {
         assertTrue(GitOperationPresentation.showAbortAction(merging = true, conflicts = 0))
         assertTrue(GitOperationPresentation.showAbortAction(merging = false, conflicts = 1))
         assertFalse(GitOperationPresentation.showAbortAction(merging = false, conflicts = 0))
+    }
+
+    @Test
+    fun continueCountsAndResolveHelpersMatchElectronVaultGitDialog() {
+        assertTrue(GitOperationPresentation.showContinueAction(merging = true, conflicts = 0))
+        assertFalse(GitOperationPresentation.showContinueAction(merging = true, conflicts = 1))
+        assertFalse(GitOperationPresentation.showContinueAction(merging = false, conflicts = 0))
+        assertTrue(GitOperationPresentation.showChangeCounts(merging = true, conflicts = 0))
+        assertTrue(GitOperationPresentation.showChangeCounts(merging = false, conflicts = 2))
+        assertFalse(GitOperationPresentation.showChangeCounts(merging = false, conflicts = 0))
+        assertTrue(GitOperationPresentation.resolveConflictEnabled(busy = false))
+        assertFalse(GitOperationPresentation.resolveConflictEnabled(busy = true))
+        assertTrue(GitOperationPresentation.refreshEnabled(busy = false))
+        assertTrue(GitOperationPresentation.abortConfirmEnabled(busy = false))
     }
 }
