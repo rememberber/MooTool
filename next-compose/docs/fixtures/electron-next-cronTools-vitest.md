@@ -7,4 +7,4 @@
 | year-field | 同上 | `CronEngineTest.filtersOptionalYearAndLeapDay` |
 | describe-language | 同上 | `CronEngineTest.describesLanguageAndRejectsImpossibleSchedules`（含 `ja-JP`，[DIFF-519](../diff/519-f16-cron-dst-history-timezone.md)） |
 | nth-weekday-dst | — | `CronEngineTest.nthWeekdayAndDstSpringForward`（`WED#2` + 美东 DST，[DIFF-519](../diff/519-f16-cron-dst-history-timezone.md)） |
-| history-timezone-json | `CronTool` `extraData.timeZone` | `CronHistoryMetadataTest` + `CronScreen` 恢复（[DIFF-519](../diff/519-f16-cron-dst-history-timezone.md)） |
+| history-timezone-json | `CronTool` `extraData.timeZone` | `CronHistoryMetadataTest` + `CronHistoryRestore`（[DIFF-519](../diff/519-f16-cron-dst-history-timezone.md)、[DIFF-535](../diff/535-f08-session-f-tools-history-git-slice.md)） |

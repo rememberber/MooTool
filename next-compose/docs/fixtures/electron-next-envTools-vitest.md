@@ -7,4 +7,6 @@
 | env-file-update | 同上 | `next/src/shared/systemService.test.ts` | `EnvEngineTest.updatesEnvironmentFileLikeElectronSystemServiceFixture`（见 [electron-next-systemService-vitest.md](electron-next-systemService-vitest.md)） |
 | permission-deny | Compose 行为 | — | `EnvEngineTest.systemWriteWithoutElevationKeepsOriginalFile` |
 
-登记：[DIFF-534](../diff/534-f08-env-export-git-push-slice.md)
+| session-restore | Compose 会话 | tab/scope/query wire | `EnvSessionMetadataTest` / `VariablesSessionRestoreTest`（[DIFF-535](../diff/535-f08-session-f-tools-history-git-slice.md)） |
+
+登记：[DIFF-534](../diff/534-f08-env-export-git-push-slice.md)、[DIFF-535](../diff/535-f08-session-f-tools-history-git-slice.md)

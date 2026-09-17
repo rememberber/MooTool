@@ -45,6 +45,8 @@ import com.rememberber.mootool.next.compose.domain.BaseAlgorithm
 import com.rememberber.mootool.next.compose.domain.CryptoEngine
 import com.rememberber.mootool.next.compose.domain.ToolsSettingsLiveApply
 import com.rememberber.mootool.next.compose.domain.CryptoException
+import com.rememberber.mootool.next.compose.domain.CryptoHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.CryptoHistoryRestore
 import com.rememberber.mootool.next.compose.domain.CryptoTab
 import com.rememberber.mootool.next.compose.domain.DigestAlgorithm
 import com.rememberber.mootool.next.compose.domain.RandomKind
@@ -76,19 +78,9 @@ import com.rememberber.mootool.next.compose.ui.workbench.onUserInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
-
-@Serializable
-private data class CryptoHistoryMeta(
-    val tab: String,
-    val operation: String,
-    val algorithm: String = ""
-)
 
 @Composable
 fun CryptoScreen(container: AppContainer, detached: Boolean) {
@@ -184,7 +176,7 @@ fun CryptoScreen(container: AppContainer, detached: Boolean) {
             toolId = ToolId.Crypto.id,
             title = container.t("common.action.history"),
             onRestore = { item ->
-                applyHistory(session, item)
+                CryptoHistoryRestore.apply(session, item)
                 session.historyOpen = false
                 refresh()
             },
@@ -737,8 +729,6 @@ private fun digestLabel(algorithm: DigestAlgorithm): String = when (algorithm) {
     DigestAlgorithm.SM3 -> "SM3"
 }
 
-private val historyCodec = Json { ignoreUnknownKeys = true }
-
 private fun runCrypto(
     container: AppContainer,
     session: CryptoSession,
@@ -787,9 +777,9 @@ private fun saveHistory(
         "password" -> container.t("crypto.random.password")
         else -> algorithm
     }
-    val meta = CryptoHistoryMeta(tab = tab, operation = operation, algorithm = algorithm)
+    val options = CryptoHistoryMetadata.encode(tab, operation, algorithm)
     val payload = com.rememberber.mootool.next.compose.storage.HistoryPrivacy.crypto(operation, input, output)
-    container.history.save(ToolId.Crypto.id, "$algorithm $label", label, payload.input, payload.output, historyCodec.encodeToString(meta))
+    container.history.save(ToolId.Crypto.id, "$algorithm $label", label, payload.input, payload.output, options)
 }
 
 private fun generateRandom(container: AppContainer, session: CryptoSession, kind: RandomKind) {
@@ -852,59 +842,3 @@ private fun chooseFile(title: String): File? {
 }
 
 
-private fun applyHistory(session: CryptoSession, item: HistoryRecord) {
-    val meta = runCatching { historyCodec.decodeFromString<CryptoHistoryMeta>(item.options) }.getOrNull()
-    val tab = meta?.tab.orEmpty()
-    val operation = meta?.operation.orEmpty()
-    session.tab = when (tab) {
-        "asymmetric" -> CryptoTab.Asymmetric
-        "digest" -> CryptoTab.Digest
-        "base" -> CryptoTab.Base
-        "random" -> CryptoTab.Random
-        else -> CryptoTab.Symmetric
-    }
-    when (session.tab) {
-        CryptoTab.Symmetric -> {
-            if (operation == "decrypt") {
-                session.symCipher = item.input
-                session.symPlain = item.output
-            } else {
-                session.symPlain = item.input
-                session.symCipher = item.output
-            }
-            SymmetricAlgorithm.entries.find { it.name == meta?.algorithm }?.let { session.symAlgorithm = it }
-        }
-        CryptoTab.Asymmetric -> {
-            if (operation.contains("Decrypt", ignoreCase = true)) {
-                session.asymCipher = item.input
-                session.asymPlain = item.output
-            } else {
-                session.asymPlain = item.input
-                session.asymCipher = item.output
-            }
-            AsymmetricAlgorithm.entries.find { it.name == meta?.algorithm }?.let { session.asymAlgorithm = it }
-        }
-        CryptoTab.Digest -> {
-            session.digestInput = item.input
-            session.digestOutput = item.output
-            DigestAlgorithm.entries.find { digestLabel(it) == meta?.algorithm }?.let { session.digestAlgorithm = it }
-        }
-        CryptoTab.Base -> {
-            if (operation == "decode") {
-                session.baseCipher = item.input
-                session.basePlain = item.output
-            } else {
-                session.basePlain = item.input
-                session.baseCipher = item.output
-            }
-            BaseAlgorithm.entries.find { it.name == meta?.algorithm }?.let { session.baseAlgorithm = it }
-        }
-        CryptoTab.Random -> when (operation) {
-            "uuid" -> session.uuid = item.output
-            "digits" -> session.digits = item.output
-            "string" -> session.randomText = item.output
-            "password" -> session.password = item.output
-        }
-    }
-    session.error = ""
-}

@@ -1347,18 +1347,7 @@ class VariablesSession {
     )
 
     fun restore(snapshot: VariablesSessionSnapshot) {
-        tab = EnvTab.entries.find { it.name.equals(snapshot.tab, ignoreCase = true) } ?: EnvTab.Environment
-        scope = EnvDisplayScope.entries.find { it.name.equals(snapshot.scope, ignoreCase = true) } ?: EnvDisplayScope.Process
-        query = snapshot.query
-        this.snapshot = null
-        loading = false
-        saving = false
-        error = ""
-        notice = ""
-        editorOpen = false
-        deleteKey = ""
-        lastBackup = ""
-        lastDiff = ""
+        com.rememberber.mootool.next.compose.domain.EnvSessionRestore.apply(this, snapshot)
     }
 }
 
@@ -1616,11 +1605,7 @@ class HardwareSession {
     )
 
     fun restore(snapshot: HardwareSessionSnapshot) {
-        tab = HardwareTab.entries.find { it.name.equals(snapshot.tab, ignoreCase = true) } ?: HardwareTab.System
-        revealSensitive = snapshot.revealSensitive
-        this.snapshot = null
-        loading = false
-        error = ""
+        com.rememberber.mootool.next.compose.domain.HardwareSessionRestore.apply(this, snapshot)
     }
 }
 

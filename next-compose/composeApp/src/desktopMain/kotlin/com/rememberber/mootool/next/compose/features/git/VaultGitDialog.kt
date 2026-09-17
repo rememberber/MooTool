@@ -318,7 +318,7 @@ fun VaultGitDialog(
                         MooButton(
                             container.t("git.fetch"),
                             p5Toolbar = true,
-                            enabled = !busy && status.remote.isNotBlank(),
+                            enabled = !busy && GitOperationPresentation.fetchEnabled(status.remote.isNotBlank()),
                             onClick = { runAction { GitEngine.fetch(root, token = token()) } }
                         )
                         MooButton(
@@ -354,7 +354,7 @@ fun VaultGitDialog(
                         MooButton(
                             container.t("git.continue"),
                             p5Toolbar = true,
-                            enabled = !busy,
+                            enabled = !busy && GitOperationPresentation.continueOperationEnabled(status.merging, status.conflicts),
                             onClick = {
                                 runAction(workingTree = GitVaultFlushAction.ContinueOperation) {
                                     GitEngine.continueOperation(root, identity())
@@ -373,7 +373,11 @@ fun VaultGitDialog(
                     MooButton(
                         remoteLabel,
                         p5Toolbar = true,
-                        enabled = !busy && status.repository && (remoteTrimmed.isNotEmpty() || status.remote.isNotBlank()),
+                        enabled = !busy && GitOperationPresentation.configureRemoteEnabled(
+                            repository = status.repository,
+                            draftRemoteTrimmed = remoteTrimmed,
+                            statusRemote = status.remote,
+                        ),
                         onClick = {
                             val committed = when (val outcome = SettingsVaultGitNormalize.commitGitRemote(remote)) {
                                 GitRemoteCommitResult.Cleared -> ""
@@ -520,7 +524,12 @@ fun VaultGitDialog(
                                             container.t("git.commit"),
                                             prominent = true,
                                             p5Toolbar = true,
-                                            enabled = !busy && status.changes.isNotEmpty() && !status.merging && status.conflicts == 0 && message.trim().isNotEmpty(),
+                                            enabled = !busy && GitOperationPresentation.commitEnabled(
+                                                merging = status.merging,
+                                                conflicts = status.conflicts,
+                                                hasChanges = status.changes.isNotEmpty(),
+                                                messageTrimmed = message.trim(),
+                                            ),
                                             onClick = {
                                                 runAction(
                                                     workingTree = GitVaultFlushAction.Commit,

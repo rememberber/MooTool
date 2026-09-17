@@ -105,7 +105,7 @@ object CommandSearchCatalog {
             categoryId = "layout",
             labelKey = "settings.category.layout",
             navIcon = "▦",
-            keywords = listOf("layout", "navigation", "sidebar", "compact", "布局", "导航", "侧栏"),
+            keywords = listOf("layout", "navigation", "sidebar", "compact", "history", "favorite", "收藏", "历史", "布局", "导航", "侧栏"),
         ),
         CommandSettingsTarget(
             categoryId = "shortcuts",

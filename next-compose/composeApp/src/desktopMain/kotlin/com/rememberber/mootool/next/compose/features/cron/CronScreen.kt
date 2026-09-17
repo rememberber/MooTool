@@ -48,6 +48,7 @@ import com.rememberber.mootool.next.compose.domain.CronEngine
 import com.rememberber.mootool.next.compose.domain.CronException
 import com.rememberber.mootool.next.compose.domain.CronFields
 import com.rememberber.mootool.next.compose.domain.CronHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.CronHistoryRestore
 import com.rememberber.mootool.next.compose.domain.TimeEngine
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.CronSession
@@ -284,13 +285,7 @@ fun CronScreen(container: AppContainer, detached: Boolean) {
             toolId = ToolId.Cron.id,
             title = container.t("common.action.history"),
             onRestore = { item ->
-                applyExpression(session, item.input)
-                session.runs = item.output.split('\n').filter { it.isNotBlank() }
-                CronHistoryMetadata.parseTimeZone(item.options)?.let { session.zone = it }
-                session.description = runCatching {
-                    CronEngine.describe(session.expression, language)
-                }.getOrDefault("")
-                session.error = ""
+                CronHistoryRestore.apply(session, item, container.settings.value.general.language)
                 session.historyOpen = false
                 refresh()
             },

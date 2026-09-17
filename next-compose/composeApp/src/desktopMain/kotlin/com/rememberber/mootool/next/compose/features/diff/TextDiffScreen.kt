@@ -49,6 +49,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.DiffEngine
+import com.rememberber.mootool.next.compose.domain.DiffHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.DiffHistoryRestore
 import com.rememberber.mootool.next.compose.domain.DiffSegment
 import com.rememberber.mootool.next.compose.domain.DiffSegmentType
 import com.rememberber.mootool.next.compose.domain.UnifiedSpan
@@ -373,8 +375,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
             toolId = ToolId.TextDiff.id,
             title = container.t("common.action.history"),
             onRestore = { item ->
-                session.left = item.input
-                session.right = item.output
+                DiffHistoryRestore.apply(session, item)
                 session.historyOpen = false
                 refresh()
             },
@@ -492,7 +493,7 @@ private fun runCompare(container: AppContainer, session: DiffSession, saveHistor
                     container.t("diff.summary", mapOf("added" to result.added.toString(), "removed" to result.removed.toString(), "changed" to result.changed.toString())),
                     left,
                     right,
-                    "${ignore}\t${session.highlightMode}"
+                    DiffHistoryMetadata.encode(ignore, session.highlightMode),
                 )
             }
             onChanged()

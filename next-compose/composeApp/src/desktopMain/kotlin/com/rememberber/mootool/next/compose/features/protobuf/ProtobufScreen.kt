@@ -37,6 +37,8 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.ProtobufBinaryFormat
 import com.rememberber.mootool.next.compose.domain.ProtobufEngine
 import com.rememberber.mootool.next.compose.domain.ProtobufException
+import com.rememberber.mootool.next.compose.domain.ProtobufHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.ProtobufHistoryRestore
 import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
@@ -143,7 +145,7 @@ fun ProtobufScreen(container: AppContainer, detached: Boolean) {
             toolId = ToolId.Protobuf.id,
             title = container.t("common.action.history"),
             onRestore = { item ->
-                applyHistory(session, item)
+                ProtobufHistoryRestore.apply(session, item)
                 session.historyOpen = false
                 refresh()
             },
@@ -179,7 +181,14 @@ private fun JsonTab(
                     session.notice = container.t("protobuf.history.format")
                     container.toastSuccess(session.notice)
                     session.error = ""
-                    container.history.save(ToolId.Protobuf.id, session.notice, session.notice, before, session.proto, "json|format")
+                    container.history.save(
+                        ToolId.Protobuf.id,
+                        session.notice,
+                        session.notice,
+                        before,
+                        session.proto,
+                        ProtobufHistoryMetadata.encodeLegacyPipe("json|format"),
+                    )
                     onChanged()
                 })
             }
@@ -335,7 +344,14 @@ private fun runOp(
             session.error = ""
             session.notice = summary
             container.toastSuccess(summary)
-            container.history.save(ToolId.Protobuf.id, summary, summary, input, output, options)
+            container.history.save(
+                ToolId.Protobuf.id,
+                summary,
+                summary,
+                input,
+                output,
+                ProtobufHistoryMetadata.encodeLegacyPipe(options),
+            )
         }
         .onFailure { error ->
             session.notice = ""
@@ -360,25 +376,3 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
     }
 }
 
-private fun applyHistory(session: ProtobufSession, item: HistoryRecord) {
-    val parts = item.options.split('|')
-    val historyTab = parts.getOrNull(0).orEmpty()
-    val operation = parts.getOrNull(1).orEmpty()
-    val historyMessage = parts.getOrNull(2).orEmpty()
-    val historyFormat = parts.getOrNull(3).orEmpty().ifEmpty { parts.getOrNull(2).orEmpty() }
-    if (historyTab in listOf("json", "wire", "convert")) session.tab = historyTab
-    if (historyMessage.isNotEmpty() && historyTab == "json") session.messageName = historyMessage
-    if (historyFormat == "Hex" || historyFormat == "Base64") {
-        val format = ProtobufSession.formatOf(historyFormat)
-        if (historyTab == "wire") session.wireFormat = format else session.format = format
-    }
-    when (operation) {
-        "jsonToBinary" -> { session.json = item.input; session.binary = item.output }
-        "binaryToJson" -> { session.binary = item.input; session.json = item.output }
-        "format" -> session.proto = item.output
-        "decode" -> { session.wireInput = item.input; session.wireOutput = item.output }
-        "hexToBase64" -> { session.hex = item.input; session.base64 = item.output }
-        "base64ToHex" -> { session.base64 = item.input; session.hex = item.output }
-    }
-    session.error = ""
-}

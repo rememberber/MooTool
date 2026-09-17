@@ -90,6 +90,12 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun historyQueryOpensLayoutSettings() {
+        val hits = CommandSearchCatalog.search("history", Translator(AppLanguage.EnUS)::t)
+        assertEquals("layout", hits.single().categoryId)
+    }
+
+    @Test
     fun catalogCoversEverySettingsNavCategory() {
         val covered = CommandSearchCatalog.targets.map { it.categoryId }.toSet()
         SettingsNavCategory.entries.forEach { category ->

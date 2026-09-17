@@ -53,17 +53,8 @@ import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
 import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
 import com.rememberber.mootool.next.compose.ui.workbench.applyUserEditClearingStatusNotice
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-
-@Serializable
-private data class EncodeHistoryMeta(
-    val tab: String,
-    val direction: String,
-    val charset: String,
-    val asciiFormat: String
-)
+import com.rememberber.mootool.next.compose.domain.EncodeHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.EncodeHistoryRestore
 
 @Composable
 fun EncodeScreen(container: AppContainer, detached: Boolean) {
@@ -263,7 +254,7 @@ fun EncodeScreen(container: AppContainer, detached: Boolean) {
             toolId = ToolId.Encode.id,
             title = container.t("common.action.history"),
             onRestore = { item ->
-                applyHistory(session, item)
+                EncodeHistoryRestore.apply(session, item)
                 session.historyOpen = false
                 refresh()
             },
@@ -288,8 +279,6 @@ private fun tabLabels(container: AppContainer, tab: EncodeTab): EncodeLabels = w
     EncodeTab.Ascii -> EncodeLabels(container.t("encode.native"), container.t("encode.ascii"), container.t("encode.toAscii"), container.t("encode.fromAscii"))
 }
 
-private val historyCodec = Json { ignoreUnknownKeys = true }
-
 private fun convert(container: AppContainer, session: EncodeSession, forward: Boolean) {
     val input = if (forward) session.left() else session.right()
     val labels = tabLabels(container, session.tab)
@@ -300,13 +289,8 @@ private fun convert(container: AppContainer, session: EncodeSession, forward: Bo
             session.error = ""
             session.notice = summary
             container.toastSuccess(summary)
-            val meta = EncodeHistoryMeta(
-                tab = session.snapshot().tab,
-                direction = if (forward) "forward" else "reverse",
-                charset = if (session.charset == UrlCharset.Gb2312) "gb2312" else "utf-8",
-                asciiFormat = if (session.asciiFormat == AsciiFormat.Hex) "hex" else "decimal"
-            )
-            container.history.save(ToolId.Encode.id, summary, summary, input, output, historyCodec.encodeToString(meta))
+            val options = EncodeHistoryMetadata.encode(session.tab, forward, session.charset, session.asciiFormat)
+            container.history.save(ToolId.Encode.id, summary, summary, input, output, options)
         }
         .onFailure { error ->
             session.notice = ""
@@ -327,26 +311,3 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
     }
 }
 
-private fun applyHistory(session: EncodeSession, item: HistoryRecord) {
-    val meta = runCatching { historyCodec.decodeFromString<EncodeHistoryMeta>(item.options) }.getOrNull()
-    if (meta != null) {
-        session.tab = when (meta.tab) {
-            "url" -> EncodeTab.Url
-            "hex" -> EncodeTab.Hex
-            "ascii" -> EncodeTab.Ascii
-            else -> EncodeTab.Unicode
-        }
-        session.charset = if (meta.charset == "gb2312") UrlCharset.Gb2312 else UrlCharset.Utf8
-        session.asciiFormat = if (meta.asciiFormat == "hex") AsciiFormat.Hex else AsciiFormat.Decimal
-        if (meta.direction == "reverse") {
-            session.setLeft(item.output)
-            session.setRight(item.input)
-        } else {
-            session.setLeft(item.input)
-            session.setRight(item.output)
-        }
-    } else {
-        session.setRight(item.output.ifBlank { item.input })
-    }
-    session.error = ""
-}
