@@ -1,5 +1,6 @@
 package com.rememberber.mootool.next.compose.domain
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -15,9 +16,10 @@ class ProtobufEngineTest {
         val hex = ProtobufEngine.jsonToProtobuf(personProto, "Person", json, ProtobufBinaryFormat.Hex)
         assertTrue(hex.matches(Regex("^[0-9a-f]+$")))
         val roundTrip = ProtobufEngine.protobufToJson(personProto, "Person", hex, ProtobufBinaryFormat.Hex)
-        assertTrue(roundTrip.contains("Moo"))
-        assertTrue(roundTrip.contains("\"age\": 25") || roundTrip.contains("\"age\":25"))
-        assertTrue(roundTrip.contains("desktop") && roundTrip.contains("tool"))
+        val parsed = ObjectMapper().readTree(roundTrip)
+        assertEquals("Moo", parsed.get("name").asText())
+        assertEquals(25, parsed.get("age").asInt())
+        assertEquals(listOf("desktop", "tool"), parsed.get("tags").map { it.asText() })
         val base64 = ProtobufEngine.convertBinary(hex, ProtobufBinaryFormat.Hex, ProtobufBinaryFormat.Base64)
         assertEquals(hex, ProtobufEngine.convertBinary(base64, ProtobufBinaryFormat.Base64, ProtobufBinaryFormat.Hex))
     }

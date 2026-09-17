@@ -16,4 +16,4 @@ DIFF-521「未做」仍列 **外观** `appearance.fontSize` 用分段（仅 12/1
 
 ## 未做
 
-产品主窗 Git/设置截图、六套 CSS 皮肤、P7 安装、HTTP 联网/二进制大走查、PDF/加解密大切片、托盘/更新手工验收。
+产品主窗 Git/设置截图、六套 CSS 皮肤、P7 安装、HTTP 联网大走查与 multipart 文件上传、PDF 加密/UI 走查、托盘权限对话框手工验收；HTTP/PDF/Protobuf/Crypto fixture 与更新调度见 [DIFF-523](523-http-pdf-crypto-tray-update-slice.md)。

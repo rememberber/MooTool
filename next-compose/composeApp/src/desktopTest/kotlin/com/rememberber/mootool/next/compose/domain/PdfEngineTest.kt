@@ -63,6 +63,27 @@ class PdfEngineTest {
     }
 
     @Test
+    fun rejectsMoreThanMaxTasksLikeElectronCap() {
+        val directory = Files.createTempDirectory("mootool-pdf-cap-")
+        try {
+            val source = writeNumberedPdf(directory.resolve("Cap.pdf"), 2)
+            val tasks = List(PdfEngine.MAX_TASKS + 1) {
+                PdfEngine.SplitTask(source.toString(), "1", PdfSplitRule.Odd, "")
+            }
+            assertFailsWith<PdfException> { PdfEngine.split(tasks) }.also { assertEquals("too-many", it.code) }
+            val mergeSources = List(PdfEngine.MAX_TASKS + 1) {
+                PdfEngine.MergeSource(source.toString(), "1")
+            }
+            assertFailsWith<PdfException> {
+                PdfEngine.merge(mergeSources, directory.resolve("cap.pdf"))
+            }.also { assertEquals("too-many", it.code) }
+        } finally {
+            directory.listDirectoryEntries().forEach { Files.deleteIfExists(it) }
+            Files.deleteIfExists(directory)
+        }
+    }
+
+    @Test
     fun rejectsUnsupportedFilesAndCancelsWithoutOrphans() {
         val directory = Files.createTempDirectory("mootool-pdf-reject-")
         try {

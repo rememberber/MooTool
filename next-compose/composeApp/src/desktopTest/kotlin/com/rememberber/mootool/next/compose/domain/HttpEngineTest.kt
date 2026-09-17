@@ -4,6 +4,7 @@ import com.rememberber.mootool.next.compose.app.AppDirectories
 import com.rememberber.mootool.next.compose.storage.HttpCollectionStore
 import com.sun.net.httpserver.HttpServer
 import java.net.InetSocketAddress
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.concurrent.Executors
 import kotlin.io.path.readText
@@ -267,6 +268,77 @@ class HttpEngineTest {
         assertEquals(2, unsetSpans.size)
         assertFalse(unsetSpans.any { it.current })
         assertEquals(emptyList(), HttpResponseFind.spans(3, emptyList(), 0))
+    }
+
+    @Test
+    fun postBodyWithEmbeddedNullBytesRoundTripsOnLocalServer() {
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.executor = Executors.newCachedThreadPool()
+        server.createContext("/raw") { exchange ->
+            val incoming = exchange.requestBody.readBytes()
+            val summary = incoming.joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            val payload = "len=${incoming.size};hex=$summary"
+            val bytes = payload.toByteArray()
+            exchange.sendResponseHeaders(200, bytes.size.toLong())
+            exchange.responseBody.write(bytes)
+            exchange.close()
+        }
+        server.start()
+        try {
+            val origin = "http://127.0.0.1:${server.address.port}"
+            val body = "\u0000ab"
+            val prepared = HttpEngine.prepare(
+                HttpEngine.emptyDraft().copy(
+                    method = HttpMethod.POST,
+                    url = "$origin/raw",
+                    body = body,
+                    bodyType = "application/octet-stream",
+                )
+            )
+            assertTrue(prepared.body!!.contentEquals(body.toByteArray(StandardCharsets.UTF_8)))
+            val result = HttpEngine.send(
+                HttpEngine.emptyDraft().copy(
+                    method = HttpMethod.POST,
+                    url = "$origin/raw",
+                    body = body,
+                    bodyType = "application/octet-stream",
+                ),
+                requestId = "raw-post",
+                timeoutMs = 5_000,
+            )
+            assertEquals(200, result.status)
+            assertTrue(result.body.contains("len=3"))
+            assertTrue(result.body.contains("hex=006162"))
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun decodeBodyTreatsMultipartResponsesAsText() {
+        val boundary = "----MooTool"
+        val payload = """
+            --$boundary
+            Content-Disposition: form-data; name="field"
+
+            hello
+            --$boundary--
+        """.trimIndent().toByteArray(StandardCharsets.UTF_8)
+        val (text, binary) = HttpEngine.decodeBody(payload, "multipart/form-data; boundary=$boundary")
+        assertFalse(binary)
+        assertTrue(text.contains("hello"))
+        assertTrue(text.contains(boundary))
+    }
+
+    @Test
+    fun parseCurlDataBinaryPreservesPayloadAndDefaultsToPost() {
+        val payload = "\u0000ab"
+        val request = HttpEngine.parseCurl("curl https://example.com/upload --data-binary '${payload.replace("'", "'\"'\"'")}'")
+        assertEquals(HttpMethod.POST, request.method)
+        assertEquals("https://example.com/upload", request.url)
+        assertEquals(payload, request.body)
+        val roundTrip = HttpEngine.parseCurl(HttpEngine.toCurl(request))
+        assertEquals(payload, roundTrip.body)
     }
 
     @Test

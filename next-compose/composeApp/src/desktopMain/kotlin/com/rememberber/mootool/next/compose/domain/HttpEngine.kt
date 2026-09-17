@@ -465,6 +465,10 @@ object HttpEngine {
 
     internal fun decodeBody(bytes: ByteArray, contentType: String): Pair<String, Boolean> {
         val lower = contentType.lowercase()
+        if (lower.startsWith("multipart/")) {
+            val charset = charsetOf(contentType) ?: StandardCharsets.UTF_8
+            return String(bytes, charset) to false
+        }
         val binaryType = lower.startsWith("image/") || lower.startsWith("audio/") || lower.startsWith("video/") ||
             lower.contains("octet-stream") || lower.contains("application/pdf")
         if (binaryType || bytes.contains(0.toByte())) {
