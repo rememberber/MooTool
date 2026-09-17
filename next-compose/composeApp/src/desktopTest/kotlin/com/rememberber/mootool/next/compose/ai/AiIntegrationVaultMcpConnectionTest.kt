@@ -549,6 +549,52 @@ class AiIntegrationVaultMcpConnectionTest {
     }
 
     @Test
+    fun subprocessDualVaultNotesReadHonorsOffsetWhenJsonGranted() {
+        val notesRoot = Files.createTempDirectory("mootool-mcp-vault-dual-notes-read-notes-")
+        val jsonRoot = Files.createTempDirectory("mootool-mcp-vault-dual-notes-read-json-")
+        val productRoot = Files.createTempDirectory("mootool-mcp-vault-dual-notes-read-product-")
+        try {
+            notesRoot.resolve("page.md").writeText(
+                "---\ntitle: t\nsyntax: text/markdown\n---\nskip570tail",
+            )
+            jsonRoot.resolve("doc.json").writeText("""{"tag":"570-json"}""")
+            val directories = com.rememberber.mootool.next.compose.app.AppPaths
+                .resolve(productRoot.toString())
+                .also { it.ensureCreated() }
+            val accessFile = McpLaunchResolver.accessFile(directories).also { path ->
+                path.parent.createDirectories()
+                path.writeText(
+                    """{"version":1,"notes":"${notesRoot.toRealPath()}","json":"${jsonRoot.toRealPath()}"}""",
+                )
+            }
+            val launch = desktopTestMcpLaunch(accessFile)
+            val transport = StdioClientTransport(
+                ServerParameters.builder(launch.command).args(launch.args).build(),
+                McpJsonDefaults.getMapper(),
+            )
+            McpClient.sync(transport).requestTimeout(Duration.ofSeconds(15)).build().use { client ->
+                client.initialize()
+                val read = client.callTool(
+                    McpSchema.CallToolRequest.builder()
+                        .name("mootool_notes_read")
+                        .arguments(mapOf("path" to "page.md", "offset" to 4, "length" to 7))
+                        .build(),
+                )
+                assertFalse(read.isError)
+                val body = read.content.firstOrNull()?.let {
+                    if (it is McpSchema.TextContent) it.text else null
+                } ?: ""
+                assertTrue(body.contains("570tail"))
+                assertFalse(body.contains("skip"))
+            }
+        } finally {
+            notesRoot.toFile().deleteRecursively()
+            jsonRoot.toFile().deleteRecursively()
+            productRoot.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun subprocessDualVaultReadAfterSearch() {
         val notesRoot = Files.createTempDirectory("mootool-mcp-vault-dual-read-notes-")
         val jsonRoot = Files.createTempDirectory("mootool-mcp-vault-dual-read-json-")

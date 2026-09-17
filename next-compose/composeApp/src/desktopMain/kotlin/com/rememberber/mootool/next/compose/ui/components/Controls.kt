@@ -1369,6 +1369,12 @@ fun Modifier.mooUaParseBar(): Modifier = heightIn(min = 46.dp)
 @Composable
 fun Modifier.mooConfigTabsRow(): Modifier = heightIn(min = 40.dp)
 
+/** Electron `.yaml-validate-layout` 外圈 padding。 */
+fun Modifier.mooConfigValidateLayout(): Modifier = padding(14.dp)
+
+/** Electron `.validate-actions` 中栏（160px 竖排按钮）。 */
+fun Modifier.mooConfigValidateActions(): Modifier = widthIn(min = 160.dp, max = 160.dp)
+
 /** Electron 文本对比工具栏差异导航区。 */
 @Composable
 fun Modifier.mooDiffNavCluster(): Modifier = heightIn(min = 34.dp)

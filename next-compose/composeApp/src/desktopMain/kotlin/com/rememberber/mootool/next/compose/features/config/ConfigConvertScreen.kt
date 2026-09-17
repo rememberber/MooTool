@@ -33,7 +33,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
-import com.rememberber.mootool.next.compose.domain.ConfigEngine
 import com.rememberber.mootool.next.compose.domain.ConfigWiringPresentation
 import com.rememberber.mootool.next.compose.domain.ConfigHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.ConfigHistoryRestore
@@ -52,6 +51,8 @@ import com.rememberber.mootool.next.compose.ui.components.IoThreePaneRow
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooConfigConvertPane
 import com.rememberber.mootool.next.compose.ui.components.mooConfigTabsRow
+import com.rememberber.mootool.next.compose.ui.components.mooConfigValidateActions
+import com.rememberber.mootool.next.compose.ui.components.mooConfigValidateLayout
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
@@ -232,7 +233,7 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
                 paneKey = "config-validate",
                 middleRatio = 0.32f,
                 minRight = 220f,
-                modifier = Modifier.weight(1f).fillMaxWidth().padding(12.dp),
+                modifier = Modifier.weight(1f).fillMaxWidth().mooConfigValidateLayout(),
                 left = {
                 Column(Modifier.fillMaxSize().mooToolShell().padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(container.t("config.yaml"), color = colors.textSecondary, fontSize = 12.sp)
@@ -253,7 +254,7 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
                 },
                 middle = {
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().mooConfigValidateActions(),
                     verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -355,31 +356,38 @@ private fun ConfigIoPanes(
 private fun convert(container: AppContainer, session: ConfigSession, toYaml: Boolean) {
     val input = if (toYaml) session.properties else session.yaml
     val summary = container.t(if (toYaml) "config.toYaml" else "config.toProperties")
-    runCatching {
-        if (toYaml) ConfigEngine.propertiesToYaml(session.properties) else ConfigEngine.yamlToProperties(session.yaml)
-    }.onSuccess { output ->
-        if (toYaml) session.yaml = output else session.properties = output
-        session.error = ""
-        session.notice = summary
-        container.toastSuccess(summary)
-        container.history.save(
-            ToolId.YmlProperties.id,
-            summary,
-            summary,
-            input,
-            output,
-            ConfigHistoryMetadata.encodeConvert(toYaml = toYaml),
-        )
-    }.onFailure { error ->
-        session.notice = ""
-        val message = messageFor(container, error)
-        session.error = message
-        container.toastError(message)
+    val outcome = if (toYaml) {
+        ConfigWiringPresentation.runToYaml(session.properties)
+    } else {
+        ConfigWiringPresentation.runToProperties(session.yaml)
+    }
+    when (outcome) {
+        is ConfigWiringPresentation.ConvertOutcome.Success -> {
+            val output = outcome.output
+            if (toYaml) session.yaml = output else session.properties = output
+            session.error = ""
+            session.notice = summary
+            container.toastSuccess(summary)
+            container.history.save(
+                ToolId.YmlProperties.id,
+                summary,
+                summary,
+                input,
+                output,
+                ConfigHistoryMetadata.encodeConvert(toYaml = toYaml),
+            )
+        }
+        is ConfigWiringPresentation.ConvertOutcome.Failure -> {
+            session.notice = ""
+            val message = messageFor(container, outcome.error)
+            session.error = message
+            container.toastError(message)
+        }
     }
 }
 
 private fun validate(container: AppContainer, session: ConfigSession) {
-    val result = ConfigEngine.validateYaml(session.validateSource)
+    val result = ConfigWiringPresentation.runValidate(session.validateSource)
     session.valid = result.valid
     session.validation = if (result.valid) container.t("config.valid") else container.t("config.invalid", mapOf("message" to result.message))
     session.error = if (result.valid) "" else session.validation
@@ -398,8 +406,9 @@ private fun validate(container: AppContainer, session: ConfigSession) {
 
 private fun format(container: AppContainer, session: ConfigSession) {
     val input = session.validateSource
-    runCatching { ConfigEngine.formatYaml(input) }
-        .onSuccess { output ->
+    when (val outcome = ConfigWiringPresentation.runFormat(input)) {
+        is ConfigWiringPresentation.ConvertOutcome.Success -> {
+            val output = outcome.output
             session.validateSource = output
             session.valid = true
             session.validation = container.t("config.valid")
@@ -415,13 +424,14 @@ private fun format(container: AppContainer, session: ConfigSession) {
                 ConfigHistoryMetadata.FORMAT,
             )
         }
-        .onFailure { error ->
+        is ConfigWiringPresentation.ConvertOutcome.Failure -> {
             session.valid = false
             session.notice = ""
-            val message = messageFor(container, error)
+            val message = messageFor(container, outcome.error)
             session.error = message
             container.toastError(message)
         }
+    }
 }
 
 private fun messageFor(container: AppContainer, error: Throwable): String {

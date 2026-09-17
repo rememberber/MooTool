@@ -58,6 +58,11 @@ mootool_evidence_print_host_profile_item_tab_focus_hint() {
   echo "# 产品窗 Host 方案搜索 Tab 走查 PNG 仍须 runDistributable + 手工截图（与 133 搜索框互补）"
 }
 
+mootool_evidence_print_config_validate_tab_focus_hint() {
+  echo "# Compose F06 YAML 校验 Tab 按钮焦点帧（非产品主窗）: docs/evidence/2026-09-15-inspector-screencapture/windows/165-compose-config-validate-tab-focus.png"
+  echo "# 产品窗 F06 校验 Tab 走查 PNG 仍须 runDistributable + 手工截图"
+}
+
 mootool_evidence_print_git_merge_product_hint() {
   echo "# Compose merge hint 焦点帧（非产品主窗）: docs/evidence/2026-09-15-inspector-screencapture/windows/153-compose-git-merge-flow-hint-tab-focus.png"
   echo "# Vault Git merge 产品窗 §B（对齐 GitMergeProductFlowPresentation / conflict.json）:"
