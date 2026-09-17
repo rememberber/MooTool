@@ -29,6 +29,9 @@ internal fun jsonInspectorStructureMetricText(value: String?): String =
 internal fun jsonInspectorUtf8ByteLabel(bytes: Int?): String =
     if (bytes == null) "—" else "$bytes B"
 
+/** Inspector「生成 JSON Schema」与 Electron 一致：仅结构解析成功时可用。 */
+internal fun jsonInspectorInferSchemaEnabled(analysis: JsonAnalysis?): Boolean = analysis != null
+
 @Composable
 internal fun JsonInspectorStructurePanel(
     analysis: JsonAnalysis?,

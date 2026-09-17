@@ -84,6 +84,13 @@ class JsonEngineTest {
     }
 
     @Test
+    fun inferJsonSchema_rejectsInvalidJson() {
+        assertFailsWith<JsonException> {
+            JsonEngine.inferJsonSchema("{", t)
+        }
+    }
+
+    @Test
     fun formatAdvancedRejectsDuplicateKeysInRawText() {
         val input = """{"alpha":1,"alpha":2}"""
         assertFailsWith<JsonException> {

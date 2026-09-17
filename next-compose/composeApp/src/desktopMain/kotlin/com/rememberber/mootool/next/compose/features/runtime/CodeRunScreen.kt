@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.features.settings.SettingsNavCategory
 import com.rememberber.mootool.next.compose.domain.CodeRunEngine
+import com.rememberber.mootool.next.compose.domain.EditorSettingsLiveApply
 import com.rememberber.mootool.next.compose.domain.CodeRunErrorCode
 import com.rememberber.mootool.next.compose.domain.CodeRunInput
 import com.rememberber.mootool.next.compose.domain.CodeRunPaths
@@ -412,7 +413,7 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                             dark = MooTheme.dark,
                             fontName = com.rememberber.mootool.next.compose.domain.DocumentFormatEngine.editorFont(settings.editor.jsonFontName),
                             fontSize = settings.editor.jsonFontSize,
-                            wrap = settings.editor.softWrap,
+                            wrap = EditorSettingsLiveApply.runtimeEditorWrap(),
                             modifier = Modifier.weight(1f).fillMaxWidth(),
                             shortcuts = EditorAppShortcuts(
                                 onFind = { openSourceFind() },

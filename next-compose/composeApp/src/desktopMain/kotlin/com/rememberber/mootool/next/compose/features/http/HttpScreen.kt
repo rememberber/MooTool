@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.DocumentFormatEngine
+import com.rememberber.mootool.next.compose.domain.EditorSettingsLiveApply
 import com.rememberber.mootool.next.compose.domain.FindMatch
 import com.rememberber.mootool.next.compose.domain.FindReplace
 import com.rememberber.mootool.next.compose.domain.HttpCookie
@@ -561,7 +562,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                             dark = MooTheme.dark,
                             fontName = DocumentFormatEngine.editorFont(settings.editor.jsonFontName),
                             fontSize = settings.editor.jsonFontSize,
-                            wrap = settings.editor.softWrap,
+                            wrap = EditorSettingsLiveApply.httpEditorWrap(settings.editor.softWrap),
                             modifier = Modifier.weight(1f).fillMaxWidth().mooEditorFrame(flatten = true),
                             shortcuts = EditorAppShortcuts(
                                 onFormat = {
@@ -712,7 +713,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                         dark = MooTheme.dark,
                         fontName = DocumentFormatEngine.editorFont(settings.editor.jsonFontName),
                         fontSize = 11,
-                        wrap = settings.editor.softWrap,
+                        wrap = EditorSettingsLiveApply.httpEditorWrap(settings.editor.softWrap),
                         modifier = Modifier.fillMaxSize(),
                         shortcuts = EditorAppShortcuts(
                             onFind = { openHttpResponseFind(session) { persist() } }

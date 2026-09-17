@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.DocumentFormatEngine
+import com.rememberber.mootool.next.compose.domain.EditorSettingsLiveApply
 import com.rememberber.mootool.next.compose.domain.FindReplace
 import com.rememberber.mootool.next.compose.domain.NoteAttachmentEngine
 import com.rememberber.mootool.next.compose.domain.NoteColors
@@ -1246,7 +1247,7 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                                             parentPath = parent,
                                             fontName = settings.editor.quickNoteFontName,
                                             fontSize = settings.editor.quickNoteFontSize,
-                                            lineWrap = session.wrap
+                                            lineWrap = EditorSettingsLiveApply.newQuickNoteLineWrap(settings.editor.softWrap),
                                         )
                                         quickNoteOpenVaultFile(session, vault, created.relativePath)
                                     }

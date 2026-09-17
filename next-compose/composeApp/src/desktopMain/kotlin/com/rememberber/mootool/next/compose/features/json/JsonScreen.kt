@@ -1399,7 +1399,7 @@ private fun InspectorPane(
                 utf8Label = container.t("json.analysis.utf8"),
                 onDuplicatePathClick = { jsonInspectorCopyJsonPath(it, container) },
             )
-            if (structureAnalysis != null) {
+            if (jsonInspectorInferSchemaEnabled(structureAnalysis)) {
                 MooButton(
                     container.t("json.action.inferSchema"),
                     p5Toolbar = true,

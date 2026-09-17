@@ -10,6 +10,37 @@ import org.junit.Assume
 /** Vault Git discard during merge conflict（对齐 Electron `VaultGitService.discard`，冲突文件可单独还原）。 */
 class GitDiscardDuringMergeTest {
     @Test
+    fun discardRestoresTrackedConflictMarkdownDuringMerge() {
+        assumeGit()
+        val root = Files.createTempDirectory("mootool-compose-git-discard-merge-md-")
+        try {
+            val identity = GitIdentity("Test User", "test@local")
+            assertTrue(GitEngine.init(root, identity, isolateConfig = true).success)
+            root.resolve("notes/conflict.md").parent?.let { Files.createDirectories(it) }
+            root.resolve("notes/conflict.md").writeText("base")
+            assertTrue(GitEngine.commit(root, "Base", identity, isolateConfig = true).success)
+            val baseBranch = GitEngine.status(root, isolateConfig = true).branch
+            git(root, "checkout", "-b", "other")
+            root.resolve("notes/conflict.md").writeText("other")
+            git(root, "add", "--all")
+            git(root, "commit", "-m", "Other")
+            git(root, "checkout", baseBranch)
+            root.resolve("notes/conflict.md").writeText("base-branch")
+            git(root, "add", "--all")
+            git(root, "commit", "-m", "Base branch")
+            assertTrue(kotlin.runCatching { git(root, "merge", "other") }.isFailure)
+            val status = GitEngine.status(root, isolateConfig = true)
+            assertTrue(status.conflicts >= 1)
+            val discarded = GitEngine.discard(root, "notes/conflict.md", isolateConfig = true)
+            assertTrue(discarded.success, discarded.message)
+            val after = GitEngine.status(root, isolateConfig = true)
+            assertFalse(after.changes.any { it.path == "notes/conflict.md" && it.status.contains('U') })
+        } finally {
+            root.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun discardRestoresTrackedConflictFileDuringMerge() {
         assumeGit()
         val root = Files.createTempDirectory("mootool-compose-git-discard-merge-")
