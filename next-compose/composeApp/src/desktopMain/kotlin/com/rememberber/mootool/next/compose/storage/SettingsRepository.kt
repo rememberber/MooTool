@@ -3,6 +3,7 @@ package com.rememberber.mootool.next.compose.storage
 import com.rememberber.mootool.next.compose.app.AppDirectories
 import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.domain.NavigationToolVisibility
+import com.rememberber.mootool.next.compose.ui.components.normalizeVaultTreeExpandMode
 import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.model.SETTINGS_SCHEMA_VERSION
 import kotlinx.serialization.encodeToString
@@ -90,18 +91,27 @@ class SettingsRepository(
         val hiddenNavigationToolIds =
             NavigationToolVisibility.normalizeHiddenNavigationToolIds(settings.layout.hiddenNavigationToolIds)
         val layout = settings.layout.copy(hiddenNavigationToolIds = hiddenNavigationToolIds)
+        val jsonTreeExpandMode = normalizeVaultTreeExpandMode(vault.jsonTreeExpandMode)
+        val quickNoteTreeExpandMode = normalizeVaultTreeExpandMode(vault.quickNoteTreeExpandMode)
         if (quickNotePath == vault.quickNotePath &&
             jsonPath == vault.jsonPath &&
             exportDirectory == settings.tools.exportDirectory &&
             dataDirectory == settings.data.directory &&
-            layout == settings.layout
+            layout == settings.layout &&
+            jsonTreeExpandMode == vault.jsonTreeExpandMode &&
+            quickNoteTreeExpandMode == vault.quickNoteTreeExpandMode
         ) {
             return settings
         }
         return settings.copy(
             layout = layout,
             data = settings.data.copy(directory = dataDirectory),
-            vault = vault.copy(quickNotePath = quickNotePath, jsonPath = jsonPath),
+            vault = vault.copy(
+                quickNotePath = quickNotePath,
+                jsonPath = jsonPath,
+                jsonTreeExpandMode = jsonTreeExpandMode,
+                quickNoteTreeExpandMode = quickNoteTreeExpandMode,
+            ),
             tools = settings.tools.copy(exportDirectory = exportDirectory)
         )
     }

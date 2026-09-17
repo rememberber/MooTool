@@ -51,6 +51,26 @@ class SettingsVaultPathSanitizeTest {
     }
 
     @Test
+    fun loadNormalizesUnknownVaultTreeExpandModes() {
+        val root = kotlin.io.path.createTempDirectory("mootool-settings-vault-expand-")
+        val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }
+        val repository = SettingsRepository(directories)
+        repository.save(
+            AppSettings.Default.copy(
+                vault = AppSettings.Default.vault.copy(
+                    jsonTreeExpandMode = "unknown",
+                    quickNoteTreeExpandMode = "bogus",
+                )
+            )
+        )
+        val loaded = SettingsRepository(directories).load()
+        assertEquals("expandAll", loaded.vault.jsonTreeExpandMode)
+        assertEquals("expandAll", loaded.vault.quickNoteTreeExpandMode)
+        assertTrue(directories.settingsFile.readText().contains("\"jsonTreeExpandMode\": \"expandAll\""))
+        root.toFile().deleteRecursively()
+    }
+
+    @Test
     fun saveNormalizesHiddenNavigationToolIds() {
         val root = kotlin.io.path.createTempDirectory("mootool-settings-nav-save-")
         val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }

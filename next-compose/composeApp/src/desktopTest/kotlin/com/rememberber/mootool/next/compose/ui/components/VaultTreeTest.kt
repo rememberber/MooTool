@@ -23,6 +23,15 @@ class VaultTreeTest {
     }
 
     @Test
+    fun normalizeVaultTreeExpandMode_matchesElectronSettingsContract() {
+        assertEquals("expandAll", normalizeVaultTreeExpandMode("expandAll"))
+        assertEquals("collapseAll", normalizeVaultTreeExpandMode("collapseAll"))
+        assertEquals("smart", normalizeVaultTreeExpandMode("smart"))
+        assertEquals("expandAll", normalizeVaultTreeExpandMode("unknown"))
+        assertEquals("expandAll", normalizeVaultTreeExpandMode(""))
+    }
+
+    @Test
     fun vaultTreeExpandForMode_smart_expandsRootOnly() {
         val items = listOf(
             VaultEntry("Work", "Work", true, 0),

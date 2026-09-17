@@ -2,6 +2,15 @@ package com.rememberber.mootool.next.compose.ui.components
 
 import com.rememberber.mootool.next.compose.storage.VaultEntry
 
+private val knownVaultTreeExpandModes = setOf("smart", "expandAll", "collapseAll")
+
+/**
+ * 对照 Electron `isVaultTreeExpandMode` + `mergeSettings`：非法值回退 `expandAll`（见 `settings.test.ts`）。
+ * Compose 额外保留 Java 迁入的 `smart`。
+ */
+fun normalizeVaultTreeExpandMode(value: String): String =
+    if (value in knownVaultTreeExpandModes) value else "expandAll"
+
 /** 对照 Electron `vaultTreeExpand.ts` `ancestorDirectoryPaths`。 */
 fun vaultAncestorDirectoryPaths(relativePath: String): List<String> {
     if (!relativePath.contains('/')) return emptyList()

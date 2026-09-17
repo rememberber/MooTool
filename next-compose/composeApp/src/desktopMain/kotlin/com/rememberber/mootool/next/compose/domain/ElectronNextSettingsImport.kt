@@ -11,6 +11,7 @@ import com.rememberber.mootool.next.compose.model.ThemePreference
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.CodeRunSessionSnapshot
 import com.rememberber.mootool.next.compose.storage.VaultPathConfig
+import com.rememberber.mootool.next.compose.ui.components.normalizeVaultTreeExpandMode
 import java.nio.file.Path
 import kotlin.io.path.readText
 import kotlinx.serialization.json.Json
@@ -197,7 +198,9 @@ object ElectronNextSettingsImport {
             vault = imported.vault.copy(
                 gitToken = if (retainSecrets) imported.vault.gitToken else "",
                 quickNotePath = VaultPathConfig.effectiveCustomRoot(imported.vault.quickNotePath),
-                jsonPath = VaultPathConfig.effectiveCustomRoot(imported.vault.jsonPath)
+                jsonPath = VaultPathConfig.effectiveCustomRoot(imported.vault.jsonPath),
+                jsonTreeExpandMode = normalizeVaultTreeExpandMode(imported.vault.jsonTreeExpandMode),
+                quickNoteTreeExpandMode = normalizeVaultTreeExpandMode(imported.vault.quickNoteTreeExpandMode),
             ),
             tools = imported.tools.copy(
                 exportDirectory = VaultPathConfig.effectiveCustomRoot(imported.tools.exportDirectory)
