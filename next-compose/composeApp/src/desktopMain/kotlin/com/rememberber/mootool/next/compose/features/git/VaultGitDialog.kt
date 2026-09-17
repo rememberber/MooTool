@@ -42,6 +42,7 @@ import com.rememberber.mootool.next.compose.domain.GitDiffSelection
 import com.rememberber.mootool.next.compose.domain.GitEditorFlushPolicy
 import com.rememberber.mootool.next.compose.domain.GitVaultFlushAction
 import com.rememberber.mootool.next.compose.domain.GitEngine
+import com.rememberber.mootool.next.compose.domain.GitOperationPresentation
 import com.rememberber.mootool.next.compose.domain.GitRemoteCommitResult
 import com.rememberber.mootool.next.compose.domain.SettingsVaultGitNormalize
 import com.rememberber.mootool.next.compose.domain.GitFileDiff
@@ -51,6 +52,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooMenu
 import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.MooStatusKind
 import com.rememberber.mootool.next.compose.ui.components.MooStatusPill
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
@@ -279,6 +281,25 @@ fun VaultGitDialog(
                                 color = colors.textMuted,
                                 fontSize = 11.sp
                             )
+                            GitOperationPresentation.inProgressMessageKey(status.operation, status.merging)?.let { key ->
+                                MooStatusPill(
+                                    container.t(key),
+                                    kind = if (status.conflicts > 0) MooStatusKind.Error else MooStatusKind.Valid,
+                                )
+                            }
+                            if (status.merging || status.conflicts > 0) {
+                                Text(
+                                    container.t(
+                                        "git.counts",
+                                        mapOf(
+                                            "changes" to status.changes.size.toString(),
+                                            "conflicts" to status.conflicts.toString(),
+                                        ),
+                                    ),
+                                    color = if (status.conflicts > 0) colors.danger else colors.textMuted,
+                                    fontSize = 11.sp,
+                                )
+                            }
                         }
                     }
                 }

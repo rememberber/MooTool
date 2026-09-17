@@ -14,6 +14,20 @@ import org.junit.Assume
  */
 class GitRebaseGuardTest {
     @Test
+    fun pushBlockedWhileRebaseInProgress() {
+        assumeGit()
+        val (root, _) = rebaseConflictFixture()
+        try {
+            val pushed = GitEngine.push(root, isolateConfig = true)
+            assertFalse(pushed.success)
+            assertTrue(pushed.message.contains("merge", ignoreCase = true), pushed.message)
+            assertTrue(pushed.message.contains("pushing", ignoreCase = true), pushed.message)
+        } finally {
+            root.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun pullBlockedWhileRebaseInProgress() {
         assumeGit()
         val (root, _) = rebaseConflictFixture()

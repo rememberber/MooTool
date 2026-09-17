@@ -42,7 +42,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
-import com.rememberber.mootool.next.compose.domain.HttpProxyConfig
+import com.rememberber.mootool.next.compose.domain.toHttpProxyConfig
 import com.rememberber.mootool.next.compose.domain.TranslationEngine
 import com.rememberber.mootool.next.compose.domain.TranslationErrorCode
 import com.rememberber.mootool.next.compose.domain.TranslationInput
@@ -135,9 +135,7 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
         session.translating = true
         session.error = ""
         persist()
-        val proxy = settings.network.let {
-            HttpProxyConfig(it.proxyEnabled, it.proxyHost, it.proxyPort, it.proxyUsername, it.proxyPassword)
-        }
+        val proxy = settings.network.toHttpProxyConfig()
         val input = TranslationInput(
             requestId = requestId,
             text = text,
@@ -357,9 +355,7 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
                 },
                 onRetranslate = { word ->
                     val requestId = "word-${UUID.randomUUID()}"
-                    val proxy = settings.network.let {
-                        HttpProxyConfig(it.proxyEnabled, it.proxyHost, it.proxyPort, it.proxyUsername, it.proxyPassword)
-                    }
+                    val proxy = settings.network.toHttpProxyConfig()
                     scope.launch(Dispatchers.IO) {
                         val result = TranslationEngine.translate(
                             TranslationInput(requestId, word.sourceText, word.sourceLang, word.targetLang, provider, timeoutMs),

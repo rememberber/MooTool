@@ -66,7 +66,7 @@ import com.rememberber.mootool.next.compose.domain.HttpEngine
 import com.rememberber.mootool.next.compose.domain.HttpErrorCode
 import com.rememberber.mootool.next.compose.domain.HttpMethod
 import com.rememberber.mootool.next.compose.domain.HttpPair
-import com.rememberber.mootool.next.compose.domain.HttpProxyConfig
+import com.rememberber.mootool.next.compose.domain.toHttpProxyConfig
 import com.rememberber.mootool.next.compose.domain.HttpRequestTab
 import com.rememberber.mootool.next.compose.domain.HttpResponseFind
 import com.rememberber.mootool.next.compose.domain.HttpResponseResult
@@ -294,9 +294,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
         session.notice = container.t("http.sending")
         persist()
         val draft = session.draft()
-        val proxy = container.settings.value.network.let {
-            HttpProxyConfig(it.proxyEnabled, it.proxyHost, it.proxyPort, it.proxyUsername, it.proxyPassword)
-        }
+        val proxy = container.settings.value.network.toHttpProxyConfig()
         scope.launch(Dispatchers.IO) {
             val result = HttpEngine.send(draft, requestId, timeout, proxy)
             withContext(Dispatchers.Main) {

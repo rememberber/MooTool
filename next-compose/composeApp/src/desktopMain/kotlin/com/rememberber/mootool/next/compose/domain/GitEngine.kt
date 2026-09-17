@@ -250,6 +250,11 @@ object GitEngine {
     }
 
     fun push(root: Path, isolateConfig: Boolean = false, token: String = ""): GitActionResult = locked(root) {
+        val current = status(root, isolateConfig)
+        if (!current.repository) return@locked GitActionResult(false, "Git repository is not initialized")
+        if (current.merging) {
+            return@locked GitActionResult(false, "Finish or abort the current merge/rebase before pushing")
+        }
         requireRemote(root, isolateConfig) { run(listOf("push", "-u", "origin", "HEAD"), root, isolateConfig, token, REMOTE_TIMEOUT_MS) }
     }
 
