@@ -53,6 +53,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
+import com.rememberber.mootool.next.compose.ui.components.mooUaResultCell
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
@@ -220,14 +221,14 @@ fun UaParseScreen(container: AppContainer, detached: Boolean) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(1.dp)) {
                             pair.forEach { (label, value) ->
                                 Column(
-                                    Modifier.weight(1f).heightIn(min = 72.dp).background(colors.workspace).padding(14.dp),
+                                    Modifier.weight(1f).mooUaResultCell().background(colors.workspace).padding(14.dp),
                                     verticalArrangement = Arrangement.spacedBy(7.dp)
                                 ) {
                                     Text(label, color = colors.textMuted, fontSize = 10.sp)
                                     Text(value.ifBlank { container.t("ua.unknown") }, color = colors.textBody, fontSize = 13.sp)
                                 }
                             }
-                            if (pair.size == 1) Spacer(Modifier.weight(1f).heightIn(min = 72.dp).background(colors.workspace))
+                            if (pair.size == 1) Spacer(Modifier.weight(1f).mooUaResultCell().background(colors.workspace))
                         }
                     }
                 }

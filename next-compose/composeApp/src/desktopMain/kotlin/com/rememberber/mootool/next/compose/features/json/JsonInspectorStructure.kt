@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.domain.JsonAnalysis
 import com.rememberber.mootool.next.compose.domain.JsonEngine
+import com.rememberber.mootool.next.compose.domain.JsonInspectorPresentation
 import com.rememberber.mootool.next.compose.ui.theme.MooColors
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
@@ -30,7 +31,8 @@ internal fun jsonInspectorUtf8ByteLabel(bytes: Int?): String =
     if (bytes == null) "—" else "$bytes B"
 
 /** Inspector「生成 JSON Schema」与 Electron 一致：仅结构解析成功时可用。 */
-internal fun jsonInspectorInferSchemaEnabled(analysis: JsonAnalysis?): Boolean = analysis != null
+internal fun jsonInspectorInferSchemaEnabled(analysis: JsonAnalysis?): Boolean =
+    JsonInspectorPresentation.inferSchemaEnabled(analysis)
 
 @Composable
 internal fun JsonInspectorStructurePanel(

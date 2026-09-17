@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.ConfigEngine
+import com.rememberber.mootool.next.compose.domain.ConfigHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.ConfigHistoryRestore
 import com.rememberber.mootool.next.compose.domain.ConfigException
 import com.rememberber.mootool.next.compose.model.AppSettings
@@ -337,7 +338,14 @@ private fun convert(container: AppContainer, session: ConfigSession, toYaml: Boo
         session.error = ""
         session.notice = summary
         container.toastSuccess(summary)
-        container.history.save(ToolId.YmlProperties.id, summary, summary, input, output, if (toYaml) "toYaml" else "toProperties")
+        container.history.save(
+            ToolId.YmlProperties.id,
+            summary,
+            summary,
+            input,
+            output,
+            ConfigHistoryMetadata.encodeConvert(toYaml = toYaml),
+        )
     }.onFailure { error ->
         session.notice = ""
         val message = messageFor(container, error)
@@ -354,7 +362,14 @@ private fun validate(container: AppContainer, session: ConfigSession) {
     val notice = if (result.valid) container.t("config.valid") else ""
     session.notice = notice
     if (result.valid) container.toastSuccess(notice)
-    container.history.save(ToolId.YmlProperties.id, container.t("config.validate"), container.t("config.validate"), session.validateSource, session.validation, "validate")
+    container.history.save(
+        ToolId.YmlProperties.id,
+        container.t("config.validate"),
+        container.t("config.validate"),
+        session.validateSource,
+        session.validation,
+        ConfigHistoryMetadata.VALIDATE,
+    )
 }
 
 private fun format(container: AppContainer, session: ConfigSession) {
@@ -367,7 +382,14 @@ private fun format(container: AppContainer, session: ConfigSession) {
             session.error = ""
             session.notice = container.t("config.format")
             container.toastSuccess(session.notice)
-            container.history.save(ToolId.YmlProperties.id, container.t("config.format"), container.t("config.format"), input, output, "format")
+            container.history.save(
+                ToolId.YmlProperties.id,
+                container.t("config.format"),
+                container.t("config.format"),
+                input,
+                output,
+                ConfigHistoryMetadata.FORMAT,
+            )
         }
         .onFailure { error ->
             session.valid = false

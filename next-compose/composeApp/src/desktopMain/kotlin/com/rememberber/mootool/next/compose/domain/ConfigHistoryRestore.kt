@@ -7,16 +7,21 @@ import com.rememberber.mootool.next.compose.sessions.ConfigSession
 object ConfigHistoryRestore {
     fun apply(session: ConfigSession, item: HistoryRecord) {
         when (item.options) {
-            "toProperties" -> {
+            ConfigHistoryMetadata.TO_YAML -> {
+                session.tab = "convert"
+                session.properties = item.input
+                session.yaml = item.output
+            }
+            ConfigHistoryMetadata.TO_PROPERTIES -> {
                 session.tab = "convert"
                 session.yaml = item.input
                 session.properties = item.output
             }
-            "validate", "format" -> {
+            ConfigHistoryMetadata.VALIDATE, ConfigHistoryMetadata.FORMAT -> {
                 session.tab = "validate"
                 session.validateSource = item.input
                 session.validation = item.output
-                session.valid = item.options == "format" || item.output.isNotEmpty()
+                session.valid = item.options == ConfigHistoryMetadata.FORMAT || item.output.isNotEmpty()
             }
             else -> {
                 session.tab = "convert"

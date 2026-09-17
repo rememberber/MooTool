@@ -69,6 +69,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenu
 import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
+import com.rememberber.mootool.next.compose.ui.components.mooMessagePresetChip
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
@@ -389,7 +390,7 @@ private fun MessageBoardPresetChip(
     }
     Row(
         modifier = modifier
-            .heightIn(min = 34.dp)
+            .mooMessagePresetChip()
             .clip(shape)
             .background(fill)
             .border(1.dp, stroke, shape)

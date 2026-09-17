@@ -62,4 +62,13 @@ class ToolRegistryTest {
         assertTrue(ToolRegistry.matchesSearch("jsonpath", tool) { it })
         assertTrue(!ToolRegistry.matchesSearch("http", tool) { it })
     }
+
+    @Test
+    fun searchFindsRemainingFToolsByKeywords() {
+        val t: (String) -> String = { it }
+        assertTrue(ToolRegistry.matchesSearch("wire", ToolRegistry.byId.getValue(ToolId.Protobuf), t))
+        assertTrue(ToolRegistry.matchesSearch("hosts", ToolRegistry.byId.getValue(ToolId.Host), t))
+        assertTrue(ToolRegistry.matchesSearch("gcd", ToolRegistry.byId.getValue(ToolId.Calculator), t))
+        assertTrue(ToolRegistry.matchesSearch("watermark", ToolRegistry.byId.getValue(ToolId.Image), t))
+    }
 }

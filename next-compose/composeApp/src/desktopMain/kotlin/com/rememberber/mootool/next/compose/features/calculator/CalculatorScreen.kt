@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.CalculatorEngine
+import com.rememberber.mootool.next.compose.domain.CalculatorHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.CalculatorHistoryRestore
 import com.rememberber.mootool.next.compose.domain.CalculatorException
 import com.rememberber.mootool.next.compose.model.HistoryRecord
@@ -54,6 +55,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooCalculatorResultRow
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
@@ -263,7 +265,7 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                     fontFamily = FontFamily.Monospace,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                    modifier = Modifier.fillMaxWidth().mooCalculatorResultRow()
                         .clip(RoundedCornerShape(6.dp))
                         .background(colors.workspace)
                         .border(1.dp, colors.borderControl, RoundedCornerShape(6.dp))
@@ -383,7 +385,14 @@ private fun runCalc(container: AppContainer, session: CalculatorSession, summary
             session.notice = summary
             container.toastSuccess(summary)
             session.log = listOf("$summary: $input = $output") + session.log.take(11)
-            container.history.save(ToolId.Calculator.id, summary, summary, input, output)
+            container.history.save(
+                ToolId.Calculator.id,
+                summary,
+                summary,
+                input,
+                output,
+                CalculatorHistoryMetadata.encode(),
+            )
         }
         .onFailure { error ->
             session.notice = ""

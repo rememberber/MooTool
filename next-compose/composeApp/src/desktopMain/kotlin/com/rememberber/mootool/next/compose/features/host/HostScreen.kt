@@ -81,6 +81,8 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenu
 import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooMenuSeparator
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooHostEditBar
+import com.rememberber.mootool.next.compose.ui.components.mooHostProfileSearch
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooFindBarBackground
@@ -317,7 +319,7 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                     .mooToolShell(p5 = true, endBorder = false)
             ) {
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = 46.dp).mooToolbarBackground()
+                    Modifier.fillMaxWidth().mooHostEditBar().mooToolbarBackground()
                         .padding(horizontal = 10.dp, vertical = 7.dp),
                     horizontalArrangement = Arrangement.spacedBy(7.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -650,7 +652,12 @@ private fun ProfileList(
         Modifier.width(width.dp).fillMaxHeight().mooToolShell(colors.sidebar, flatten = true).padding(7.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        MooCompactSearch(session.query, { session.query = it; onChanged() }, placeholder = container.t("common.search"))
+        MooCompactSearch(
+            session.query,
+            { session.query = it; onChanged() },
+            placeholder = container.t("common.search"),
+            modifier = Modifier.fillMaxWidth().mooHostProfileSearch(),
+        )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Box(
                 Modifier.clip(RoundedCornerShape(4.dp)).background(if (session.includeContent) colors.accent else colors.workspace)

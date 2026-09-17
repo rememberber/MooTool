@@ -159,6 +159,36 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun screenshotQueryOpensGeneralSettings() {
+        val hits = CommandSearchCatalog.search("screenshot", Translator(AppLanguage.EnUS)::t)
+        assertEquals("general", hits.single().categoryId)
+    }
+
+    @Test
+    fun structureQueryOpensVaultSettings() {
+        val hits = CommandSearchCatalog.search("structure", Translator(AppLanguage.EnUS)::t)
+        assertTrue(hits.any { it.categoryId == "vault" })
+    }
+
+    @Test
+    fun hostsQueryOpensNetworkSettings() {
+        val hits = CommandSearchCatalog.search("hosts", Translator(AppLanguage.EnUS)::t)
+        assertEquals("network", hits.single().categoryId)
+    }
+
+    @Test
+    fun calculatorDefaultsQueryOpensToolsSettings() {
+        val hits = CommandSearchCatalog.search("calculator", Translator(AppLanguage.EnUS)::t)
+        assertEquals("tools", hits.single().categoryId)
+    }
+
+    @Test
+    fun autoDownloadKeywordOpensAboutSettings() {
+        val hits = CommandSearchCatalog.search("auto", Translator(AppLanguage.EnUS)::t)
+        assertTrue(hits.any { it.categoryId == "about" })
+    }
+
+    @Test
     fun catalogCoversEverySettingsNavCategory() {
         val covered = CommandSearchCatalog.targets.map { it.categoryId }.toSet()
         SettingsNavCategory.entries.forEach { category ->

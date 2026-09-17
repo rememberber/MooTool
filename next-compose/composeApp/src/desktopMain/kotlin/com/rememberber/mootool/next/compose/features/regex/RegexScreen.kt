@@ -64,6 +64,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
+import com.rememberber.mootool.next.compose.ui.components.mooRegexTestPane
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
@@ -189,7 +190,7 @@ private fun TestWorkspace(
 ) {
     val settings by container.settings.collectAsState()
     val colors = MooTheme.colors
-    Column(modifier.fillMaxSize()) {
+    Column(modifier.fillMaxSize().mooRegexTestPane()) {
         Column(
             Modifier.fillMaxWidth().padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)

@@ -50,6 +50,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooToolTabsRow
 import com.rememberber.mootool.next.compose.ui.components.IoThreePaneRow
 import com.rememberber.mootool.next.compose.ui.components.IoTwoPaneRow
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooProtobufWirePane
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
@@ -249,7 +250,10 @@ private fun WireTab(
         minRight = 240f,
         modifier = modifier.padding(12.dp),
         left = {
-            Column(Modifier.fillMaxSize().mooToolShell().padding(8.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Column(
+                Modifier.fillMaxSize().mooToolShell().mooProtobufWirePane().padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(7.dp),
+            ) {
                 Text(container.t("protobuf.wireInput"), color = MooTheme.colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                 MooTextField(session.wireInput, { session.onUserInput { session.wireInput = it; session.error = ""; onChanged() } }, modifier = Modifier.weight(1f).fillMaxWidth(), singleLine = false)
             }

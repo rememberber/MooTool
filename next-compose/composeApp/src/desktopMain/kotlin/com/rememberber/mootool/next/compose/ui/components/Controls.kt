@@ -1417,6 +1417,46 @@ fun Modifier.mooEnvVarRow(): Modifier = heightIn(min = 36.dp)
 @Composable
 fun Modifier.mooNetSection(): Modifier = padding(vertical = 12.dp)
 
+/** Electron `.color-board` 色码侧栏宽。 */
+@Composable
+fun Modifier.mooColorHexColumn(): Modifier = widthIn(min = 136.dp)
+
+/** Electron 调色板当前色预览区。 */
+@Composable
+fun Modifier.mooColorPreviewPane(): Modifier = heightIn(min = 190.dp)
+
+/** Electron `.calculator-output` 结果行。 */
+@Composable
+fun Modifier.mooCalculatorResultRow(): Modifier = heightIn(min = 56.dp)
+
+/** Electron Host 编辑条。 */
+@Composable
+fun Modifier.mooHostEditBar(): Modifier = heightIn(min = 46.dp)
+
+/** Electron `.host-profile-search` 方案列表搜索行。 */
+@Composable
+fun Modifier.mooHostProfileSearch(): Modifier = heightIn(min = 33.dp)
+
+/** Electron 时间工具「当前」带。 */
+@Composable
+fun Modifier.mooTimeCurrentBand(): Modifier = heightIn(min = 104.dp)
+
+/** Electron 留言板预设芯片行。 */
+@Composable
+fun Modifier.mooMessagePresetChip(): Modifier = heightIn(min = 34.dp)
+
+/** Electron `.regex-test` 测试区最小高度。 */
+@Composable
+fun Modifier.mooRegexTestPane(): Modifier = heightIn(min = 280.dp)
+
+/** Electron UA 解析结果格。 */
+@Composable
+fun Modifier.mooUaResultCell(): Modifier = heightIn(min = 72.dp)
+
+/** Electron Protobuf Wire 输入区壳。 */
+@Composable
+fun Modifier.mooProtobufWirePane(): Modifier = heightIn(min = 200.dp)
+
 @Composable
 fun Modifier.mooWorkspaceBackground(): Modifier {
     val colors = MooTheme.colors

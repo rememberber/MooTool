@@ -77,6 +77,8 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooColorHexColumn
+import com.rememberber.mootool.next.compose.ui.components.mooColorPreviewPane
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
@@ -237,7 +239,7 @@ fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
                     session.onUserInput { session.code = it; session.error = "" }
                     refresh()
                 },
-                modifier = Modifier.width(136.dp),
+                modifier = Modifier.mooColorHexColumn(),
                 placeholder = container.t("color.code"),
                 compact = true
             )
@@ -345,7 +347,7 @@ private fun CurrentPanel(
     val text = ColorEngine.bestTextColor(session.primary)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Box(
-            Modifier.fillMaxWidth().heightIn(min = 190.dp).clip(RoundedCornerShape(8.dp))
+            Modifier.fillMaxWidth().mooColorPreviewPane().clip(RoundedCornerShape(8.dp))
                 .border(1.dp, ColorEngine.parseColor(text).toCompose().copy(alpha = 0.16f), RoundedCornerShape(8.dp))
                 .background(session.primary.toCompose())
                 .padding(18.dp),

@@ -56,6 +56,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenu
 import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooStatusPill
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooTimeCurrentBand
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
@@ -280,7 +281,7 @@ private fun CurrentBand(container: AppContainer, session: TimeSession, nowMillis
     val currentTimestamp = (nowMillis / 1000).toString()
     val currentLocal = TimeEngine.formatLocalTime(nowMillis, session.zone)
     Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 104.dp).background(colors.surfaceSubtle)
+        modifier = Modifier.fillMaxWidth().mooTimeCurrentBand().background(colors.surfaceSubtle)
             .padding(horizontal = 22.dp, vertical = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(18.dp)
