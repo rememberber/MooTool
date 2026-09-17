@@ -26,5 +26,6 @@
 | fetch-prune-stale-ref | 同上 | `fetch --prune` | `GitEngineTest.fetchPruneRemovesStaleRemoteTrackingBranch`（[DIFF-478](../diff/478-git-fetch-prune-stale-ref-parity.md)） |
 | fetch-diverged-ahead-behind | 同上 | `fetch` + `status` ahead/behind | `GitEngineTest.fetchReportsAheadAndBehindWhenBranchesDiverge`（[DIFF-479](../diff/479-git-fetch-diverged-ahead-behind-parity.md)） |
 | configure-remote-remove | 同上 | 空 URL 删除 origin | `GitEngineTest.configureRemoteRemoveClearsOriginFromStatus` / `configureRemoteRemoveWhenAlreadyRemovedIsIdempotent`（[DIFF-475](../diff/475-git-configure-remote-remove-parity.md)） |
+| push-unresolved-conflicts | 同上 | 冲突未清禁止 push | `GitPushGuardTest.pushBlockedWhileMergeConflictsRemain`（[DIFF-517](../diff/517-settings-catalog-git-push-host-json.md)、[DIFF-518](../diff/518-settings-translation-commit-listpaths.md)） |
 
 UI：`VaultGitDialog` 冲突行「使用本地/远端」Compose Tab 帧 `142` 见 [DIFF-437](../diff/437-git-conflict-actions-quicknote-copy.md)（非产品主窗）。

@@ -45,6 +45,7 @@ import com.rememberber.mootool.next.compose.domain.GitRemoteCommitResult
 import com.rememberber.mootool.next.compose.domain.NavigationToolVisibility
 import com.rememberber.mootool.next.compose.domain.ProxyPortCommitResult
 import com.rememberber.mootool.next.compose.domain.SettingsNetworkNormalize
+import com.rememberber.mootool.next.compose.domain.SettingsToolsTranslationNormalize
 import com.rememberber.mootool.next.compose.domain.SettingsVaultGitNormalize
 import com.rememberber.mootool.next.compose.domain.TimeoutCommitResult
 import com.rememberber.mootool.next.compose.app.UpdateUiState
@@ -891,14 +892,44 @@ fun SettingsScreen(container: AppContainer) {
                         )
                     }
                     SettingRow(container.t("settings.tools.sourceLang")) {
-                        SettingTextField(settings.tools.translationSourceLang, {
-                            container.updateSettings { current -> current.copy(tools = current.tools.copy(translationSourceLang = it)) }
-                        })
+                        SettingCommitTextField(
+                            settings.tools.translationSourceLang,
+                            onCommit = { draft ->
+                                val (source, target) = SettingsToolsTranslationNormalize.commitLanguagePair(
+                                    draft,
+                                    settings.tools.translationTargetLang,
+                                )
+                                container.updateSettings { current ->
+                                    current.copy(
+                                        tools = current.tools.copy(
+                                            translationSourceLang = source,
+                                            translationTargetLang = target,
+                                        ),
+                                    )
+                                }
+                                true
+                            },
+                        )
                     }
                     SettingRow(container.t("settings.tools.targetLang")) {
-                        SettingTextField(settings.tools.translationTargetLang, {
-                            container.updateSettings { current -> current.copy(tools = current.tools.copy(translationTargetLang = it)) }
-                        })
+                        SettingCommitTextField(
+                            settings.tools.translationTargetLang,
+                            onCommit = { draft ->
+                                val (source, target) = SettingsToolsTranslationNormalize.commitLanguagePair(
+                                    settings.tools.translationSourceLang,
+                                    draft,
+                                )
+                                container.updateSettings { current ->
+                                    current.copy(
+                                        tools = current.tools.copy(
+                                            translationSourceLang = source,
+                                            translationTargetLang = target,
+                                        ),
+                                    )
+                                }
+                                true
+                            },
+                        )
                     }
                 }
                 SettingsNavCategory.Shortcuts -> SettingsGroup(container.t("settings.group.shortcuts")) {

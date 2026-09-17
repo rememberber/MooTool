@@ -60,6 +60,12 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun translateQueryOpensToolsDefaults() {
+        val hits = CommandSearchCatalog.search("translate", Translator(AppLanguage.EnUS)::t)
+        assertEquals("tools", hits.single().categoryId)
+    }
+
+    @Test
     fun integrationQueryOpensAiSettings() {
         val hits = CommandSearchCatalog.search("integration", Translator(AppLanguage.EnUS)::t)
         assertEquals("ai", hits.single().categoryId)
