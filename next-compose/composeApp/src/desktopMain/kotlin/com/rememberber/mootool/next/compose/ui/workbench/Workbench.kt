@@ -47,6 +47,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
@@ -283,15 +284,42 @@ private fun CommandSearch(container: AppContainer) {
     val results = remember(query, container.settings.value.general.language) {
         ToolRegistry.search(query) { container.t(it) }
     }
-    val focus = remember { FocusRequester() }
+    val searchFocus = remember { FocusRequester() }
+    val resultFocus = remember { FocusRequester() }
     LaunchedEffect(results) { selected = nextCommandIndex(selected, results.size, stay = true) }
-    LaunchedEffect(Unit) { focus.requestFocus() }
+    LaunchedEffect(Unit) { searchFocus.requestFocus() }
     fun choose(index: Int) {
         results.getOrNull(index)?.let { container.openTool(it.id) }
         container.setSearchOpen(false)
     }
-    fun onSearchKey(event: androidx.compose.ui.input.key.KeyEvent): Boolean {
+    fun focusCommandPaletteTarget(target: CommandPaletteFocusTarget) {
+        when (target) {
+            CommandPaletteFocusTarget.Search -> searchFocus.requestFocus()
+            CommandPaletteFocusTarget.Result -> resultFocus.requestFocus()
+        }
+    }
+    fun onPaletteKey(event: androidx.compose.ui.input.key.KeyEvent, fromResultRow: Boolean = false): Boolean {
         if (event.type != KeyEventType.KeyDown || event.blockedByIme()) return false
+        if (event.key == Key.Tab) {
+            val next = commandPaletteTabFocusTransition(
+                shift = event.isShiftPressed,
+                fromResultRow = fromResultRow,
+                resultCount = results.size,
+            )
+            if (next != null) {
+                focusCommandPaletteTarget(next)
+                return true
+            }
+        }
+        if (!fromResultRow) {
+            return when (event.key) {
+                Key.DirectionDown -> { selected = nextCommandIndex(selected, results.size, down = true); true }
+                Key.DirectionUp -> { selected = nextCommandIndex(selected, results.size, down = false); true }
+                Key.Enter -> { choose(selected); true }
+                Key.Escape -> { container.setSearchOpen(false); true }
+                else -> false
+            }
+        }
         return when (event.key) {
             Key.DirectionDown -> { selected = nextCommandIndex(selected, results.size, down = true); true }
             Key.DirectionUp -> { selected = nextCommandIndex(selected, results.size, down = false); true }
@@ -310,7 +338,7 @@ private fun CommandSearch(container: AppContainer) {
                 .width(620.dp)
                 .mooDialogSurface(MooTheme.dimens.commandRadius)
                 .semantics { contentDescription = container.t("app.search.title") }
-                .onPreviewKeyEvent(::onSearchKey)
+                .onPreviewKeyEvent { onPaletteKey(it) }
         ) {
             Row(
                 Modifier
@@ -336,7 +364,7 @@ private fun CommandSearch(container: AppContainer) {
                     },
                     modifier = Modifier.weight(1f),
                     placeholder = container.t("app.search.placeholder"),
-                    fieldModifier = Modifier.focusRequester(focus)
+                    fieldModifier = Modifier.focusRequester(searchFocus)
                 )
                 Text(
                     "×",
@@ -371,6 +399,8 @@ private fun CommandSearch(container: AppContainer) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .then(if (active) Modifier.focusRequester(resultFocus) else Modifier)
+                                .onPreviewKeyEvent { onPaletteKey(it, fromResultRow = true) }
                                 .mooFocusOutline(rowFocused, rowShape)
                                 .clip(rowShape)
                                 .background(colors.sidebarItemBrush(active, card = false, hovered = false))
@@ -420,6 +450,25 @@ private fun CommandSearch(container: AppContainer) {
                 }
             }
         }
+    }
+}
+
+internal enum class CommandPaletteFocusTarget {
+    Search,
+    Result,
+}
+
+/** Tab / Shift+Tab between搜索框与当前选中结果行（对齐 Electron 结果按钮可 Tab 聚焦）。 */
+internal fun commandPaletteTabFocusTransition(
+    shift: Boolean,
+    fromResultRow: Boolean,
+    resultCount: Int,
+): CommandPaletteFocusTarget? {
+    if (resultCount <= 0) return null
+    return when {
+        !shift && !fromResultRow -> CommandPaletteFocusTarget.Result
+        shift && fromResultRow -> CommandPaletteFocusTarget.Search
+        else -> null
     }
 }
 

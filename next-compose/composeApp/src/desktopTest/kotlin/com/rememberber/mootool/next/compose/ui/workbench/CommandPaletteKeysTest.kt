@@ -17,6 +17,21 @@ class CommandPaletteKeysTest {
     }
 
     @Test
+    fun tabFocusTransition_movesBetweenSearchAndSelectedResult() {
+        assertEquals(
+            CommandPaletteFocusTarget.Result,
+            commandPaletteTabFocusTransition(shift = false, fromResultRow = false, resultCount = 3),
+        )
+        assertEquals(
+            CommandPaletteFocusTarget.Search,
+            commandPaletteTabFocusTransition(shift = true, fromResultRow = true, resultCount = 3),
+        )
+        assertEquals(null, commandPaletteTabFocusTransition(shift = false, fromResultRow = false, resultCount = 0))
+        assertEquals(null, commandPaletteTabFocusTransition(shift = true, fromResultRow = false, resultCount = 2))
+        assertEquals(null, commandPaletteTabFocusTransition(shift = false, fromResultRow = true, resultCount = 2))
+    }
+
+    @Test
     fun searchCopyFollowsElectronKeys() {
         val zh = Translator(AppLanguage.ZhCN)
         assertEquals("搜索工具", zh.t("app.search.title"))
