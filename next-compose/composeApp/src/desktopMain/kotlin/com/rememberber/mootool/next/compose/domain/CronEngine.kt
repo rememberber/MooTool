@@ -43,6 +43,7 @@ object CronEngine {
 
     private val parser = CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ))
     private val stamp = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    private val offsetStamp = DateTimeFormatter.ofPattern("xxx")
 
     fun build(fields: CronFields): String {
         val required = listOf(fields.second, fields.minute, fields.hour, fields.day, fields.month, fields.week)
@@ -93,7 +94,7 @@ object CronEngine {
             val next = execution.nextExecution(cursor).orElse(null) ?: break
             cursor = next
             if (matchesYear(next.year, fields.year)) {
-                runs += "${next.format(stamp)} ${zoneDisplay(next)}"
+                runs += formatRunLine(next)
             }
         }
         if (runs.size < count) throw CronException("no-runs", "No matching run time in the supported year range")
@@ -138,13 +139,8 @@ object CronEngine {
         }
     }
 
-    private fun zoneDisplay(time: ZonedDateTime): String {
-        val hours = time.offset.totalSeconds / 3600.0
-        val whole = hours.toInt()
-        return if (hours == whole.toDouble()) {
-            "GMT" + (if (whole >= 0) "+" else "") + whole
-        } else {
-            time.offset.id
-        }
+    internal fun formatRunLine(time: ZonedDateTime): String {
+        val offset = time.format(offsetStamp)
+        return "${time.format(stamp)} $offset"
     }
 }

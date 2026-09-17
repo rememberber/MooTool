@@ -47,6 +47,7 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.CronEngine
 import com.rememberber.mootool.next.compose.domain.CronException
 import com.rememberber.mootool.next.compose.domain.CronFields
+import com.rememberber.mootool.next.compose.domain.CronHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.TimeEngine
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.CronSession
@@ -285,7 +286,11 @@ fun CronScreen(container: AppContainer, detached: Boolean) {
             onRestore = { item ->
                 applyExpression(session, item.input)
                 session.runs = item.output.split('\n').filter { it.isNotBlank() }
-                if (item.options.isNotBlank()) session.zone = item.options
+                CronHistoryMetadata.parseTimeZone(item.options)?.let { session.zone = it }
+                session.description = runCatching {
+                    CronEngine.describe(session.expression, language)
+                }.getOrDefault("")
+                session.error = ""
                 session.historyOpen = false
                 refresh()
             },
@@ -380,7 +385,14 @@ private fun parseRuns(container: AppContainer, session: CronSession, language: S
                     session.error = ""
                     session.notice = container.t("cron.nextRuns")
                     container.toastSuccess(session.notice)
-                    container.history.save(ToolId.Cron.id, session.notice, session.notice, session.expression, runs.joinToString("\n"), session.zone)
+                    container.history.save(
+                        ToolId.Cron.id,
+                        session.notice,
+                        session.notice,
+                        session.expression,
+                        runs.joinToString("\n"),
+                        CronHistoryMetadata.encodeTimeZone(session.zone),
+                    )
                 },
                 onFailure = { error ->
                     session.runs = emptyList()
