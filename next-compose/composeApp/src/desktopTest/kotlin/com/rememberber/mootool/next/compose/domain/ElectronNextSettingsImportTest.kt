@@ -123,6 +123,19 @@ class ElectronNextSettingsImportTest {
     }
 
     @Test
+    fun merge_normalizesEditorFontNames() {
+        val imported = AppSettings.Default.copy(
+            editor = AppSettings.Default.editor.copy(
+                jsonFontName = "  PingFang SC  ",
+                quickNoteFontName = "",
+            ),
+        )
+        val merged = ElectronNextSettingsImport.mergeInto(AppSettings.Default, imported)
+        assertEquals("PingFang SC", merged.editor.jsonFontName)
+        assertEquals("ui-monospace", merged.editor.quickNoteFontName)
+    }
+
+    @Test
     fun loadsRuntimeDraftsAndOptionsIntoCodeRunPatch() {
         val dir = createTempDirectory("electron-runtime-")
         val store = dir.resolve("mootool-next.json")

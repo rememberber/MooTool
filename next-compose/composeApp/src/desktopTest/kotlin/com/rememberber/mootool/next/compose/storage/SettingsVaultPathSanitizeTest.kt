@@ -91,6 +91,26 @@ class SettingsVaultPathSanitizeTest {
     }
 
     @Test
+    fun loadNormalizesEditorFontNames() {
+        val root = kotlin.io.path.createTempDirectory("mootool-settings-editor-font-")
+        val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }
+        val repository = SettingsRepository(directories)
+        repository.save(
+            AppSettings.Default.copy(
+                editor = AppSettings.Default.editor.copy(
+                    jsonFontName = "  PingFang SC  ",
+                    quickNoteFontName = "",
+                )
+            )
+        )
+        val loaded = SettingsRepository(directories).load()
+        assertEquals("PingFang SC", loaded.editor.jsonFontName)
+        assertEquals("ui-monospace", loaded.editor.quickNoteFontName)
+        assertTrue(directories.settingsFile.readText().contains("\"jsonFontName\": \"PingFang SC\""))
+        root.toFile().deleteRecursively()
+    }
+
+    @Test
     fun saveNormalizesHiddenNavigationToolIds() {
         val root = kotlin.io.path.createTempDirectory("mootool-settings-nav-save-")
         val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }

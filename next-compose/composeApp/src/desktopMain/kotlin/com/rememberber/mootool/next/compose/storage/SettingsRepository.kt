@@ -2,6 +2,7 @@ package com.rememberber.mootool.next.compose.storage
 
 import com.rememberber.mootool.next.compose.app.AppDirectories
 import com.rememberber.mootool.next.compose.app.ProductIdentity
+import com.rememberber.mootool.next.compose.domain.EditorFontSettings
 import com.rememberber.mootool.next.compose.domain.NavigationToolVisibility
 import com.rememberber.mootool.next.compose.domain.TranslationEngine
 import com.rememberber.mootool.next.compose.ui.components.normalizeVaultTreeExpandMode
@@ -103,6 +104,7 @@ class SettingsRepository(
             translationSourceLang = translationLanguages.first,
             translationTargetLang = translationLanguages.second,
         )
+        val editor = EditorFontSettings.normalizeEditorSettings(settings.editor, AppSettings.Default.editor)
         if (quickNotePath == vault.quickNotePath &&
             jsonPath == vault.jsonPath &&
             exportDirectory == settings.tools.exportDirectory &&
@@ -110,13 +112,15 @@ class SettingsRepository(
             layout == settings.layout &&
             jsonTreeExpandMode == vault.jsonTreeExpandMode &&
             quickNoteTreeExpandMode == vault.quickNoteTreeExpandMode &&
-            tools == settings.tools
+            tools == settings.tools &&
+            editor == settings.editor
         ) {
             return settings
         }
         return settings.copy(
             layout = layout,
             data = settings.data.copy(directory = dataDirectory),
+            editor = editor,
             vault = vault.copy(
                 quickNotePath = quickNotePath,
                 jsonPath = jsonPath,

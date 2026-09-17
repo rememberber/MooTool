@@ -126,9 +126,15 @@ object ElectronNextSettingsImport {
             ),
             editor = current.editor.copy(
                 sqlDialect = patch.editor.sqlDialect,
-                jsonFontName = patch.editor.jsonFontName,
+                jsonFontName = EditorFontSettings.normalizeFontName(
+                    patch.editor.jsonFontName,
+                    AppSettings.Default.editor.jsonFontName,
+                ),
                 jsonFontSize = patch.editor.jsonFontSize.coerceIn(11, 24),
-                quickNoteFontName = patch.editor.quickNoteFontName,
+                quickNoteFontName = EditorFontSettings.normalizeFontName(
+                    patch.editor.quickNoteFontName,
+                    AppSettings.Default.editor.quickNoteFontName,
+                ),
                 quickNoteFontSize = patch.editor.quickNoteFontSize.coerceIn(11, 24),
                 softWrap = patch.editor.softWrap
             ),
@@ -192,6 +198,7 @@ object ElectronNextSettingsImport {
         }
         return imported.copy(
             general = general,
+            editor = EditorFontSettings.normalizeEditorSettings(imported.editor, AppSettings.Default.editor),
             layout = imported.layout.copy(customGroups = groups),
             network = imported.network.copy(
                 proxyPassword = if (retainSecrets) imported.network.proxyPassword else ""
