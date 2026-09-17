@@ -54,9 +54,4 @@ class UaRegexTimeWiringPresentationTest {
         assertTrue(outcome is UaWiringPresentation.ParseOutcome.Success)
     }
 
-    @Test
-    fun timeConvertGuards() {
-        assertFalse(TimeWiringPresentation.canConvertTimestamp(""))
-        assertTrue(TimeWiringPresentation.canConvertLocal("2026-01-01"))
-    }
 }

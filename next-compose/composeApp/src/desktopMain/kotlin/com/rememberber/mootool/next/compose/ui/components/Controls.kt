@@ -1617,6 +1617,15 @@ fun Modifier.mooHostProfileSearch(): Modifier = heightIn(min = 33.dp)
 @Composable
 fun Modifier.mooTimeCurrentBand(): Modifier = heightIn(min = 104.dp)
 
+/** Electron `.time-quick-zones` 快捷时区 segmented 容器。 */
+@Composable
+fun Modifier.mooTimeQuickZones(): Modifier {
+    val colors = MooTheme.colors
+    return clip(RoundedCornerShape(7.dp))
+        .background(colors.control)
+        .padding(3.dp)
+}
+
 /** Electron 留言板预设芯片行。 */
 @Composable
 fun Modifier.mooMessagePresetChip(): Modifier = heightIn(min = 34.dp)

@@ -58,6 +58,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooStatusPill
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooTimeCurrentBand
+import com.rememberber.mootool.next.compose.ui.components.mooTimeQuickZones
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
@@ -146,8 +147,8 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
                 }
             }
             Row(
-                Modifier.clip(RoundedCornerShape(7.dp)).background(colors.control).padding(3.dp),
-                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                Modifier.mooTimeQuickZones(),
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 TimeEngine.quickTimezones.forEach { (zone, label) ->
                     MooButton(
@@ -358,8 +359,9 @@ private fun ClockOverlay(container: AppContainer, session: TimeSession, nowMilli
 }
 
 private fun convertToLocal(container: AppContainer, session: TimeSession, refresh: () -> Unit) {
-    runCatching { TimeEngine.timestampToLocal(session.timestamp, session.unit, session.zone) }
-        .onSuccess { result ->
+    when (val outcome = TimeWiringPresentation.runTimestampToLocal(session.timestamp, session.unit, session.zone)) {
+        is TimeWiringPresentation.ConvertOutcome.ToLocal -> {
+            val result = outcome.result
             session.localTime = result.localTime
             session.unit = result.unit
             session.error = ""
@@ -368,27 +370,31 @@ private fun convertToLocal(container: AppContainer, session: TimeSession, refres
             container.toastSuccess(notice)
             saveHistory(container, session, notice, session.timestamp, result.localTime)
         }
-        .onFailure { error ->
+        is TimeWiringPresentation.ConvertOutcome.Failure -> {
             session.notice = ""
-            session.error = messageFor(container, error)
+            session.error = messageFor(container, outcome.error)
         }
+        is TimeWiringPresentation.ConvertOutcome.ToTimestamp -> Unit
+    }
     refresh()
 }
 
 private fun convertToTimestamp(container: AppContainer, session: TimeSession, refresh: () -> Unit) {
-    runCatching { TimeEngine.localToTimestamp(session.localTime, session.unit, session.zone) }
-        .onSuccess { result ->
-            session.timestamp = result
+    when (val outcome = TimeWiringPresentation.runLocalToTimestamp(session.localTime, session.unit, session.zone)) {
+        is TimeWiringPresentation.ConvertOutcome.ToTimestamp -> {
+            session.timestamp = outcome.timestamp
             session.error = ""
             val notice = container.t("time.notice.toTimestamp")
             session.notice = notice
             container.toastSuccess(notice)
-            saveHistory(container, session, notice, session.localTime, result)
+            saveHistory(container, session, notice, session.localTime, outcome.timestamp)
         }
-        .onFailure { error ->
+        is TimeWiringPresentation.ConvertOutcome.Failure -> {
             session.notice = ""
-            session.error = messageFor(container, error)
+            session.error = messageFor(container, outcome.error)
         }
+        is TimeWiringPresentation.ConvertOutcome.ToLocal -> Unit
+    }
     refresh()
 }
 
