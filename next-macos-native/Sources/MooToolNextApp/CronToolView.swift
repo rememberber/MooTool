@@ -44,7 +44,7 @@ struct CronToolView: View {
                     Text(loc("cron.expression")).font(.headline)
                     TextField("0 0 9 ? * MON-FRI", text: $draft.input).textFieldStyle(.roundedBorder).font(.system(.body, design: .monospaced))
                         .onChange(of: draft.input) { _, value in syncFields(from: value) }
-                    if let description = CronExpression.describe(draft.input) {
+                    if let description = CronExpression.describe(draft.input, language: language) {
                         Text(humanSummary(description)).font(.callout).foregroundStyle(.secondary)
                     }
                     EditorPane(title: loc("cron.nextRuns"), text: $draft.output, editable: false)
@@ -92,7 +92,7 @@ struct CronToolView: View {
             formatter.timeZone = zone
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss ZZZZ"
             let lines = runs.enumerated().map { "\($0.offset + 1).  \(formatter.string(from: $0.element))" }.joined(separator: "\n")
-            if let description = CronExpression.describe(d.input) {
+            if let description = CronExpression.describe(d.input, language: lang) {
                 let sep = lang == .enUS ? ": " : "："
                 let summary = AppLocalization.string("cron.humanReadable", language: lang) + sep + description
                 return "\(summary)\n\n\(lines)"

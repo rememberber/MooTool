@@ -6,10 +6,10 @@
 
 | 命令 | 结果 | 说明 |
 | --- | --- | --- |
-| `./scripts/check-core.sh` | 59 组，0 失败 | 含 SQLite 导入（HTTP/Host/翻译/收藏/历史/草稿/`t_quick_note`/`t_json_beauty`） |
-| `./scripts/smoke.sh` | 通过（偶发需复跑） | 附件、随手记、JSON、格式化、文档库选区/滚动、86 张截图、重启持久化；与 SwiftPM 并发时格式化验收可能需等待更久 |
+| `./scripts/check-core.sh` | 59 组，0 失败 | 含 SQLite 导入（HTTP/Host/翻译/收藏/历史/草稿/`t_quick_note`/`t_json_beauty`）；**2026-09-17** 工作树终验复跑通过 |
+| `./scripts/smoke.sh` | 通过（偶发需复跑） | 附件、随手记、JSON、格式化、文档库选区/滚动、86 张截图、重启持久化；**2026-09-17** 两批 i18n 后均单次全绿（约 6.1 min / 8.6 min） |
 
-最近一次 smoke 全绿：**2026-09-16** — 关闭主窗口 `closeBehavior` 合入后复跑通过（约 8.4 min）；同日 `t_quick_note` / `t_json_beauty`、托盘与 `t_func_content` 亦全绿。
+最近一次 smoke 全绿：**2026-09-17** — 调色板 / Cron describe / JSON worker / 计算器标签等批次后单次通过（约 6.1 min）；同日 Markdown 预览 / 托盘·附件批次（约 8.6 min）亦全绿。
 
 ## 范围说明
 
@@ -67,6 +67,15 @@
 - RSA/SM2/`RSAOpenSSLBridge` 用户可见错误与验签结果（`crypto.error.*`、`crypto.verify.*`）：**check-core** **59/0**（约 2.5 min，2026-09-17）；**smoke** 复跑仍失败于格式化验收（`JSON 操作超过 3 秒`），随手记查找计数段未再报错（已加长 `waitForFind` 等待）。
 - 格式化 worker 超时改为 10s（`dc5f1049`）后 **smoke** 单次全绿（约 3.7 min，2026-09-17；含附件/随手记/JSON/Vault/86 截图与重启恢复）。
 - HTTP/`ProcessRunner`/网络诊断校验错误（`http.error.*`、`process.error.*`、`net.error.*`）：**check-core** **59/0**（约 1.5 min，2026-09-17）。
+- 对称 **AES/DES/SM4 ECB**、Base32、`CurlCommand` / `HTTPFields` / `HTTPMultipartBuilder` Core 错误（`crypto.error.*`、`encode.error.base32Invalid`、`http.curl.*` / `http.field.*` / `http.multipart.*`）：**check-core** **59/0**（约 2.8 min，2026-09-17；**smoke** 未在本批复跑）。
+- `DocumentVault` 库内校验/重命名/移动/批量导入（`vault.error.*` 扩展键）、`VaultGitService` 用户可见 `ToolError` 与操作结果摘要（`git.error.*` / `git.result.*`，含 Git 面板与自动检查点）：**check-core** **59/0**（约 2.9 min，2026-09-17）；**smoke** 单次全绿（约 7.1 min，2026-09-17）。
+- `QuickNoteOptions` / 查找替换限额、`NoteImagePayload` / `NoteAttachmentRepository` / 备份恢复附件路径（`quickNote.error.*`、`attachment.error.*`、`backup.error.attachment*`）：**check-core** **59/0**（2026-09-17；**MooToolNextCore** 内 `ToolError` 硬编码中文已清零）；**smoke** 首轮格式化验收失败、加长 `NativeReformatAcceptance` 等待后单次全绿（约 6.9 min，2026-09-17）。
+- App 层托盘状态、随手记图片预览/插入队列、`VaultStore` 删除草稿提示、legacy **AES-GCM** 稳定算法键（`tray.status.*`、`quickNote.image.*`、`quickNote.error.*` 插入守卫、`vault.status.deletedDraftKept`）：**check-core** **59/0**（约 3.0 min，2026-09-17）；**smoke** 单次全绿（约 9.0 min，2026-09-17；附件/随手记/JSON/Vault/86 截图与重启恢复）。
+- 随手记 **Markdown 预览**块级 UI（`quickNote.preview.*`，含代码块/任务列表/预览失败标题）：**check-core** **59/0**（2026-09-17）；**smoke** 单次全绿（约 8.6 min，2026-09-17）。
+- Cron **`describe`/`naturalSummary`**（`cron.describe.*` / `cron.weekday.*`，`CronToolView` 传 `language`）：**check-core** **59/0**（约 3.1 min，2026-09-17）。
+- JSON worker **`json.valid.*`**（`JSONDispatch.js` 与 `JSONTools.js` 校验 idle/ok/error）：**check-core** **59/0**（约 0.7 min，2026-09-17）。
+- 调色板预览标题与结果栏格式标签（`color.preview.title` / `color.label.*`）：**check-core** **59/0**（2026-09-17）。
+- 计算器进制转换结果行标签（`calculator.label.*`）：**check-core** **59/0**（约 2.7 min，2026-09-17）；**smoke** 单次全绿（约 6.1 min，2026-09-17；含 Cron/JSONDispatch/调色板等同工作树批次）。
 
 ## 手工建议
 

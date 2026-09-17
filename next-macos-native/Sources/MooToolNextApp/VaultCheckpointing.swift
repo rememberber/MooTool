@@ -21,14 +21,14 @@ extension AppStore {
             hasUnsavedEditorChanges: { [weak self] in await MainActor.run { self?.hasUnsavedVaultEdits(toolID: "json") ?? true } },
             idleMilliseconds: { idleSeconds() * 1000 },
             inactiveMilliseconds: { inactiveSeconds() * 1000 },
-            checkpoint: { [weak self] message in await self?.runVaultCheckpoint(toolID: "json", message: message) ?? VaultGitActionResult(success: false, message: "应用未就绪") }
+            checkpoint: { [weak self] message in await self?.runVaultCheckpoint(toolID: "json", message: message) ?? VaultGitActionResult(success: false, message: AppLocalization.string("git.result.appNotReady", language: AppLocalization.preferredLanguage())) }
         ))
         quickNoteCheckpointScheduler = VaultGitCheckpointScheduler(options: .init(
             enabled: enabled,
             hasUnsavedEditorChanges: { [weak self] in await MainActor.run { self?.hasUnsavedVaultEdits(toolID: "quickNote") ?? true } },
             idleMilliseconds: { idleSeconds() * 1000 },
             inactiveMilliseconds: { inactiveSeconds() * 1000 },
-            checkpoint: { [weak self] message in await self?.runVaultCheckpoint(toolID: "quickNote", message: message) ?? VaultGitActionResult(success: false, message: "应用未就绪") }
+            checkpoint: { [weak self] message in await self?.runVaultCheckpoint(toolID: "quickNote", message: message) ?? VaultGitActionResult(success: false, message: AppLocalization.string("git.result.appNotReady", language: AppLocalization.preferredLanguage())) }
         ))
         jsonCheckpointScheduler?.start()
         quickNoteCheckpointScheduler?.start()
@@ -65,10 +65,12 @@ extension AppStore {
         }
         let directory = repository.directory
         let remote = nativeDefaults.string(forKey: "vaultGitRemote")
+        let language = AppLocalization.preferredLanguage()
         return await Task.detached {
             let service = VaultGitService(
                 rootDirectory: VaultFilesystemSync.root(toolID: toolID, workspace: directory),
-                credentials: VaultGitCredentials(username: NSFullUserName())
+                credentials: VaultGitCredentials(username: NSFullUserName()),
+                language: language
             )
             if let remote, !remote.isEmpty { _ = try? service.perform(VaultGitActionInput(action: .configureRemote, remote: remote)) }
             do { return try service.automaticCheckpoint(message) }

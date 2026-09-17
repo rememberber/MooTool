@@ -91,7 +91,8 @@ final class MenuBarTray {
                 let draft = store.draft("colorBoard")
                 guard let rgb = color.usingColorSpace(.sRGB) else { return }
                 draft.input = String(format: "#%02X%02X%02X", Int(rgb.redComponent * 255), Int(rgb.greenComponent * 255), Int(rgb.blueComponent * 255))
-                draft.status = "已从托盘取色"
+                let language = AppLocalization.preferredLanguage()
+                draft.status = AppLocalization.string("tray.status.pickedColor", language: language)
                 draft.error = nil
             }
         }
@@ -108,7 +109,8 @@ final class MenuBarTray {
                 let draft = store.draft("image")
                 draft.media = draft.media ?? MediaWorkspaceState()
                 draft.media?.filePaths = [url.path]
-                draft.status = "已导入截图"
+                let language = AppLocalization.preferredLanguage()
+                draft.status = AppLocalization.string("tray.status.importedScreenshot", language: language)
                 draft.error = nil
             } catch {
                 self?.store?.draft("image").error = error.localizedDescription
@@ -127,7 +129,8 @@ final class MenuBarTray {
         let draft = store.draft("host")
         draft.input = profile.content
         draft.option = profile.id.uuidString
-        draft.status = "已切换配置：\(profile.name)"
+        let language = AppLocalization.preferredLanguage()
+        draft.status = String(format: AppLocalization.string("tray.status.hostProfile", language: language), profile.name)
         store.select("host")
         refresh()
     }

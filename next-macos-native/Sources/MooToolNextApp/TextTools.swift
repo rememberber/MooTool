@@ -106,9 +106,9 @@ struct TextTool: View {
     }
     private func cryptoEngineAlgorithm(_ mode: String) -> String {
         switch mode {
-        case "aesGcmEncrypt", "AES-GCM 加密": return "AES-GCM 加密"
-        case "aesGcmDecrypt", "AES-GCM 解密": return "AES-GCM 解密"
-        case "random32", "随机 32 字节": return "随机 32 字节"
+        case "aesGcmEncrypt", "AES-GCM 加密": return "aesGcmEncrypt"
+        case "aesGcmDecrypt", "AES-GCM 解密": return "aesGcmDecrypt"
+        case "random32", "随机 32 字节": return "random32"
         default: return mode
         }
     }
@@ -334,7 +334,8 @@ struct TextTool: View {
                 guard let value = Int64(d.input.trimmingCharacters(in: .whitespacesAndNewlines), radix: radix) else {
                     throw ToolError(AppLocalization.string("calculator.error.int64", language: lang))
                 }
-                return "DEC  \(value)\nHEX  \(String(value, radix: 16).uppercased())\nOCT  \(String(value, radix: 8))\nBIN  \(String(value, radix: 2))"
+                func cl(_ key: String) -> String { AppLocalization.string(key, language: lang) }
+                return "\(cl("calculator.label.dec"))  \(value)\n\(cl("calculator.label.hex"))  \(String(value, radix: 16).uppercased())\n\(cl("calculator.label.oct"))  \(String(value, radix: 8))\n\(cl("calculator.label.bin"))  \(String(value, radix: 2))"
             case "cron":
                 return try CronExpression(d.input, language: lang).next(after: Date(), language: lang).enumerated()
                     .map { "\($0.offset + 1).  \($0.element.formatted(date: .complete, time: .standard))" }.joined(separator: "\n")

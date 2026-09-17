@@ -19,16 +19,16 @@ enum Base32Codec {
         return output + String(repeating: "=", count: padding)
     }
 
-    static func decode(_ text: String) throws -> Data {
+    static func decode(_ text: String, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> Data {
         let normalized = text.uppercased().filter { !$0.isWhitespace }
         let unpadded = normalized.replacingOccurrences(of: "=+$", with: "", options: .regularExpression)
         guard normalized.range(of: #"^[A-Z2-7]*={0,6}$"#, options: .regularExpression) != nil, !unpadded.contains("=") else {
-            throw ToolError("无效 Base32。")
+            throw err("encode.error.base32Invalid", language)
         }
         var bits = 0, value = 0
         var bytes: [UInt8] = []
         for character in unpadded {
-            guard let index = alphabet.firstIndex(of: character) else { throw ToolError("无效 Base32。") }
+            guard let index = alphabet.firstIndex(of: character) else { throw err("encode.error.base32Invalid", language) }
             value = (value << 5) | index
             bits += 5
             if bits >= 8 {
@@ -37,5 +37,9 @@ enum Base32Codec {
             }
         }
         return Data(bytes)
+    }
+
+    private static func err(_ key: String, _ language: AppLanguage) -> ToolError {
+        ToolError(AppLocalization.string(key, language: language))
     }
 }

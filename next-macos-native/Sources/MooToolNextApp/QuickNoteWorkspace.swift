@@ -38,13 +38,13 @@ struct QuickNoteWorkspace: View {
     private func option<T>(_ key: WritableKeyPath<QuickNoteOptions, T>) -> Binding<T> {
         Binding(get: { options[keyPath: key] }, set: { value in
             var next = options; next[keyPath: key] = value
-            do { try next.validate(); draft.noteOptions = next } catch { draft.error = error.localizedDescription }
+            do { try next.validate(language: language); draft.noteOptions = next } catch { draft.error = error.localizedDescription }
         })
     }
     private func setting<T>(_ key: WritableKeyPath<QuickNoteWorkspaceOptions, T>) -> Binding<T> {
         Binding(get: { workspace[keyPath: key] }, set: { value in
             var next = workspace; next[keyPath: key] = value
-            do { try next.validate(); draft.noteWorkspace = next } catch { draft.error = error.localizedDescription }
+            do { try next.validate(language: language); draft.noteWorkspace = next } catch { draft.error = error.localizedDescription }
         })
     }
     var body: some View {
@@ -296,7 +296,7 @@ struct QuickNoteWorkspace: View {
         var next = workspace; next.findOpen = true
         let range = editor.selection
         if viewMode != .preview, range.length > 0, NSMaxRange(range) <= (draft.input as NSString).length { next.findQuery = (draft.input as NSString).substring(with: range) }
-        do { try next.validate(); draft.noteWorkspace = next; findFocused = true } catch { draft.error = error.localizedDescription }
+        do { try next.validate(language: language); draft.noteWorkspace = next; findFocused = true } catch { draft.error = error.localizedDescription }
     }
     private func cancelOwnOperation() {
         operation?.cancel()

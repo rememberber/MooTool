@@ -83,6 +83,7 @@ struct ColorTool: View {
     @State private var color = Color(red: 0.31, green: 0.51, blue: 0.80)
     @State private var sampler: NSColorSampler?
     @State private var favoritesOpen = false
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
     var body: some View {
         ToolPage(tool: Catalog.tool("colorBoard"), draft: draft) {
             ColorPicker(AppLocalization.string("color.choose", language: language), selection: $color, supportsOpacity: false).frame(width: 160)
@@ -93,7 +94,7 @@ struct ColorTool: View {
         } content: {
             PersistedHSplit(toolID: "colorBoard", defaultLeading: 320, minLeading: 220, maxLeading: 560) {
                 RoundedRectangle(cornerRadius: 18).fill(color).overlay {
-                    VStack(spacing: 10) { Text(draft.input.uppercased()).font(.system(size: 34, weight: .medium, design: .monospaced)); Text("MooTool Color").font(.title3) }.foregroundStyle(contrastColor)
+                    VStack(spacing: 10) { Text(draft.input.uppercased()).font(.system(size: 34, weight: .medium, design: .monospaced)); Text(loc("color.preview.title")).font(.title3) }.foregroundStyle(contrastColor)
                 }.padding(24)
             } trailing: {
                 EditorPane(title: AppLocalization.string("color.values", language: language), text: $draft.output, editable: false)
@@ -126,7 +127,9 @@ struct ColorTool: View {
         if delta > 0 { hue = high == r ? ((g - b) / delta).truncatingRemainder(dividingBy: 6) : high == g ? (b - r) / delta + 2 : (r - g) / delta + 4; hue *= 60; if hue < 0 { hue += 360 } }
         let saturation = delta == 0 ? 0 : delta / (1 - abs(2 * light - 1))
         draft.input = String(format: "#%02X%02X%02X", Int((r * 255).rounded()), Int((g * 255).rounded()), Int((b * 255).rounded()))
-        draft.output = "HEX  \(draft.input)\n\nRGB  \(Int((r * 255).rounded())), \(Int((g * 255).rounded())), \(Int((b * 255).rounded()))\n\n" + String(format: "HSL  %.0f°, %.1f%%, %.1f%%\n\nSwiftUI\nColor(red: %.3f, green: %.3f, blue: %.3f)", hue, saturation * 100, light * 100, r, g, b)
+        let ri = Int((r * 255).rounded()), gi = Int((g * 255).rounded()), bi = Int((b * 255).rounded())
+        draft.output = "\(loc("color.label.hex"))  \(draft.input)\n\n\(loc("color.label.rgb"))  \(ri), \(gi), \(bi)\n\n"
+            + String(format: "\(loc("color.label.hsl"))  %.0f°, %.1f%%, %.1f%%\n\n\(loc("color.label.swiftUI"))\nColor(red: %.3f, green: %.3f, blue: %.3f)", hue, saturation * 100, light * 100, r, g, b)
         draft.error = nil
     }
 }

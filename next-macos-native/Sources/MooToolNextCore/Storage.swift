@@ -77,14 +77,14 @@ public struct WorkspaceSnapshot: Codable, Equatable {
     public func validated(language: AppLanguage = AppLocalization.preferredLanguage()) throws -> Self {
         func err(_ key: String) -> ToolError { ToolError(AppLocalization.string(key, language: language)) }
         guard product == Product.id, schema == 1 else { throw err("backup.error.unsupported") }
-        try NoteAttachmentRepository.validateManifest(noteAttachments ?? [])
+        try NoteAttachmentRepository.validateManifest(noteAttachments ?? [], language: language)
         if let attachmentData {
             guard Set(attachmentData.keys) == Set((noteAttachments ?? []).map(\.path)),
                   attachmentData.values.allSatisfy({ !$0.isEmpty && $0.count <= NoteImagePayload.maximumBytes }),
                   attachmentData.values.reduce(0, { $0 + $1.count }) <= 64 * 1024 * 1024 else { throw err("backup.error.attachmentInvalid") }
         }
-        try DocumentVault(documents: documents, folders: folders ?? []).validate()
-        for document in documents { try document.noteOptions?.validate() }
+        try DocumentVault(documents: documents, folders: folders ?? []).validate(language: language)
+        for document in documents { try document.noteOptions?.validate(language: language) }
         guard (vaultPreferences ?? [:]).keys.allSatisfy({ ["json", "quickNote"].contains($0) }),
               (scratchDrafts ?? [:]).allSatisfy({ ["json", "quickNote"].contains($0.key) && $0.value.documentID == nil }) else { throw err("backup.error.vaultInvalid") }
         guard Set(documents.map(\.id)).count == documents.count,
@@ -100,7 +100,7 @@ public struct WorkspaceSnapshot: Codable, Equatable {
         guard (toolFavorites ?? []).count <= 2_000,
               Set((toolFavorites ?? []).map(\.id)).count == (toolFavorites ?? []).count else { throw err("backup.error.favoritesInvalid") }
         for draft in Array(drafts.values) + history.map(\.draft) + (httpRequests ?? []).map(\.draft) + Array((scratchDrafts ?? [:]).values) {
-            try draft.noteOptions?.validate(); try draft.noteWorkspace?.validate()
+            try draft.noteOptions?.validate(language: language); try draft.noteWorkspace?.validate(language: language)
             try draft.messageBoard?.validate()
             try draft.media?.validate(language: language)
             guard ["RSA", "SM2"].contains(draft.cryptoAsymmetric) else { throw err("backup.error.cryptoAsymmetricInvalid") }

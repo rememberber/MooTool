@@ -239,10 +239,10 @@ struct CryptoToolView: View {
         let algorithm = symmetricAlgorithms.contains(draft.option) ? draft.option : "AES-GCM"
         if algorithm == "AES-GCM" {
             if encrypt {
-                store.run("crypto") { d in try TextServices.digest(d.input, algorithm: "AES-GCM 加密", key: d.secondary, language: language) }
+                store.run("crypto") { d in try TextServices.digest(d.input, algorithm: "aesGcmEncrypt", key: d.secondary, language: language) }
             } else {
                 let cipher = draft.output.isEmpty ? draft.input : draft.output
-                store.run("crypto") { d in try TextServices.digest(cipher, algorithm: "AES-GCM 解密", key: d.secondary, language: language) }
+                store.run("crypto") { d in try TextServices.digest(cipher, algorithm: "aesGcmDecrypt", key: d.secondary, language: language) }
                 Task { @MainActor in
                     await waitForCryptoRun()
                     if !draft.output.isEmpty { draft.input = draft.output }
@@ -252,10 +252,10 @@ struct CryptoToolView: View {
         }
         guard let legacy = LegacySymmetricCrypto.Algorithm(rawValue: algorithm) else { return }
         if encrypt {
-            store.run("crypto") { d in try LegacySymmetricCrypto.encrypt(algorithm: legacy, plaintext: d.input, key: d.secondary) }
+            store.run("crypto") { d in try LegacySymmetricCrypto.encrypt(algorithm: legacy, plaintext: d.input, key: d.secondary, language: language) }
         } else {
             let cipher = draft.output.isEmpty ? draft.input : draft.output
-            store.run("crypto") { d in try LegacySymmetricCrypto.decrypt(algorithm: legacy, cipherHex: cipher, key: d.secondary) }
+            store.run("crypto") { d in try LegacySymmetricCrypto.decrypt(algorithm: legacy, cipherHex: cipher, key: d.secondary, language: language) }
             Task { @MainActor in
                 await waitForCryptoRun()
                 if !draft.output.isEmpty { draft.input = draft.output }
@@ -374,7 +374,7 @@ struct CryptoToolView: View {
                 randomUUID = draft.output
             }
         case .bytes32:
-            store.run("crypto") { _ in try TextServices.digest("", algorithm: "随机 32 字节", language: language) }
+            store.run("crypto") { _ in try TextServices.digest("", algorithm: "random32", language: language) }
             Task { @MainActor in
                 for _ in 0..<20 where draft.busy { try? await Task.sleep(for: .milliseconds(50)) }
             }

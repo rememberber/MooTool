@@ -75,9 +75,9 @@ struct SettingsView: View {
                     if store.persistenceBlocked { throw ToolError(loc("settings.error.workspaceBlocked")) }
                     let backup = store.repository.directory.appendingPathComponent("before-restore-\(UUID().uuidString).json")
                     try FileManager.default.createDirectory(at: store.repository.directory, withIntermediateDirectories: true)
-                    try store.repository.backup(store.snapshot()).write(to: backup, options: .atomic)
+                    try store.repository.backup(store.snapshot(), language: language).write(to: backup, options: .atomic)
                     try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: backup.path)
-                    let restored = try store.repository.installBackup(value)
+                    let restored = try store.repository.installBackup(value, language: language)
                     store.restore(restored); store.saveNow(); pendingBackup = nil
                 } catch { FilePanels.error(error) }
             }
@@ -187,7 +187,8 @@ struct SettingsView: View {
                         Task {
                             defer { backupBusy = false }
                             do {
-                                let data = try await Task.detached { try repository.backup(snapshot) }.value
+                                let lang = language
+                                let data = try await Task.detached { try repository.backup(snapshot, language: lang) }.value
                                 FilePanels.save(data, name: "MooTool-Next-Native-backup.json")
                             } catch { FilePanels.error(error) }
                         }

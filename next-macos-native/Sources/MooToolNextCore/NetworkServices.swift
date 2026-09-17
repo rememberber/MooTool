@@ -20,7 +20,7 @@ public enum NetworkServices {
         guard options.timeout.isFinite, (1...120).contains(options.timeout) else { throw err("http.error.timeoutRange", language) }
         for fields in [options.params, options.cookies, options.form] { guard fields.count <= 1000 else { throw err("http.error.fieldLimit", language) } }
         guard options.multipart.count <= 1000 else { throw err("http.error.multipartLimit", language) }
-        let url = try HTTPFields.appendingQuery(HTTPFields.query(options.params), to: draft.option)
+        let url = try HTTPFields.appendingQuery(HTTPFields.query(options.params), to: draft.option, language: language)
         var body = draft.input
         var bodyData: Data?
         var multipartType: String?
@@ -28,7 +28,7 @@ public enum NetworkServices {
         if options.bodyKind == .none { body = "" }
         if options.bodyKind == .multipart {
             body = ""
-            let encoded = try HTTPMultipartBuilder.encode(options.multipart)
+            let encoded = try HTTPMultipartBuilder.encode(options.multipart, language: language)
             bodyData = encoded.0
             multipartType = encoded.1
         }
@@ -67,7 +67,7 @@ public enum NetworkServices {
               ["http", "https"].contains(url.scheme?.lowercased() ?? ""), let host = url.host, !host.isEmpty else { throw err("http.error.urlInvalid", language) }
         guard ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"].contains(method) else { throw err("http.error.methodUnsupported", language) }
         var request = URLRequest(url: url, timeoutInterval: 30); request.httpMethod = method
-        for (key, value) in try HTTPFields.headerLines(headers) {
+        for (key, value) in try HTTPFields.headerLines(headers, language: language) {
             if key.lowercased() == "cookie", let previous = request.value(forHTTPHeaderField: key) { request.setValue(previous + "; " + value, forHTTPHeaderField: key) }
             else { request.addValue(value, forHTTPHeaderField: key) }
         }

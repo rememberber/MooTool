@@ -3,8 +3,8 @@ import Foundation
 enum SM4Cipher {
     enum Operation { case encrypt, decrypt }
 
-    static func ecb(operation: Operation, data: Data, key: Data) throws -> Data {
-        guard key.count == 16 else { throw ToolError("SM4 密钥长度无效。") }
+    static func ecb(operation: Operation, data: Data, key: Data, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> Data {
+        guard key.count == 16 else { throw err("crypto.error.sm4KeyInvalid", language) }
         let blocks = pkcs7Pad(data, blockSize: 16, encrypt: operation == .encrypt)
         var output = Data()
         output.reserveCapacity(blocks.count)
@@ -14,9 +14,13 @@ enum SM4Cipher {
             output.append(cryptBlock(block, roundKeys: roundKeys))
         }
         if operation == .decrypt {
-            return try pkcs7Unpad(output, blockSize: 16)
+            return try pkcs7Unpad(output, blockSize: 16, language: language)
         }
         return output
+    }
+
+    private static func err(_ key: String, _ language: AppLanguage) -> ToolError {
+        ToolError(AppLocalization.string(key, language: language))
     }
 
     private static func pkcs7Pad(_ data: Data, blockSize: Int, encrypt: Bool) -> Data {
@@ -25,12 +29,12 @@ enum SM4Cipher {
         return data + Data(repeating: UInt8(padding), count: padding)
     }
 
-    private static func pkcs7Unpad(_ data: Data, blockSize: Int) throws -> Data {
+    private static func pkcs7Unpad(_ data: Data, blockSize: Int, language: AppLanguage) throws -> Data {
         guard let last = data.last, last > 0, last <= blockSize, data.count >= last else {
-            throw ToolError("SM4 解密填充无效。")
+            throw err("crypto.error.sm4PaddingInvalid", language)
         }
         let pad = Int(last)
-        guard data.suffix(pad).allSatisfy({ $0 == last }) else { throw ToolError("SM4 解密填充无效。") }
+        guard data.suffix(pad).allSatisfy({ $0 == last }) else { throw err("crypto.error.sm4PaddingInvalid", language) }
         return data.dropLast(pad)
     }
 

@@ -3,6 +3,10 @@ import CryptoKit
 import ImageIO
 import UniformTypeIdentifiers
 
+private func attachmentErr(_ key: String, _ language: AppLanguage) -> ToolError {
+    ToolError(AppLocalization.string(key, language: language))
+}
+
 public struct NoteAttachment: Codable, Equatable, Sendable {
     public let path: String
     public let sha256: String
@@ -10,10 +14,10 @@ public struct NoteAttachment: Codable, Equatable, Sendable {
     public let width: Int
     public let height: Int
     public var markdown: String { "![image](\(path))" }
-    public func validate() throws {
+    public func validate(language: AppLanguage = AppLocalization.preferredLanguage()) throws {
         guard Self.isManagedPath(path), path == "attachments/" + sha256 + "." + (path as NSString).pathExtension,
               (1...NoteImagePayload.maximumBytes).contains(bytes), width > 0, height > 0,
-              width <= 20_000, height <= 20_000, width * height <= 40_000_000 else { throw ToolError("图片附件记录无效。") }
+              width <= 20_000, height <= 20_000, width * height <= 40_000_000 else { throw attachmentErr("attachment.error.invalidRecord", language) }
     }
     public static func isManagedPath(_ path: String) -> Bool {
         path.range(of: #"^attachments/[a-f0-9]{64}\.(png|jpg|gif|bmp|webp)\z"#, options: .regularExpression) != nil
@@ -24,7 +28,7 @@ public struct NoteImagePayload: Sendable {
     public static let maximumBytes = 20 * 1024 * 1024
     public let data: Data
     public let attachment: NoteAttachment
-    public init(data original: Data) throws {
+    public init(data original: Data, language: AppLanguage = AppLocalization.preferredLanguage()) throws {
         guard !original.isEmpty, original.count <= Self.maximumBytes,
               let source = CGImageSourceCreateWithData(original as CFData, [kCGImageSourceShouldCache: false] as CFDictionary),
               let type = CGImageSourceGetType(source) as String?,
@@ -32,31 +36,31 @@ public struct NoteImagePayload: Sendable {
               let width = props[kCGImagePropertyPixelWidth] as? Int, let height = props[kCGImagePropertyPixelHeight] as? Int,
               width > 0, height > 0, width <= 20_000, height <= 20_000, width * height <= 40_000_000,
               CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: 32, kCGImageSourceShouldCache: false] as CFDictionary) != nil else {
-            throw ToolError("图片无效、超过 20 MB 或 4000 万像素（单边最多 2 万像素）。")
+            throw attachmentErr("attachment.error.invalidImage", language)
         }
         let extensions = [UTType.png.identifier: "png", UTType.jpeg.identifier: "jpg", UTType.gif.identifier: "gif", UTType.bmp.identifier: "bmp", UTType.webP.identifier: "webp"]
         var data = original
         let ext: String
         if let known = extensions[type] { ext = known }
         else if type == UTType.tiff.identifier {
-            guard let image = CGImageSourceCreateImageAtIndex(source, 0, [kCGImageSourceShouldCache: false] as CFDictionary) else { throw ToolError("无法读取剪贴板图片。") }
+            guard let image = CGImageSourceCreateImageAtIndex(source, 0, [kCGImageSourceShouldCache: false] as CFDictionary) else { throw attachmentErr("attachment.error.clipboardReadFailed", language) }
             let output = NSMutableData()
-            guard let destination = CGImageDestinationCreateWithData(output, UTType.png.identifier as CFString, 1, nil) else { throw ToolError("无法转换剪贴板图片。") }
+            guard let destination = CGImageDestinationCreateWithData(output, UTType.png.identifier as CFString, 1, nil) else { throw attachmentErr("attachment.error.clipboardConvertFailed", language) }
             CGImageDestinationAddImage(destination, image, nil)
-            guard CGImageDestinationFinalize(destination) else { throw ToolError("无法转换剪贴板图片。") }
+            guard CGImageDestinationFinalize(destination) else { throw attachmentErr("attachment.error.clipboardConvertFailed", language) }
             data = output as Data; ext = "png"
-        } else { throw ToolError("支持 PNG、JPEG、GIF、BMP、WebP 图片及剪贴板 TIFF。") }
-        guard data.count <= Self.maximumBytes else { throw ToolError("转换后的图片超过 20 MB。") }
+        } else { throw attachmentErr("attachment.error.unsupportedFormat", language) }
+        guard data.count <= Self.maximumBytes else { throw attachmentErr("attachment.error.convertedTooLarge", language) }
         let hash = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
         self.data = data; attachment = NoteAttachment(path: "attachments/\(hash).\(ext)", sha256: hash, bytes: data.count, width: width, height: height)
     }
-    public init(file: URL) throws { try self.init(data: Self.readBounded(file)) }
-    public static func readBounded(_ file: URL) throws -> Data {
+    public init(file: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws { try self.init(data: Self.readBounded(file, language: language), language: language) }
+    public static func readBounded(_ file: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> Data {
         let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
-        guard values.isRegularFile == true, values.isSymbolicLink != true, (values.fileSize ?? Int.max) <= maximumBytes else { throw ToolError("附件必须是 20 MB 以内的普通图片文件。") }
+        guard values.isRegularFile == true, values.isSymbolicLink != true, (values.fileSize ?? Int.max) <= maximumBytes else { throw attachmentErr("attachment.error.fileRequirements", language) }
         let handle = try FileHandle(forReadingFrom: file); defer { try? handle.close() }
         let data = try handle.read(upToCount: maximumBytes + 1) ?? Data()
-        guard data.count <= maximumBytes else { throw ToolError("图片超过 20 MB。") }; return data
+        guard data.count <= maximumBytes else { throw attachmentErr("attachment.error.tooLarge", language) }; return data
     }
 }
 
@@ -140,49 +144,51 @@ public struct NoteAttachmentRepository: Sendable {
     public let workspace: URL
     public init(workspace: URL) { self.workspace = workspace }
     private var directory: URL { workspace.appendingPathComponent("attachments", isDirectory: true) }
-    private func checkedDirectory(create: Bool) throws -> URL {
+    private func checkedDirectory(create: Bool, language: AppLanguage) throws -> URL {
         let fm = FileManager.default
         if create { try fm.createDirectory(at: workspace, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700]) }
         let root = try workspace.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
-        guard root.isDirectory == true, root.isSymbolicLink != true else { throw ToolError("附件工作区目录无效。") }
+        guard root.isDirectory == true, root.isSymbolicLink != true else { throw attachmentErr("attachment.error.workspaceInvalid", language) }
         if create && !fm.fileExists(atPath: directory.path) { try fm.createDirectory(at: directory, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700]) }
         let values = try directory.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
         guard values.isDirectory == true, values.isSymbolicLink != true,
-              directory.resolvingSymlinksInPath().deletingLastPathComponent().standardizedFileURL.path == workspace.resolvingSymlinksInPath().standardizedFileURL.path else { throw ToolError("附件目录不在原生版工作区内。") }
+              directory.resolvingSymlinksInPath().deletingLastPathComponent().standardizedFileURL.path == workspace.resolvingSymlinksInPath().standardizedFileURL.path else { throw attachmentErr("attachment.error.directoryOutsideWorkspace", language) }
         return directory
     }
-    public func write(_ payload: NoteImagePayload) throws {
-        try payload.attachment.validate()
-        let target = try checkedDirectory(create: true).appendingPathComponent((payload.attachment.path as NSString).lastPathComponent)
-        if FileManager.default.fileExists(atPath: target.path) { _ = try read(payload.attachment); return }
+    public func write(_ payload: NoteImagePayload, language: AppLanguage = AppLocalization.preferredLanguage()) throws {
+        try payload.attachment.validate(language: language)
+        let target = try checkedDirectory(create: true, language: language).appendingPathComponent((payload.attachment.path as NSString).lastPathComponent)
+        if FileManager.default.fileExists(atPath: target.path) { _ = try read(payload.attachment, language: language); return }
         try payload.data.write(to: target, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: target.path)
     }
-    public func read(_ attachment: NoteAttachment) throws -> Data {
-        try attachment.validate()
-        let file = try checkedDirectory(create: false).appendingPathComponent((attachment.path as NSString).lastPathComponent)
-        let data = try NoteImagePayload.readBounded(file)
-        guard data.count == attachment.bytes, SHA256.hash(data: data).map({ String(format: "%02x", $0) }).joined() == attachment.sha256 else { throw ToolError("图片附件已损坏：\(attachment.path)") }
+    public func read(_ attachment: NoteAttachment, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> Data {
+        try attachment.validate(language: language)
+        let file = try checkedDirectory(create: false, language: language).appendingPathComponent((attachment.path as NSString).lastPathComponent)
+        let data = try NoteImagePayload.readBounded(file, language: language)
+        guard data.count == attachment.bytes, SHA256.hash(data: data).map({ String(format: "%02x", $0) }).joined() == attachment.sha256 else {
+            throw ToolError(String(format: AppLocalization.string("attachment.error.corrupted", language: language), attachment.path))
+        }
         return data
     }
-    public func thumbnail(_ attachment: NoteAttachment, maximumPixels: Int = 2048) throws -> CGImage {
-        let data = try read(attachment)
+    public func thumbnail(_ attachment: NoteAttachment, maximumPixels: Int = 2048, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> CGImage {
+        let data = try read(attachment, language: language)
         guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary),
-              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: maximumPixels, kCGImageSourceCreateThumbnailWithTransform: true, kCGImageSourceShouldCache: false] as CFDictionary) else { throw ToolError("图片附件无法解码。") }
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: maximumPixels, kCGImageSourceCreateThumbnailWithTransform: true, kCGImageSourceShouldCache: false] as CFDictionary) else { throw attachmentErr("attachment.error.decodeFailed", language) }
         return image
     }
-    public static func validateManifest(_ attachments: [NoteAttachment]) throws {
-        guard attachments.count <= 1024, Set(attachments.map(\.path)).count == attachments.count else { throw ToolError("附件重复或超过 1024 张。") }
+    public static func validateManifest(_ attachments: [NoteAttachment], language: AppLanguage = AppLocalization.preferredLanguage()) throws {
+        guard attachments.count <= 1024, Set(attachments.map(\.path)).count == attachments.count else { throw attachmentErr("attachment.error.manifestLimits", language) }
         var total = 0
-        for attachment in attachments { try attachment.validate(); total += attachment.bytes }
-        guard total <= 64 * 1024 * 1024 else { throw ToolError("原生工作区附件总量超过 64 MB。") }
+        for attachment in attachments { try attachment.validate(language: language); total += attachment.bytes }
+        guard total <= 64 * 1024 * 1024 else { throw attachmentErr("attachment.error.totalTooLarge", language) }
     }
     /// Create a new folder; never overwrite the user's existing export or source images.
-    public func exportDocument(name: String, content: String, attachments: [NoteAttachment], to parent: URL) throws -> URL {
+    public func exportDocument(name: String, content: String, attachments: [NoteAttachment], to parent: URL, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> URL {
         let paths = MarkdownImageReference.managedPaths(in: content)
         let manifest = attachments.filter { paths.contains($0.path) }
-        guard Set(manifest.map(\.path)) == paths else { throw ToolError("文档引用了未登记或丢失的附件，无法完整导出。") }
-        let files = try manifest.map { ($0, try read($0)) }
+        guard Set(manifest.map(\.path)) == paths else { throw attachmentErr("attachment.error.exportMissingRefs", language) }
+        let files = try manifest.map { ($0, try read($0, language: language)) }
         let fm = FileManager.default, stage = parent.appendingPathComponent(".mootool-export-" + UUID().uuidString, isDirectory: true)
         try fm.createDirectory(at: stage, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
         defer { try? fm.removeItem(at: stage) }
@@ -199,24 +205,26 @@ public struct NoteAttachmentRepository: Sendable {
 
 extension WorkspaceRepository {
     public var attachmentRepository: NoteAttachmentRepository { NoteAttachmentRepository(workspace: directory) }
-    public func backup(_ snapshot: WorkspaceSnapshot) throws -> Data {
+    public func backup(_ snapshot: WorkspaceSnapshot, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> Data {
         var value = snapshot
         let attachments = value.noteAttachments ?? []
-        if !attachments.isEmpty { value.attachmentData = try Dictionary(uniqueKeysWithValues: attachments.map { ($0.path, try attachmentRepository.read($0)) }) }
-        return try Self.encode(value.validated())
+        if !attachments.isEmpty { value.attachmentData = try Dictionary(uniqueKeysWithValues: attachments.map { ($0.path, try attachmentRepository.read($0, language: language)) }) }
+        return try Self.encode(value.validated(language: language))
     }
-    public func installBackup(_ backup: WorkspaceSnapshot) throws -> WorkspaceSnapshot {
-        var value = try backup.validated()
+    public func installBackup(_ backup: WorkspaceSnapshot, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> WorkspaceSnapshot {
+        var value = try backup.validated(language: language)
         let attachments = value.noteAttachments ?? []
-        guard attachments.isEmpty || value.attachmentData != nil else { throw ToolError("备份缺少图片内容，请使用原生版“导出备份”生成完整备份。") }
+        guard attachments.isEmpty || value.attachmentData != nil else { throw attachmentErr("backup.error.attachmentPortableExport", language) }
         // Validate and decode every image before writing anything to this workspace.
         let images = try attachments.map { record -> NoteImagePayload in
-            guard let data = value.attachmentData?[record.path] else { throw ToolError("备份缺少图片：\(record.path)") }
-            let payload = try NoteImagePayload(data: data)
-            guard payload.attachment == record else { throw ToolError("备份图片与记录不一致。") }; return payload
+            guard let data = value.attachmentData?[record.path] else {
+                throw ToolError(String(format: AppLocalization.string("backup.error.attachmentFileMissing", language: language), record.path))
+            }
+            let payload = try NoteImagePayload(data: data, language: language)
+            guard payload.attachment == record else { throw attachmentErr("backup.error.attachmentRecordMismatch", language) }; return payload
         }
         value.attachmentData = nil; _ = try Self.encode(value)
-        for image in images { try attachmentRepository.write(image) }
+        for image in images { try attachmentRepository.write(image, language: language) }
         try save(value); return value
     }
 }

@@ -74,23 +74,27 @@ public enum HTTPFields {
     public static func query(_ fields: [HTTPField]) -> String {
         active(fields).map { percentEncode($0.name) + "=" + percentEncode($0.value) }.joined(separator: "&")
     }
-    public static func appendingQuery(_ query: String, to url: String) throws -> String {
-        guard URLComponents(string: "https://example.invalid/?" + query)?.percentEncodedQuery == query else { throw ToolError("查询参数包含未编码的字符。") }
-        guard var components = URLComponents(string: url.trimmingCharacters(in: .whitespacesAndNewlines)) else { throw ToolError("URL 无效。") }
+    public static func appendingQuery(_ query: String, to url: String, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> String {
+        guard URLComponents(string: "https://example.invalid/?" + query)?.percentEncodedQuery == query else { throw err("http.field.queryUnencoded", language) }
+        guard var components = URLComponents(string: url.trimmingCharacters(in: .whitespacesAndNewlines)) else { throw err("http.field.urlInvalid", language) }
         if !query.isEmpty { components.percentEncodedQuery = [components.percentEncodedQuery, query].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "&") }
-        guard let result = components.url?.absoluteString else { throw ToolError("URL 参数无效。") }; return result
+        guard let result = components.url?.absoluteString else { throw err("http.field.urlParamsInvalid", language) }; return result
     }
-    public static func headerLines(_ text: String) throws -> [(String, String)] {
+    public static func headerLines(_ text: String, language: AppLanguage = AppLocalization.preferredLanguage()) throws -> [(String, String)] {
         let normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
-        guard !normalized.contains("\r") else { throw ToolError("请求头包含无效换行。") }
+        guard !normalized.contains("\r") else { throw err("http.field.headerNewline", language) }
         return try normalized.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.map { line in
-            guard let colon = line.firstIndex(of: ":") else { throw ToolError("请求头格式应为 Name: Value。") }
+            guard let colon = line.firstIndex(of: ":") else { throw err("http.field.headerFormat", language) }
             let key = String(line[..<colon]).trimmingCharacters(in: .whitespaces)
             let value = String(line[line.index(after: colon)...]).trimmingCharacters(in: .whitespaces)
             let allowed = CharacterSet(charactersIn: "!#$%&'*+-.^_`|~0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
             guard !key.isEmpty, key.unicodeScalars.allSatisfy(allowed.contains),
-                  value.unicodeScalars.allSatisfy({ $0.value == 9 || ($0.value >= 32 && $0.value != 127) }) else { throw ToolError("请求头包含无效字符。") }
+                  value.unicodeScalars.allSatisfy({ $0.value == 9 || ($0.value >= 32 && $0.value != 127) }) else { throw err("http.field.headerInvalidChars", language) }
             return (key, value)
         }
+    }
+
+    private static func err(_ key: String, _ language: AppLanguage) -> ToolError {
+        ToolError(AppLocalization.string(key, language: language))
     }
 }

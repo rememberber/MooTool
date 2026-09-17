@@ -63,16 +63,22 @@ enum NoteImageSource: Sendable {
     private var token: UUID?
     private weak var owner: ToolDraft?
     func enqueue(_ sources: [NoteImageSource], selection: NSRange, store: AppStore, draft: ToolDraft, editor: NativeEditorBridge) {
-        guard let document = draft.documentID else { draft.error = "请先保存或新建笔记，再插入图片附件。"; return }
-        guard !store.persistenceBlocked else { draft.error = "工作区保存已暂停，暂时无法添加附件。"; return }
-        guard !draft.busy || (task != nil && draft.noteOperationID == token) else { draft.error = "请等待当前操作完成后插入图片。"; return }
-        guard !sources.isEmpty, sources.count <= 20, requests.count < 20 else { draft.error = "一次最多插入 20 张图片。"; return }
+        let language = AppLocalization.preferredLanguage()
+        func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+        guard let document = draft.documentID else { draft.error = loc("quickNote.error.saveBeforeInsert"); return }
+        guard !store.persistenceBlocked else { draft.error = loc("quickNote.error.attachmentsPaused"); return }
+        guard !draft.busy || (task != nil && draft.noteOperationID == token) else { draft.error = loc("quickNote.error.waitBeforeInsert"); return }
+        guard !sources.isEmpty, sources.count <= 20, requests.count < 20 else { draft.error = loc("quickNote.error.maxImagesPerInsert"); return }
         requests.append(Request(sources: sources, selection: selection, source: draft.input, document: document, generation: store.editorRestoreGeneration, revision: draft.editorRevision))
         guard task == nil else { return }
         let current = UUID(); token = current; owner = draft; draft.noteOperationID = current; draft.busy = true; draft.error = nil
         task = Task { [weak self] in
             guard let self else { return }
             defer { if self.token == current { self.finish() } }
+            let language = AppLocalization.preferredLanguage()
+            func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+            let stale = loc("quickNote.error.imageInsertStale")
+            let insertAction = loc("quickNote.action.insertAttachment")
             var previous: Applied?
             while !self.requests.isEmpty, !Task.isCancelled, self.token == current {
                 let request = self.requests.removeFirst()
@@ -81,13 +87,13 @@ enum NoteImageSource: Sendable {
                     if let previous, previous.source == request.source, previous.selection == request.selection {
                         expected = previous.content; selection = NSRange(location: previous.caret, length: 0)
                     }
-                    guard self.isCurrent(request, store: store, draft: draft), draft.input == expected else { throw ToolError("正文或文档已变化，未插入过期的图片。") }
+                    guard self.isCurrent(request, store: store, draft: draft), draft.input == expected else { throw ToolError(stale) }
                     let preparation = Task.detached(priority: .userInitiated) {
                         try request.sources.map { source in try Task.checkCancellation(); return try source.prepare() }
                     }
                     let payloads = try await withTaskCancellationHandler { try await preparation.value } onCancel: { preparation.cancel() }
                     try Task.checkCancellation()
-                    guard self.isCurrent(request, store: store, draft: draft), draft.input == expected else { throw ToolError("正文或文档已变化，未插入过期的图片。") }
+                    guard self.isCurrent(request, store: store, draft: draft), draft.input == expected else { throw ToolError(stale) }
                     var manifest = store.noteAttachments
                     for image in payloads where !manifest.contains(where: { $0.path == image.attachment.path }) { manifest.append(image.attachment) }
                     try NoteAttachmentRepository.validateManifest(manifest)
@@ -96,18 +102,18 @@ enum NoteImageSource: Sendable {
                         let insertion = NoteImageInsertion(content: content, selection: selection, markdown: image.attachment.markdown)
                         content = insertion.applying(to: content); caret = insertion.caret; selection = NSRange(location: caret, length: 0)
                     }
-                    guard content.utf8.count <= 10 * 1024 * 1024 else { throw ToolError("插入图片后的正文超过 10 MB。") }
+                    guard content.utf8.count <= 10 * 1024 * 1024 else { throw ToolError(loc("quickNote.error.bodyTooLargeAfterImages")) }
                     let repository = store.repository.attachmentRepository
                     let writing = Task.detached(priority: .userInitiated) { for image in payloads { try Task.checkCancellation(); try repository.write(image) } }
                     try await withTaskCancellationHandler { try await writing.value } onCancel: { writing.cancel() }
                     try Task.checkCancellation()
                     guard self.isCurrent(request, store: store, draft: draft), draft.input == expected,
-                          editor.replace(content, expected: expected, action: "插入图片附件") else { throw ToolError("正文或文档已变化，未插入过期的图片。") }
+                          editor.replace(content, expected: expected, action: insertAction) else { throw ToolError(stale) }
                     draft.input = content
                     store.noteAttachments = manifest; store.attachmentGeneration += 1
                     var options = draft.noteOptions ?? QuickNoteOptions(); options.syntax = .markdown; draft.noteOptions = options
                     editor.select(NSRange(location: caret, length: 0)); store.scheduleSave()
-                    draft.status = "已插入 \(payloads.count) 张图片"; draft.error = nil
+                    draft.status = String(format: loc("quickNote.status.insertedImages"), payloads.count); draft.error = nil
                     previous = Applied(selection: request.selection, source: request.source, content: content, caret: caret)
                 } catch {
                     if !Task.isCancelled, self.isCurrent(request, store: store, draft: draft) { draft.error = error.localizedDescription }

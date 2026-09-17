@@ -32,7 +32,7 @@ struct VaultGitDialog: View {
     }
 
     private func makeService() -> VaultGitService {
-        VaultGitService(rootDirectory: VaultFilesystemSync.root(toolID: toolID, workspace: store.repository.directory))
+        VaultGitService(rootDirectory: VaultFilesystemSync.root(toolID: toolID, workspace: store.repository.directory), language: language)
     }
 
     var body: some View {

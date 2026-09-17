@@ -82,11 +82,16 @@ public struct VaultGitCredentials: Sendable {
 public final class VaultGitService: @unchecked Sendable {
     private let rootDirectory: URL
     private let credentials: VaultGitCredentials
+    private let language: AppLanguage
     private let queue = DispatchQueue(label: "com.rememberber.mootool.vault-git")
 
-    public init(rootDirectory: URL, credentials: VaultGitCredentials = VaultGitCredentials()) {
-        self.rootDirectory = rootDirectory; self.credentials = credentials
+    public init(rootDirectory: URL, credentials: VaultGitCredentials = VaultGitCredentials(), language: AppLanguage = AppLocalization.preferredLanguage()) {
+        self.rootDirectory = rootDirectory; self.credentials = credentials; self.language = language
     }
+
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+    private func err(_ key: String) -> ToolError { ToolError(loc(key)) }
+    private func actionResult(_ success: Bool, _ key: String) -> VaultGitActionResult { VaultGitActionResult(success: success, message: loc(key)) }
 
     public func status() throws -> VaultGitStatus {
         try queue.sync { try queryStatus() }
@@ -118,9 +123,9 @@ public final class VaultGitService: @unchecked Sendable {
 
     public func diff(path: String? = nil, commit: String? = nil) throws -> VaultGitDiffResult {
         try queue.sync {
-            guard try queryStatus().repository else { throw ToolError("Git 仓库未初始化。") }
+            guard try queryStatus().repository else { throw err("git.error.repoNotInitialized") }
             if let commit {
-                guard commit.range(of: #"^[0-9a-f]{7,40}$"#, options: .regularExpression) != nil else { throw ToolError("提交哈希无效。") }
+                guard commit.range(of: #"^[0-9a-f]{7,40}$"#, options: .regularExpression) != nil else { throw err("git.error.invalidCommitHash") }
                 return VaultGitDiffResult(files: try commitDiffFiles(commit, path: path))
             }
             let current = try queryStatus()
@@ -150,25 +155,25 @@ public final class VaultGitService: @unchecked Sendable {
     public func automaticCheckpoint(_ message: String) throws -> VaultGitActionResult {
         return try queue.sync { () throws -> VaultGitActionResult in
             var gitStatus = try queryStatus()
-            if !gitStatus.available { return VaultGitActionResult(success: true, message: "Git 不可用，已跳过自动检查点。") }
+            if !gitStatus.available { return actionResult(true, "git.result.skippedGitUnavailable") }
             if !gitStatus.repository {
                 let initialized = try initialize()
                 if !initialized.success { return initialized }
                 gitStatus = try queryStatus()
             }
             if gitStatus.merging || gitStatus.conflicts > 0 {
-                return VaultGitActionResult(success: true, message: "合并/变基进行中，已跳过自动检查点。")
+                return actionResult(true, "git.result.skippedMergeInProgress")
             }
             let shouldPush = !gitStatus.remote.isEmpty && (!gitStatus.changes.isEmpty || gitStatus.ahead > 0)
-            var result = VaultGitActionResult(success: true, message: "没有需要提交的变更。")
+            var checkpointResult = actionResult(true, "git.result.nothingToCommit")
             if !gitStatus.changes.isEmpty {
-                result = try commit(message)
-                if !result.success { return result }
+                checkpointResult = try commit(message)
+                if !checkpointResult.success { return checkpointResult }
             }
             if shouldPush {
-                return commandResult(run(["push", "-u", "origin", "HEAD"], authenticated: true), successMessage: "Push 完成")
+                return commandResult(run(["push", "-u", "origin", "HEAD"], authenticated: true), successMessage: loc("git.result.pushDone"))
             }
-            return result
+            return checkpointResult
         }
     }
 
@@ -177,15 +182,15 @@ public final class VaultGitService: @unchecked Sendable {
             try FileManager.default.createDirectory(at: rootDirectory, withIntermediateDirectories: true)
             let repoReady = try queryStatus().repository
             if input.action != .initRepo && !repoReady {
-                return VaultGitActionResult(success: false, message: "当前文档库目录尚未初始化 Git 仓库。")
+                return actionResult(false, "git.result.repoDirectoryNotInitialized")
             }
             switch input.action {
             case .initRepo: return try initialize()
             case .configureRemote: return try configureRemote(input.remote)
             case .commit: return try commit(input.message)
-            case .fetch: return commandResult(run(["fetch", "--prune", "origin"]), successMessage: "Fetch 完成")
+            case .fetch: return commandResult(run(["fetch", "--prune", "origin"]), successMessage: loc("git.result.fetchDone"))
             case .pull: return try pull()
-            case .push: return commandResult(run(["push", "-u", "origin", "HEAD"], authenticated: true), successMessage: "Push 完成")
+            case .push: return commandResult(run(["push", "-u", "origin", "HEAD"], authenticated: true), successMessage: loc("git.result.pushDone"))
             case .discard: return try discard(input.path)
             case .abortMerge: return try abortMerge()
             case .resolveConflict: return try resolveConflict(input.path, strategy: input.strategy)
@@ -196,42 +201,42 @@ public final class VaultGitService: @unchecked Sendable {
 
     private func pull() throws -> VaultGitActionResult {
         let current = try queryStatus()
-        if current.merging { return VaultGitActionResult(success: false, message: "请先完成或中止当前合并/变基，再执行 Pull。") }
-        return commandResult(run(["pull", "--no-rebase", "origin"], authenticated: true), successMessage: "Pull 完成")
+        if current.merging { return actionResult(false, "git.result.finishMergeBeforePull") }
+        return commandResult(run(["pull", "--no-rebase", "origin"], authenticated: true), successMessage: loc("git.result.pullDone"))
     }
 
     private func abortMerge() throws -> VaultGitActionResult {
         let merge = run(["merge", "--abort"])
-        if merge.exitCode == 0 { return VaultGitActionResult(success: true, message: merge.stdout.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "已中止合并。" : merge.stdout.trimmingCharacters(in: .whitespacesAndNewlines)) }
+        if merge.exitCode == 0 { return VaultGitActionResult(success: true, message: merge.stdout.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? loc("git.result.mergeAborted") : merge.stdout.trimmingCharacters(in: .whitespacesAndNewlines)) }
         let rebase = run(["rebase", "--abort"])
         return rebase.exitCode == 0
-            ? VaultGitActionResult(success: true, message: rebase.stdout.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "已中止变基。" : rebase.stdout.trimmingCharacters(in: .whitespacesAndNewlines))
+            ? VaultGitActionResult(success: true, message: rebase.stdout.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? loc("git.result.rebaseAborted") : rebase.stdout.trimmingCharacters(in: .whitespacesAndNewlines))
             : commandFailure(rebase)
     }
 
     private func resolveConflict(_ value: String?, strategy: VaultGitConflictStrategy?) throws -> VaultGitActionResult {
         let path = try normalizeGitPath(value)
-        guard let strategy else { throw ToolError("请选择冲突解决策略（保留本地或远端）。") }
+        guard let strategy else { throw err("git.error.chooseConflictStrategy") }
         let current = try queryStatus()
         guard current.changes.contains(where: { $0.path == path && $0.conflict }) else {
-            throw ToolError("该路径当前没有未解决的冲突。")
+            throw err("git.error.noConflictAtPath")
         }
         let checkout = run(["checkout", "--\(strategy.rawValue)", "--", path])
         guard checkout.exitCode == 0 else { return commandFailure(checkout) }
-        return commandResult(run(["add", "--", path]), successMessage: "已标记冲突为已解决。")
+        return commandResult(run(["add", "--", path]), successMessage: loc("git.result.conflictMarkedResolved"))
     }
 
     private func continueOperation() throws -> VaultGitActionResult {
         let current = try queryStatus()
         guard current.repository, current.operation != "none" else {
-            return VaultGitActionResult(success: false, message: "当前没有进行中的合并或变基。")
+            return actionResult(false, "git.result.noMergeInProgress")
         }
-        if current.conflicts > 0 { return VaultGitActionResult(success: false, message: "请先解决全部冲突后再继续。") }
+        if current.conflicts > 0 { return actionResult(false, "git.result.resolveConflictsFirst") }
         try ensureIdentity()
         if current.operation == "rebase" {
-            return commandResult(run(["-c", "core.editor=true", "-c", "commit.gpgsign=false", "rebase", "--continue"]), successMessage: "变基已继续。")
+            return commandResult(run(["-c", "core.editor=true", "-c", "commit.gpgsign=false", "rebase", "--continue"]), successMessage: loc("git.result.rebaseContinued"))
         }
-        return commandResult(run(["-c", "commit.gpgsign=false", "commit", "--no-edit"]), successMessage: "合并已继续。")
+        return commandResult(run(["-c", "commit.gpgsign=false", "commit", "--no-edit"]), successMessage: loc("git.result.mergeContinued"))
     }
 
     private func gitPathExists(_ name: String) -> Bool {
@@ -247,10 +252,10 @@ public final class VaultGitService: @unchecked Sendable {
         let path = try normalizeGitPath(value)
         let current = try queryStatus()
         guard let change = current.changes.first(where: { $0.path == path }) else {
-            return VaultGitActionResult(success: true, message: "没有可丢弃的变更。")
+            return actionResult(true, "git.result.nothingToDiscard")
         }
         if change.status == "??" || change.status.hasSuffix("?") {
-            return commandResult(run(["clean", "-f", "--", path]), successMessage: "已删除未跟踪文件。")
+            return commandResult(run(["clean", "-f", "--", path]), successMessage: loc("git.result.untrackedRemoved"))
         }
         let paths = [change.originalPath, change.path].compactMap { $0 }.filter { !$0.isEmpty }
         var restored = run(["restore", "--staged", "--worktree", "--source=HEAD", "--"] + paths)
@@ -259,9 +264,9 @@ public final class VaultGitService: @unchecked Sendable {
             restored = run(["checkout", "HEAD", "--"] + paths)
         }
         if restored.exitCode != 0 && change.status.contains("A") {
-            return commandResult(run(["clean", "-f", "--", path]), successMessage: "已丢弃变更。")
+            return commandResult(run(["clean", "-f", "--", path]), successMessage: loc("git.result.discarded"))
         }
-        return restored.exitCode == 0 ? VaultGitActionResult(success: true, message: "已丢弃变更。") : commandFailure(restored)
+        return restored.exitCode == 0 ? actionResult(true, "git.result.discarded") : commandFailure(restored)
     }
 
     private func commitDiffFiles(_ commit: String, path: String?) throws -> [VaultGitDiffFile] {
@@ -275,7 +280,7 @@ public final class VaultGitService: @unchecked Sendable {
         }
         if let path { args += ["--", path] }
         let listing = run(args)
-        guard listing.exitCode == 0 else { throw ToolError("无法读取提交差异。") }
+        guard listing.exitCode == 0 else { throw err("git.error.readCommitDiffFailed") }
         return parseNameStatus(listing.stdout).compactMap { item in
             let before = parentHash == nil ? missingPreview() : readBlobPreview(ref: parentHash!, path: item.originalPath ?? item.path)
             let after = readBlobPreview(ref: commit, path: item.path)
@@ -338,13 +343,13 @@ public final class VaultGitService: @unchecked Sendable {
         let path = (value ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !path.isEmpty, path.count <= 512, !path.hasPrefix("/"), !path.contains("\0"),
               !path.split(separator: "/").contains(where: { $0 == ".." || $0 == "." || $0.isEmpty }) else {
-            throw ToolError("Git 路径无效。")
+            throw err("git.error.invalidPath")
         }
         return path.replacingOccurrences(of: "\\", with: "/")
     }
 
     private func initialize() throws -> VaultGitActionResult {
-        if try queryStatus().repository { return VaultGitActionResult(success: true, message: "Git 仓库已存在。") }
+        if try queryStatus().repository { return actionResult(true, "git.result.repoAlreadyExists") }
         let initResult = run(["init"])
         guard initResult.exitCode == 0 else { return commandFailure(initResult) }
         let ignore = rootDirectory.appendingPathComponent(".gitignore")
@@ -363,23 +368,23 @@ public final class VaultGitService: @unchecked Sendable {
             if result.exitCode != 0 && !result.stderr.contains("No such remote") {
                 return commandFailure(result)
             }
-            return VaultGitActionResult(success: true, message: "已删除远程 origin。")
+            return actionResult(true, "git.result.remoteRemoved")
         }
         let existing = run(["remote", "get-url", "origin"])
         if existing.exitCode == 0 {
-            return commandResult(run(["remote", "set-url", "origin", remote]), successMessage: "已更新远程地址。")
+            return commandResult(run(["remote", "set-url", "origin", remote]), successMessage: loc("git.result.remoteUpdated"))
         }
-        return commandResult(run(["remote", "add", "origin", remote]), successMessage: "已保存远程地址。")
+        return commandResult(run(["remote", "add", "origin", remote]), successMessage: loc("git.result.remoteSaved"))
     }
 
     private func commit(_ message: String?) throws -> VaultGitActionResult {
         let text = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return VaultGitActionResult(success: false, message: "请输入提交说明。") }
+        guard !text.isEmpty else { return actionResult(false, "git.result.enterCommitMessage") }
         let current = try queryStatus()
         if current.merging || current.conflicts > 0 {
-            return VaultGitActionResult(success: false, message: "请先完成或中止当前合并/变基，再创建检查点。")
+            return actionResult(false, "git.result.finishMergeBeforeCheckpoint")
         }
-        if current.changes.isEmpty { return VaultGitActionResult(success: true, message: "没有需要提交的变更。") }
+        if current.changes.isEmpty { return actionResult(true, "git.result.nothingToCommit") }
         try ensureIdentity()
         let add = run(["add", "-A"])
         guard add.exitCode == 0 else { return commandFailure(add) }
@@ -392,12 +397,12 @@ public final class VaultGitService: @unchecked Sendable {
         if run(["config", "--get", "user.name"]).exitCode != 0 {
             let name = credentials.username?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
                 ? credentials.username!.trimmingCharacters(in: .whitespacesAndNewlines) : "MooTool"
-            guard run(["config", "user.name", name]).exitCode == 0 else { throw ToolError("无法配置 Git 用户名。") }
+            guard run(["config", "user.name", name]).exitCode == 0 else { throw err("git.error.configUserNameFailed") }
         }
         if run(["config", "--get", "user.email"]).exitCode != 0 {
             let user = credentials.username?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let email = user.isEmpty ? "mootool@local" : user + "@mootool.local"
-            guard run(["config", "user.email", email]).exitCode == 0 else { throw ToolError("无法配置 Git 邮箱。") }
+            guard run(["config", "user.email", email]).exitCode == 0 else { throw err("git.error.configUserEmailFailed") }
         }
     }
 
@@ -489,7 +494,7 @@ public final class VaultGitService: @unchecked Sendable {
         if remote.isEmpty { return "" }
         guard remote.count <= 2048, !remote.contains(where: { $0.isNewline }),
               remote.range(of: #"^(https?://|ssh://|git://|git@|file://)"#, options: .regularExpression) != nil else {
-            throw ToolError("远程仓库地址无效。")
+            throw err("git.error.invalidRemote")
         }
         return remote
     }

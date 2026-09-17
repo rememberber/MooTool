@@ -6,12 +6,14 @@ struct MarkdownPreview: View {
     let text: String
     var fontName = ""
     var pointSize = 14.0
+    @Environment(\.appLanguage) private var language
     @State private var document: MarkdownDocument?
     @State private var error: String?
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
     var body: some View {
         GeometryReader { geometry in
         ScrollView {
-            if let error { ContentUnavailableView("无法预览", systemImage: "doc.text", description: Text(error)) }
+            if let error { ContentUnavailableView(loc("quickNote.preview.unavailableTitle"), systemImage: "doc.text", description: Text(error)) }
             else if let document {
                 LazyVStack(alignment: .leading, spacing: 11) {
                     ForEach(document.blocks) { block in
@@ -19,13 +21,20 @@ struct MarkdownPreview: View {
                         case "heading": inline(block.text).font(.system(size: max(pointSize + 1, 31 - Double(block.level) * 3), weight: .semibold)).padding(.top, 7)
                         case "code":
                             VStack(alignment: .leading, spacing: 8) {
-                                HStack { Text(block.language.isEmpty ? "代码" : block.language).font(.caption).foregroundStyle(.secondary); Spacer(); Button { FilePanels.copy(block.text) } label: { Image(systemName: "doc.on.doc") }.buttonStyle(.borderless).help("复制代码") }
+                                HStack {
+                                    Text(block.language.isEmpty ? loc("quickNote.preview.codeBlock") : block.language).font(.caption).foregroundStyle(.secondary)
+                                    Spacer()
+                                    Button { FilePanels.copy(block.text) } label: { Image(systemName: "doc.on.doc") }.buttonStyle(.borderless).help(loc("quickNote.preview.copyCode"))
+                                }
                                 ScrollView(.horizontal) { Text(block.text).font(.system(size: pointSize, design: .monospaced)).fixedSize(horizontal: true, vertical: false) }
                             }.padding(13).background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 8))
                         case "quote": HStack { RoundedRectangle(cornerRadius: 2).fill(.tint).frame(width: 3); inline(block.text).foregroundStyle(.secondary) }.fixedSize(horizontal: false, vertical: true)
                         case "list":
                             HStack(alignment: .top, spacing: 8) {
-                                if let checked = block.checked { Image(systemName: checked ? "checkmark.square" : "square").foregroundStyle(.secondary).accessibilityLabel(checked ? "已完成" : "未完成") }
+                                if let checked = block.checked {
+                                    Image(systemName: checked ? "checkmark.square" : "square").foregroundStyle(.secondary)
+                                        .accessibilityLabel(checked ? loc("quickNote.preview.taskDone") : loc("quickNote.preview.taskOpen"))
+                                }
                                 else { Text(block.marker).foregroundStyle(.secondary) }
                                 inline(block.text)
                             }.padding(.leading, CGFloat(block.level) * 14)

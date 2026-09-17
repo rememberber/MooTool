@@ -18,7 +18,10 @@ const messagesByLocale = {
     'json.error.regexInvalid': '正则表达式无效：{message}',
     'json.error.findTooManyResults': '查找结果超过 2 万项，请缩小查询范围。',
     'json.error.unknownAction': '未知 JSON 操作。',
-    'json.valid.workerPrefix': '有效 JSON · '
+    'json.valid.workerPrefix': '有效 JSON · ',
+    'json.valid.idle': '输入 JSON 开始',
+    'json.valid.ok': '有效 JSON · {type}',
+    'json.valid.error': 'JSON 无效或无法解析。'
   },
   'en-US': {
     'json.error.empty': 'Enter JSON.', 'json.error.notString': 'Input must be a JSON string.',
@@ -38,7 +41,10 @@ const messagesByLocale = {
     'json.error.regexInvalid': 'Invalid regular expression: {message}',
     'json.error.findTooManyResults': 'Find returned more than 20,000 matches. Narrow the query.',
     'json.error.unknownAction': 'Unknown JSON action.',
-    'json.valid.workerPrefix': 'Valid JSON · '
+    'json.valid.workerPrefix': 'Valid JSON · ',
+    'json.valid.idle': 'Enter JSON to begin',
+    'json.valid.ok': 'Valid JSON · {type}',
+    'json.valid.error': 'JSON is invalid or could not be parsed.'
   },
   'ja-JP': {
     'json.error.empty': 'JSON を入力してください。', 'json.error.notString': '入力は JSON 文字列である必要があります。',
@@ -58,7 +64,10 @@ const messagesByLocale = {
     'json.error.regexInvalid': '正規表現が無効です：{message}',
     'json.error.findTooManyResults': '検索結果が 2 万件を超えています。範囲を狭めてください。',
     'json.error.unknownAction': '不明な JSON 操作です。',
-    'json.valid.workerPrefix': '有効な JSON · '
+    'json.valid.workerPrefix': '有効な JSON · ',
+    'json.valid.idle': 'JSON を入力してください',
+    'json.valid.ok': '有効な JSON · {type}',
+    'json.valid.error': 'JSON が無効か、解析できません。'
   }
 };
 function translate(key, params = {}, locale = 'zh-CN') {

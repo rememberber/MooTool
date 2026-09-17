@@ -55,7 +55,7 @@ public enum TextServices {
             }; return result
         case ("Base32", false): return Base32Codec.encode(Data(text.utf8))
         case ("Base32", true):
-            guard let result = String(data: try Base32Codec.decode(text), encoding: .utf8) else {
+            guard let result = String(data: try Base32Codec.decode(text, language: language), encoding: .utf8) else {
                 throw ToolError(AppLocalization.string("encode.error.base32Utf8", language: language))
             }
             return result
@@ -94,16 +94,16 @@ public enum TextServices {
         case "SM3": return CryptoServices.sm3(text)
         case "HMAC-SHA256": return Data(HMAC<SHA256>.authenticationCode(for: data, using: SymmetricKey(data: Data(key.utf8)))).hex
         case "UUID": return UUID().uuidString.lowercased()
-        case "随机 32 字节":
+        case "random32", "随机 32 字节":
             var generator = SystemRandomNumberGenerator()
             return Data((0..<32).map { _ in UInt8.random(in: .min ... .max, using: &generator) }).hex
-        case "AES-GCM 加密", "AES-GCM 解密":
+        case "aesGcmEncrypt", "AES-GCM 加密", "aesGcmDecrypt", "AES-GCM 解密":
             let keyData = try Data(hex: key, language: language)
             guard [16, 24, 32].contains(keyData.count) else {
                 throw ToolError(AppLocalization.string("textCrypto.error.aesKeyHex", language: language))
             }
             let symmetricKey = SymmetricKey(data: keyData)
-            if algorithm == "AES-GCM 加密" {
+            if algorithm == "aesGcmEncrypt" || algorithm == "AES-GCM 加密" {
                 return try AES.GCM.seal(data, using: symmetricKey).combined!.base64EncodedString()
             }
             guard let bytes = Data(base64Encoded: text) else {

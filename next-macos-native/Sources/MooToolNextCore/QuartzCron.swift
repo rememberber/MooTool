@@ -1,18 +1,22 @@
 import Foundation
 
 extension CronExpression {
-    public static func describe(_ input: String) -> String? {
+    public static func describe(_ input: String, language: AppLanguage = .zhCN) -> String? {
         guard let cron = try? CronExpression(input) else { return nil }
-        if let summary = cron.naturalSummary() {
-            return summary + " · " + cron.describe()
+        if let summary = cron.naturalSummary(language: language) {
+            return summary + " · " + cron.describe(language: language)
         }
-        return cron.describe()
+        return cron.describe(language: language)
     }
 }
 
 extension CronExpression {
-    /// Short Chinese schedule hint for common Quartz patterns (cronstrue-style, not a full parser).
-    func naturalSummary() -> String? {
+    private func loc(_ key: String, language: AppLanguage) -> String {
+        AppLocalization.string(key, language: language)
+    }
+
+    /// Short schedule hint for common Quartz patterns (cronstrue-style, not a full parser).
+    func naturalSummary(language: AppLanguage) -> String? {
         guard flavor == .quartz, seconds == [0], minutesField.count == 1, hoursField.count == 1 else { return nil }
         let minute = minutesField.sorted().first!
         let hour = hoursField.sorted().first!
@@ -20,64 +24,76 @@ extension CronExpression {
         let weekdays = Set(weekdaysField.map { $0 == 7 ? 0 : $0 })
         let workdays = Set([1, 2, 3, 4, 5])
         if dayRule == .quartzWeek, weekMatcher == .values, weekdays == workdays {
-            return "工作日每天 \(time)"
+            return String(format: loc("cron.describe.summaryWorkdays", language: language), time)
         }
         if dayRule == .quartzAny, monthsField.count == 12, daysField.count == 31 {
-            return "每天 \(time)"
+            return String(format: loc("cron.describe.summaryDaily", language: language), time)
         }
         if dayRule == .quartzDay, dayMatcher == .last {
-            return "每月最后一天 \(time)"
+            return String(format: loc("cron.describe.summaryLastDay", language: language), time)
         }
         if dayRule == .quartzWeek, case .nth(let weekday, let nth) = weekMatcher {
-            return "每月第 \(nth) 个\(weekdayName(weekday)) \(time)"
+            return String(format: loc("cron.describe.summaryNthWeekday", language: language), nth, weekdayName(weekday, language: language), time)
         }
         if dayRule == .quartzWeek, case .last(let weekday) = weekMatcher {
-            return "每月最后一个\(weekdayName(weekday)) \(time)"
+            return String(format: loc("cron.describe.summaryLastWeekday", language: language), weekdayName(weekday, language: language), time)
         }
         return nil
     }
 
-    func describe() -> String {
+    func describe(language: AppLanguage) -> String {
         switch flavor {
         case .unix:
-            return "Unix 五段 Cron（分 时 日 月 周）"
+            return loc("cron.describe.unixFiveField", language: language)
         case .quartz:
             var parts: [String] = []
-            if seconds != [0] { parts.append("秒：\(label(seconds, in: 0...59))") }
-            parts.append("分：\(label(minutesField, in: 0...59))")
-            parts.append("时：\(label(hoursField, in: 0...23))")
+            if seconds != [0] {
+                parts.append(String(format: loc("cron.describe.fieldSeconds", language: language), label(seconds, in: 0...59, language: language)))
+            }
+            parts.append(String(format: loc("cron.describe.fieldMinutes", language: language), label(minutesField, in: 0...59, language: language)))
+            parts.append(String(format: loc("cron.describe.fieldHours", language: language), label(hoursField, in: 0...23, language: language)))
             switch dayRule {
-            case .unixOr: parts.append("日/周：按 Unix 规则（日或周匹配）")
+            case .unixOr: parts.append(loc("cron.describe.unixDayOrWeek", language: language))
             case .quartzDay:
                 switch dayMatcher {
-                case .last: parts.append("日：每月最后一天")
-                case .nearestWeekday(let day): parts.append("日：\(day) 日最近工作日")
-                case .any: parts.append("日：任意")
-                case .values: parts.append("日：\(label(daysField, in: 1...31))")
+                case .last: parts.append(loc("cron.describe.dayLast", language: language))
+                case .nearestWeekday(let day):
+                    parts.append(String(format: loc("cron.describe.dayNearestWeekday", language: language), day))
+                case .any: parts.append(loc("cron.describe.dayAny", language: language))
+                case .values:
+                    parts.append(String(format: loc("cron.describe.dayValues", language: language), label(daysField, in: 1...31, language: language)))
                 }
             case .quartzWeek:
                 switch weekMatcher {
-                case .last(let weekday): parts.append("周：每月最后一个\(weekdayName(weekday))")
-                case .nth(let weekday, let nth): parts.append("周：每月第 \(nth) 个\(weekdayName(weekday))")
-                case .any: parts.append("周：任意")
-                case .values: parts.append("周：\(label(weekdaysField, in: 0...7))")
+                case .last(let weekday):
+                    parts.append(String(format: loc("cron.describe.weekLast", language: language), weekdayName(weekday, language: language)))
+                case .nth(let weekday, let nth):
+                    parts.append(String(format: loc("cron.describe.weekNth", language: language), nth, weekdayName(weekday, language: language)))
+                case .any: parts.append(loc("cron.describe.weekAny", language: language))
+                case .values:
+                    parts.append(String(format: loc("cron.describe.weekValues", language: language), label(weekdaysField, in: 0...7, language: language)))
                 }
-            case .quartzAny: parts.append("每日")
+            case .quartzAny: parts.append(loc("cron.describe.everyDay", language: language))
             }
-            parts.append("月：\(label(monthsField, in: 1...12))")
-            if let yearsField, yearsField != Set(1970...2199) { parts.append("年：\(label(yearsField, in: 1970...2199))") }
+            parts.append(String(format: loc("cron.describe.fieldMonths", language: language), label(monthsField, in: 1...12, language: language)))
+            if let yearsField, yearsField != Set(1970...2199) {
+                parts.append(String(format: loc("cron.describe.fieldYears", language: language), label(yearsField, in: 1970...2199, language: language)))
+            }
             return parts.joined(separator: " · ")
         }
     }
 
-    private func label(_ values: Set<Int>, in range: ClosedRange<Int>) -> String {
-        if values.count == range.count { return "每\(range.lowerBound == 0 ? "个" : "月")" }
+    private func label(_ values: Set<Int>, in range: ClosedRange<Int>, language: AppLanguage) -> String {
+        if values.count == range.count {
+            return loc(range.lowerBound == 0 ? "cron.describe.labelEvery" : "cron.describe.labelEveryMonth", language: language)
+        }
         if values.count <= 4 { return values.sorted().map(String.init).joined(separator: ",") }
-        return "\(values.count) 个取值"
+        return String(format: loc("cron.describe.labelValueCount", language: language), values.count)
     }
 
-    private func weekdayName(_ weekday: Int) -> String {
-        ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][max(0, min(6, weekday))]
+    private func weekdayName(_ weekday: Int, language: AppLanguage) -> String {
+        let index = max(0, min(6, weekday))
+        return loc("cron.weekday.\(index)", language: language)
     }
 }
 

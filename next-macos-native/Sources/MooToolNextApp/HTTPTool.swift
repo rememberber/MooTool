@@ -27,7 +27,7 @@ struct HTTPTool: View {
             PrimaryButton(title: AppLocalization.string("tool.send", language: language), symbol: "paperplane.fill", action: send)
             Menu {
                 Button(AppLocalization.string("http.importCurl", language: language)) { sheet = .curl }
-                Button(loc("http.copyCurl")) { do { FilePanels.copy(try CurlCommand.export(draft.record)); draft.status = loc("http.status.copiedCurl") } catch { draft.error = error.localizedDescription } }
+                Button(loc("http.copyCurl")) { do { FilePanels.copy(try CurlCommand.export(draft.record, language: language)); draft.status = loc("http.status.copiedCurl") } catch { draft.error = error.localizedDescription } }
                 Divider()
                 Button(AppLocalization.string("http.saveToCollection", language: language)) { sheet = .save }
                 Button(AppLocalization.string("http.openCollection", language: language)) { sheet = .library }
@@ -240,7 +240,7 @@ private struct CurlImportSheet: View {
             Text(loc("http.curlImport.help")).foregroundStyle(.secondary)
             EditorPane(title: loc("http.curlEditor"), text: $command)
             if let error { Text(error).font(.caption).foregroundStyle(.red).textSelection(.enabled) }
-            HStack { Button(loc("common.cancel")) { dismiss() }.keyboardShortcut(.cancelAction); Spacer(); Button(loc("tool.import")) { do { let value = try CurlCommand.parse(command); onImport(value); dismiss() } catch { self.error = error.localizedDescription } }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).disabled(command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
+            HStack { Button(loc("common.cancel")) { dismiss() }.keyboardShortcut(.cancelAction); Spacer(); Button(loc("tool.import")) { do { let value = try CurlCommand.parse(command, language: language); onImport(value); dismiss() } catch { self.error = error.localizedDescription } }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).disabled(command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
         }.padding(24).frame(width: 660, height: 460)
     }
 }

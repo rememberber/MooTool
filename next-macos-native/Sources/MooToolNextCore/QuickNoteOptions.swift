@@ -31,8 +31,10 @@ public struct QuickNoteOptions: Codable, Equatable, Sendable {
         }
         return value
     }
-    public func validate() throws {
-        guard fontName.utf8.count <= 256, fontSize.isFinite, (8...48).contains(fontSize), Self.lineSpacings.contains(lineSpacing) else { throw ToolError("随手记字体、字号或行距设置无效。") }
+    public func validate(language: AppLanguage = AppLocalization.preferredLanguage()) throws {
+        guard fontName.utf8.count <= 256, fontSize.isFinite, (8...48).contains(fontSize), Self.lineSpacings.contains(lineSpacing) else {
+            throw ToolError(AppLocalization.string("quickNote.error.editorSettings", language: language))
+        }
     }
 }
 public struct QuickNoteWorkspaceOptions: Codable, Equatable, Sendable {
@@ -44,8 +46,10 @@ public struct QuickNoteWorkspaceOptions: Codable, Equatable, Sendable {
     public var wholeWord = false
     public var regex = false
     public init() {}
-    public func validate() throws {
-        guard findQuery.utf8.count <= 16_384, replacement.utf8.count <= 1024 * 1024 else { throw ToolError("随手记查找或替换内容超过限制。") }
+    public func validate(language: AppLanguage = AppLocalization.preferredLanguage()) throws {
+        guard findQuery.utf8.count <= 16_384, replacement.utf8.count <= 1024 * 1024 else {
+            throw ToolError(AppLocalization.string("quickNote.error.findLimits", language: language))
+        }
     }
 }
 public enum QuickNoteAction: String, CaseIterable, Identifiable {

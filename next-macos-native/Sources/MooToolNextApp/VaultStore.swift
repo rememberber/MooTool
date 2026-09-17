@@ -90,7 +90,10 @@ extension AppStore {
         try commitVault(next, toolID: toolID, gitMessage: toolID == "json" ? "Delete JSON Vault entry" : "Delete Quick Note entry")
         for toolID in ["json", "quickNote"] {
             let draft = draft(toolID)
-            if let active = draft.documentID, removed.contains(active) { draft.documentID = nil; draft.status = "已删除文档，当前内容保留为草稿" }
+            if let active = draft.documentID, removed.contains(active) {
+                draft.documentID = nil
+                draft.status = AppLocalization.string("vault.status.deletedDraftKept", language: AppLocalization.preferredLanguage())
+            }
             updateVaultPreference(toolID) { value in
                 value.expanded.subtract(removed)
                 if let selected = value.selectedEntryID, removed.contains(selected) { value.selectedEntryID = nil }
