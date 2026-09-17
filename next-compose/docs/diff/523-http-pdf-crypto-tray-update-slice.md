@@ -36,4 +36,4 @@ DIFF-522「未做」仍列 HTTP 联网/二进制大走查、PDF/加解密大切�
 
 ## 未做
 
-产品主窗 Git/设置截图、六套 CSS 皮肤、P7 安装、HTTP 联网大走查与 multipart 文件上传、PDF 加密样本/UI 走查、托盘取色/截图权限对话框手工验收、加解密 UI 大切片。
+产品主窗 Git/设置截图、六套 CSS 皮肤、P7 安装、HTTP 联网大走查与 multipart 文件上传、PDF 表单/书签/签名、托盘取色/截图权限对话框手工验收、加解密非对称 Tab 大切片（HTTP urlencode/对称密钥字节/PDF 加密 UI 部分见 [DIFF-524](524-http-crypto-pdf-tray-slice.md)）。

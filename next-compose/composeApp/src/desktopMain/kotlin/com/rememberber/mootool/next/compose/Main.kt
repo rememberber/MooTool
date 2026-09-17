@@ -92,6 +92,7 @@ fun main(args: Array<String>) {
     val settings by container.settings.collectAsState()
     val detached by container.sessionManager.detached.collectAsState()
     val revision by container.sessionManager.revision.collectAsState()
+    val hostProfileMenuRevision by container.hostProfileMenuRevision.collectAsState()
     var visible by remember { mutableStateOf(true) }
     var closeDialog by remember { mutableStateOf(false) }
     var mainFocused by remember { mutableStateOf(true) }
@@ -193,7 +194,7 @@ fun main(args: Array<String>) {
         }
     }
 
-    LaunchedEffect(settings.general.trayEnabled, settings.general.language, revision) {
+    LaunchedEffect(settings.general.trayEnabled, settings.general.language, revision, hostProfileMenuRevision) {
         tray.sync(settings.general.trayEnabled, trayModel())
     }
     DisposableEffect(Unit) {

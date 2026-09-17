@@ -145,6 +145,7 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
             }
             session.error = ""
             reloadProfiles()
+            container.notifyHostProfileMenuChanged()
             persist()
             true
         }.getOrElse {
@@ -279,6 +280,7 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                     val copy = container.hostProfiles.duplicate(sourceId, container.t("host.copySuffix"))
                     session.markSaved(copy.id, copy.name, copy.content)
                     reloadProfiles()
+                    container.notifyHostProfileMenuChanged()
                     persist()
                 },
                 onImport = {
@@ -577,6 +579,7 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                                 container.toastSuccess(container.t("common.save"))
                                 session.error = ""
                                 reloadProfiles()
+                                container.notifyHostProfileMenuChanged()
                             }
                             .onFailure { session.error = it.message ?: container.t("host.error.generic") }
                         persist()
@@ -604,6 +607,7 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                         session.savedContent = ""
                         session.deleteConfirm = false
                         reloadProfiles()
+                        container.notifyHostProfileMenuChanged()
                         persist()
                     })
                     MooButton(container.t("common.cancel"), onClick = { session.deleteConfirm = false; persist() })

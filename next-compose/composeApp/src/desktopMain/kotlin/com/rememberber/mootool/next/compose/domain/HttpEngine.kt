@@ -15,6 +15,7 @@ import java.io.InterruptedIOException
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.URI
+import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
@@ -252,7 +253,16 @@ object HttpEngine {
                     index += 2
                 }
                 token in listOf("-d", "--data", "--data-raw", "--data-binary", "--data-urlencode") && next != null -> {
-                    body = next
+                    body = if (token == "--data-urlencode") {
+                        URLDecoder.decode(next, StandardCharsets.UTF_8)
+                    } else {
+                        next
+                    }
+                    if (token == "--data-urlencode" &&
+                        headers.none { it.name.equals("content-type", ignoreCase = true) && it.value.isNotBlank() }
+                    ) {
+                        bodyType = "application/x-www-form-urlencoded"
+                    }
                     if (method == HttpMethod.GET) method = HttpMethod.POST
                     index += 2
                 }

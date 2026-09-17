@@ -89,4 +89,14 @@ class CryptoEngineTest {
         }
         assertEquals("invalid-key", error.code)
     }
+
+    @Test
+    fun symmetricKeyUtf8LengthMatchesNormalizationRules() {
+        assertTrue(CryptoEngine.symmetricKeyUtf8Length(SymmetricAlgorithm.AES, CryptoEngine.SAMPLE_KEY).valid)
+        assertEquals(16, CryptoEngine.symmetricKeyUtf8Length(SymmetricAlgorithm.AES, CryptoEngine.SAMPLE_KEY).current)
+        assertFalse(
+            CryptoEngine.symmetricKeyUtf8Length(SymmetricAlgorithm.AES, "你好世界你好世界你好世界你好").valid
+        )
+        assertTrue(CryptoEngine.symmetricKeyUtf8Length(SymmetricAlgorithm.DES, "12345678").valid)
+    }
 }

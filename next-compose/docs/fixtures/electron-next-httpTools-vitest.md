@@ -7,3 +7,4 @@
 | binary-post | （Compose 本机 echo，Electron 无等价 vitest） | `HttpEngineTest.postBodyWithEmbeddedNullBytesRoundTripsOnLocalServer`（[DIFF-523](../diff/523-http-pdf-crypto-tray-update-slice.md)） |
 | multipart-preview | （Compose 扩展；Electron 响应仍 UTF-8 解码） | `HttpEngineTest.decodeBodyTreatsMultipartResponsesAsText` |
 | curl-data-binary | （与 `-d` 同等 token 分支） | `HttpEngineTest.parseCurlDataBinaryPreservesPayloadAndDefaultsToPost` |
+| curl-data-urlencode | （Electron 解析不 decode；Compose 按 URL 解码正文，见 [DIFF-524](../diff/524-http-crypto-pdf-tray-slice.md)） | `HttpEngineTest.parseCurlDataUrlencodeDecodesBodyAndSetsFormContentType` |

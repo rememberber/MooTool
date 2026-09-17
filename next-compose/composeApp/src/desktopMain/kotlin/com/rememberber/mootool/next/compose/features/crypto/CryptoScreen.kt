@@ -212,6 +212,15 @@ private fun SymmetricPanel(
                 modifier = Modifier.width(220.dp)
             )
             Text(container.t("crypto.keyHint"), color = colors.textMuted, fontSize = 10.sp)
+            val keyLength = CryptoEngine.symmetricKeyUtf8Length(session.symAlgorithm, session.symKey)
+            Text(
+                container.t(
+                    "crypto.keyBytes",
+                    mapOf("current" to keyLength.current.toString(), "required" to keyLength.required.toString())
+                ),
+                color = if (keyLength.valid) colors.textMuted else colors.warning,
+                fontSize = 10.sp
+            )
         }
         IoThreePaneRow(
             container = container,

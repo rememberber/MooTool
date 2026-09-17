@@ -107,6 +107,8 @@ class AppContainer(
     val jsonVaultAutoPullTick: StateFlow<Long> = _jsonVaultAutoPullTick
     private val _quickNoteVaultAutoPullTick = MutableStateFlow(0L)
     val quickNoteVaultAutoPullTick: StateFlow<Long> = _quickNoteVaultAutoPullTick
+    private val _hostProfileMenuRevision = MutableStateFlow(0)
+    val hostProfileMenuRevision: StateFlow<Int> = _hostProfileMenuRevision
     val jsonVault: JsonVault
         get() = JsonVault(dataDirectories(), _settings.value.vault.jsonPath)
 
@@ -473,6 +475,10 @@ class AppContainer(
 
     fun configureAutomaticUpdateChecks() {
         updateAutoCheckScheduler.reconfigure()
+    }
+
+    fun notifyHostProfileMenuChanged() {
+        _hostProfileMenuRevision.value++
     }
 
     fun startBackgroundTasks() {

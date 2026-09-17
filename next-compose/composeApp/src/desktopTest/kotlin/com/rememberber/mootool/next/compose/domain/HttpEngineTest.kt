@@ -331,6 +331,20 @@ class HttpEngineTest {
     }
 
     @Test
+    fun parseCurlDataUrlencodeDecodesBodyAndSetsFormContentType() {
+        val request = HttpEngine.parseCurl("curl 'https://example.com/form' --data-urlencode 'q=hello%20world'")
+        assertEquals(HttpMethod.POST, request.method)
+        assertEquals("https://example.com/form", request.url)
+        assertEquals("q=hello world", request.body)
+        assertEquals("application/x-www-form-urlencoded", request.bodyType)
+        val withHeader = HttpEngine.parseCurl(
+            "curl https://example.com/form -H 'Content-Type: text/plain' --data-urlencode 'a%3D1'"
+        )
+        assertEquals("a=1", withHeader.body)
+        assertEquals("text/plain", withHeader.bodyType)
+    }
+
+    @Test
     fun parseCurlDataBinaryPreservesPayloadAndDefaultsToPost() {
         val payload = "\u0000ab"
         val request = HttpEngine.parseCurl("curl https://example.com/upload --data-binary '${payload.replace("'", "'\"'\"'")}'")

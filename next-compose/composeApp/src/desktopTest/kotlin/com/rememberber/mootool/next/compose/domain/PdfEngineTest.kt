@@ -4,6 +4,8 @@ import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.pdmodel.PDPageContentStream
 import org.apache.pdfbox.pdmodel.common.PDRectangle
+import org.apache.pdfbox.pdmodel.encryption.AccessPermission
+import org.apache.pdfbox.pdmodel.encryption.StandardProtectionPolicy
 import org.apache.pdfbox.pdmodel.font.PDType1Font
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts
 import java.nio.file.Files
@@ -84,6 +86,18 @@ class PdfEngineTest {
     }
 
     @Test
+    fun inspectRejectsEncryptedPdfWithStableCode() {
+        val directory = Files.createTempDirectory("mootool-pdf-encrypted-")
+        try {
+            val encrypted = writeEncryptedPdf(directory.resolve("locked.pdf"))
+            assertFailsWith<PdfException> { PdfEngine.inspect(encrypted) }.also { assertEquals("encrypted", it.code) }
+        } finally {
+            directory.listDirectoryEntries().forEach { Files.deleteIfExists(it) }
+            Files.deleteIfExists(directory)
+        }
+    }
+
+    @Test
     fun rejectsUnsupportedFilesAndCancelsWithoutOrphans() {
         val directory = Files.createTempDirectory("mootool-pdf-reject-")
         try {
@@ -108,6 +122,17 @@ class PdfEngineTest {
             directory.listDirectoryEntries().forEach { Files.deleteIfExists(it) }
             Files.deleteIfExists(directory)
         }
+    }
+
+    private fun writeEncryptedPdf(path: Path): Path {
+        PDDocument().use { document ->
+            document.addPage(PDPage(PDRectangle.A4))
+            val policy = StandardProtectionPolicy("owner", "user", AccessPermission())
+            policy.encryptionKeyLength = 128
+            document.protect(policy)
+            document.save(path.toFile())
+        }
+        return path
     }
 
     private fun writeNumberedPdf(path: Path, pageCount: Int): Path {

@@ -128,6 +128,13 @@ fun PdfScreen(container: AppContainer, detached: Boolean) {
                 })
             }
             Spacer(Modifier.weight(1f))
+            Text(
+                container.t("pdf.toolbar.limits"),
+                color = colors.textMuted,
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             val limitReached = currentCount(session) >= PdfEngine.MAX_TASKS
             MooButton(
                 if (session.tab == PdfTab.Split) container.t("pdf.addTask") else container.t("pdf.addFile"),
@@ -481,7 +488,13 @@ private fun ingestPdfFiles(container: AppContainer, session: PdfSession, files: 
                     )
                 }
             }
-            .onFailure { error -> errors += messageFor(container, error) }
+            .onFailure { error ->
+                val message = messageFor(container, error)
+                if ((error as? PdfException)?.code == "encrypted") {
+                    container.toastError(message)
+                }
+                errors += message
+            }
     }
     session.error = errors.firstOrNull().orEmpty()
     session.notice = if (session.error.isEmpty()) "" else session.notice

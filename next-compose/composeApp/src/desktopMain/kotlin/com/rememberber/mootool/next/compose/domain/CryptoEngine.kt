@@ -52,6 +52,10 @@ enum class RandomKind { Uuid, Digits, String, Password }
 
 data class AsymmetricKeyPair(val publicKey: String, val privateKey: String)
 
+data class SymmetricKeyUtf8Length(val current: Int, val required: Int) {
+    val valid: Boolean get() = current == required
+}
+
 class CryptoException(val code: String, message: String) : RuntimeException(message)
 
 object CryptoEngine {
@@ -80,6 +84,14 @@ object CryptoEngine {
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
             Security.addProvider(BouncyCastleProvider())
         }
+    }
+
+    fun symmetricKeyUtf8Length(algorithm: SymmetricAlgorithm, key: String): SymmetricKeyUtf8Length {
+        val charLength = if (algorithm == SymmetricAlgorithm.DES) 8 else 16
+        val required = charLength
+        val normalized = normalizeKey(key, charLength)
+        val current = normalized.toByteArray(Charsets.UTF_8).size
+        return SymmetricKeyUtf8Length(current, required)
     }
 
     fun symmetricEncrypt(algorithm: SymmetricAlgorithm, content: String, key: String): String {
