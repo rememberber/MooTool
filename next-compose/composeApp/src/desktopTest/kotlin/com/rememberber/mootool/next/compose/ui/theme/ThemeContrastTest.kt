@@ -60,6 +60,18 @@ class ThemeContrastTest {
     }
 
     @Test
+    fun heroClaudeRestoreWorkspaceEditorShell() {
+        val hero = resolveMooColors(false, "hero", "blue")
+        val claude = resolveMooColors(false, "claude", "blue")
+        val modern = resolveMooColors(false, "modern", "blue")
+        assertTrue(hero.restoresWorkspaceChrome())
+        assertTrue(claude.restoresWorkspaceChrome())
+        assertTrue(!modern.restoresWorkspaceChrome())
+        assertTrue(!hero.flattenWorkspaceToolPanels())
+        assertTrue(modern.flattenWorkspaceToolPanels())
+    }
+
+    @Test
     fun heroAndMiuiTokensFollowElectronCssVariables() {
         val hero = resolveMooColors(false, "hero", "blue", unifiedBackground = false)
         assertEquals(Color(0xFFFAFAFA), hero.sidebar)

@@ -3,6 +3,7 @@ package com.rememberber.mootool.next.compose.app
 import com.rememberber.mootool.next.compose.model.ToolGroupId
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.model.ToolStatus
+import java.util.Locale
 
 data class ToolDefinition(
     val id: ToolId,
@@ -60,13 +61,16 @@ object ToolRegistry {
     val byId: Map<ToolId, ToolDefinition> = tools.associateBy { it.id }
 
     fun search(query: String, translate: (String) -> String): List<ToolDefinition> {
-        val needle = query.trim().lowercase()
+        val needle = query.trim().lowercase(Locale.ROOT)
         if (needle.isEmpty()) return tools
-        return tools.filter { tool ->
-            tool.id.id.lowercase().contains(needle) ||
-                translate(tool.titleKey).lowercase().contains(needle) ||
-                tool.keywords.any { it.lowercase().contains(needle) }
-        }
+        return tools.filter { tool -> matchesSearch(needle, tool, translate) }
+    }
+
+    /** Locale-stable id/keyword matching; localized titles use default locale (Electron `toLocaleLowerCase`). */
+    internal fun matchesSearch(needle: String, tool: ToolDefinition, translate: (String) -> String): Boolean {
+        if (tool.id.id.lowercase(Locale.ROOT).contains(needle)) return true
+        if (translate(tool.titleKey).lowercase(Locale.getDefault()).contains(needle)) return true
+        return tool.keywords.any { it.lowercase(Locale.ROOT).contains(needle) }
     }
 
     fun groupTitleKey(id: ToolGroupId): String? =

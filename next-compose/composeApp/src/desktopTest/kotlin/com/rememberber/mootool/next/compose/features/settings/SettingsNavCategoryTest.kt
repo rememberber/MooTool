@@ -2,6 +2,7 @@ package com.rememberber.mootool.next.compose.features.settings
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class SettingsNavCategoryTest {
     @Test
@@ -22,5 +23,13 @@ class SettingsNavCategoryTest {
         assertEquals(SettingsNavCategory.Appearance, settingsNavCategoryStep(SettingsNavCategory.General, 1))
         assertEquals(SettingsNavCategory.General, settingsNavCategoryStep(SettingsNavCategory.Appearance, -1))
         assertEquals(SettingsNavCategory.About, settingsNavCategoryStep(SettingsNavCategory.About, 1))
+    }
+
+    @Test
+    fun categoryLabelKeysMatchElectronSettingsCategoryIds() {
+        assertEquals("settings.category.general", SettingsNavCategory.General.categoryLabelKey())
+        assertEquals("settings.category.ai", SettingsNavCategory.Ai.categoryLabelKey())
+        assertEquals("settings.category.about", SettingsNavCategory.About.categoryLabelKey())
+        assertTrue(SettingsNavCategory.entries.all { it.navIcon().isNotBlank() })
     }
 }

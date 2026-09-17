@@ -54,4 +54,12 @@ class ToolRegistryTest {
         assertEquals(null, ToolRegistry.groupTitleKey(ToolGroupId.Home))
         assertEquals("app.group.dev", ToolRegistry.groupTitleKey(ToolGroupId.Dev))
     }
+
+    @Test
+    fun searchUsesRootLocaleForToolIdsAndKeywords() {
+        val tool = ToolRegistry.byId.getValue(ToolId.Json)
+        assertTrue(ToolRegistry.matchesSearch("json", tool) { it })
+        assertTrue(ToolRegistry.matchesSearch("jsonpath", tool) { it })
+        assertTrue(!ToolRegistry.matchesSearch("http", tool) { it })
+    }
 }

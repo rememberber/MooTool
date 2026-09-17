@@ -32,6 +32,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
@@ -119,7 +120,8 @@ fun SettingsScreen(container: AppContainer) {
         ) {
             SettingsNavCategory.entries.forEach { item ->
                 SettingsNavItem(
-                    label = container.t("settings.${item.name.lowercase()}"),
+                    label = container.t(item.categoryLabelKey()),
+                    icon = item.navIcon(),
                     selected = item == category,
                     onClick = {
                         category = item
@@ -135,9 +137,16 @@ fun SettingsScreen(container: AppContainer) {
         Column(Modifier.weight(1f).widthIn(min = 420.dp).fillMaxHeight()) {
             Row(
                 modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 20.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                MooPageTitle(container.t("settings.${category.name.lowercase()}"), settings = true)
+                Text(
+                    category.navIcon(),
+                    color = colors.textSecondary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+                MooPageTitle(container.t(category.categoryLabelKey()), settings = true)
             }
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             when (category) {

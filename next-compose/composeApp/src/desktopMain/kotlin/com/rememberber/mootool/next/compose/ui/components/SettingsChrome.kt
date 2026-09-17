@@ -56,6 +56,7 @@ fun SettingsNavItem(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    icon: String? = null,
 ) {
     val colors = MooTheme.colors
     val interaction = remember { MutableInteractionSource() }
@@ -99,6 +100,15 @@ fun SettingsNavItem(
             Box(
                 Modifier.width(3.dp).height(16.dp).clip(RoundedCornerShape(2.dp))
                     .background(if (selected) colors.navActiveBar else Color.Transparent)
+            )
+        }
+        if (!icon.isNullOrBlank()) {
+            Text(
+                icon,
+                color = if (selected) colors.navSelectedIcon() else colors.textMuted,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.width(22.dp),
             )
         }
         Text(

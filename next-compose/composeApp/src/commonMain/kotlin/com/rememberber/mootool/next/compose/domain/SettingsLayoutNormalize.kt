@@ -14,7 +14,7 @@ object SettingsLayoutNormalize {
 
     fun apply(settings: AppSettings, defaults: AppSettings = AppSettings.Default): AppSettings {
         val base = SettingsGeneralNormalize.apply(settings, defaults)
-        return base.copy(
+        val normalized = base.copy(
             appearance = base.appearance.copy(
                 interfaceStyle = normalizeInterfaceStyle(base.appearance.interfaceStyle, defaults.appearance.interfaceStyle),
                 theme = normalizeTheme(base.appearance.theme, defaults.appearance.theme),
@@ -27,6 +27,7 @@ object SettingsLayoutNormalize {
                 paneSizes = sanitizePaneSizes(base.layout.paneSizes),
             ),
         )
+        return SettingsVaultGitNormalize.apply(normalized)
     }
 
     fun normalizeInterfaceStyle(value: String, fallback: String = InterfaceStyle.Modern.name.lowercase()): String {

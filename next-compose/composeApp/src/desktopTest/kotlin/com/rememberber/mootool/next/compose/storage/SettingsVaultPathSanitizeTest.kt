@@ -249,4 +249,25 @@ class SettingsVaultPathSanitizeTest {
         assertEquals(listOf("json"), repository.current.layout.hiddenNavigationToolIds)
         root.toFile().deleteRecursively()
     }
+
+    @Test
+    fun loadTrimsVaultGitCredentialFields() {
+        val root = kotlin.io.path.createTempDirectory("mootool-settings-git-trim-")
+        val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }
+        val repository = SettingsRepository(directories)
+        repository.save(
+            AppSettings.Default.copy(
+                vault = AppSettings.Default.vault.copy(
+                    gitUsername = "  Zhou  ",
+                    gitRemote = "  https://example.com/repo.git  ",
+                    gitToken = "  secret-token  ",
+                ),
+            ),
+        )
+        val loaded = SettingsRepository(directories).load()
+        assertEquals("Zhou", loaded.vault.gitUsername)
+        assertEquals("https://example.com/repo.git", loaded.vault.gitRemote)
+        assertEquals("secret-token", loaded.vault.gitToken)
+        root.toFile().deleteRecursively()
+    }
 }

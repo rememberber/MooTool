@@ -168,6 +168,9 @@ data class MooColors(
     fun restoresWorkspaceChrome(): Boolean =
         styleId == "hero" || styleId == "claude" || styleId == "smartisan"
 
+    /** When true, JSON/HTTP/Host vault side panels use flat workspace edges (Electron `.tool-page--workspace`). */
+    fun flattenWorkspaceToolPanels(): Boolean = !restoresWorkspaceChrome()
+
     fun prominentFill(dark: Boolean, hovered: Boolean, pressed: Boolean): Color {
         val (rest, hover) = when (styleId) {
             "hero", "smartisan" -> accentAction to lerp(accentAction, Color.Black, 0.12f)

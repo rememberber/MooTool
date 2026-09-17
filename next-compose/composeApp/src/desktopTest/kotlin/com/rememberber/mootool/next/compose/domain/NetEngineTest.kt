@@ -45,6 +45,7 @@ class NetEngineTest {
 
         assertEquals(NetEngine.commonPorts.keys.toList(), NetEngine.parsePortSpec(""))
         assertEquals(listOf(22, 80, 3306), NetEngine.parsePortSpec("22,80,3306"))
+        assertEquals(listOf(22, 80, 81, 82, 3306), NetEngine.parsePortSpec("3306,80-82,22"))
         assertEquals((1..5).toList(), NetEngine.parsePortSpec("1-5"))
         assertFailsWith<NetException> { NetEngine.parsePortSpec("0") }
         assertFailsWith<NetException> { NetEngine.parsePortSpec("65536") }
