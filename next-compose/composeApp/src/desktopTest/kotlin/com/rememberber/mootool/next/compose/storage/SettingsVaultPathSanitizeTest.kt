@@ -2,6 +2,7 @@ package com.rememberber.mootool.next.compose.storage
 
 import com.rememberber.mootool.next.compose.app.AppPaths
 import com.rememberber.mootool.next.compose.model.AppSettings
+import com.rememberber.mootool.next.compose.model.CustomToolGroup
 import com.rememberber.mootool.next.compose.model.ToolId
 import kotlin.io.path.readText
 import kotlin.test.Test
@@ -144,6 +145,36 @@ class SettingsVaultPathSanitizeTest {
         assertEquals(5, loaded.vault.autoCommitIdleSeconds)
         assertEquals(3_600, loaded.vault.autoCommitInactiveSeconds)
         assertEquals("bing", loaded.tools.translationProvider)
+        root.toFile().deleteRecursively()
+    }
+
+    @Test
+    fun loadNormalizesUnknownInterfaceStyleAndCustomGroups() {
+        val root = kotlin.io.path.createTempDirectory("mootool-settings-layout-")
+        val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }
+        val repository = SettingsRepository(directories)
+        repository.save(
+            AppSettings.Default.copy(
+                appearance = AppSettings.Default.appearance.copy(interfaceStyle = "unknown"),
+                layout = AppSettings.Default.layout.copy(
+                    navigationStyle = "bogus",
+                    customGroups = listOf(
+                        CustomToolGroup("daily", "  My tools  ", listOf("json", "mootool", "unknown")),
+                        CustomToolGroup("daily", "Second", listOf("cron")),
+                    ),
+                ),
+            )
+        )
+        val loaded = SettingsRepository(directories).load()
+        assertEquals("modern", loaded.appearance.interfaceStyle)
+        assertEquals("classic", loaded.layout.navigationStyle)
+        assertEquals(
+            listOf(
+                CustomToolGroup("daily", "My tools", listOf("json")),
+                CustomToolGroup("daily-2", "Second", listOf("cron")),
+            ),
+            loaded.layout.customGroups,
+        )
         root.toFile().deleteRecursively()
     }
 

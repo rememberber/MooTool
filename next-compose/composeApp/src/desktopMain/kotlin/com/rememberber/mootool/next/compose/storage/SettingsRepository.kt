@@ -4,6 +4,7 @@ import com.rememberber.mootool.next.compose.app.AppDirectories
 import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.domain.EditorFontSettings
 import com.rememberber.mootool.next.compose.domain.NavigationToolVisibility
+import com.rememberber.mootool.next.compose.domain.SettingsLayoutNormalize
 import com.rememberber.mootool.next.compose.domain.SettingsNumericBounds
 import com.rememberber.mootool.next.compose.domain.TranslationEngine
 import com.rememberber.mootool.next.compose.ui.components.normalizeVaultTreeExpandMode
@@ -118,11 +119,10 @@ class SettingsRepository(
             ),
             tools = tools,
         )
-        val normalized = SettingsNumericBounds.normalize(merged, AppSettings.Default)
-        if (normalized == settings) {
-            return settings
-        }
-        return normalized
+        return SettingsNumericBounds.normalize(
+            SettingsLayoutNormalize.apply(merged),
+            AppSettings.Default,
+        )
     }
 
     companion object {

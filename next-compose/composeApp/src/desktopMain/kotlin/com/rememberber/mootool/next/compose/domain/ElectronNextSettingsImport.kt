@@ -6,9 +6,6 @@ import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.model.ToolSettings
 import com.rememberber.mootool.next.compose.model.CloseBehavior
 import com.rememberber.mootool.next.compose.model.CustomToolGroup
-import com.rememberber.mootool.next.compose.model.InterfaceStyle
-import com.rememberber.mootool.next.compose.model.NavigationStyle
-import com.rememberber.mootool.next.compose.model.ThemePreference
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.CodeRunSessionSnapshot
 import com.rememberber.mootool.next.compose.storage.VaultPathConfig
@@ -102,8 +99,8 @@ object ElectronNextSettingsImport {
                 legacyMigrationHintDismissed = patch.general.legacyMigrationHintDismissed,
             ),
             appearance = current.appearance.copy(
-                interfaceStyle = normalizeInterfaceStyle(patch.appearance.interfaceStyle),
-                theme = normalizeTheme(patch.appearance.theme),
+                interfaceStyle = SettingsLayoutNormalize.normalizeInterfaceStyle(patch.appearance.interfaceStyle),
+                theme = SettingsLayoutNormalize.normalizeTheme(patch.appearance.theme),
                 accentColor = patch.appearance.accentColor,
                 fontFamily = patch.appearance.fontFamily,
                 fontSize = SettingsNumericBounds.clampNumber(patch.appearance.fontSize, 12, 18),
@@ -114,7 +111,7 @@ object ElectronNextSettingsImport {
                 compactNavigation = patch.layout.compactNavigation,
                 showSeparators = patch.layout.showSeparators,
                 hideNavigationTitles = patch.layout.hideNavigationTitles,
-                navigationStyle = normalizeNavigationStyle(patch.layout.navigationStyle),
+                navigationStyle = SettingsLayoutNormalize.normalizeNavigationStyle(patch.layout.navigationStyle),
                 customGroups = mergeCustomGroups(current.layout.customGroups, patch.layout.customGroups),
                 hiddenNavigationToolIds = NavigationToolVisibility.normalizeHiddenNavigationToolIds(
                     patch.layout.hiddenNavigationToolIds
@@ -188,21 +185,15 @@ object ElectronNextSettingsImport {
     }
 
     private fun sanitize(imported: AppSettings, retainSecrets: Boolean = false): AppSettings {
-        val groups = imported.layout.customGroups.mapNotNull { group ->
-            val name = group.name.trim()
-            val ids = group.toolIds.filter { ToolId.fromId(it) != null }
-            if (name.isEmpty() || ids.isEmpty()) null
-            else group.copy(name = name, toolIds = ids)
-        }
         val general = if (imported.schemaVersion < ELECTRON_LEGACY_MIGRATION_HINT_SCHEMA) {
             imported.general.copy(legacyMigrationHintDismissed = true)
         } else {
             imported.general
         }
-        val base = imported.copy(
+        val base = SettingsLayoutNormalize.apply(
+            imported.copy(
             general = general,
             editor = EditorFontSettings.normalizeEditorSettings(imported.editor, AppSettings.Default.editor),
-            layout = imported.layout.copy(customGroups = groups),
             network = imported.network.copy(
                 proxyPassword = if (retainSecrets) imported.network.proxyPassword else ""
             ),
@@ -214,6 +205,7 @@ object ElectronNextSettingsImport {
                 quickNoteTreeExpandMode = normalizeVaultTreeExpandMode(imported.vault.quickNoteTreeExpandMode),
             ),
             tools = normalizeTranslationTools(imported.tools),
+            ),
         )
         return SettingsNumericBounds.normalize(base, AppSettings.Default)
     }
@@ -242,30 +234,9 @@ object ElectronNextSettingsImport {
     private fun normalizeLanguage(value: String): String =
         AppLanguage.entries.firstOrNull { it.code.equals(value, ignoreCase = true) }?.code ?: AppLanguage.ZhCN.code
 
-    private fun normalizeTheme(value: String): String =
-        ThemePreference.entries.firstOrNull { it.name.equals(value, ignoreCase = true) }?.name?.lowercase()
-            ?: ThemePreference.System.name.lowercase()
-
-    private fun normalizeInterfaceStyle(value: String): String {
-        val normalized = value.trim().lowercase()
-        return when (normalized) {
-            "miui-v5", "miuiv5" -> "miui-v5"
-            "modern" -> InterfaceStyle.Modern.name.lowercase()
-            "quiet" -> InterfaceStyle.Quiet.name.lowercase()
-            "hero" -> InterfaceStyle.Hero.name.lowercase()
-            "smartisan" -> InterfaceStyle.Smartisan.name.lowercase()
-            "claude" -> InterfaceStyle.Claude.name.lowercase()
-            else -> InterfaceStyle.Modern.name.lowercase()
-        }
-    }
-
     private fun normalizeCloseBehavior(value: String): String =
         CloseBehavior.entries.firstOrNull { it.name.equals(value, ignoreCase = true) }?.name?.lowercase()
             ?: CloseBehavior.Ask.name.lowercase()
-
-    private fun normalizeNavigationStyle(value: String): String =
-        NavigationStyle.entries.firstOrNull { it.name.equals(value, ignoreCase = true) }?.name?.lowercase()
-            ?: NavigationStyle.Classic.name.lowercase()
 
     private fun parseCodeRunPatch(runtime: JsonObject): CodeRunSessionSnapshot {
         val drafts = runtime["drafts"]?.jsonObject
