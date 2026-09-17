@@ -28,4 +28,4 @@ DIFF-519「未做」仍列设置 Vault 数值失焦链、HTTP 大切片、Git pu
 
 ## 未做
 
-产品主窗 Git/设置截图、六套 CSS 皮肤、P7 安装、HTTP 联网/二进制大走查、PDF/加解密大切片、工具默认值 QR/随机长度 NumberSetting、编辑器字号失焦链。
+产品主窗 Git/设置截图、六套 CSS 皮肤、P7 安装、HTTP 联网/二进制大走查、PDF/加解密大切片；工具 QR/随机长度与编辑器字号失焦提交见 [DIFF-521](521-settings-tools-editor-numeric-commit.md)。

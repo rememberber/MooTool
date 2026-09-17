@@ -44,7 +44,10 @@ import com.rememberber.mootool.next.compose.app.ToolRegistry
 import com.rememberber.mootool.next.compose.domain.GitRemoteCommitResult
 import com.rememberber.mootool.next.compose.domain.NavigationToolVisibility
 import com.rememberber.mootool.next.compose.domain.ProxyPortCommitResult
+import com.rememberber.mootool.next.compose.domain.NumericSettingCommitResult
+import com.rememberber.mootool.next.compose.domain.SettingsEditorNumericNormalize
 import com.rememberber.mootool.next.compose.domain.SettingsNetworkNormalize
+import com.rememberber.mootool.next.compose.domain.SettingsToolsNumericNormalize
 import com.rememberber.mootool.next.compose.domain.SettingsToolsTranslationNormalize
 import com.rememberber.mootool.next.compose.domain.SettingsVaultNumericNormalize
 import com.rememberber.mootool.next.compose.domain.SettingsVaultGitNormalize
@@ -345,13 +348,23 @@ fun SettingsScreen(container: AppContainer) {
                             }
                         )
                     }
-                    SettingRow(container.t("settings.jsonFontSize") + ": ${settings.editor.jsonFontSize}") {
-                        MooSegmented(
-                            options = listOf(12, 13, 14, 16, 18).map { it.toString() to it.toString() },
-                            value = settings.editor.jsonFontSize.toString(),
-                            onChange = { value ->
-                                container.updateSettings { it.copy(editor = it.editor.copy(jsonFontSize = value.toInt())) }
-                            }
+                    SettingRow(container.t("settings.jsonFontSize")) {
+                        SettingCommitTextField(
+                            settings.editor.jsonFontSize.toString(),
+                            onCommit = { draft ->
+                                when (val outcome = SettingsEditorNumericNormalize.commitJsonFontSize(draft)) {
+                                    is NumericSettingCommitResult.Accepted -> {
+                                        container.updateSettings { current ->
+                                            current.copy(editor = current.editor.copy(jsonFontSize = outcome.value))
+                                        }
+                                        true
+                                    }
+                                    NumericSettingCommitResult.Rejected -> {
+                                        container.toastError(container.t("settings.vault.numericInvalid"))
+                                        false
+                                    }
+                                }
+                            },
                         )
                     }
                     SettingRow(container.t("settings.quickNoteFontName")) {
@@ -365,13 +378,23 @@ fun SettingsScreen(container: AppContainer) {
                             }
                         )
                     }
-                    SettingRow(container.t("settings.quickNoteFontSize") + ": ${settings.editor.quickNoteFontSize}") {
-                        MooSegmented(
-                            options = listOf(12, 13, 14, 16, 18).map { it.toString() to it.toString() },
-                            value = settings.editor.quickNoteFontSize.toString(),
-                            onChange = { value ->
-                                container.updateSettings { it.copy(editor = it.editor.copy(quickNoteFontSize = value.toInt())) }
-                            }
+                    SettingRow(container.t("settings.quickNoteFontSize")) {
+                        SettingCommitTextField(
+                            settings.editor.quickNoteFontSize.toString(),
+                            onCommit = { draft ->
+                                when (val outcome = SettingsEditorNumericNormalize.commitQuickNoteFontSize(draft)) {
+                                    is NumericSettingCommitResult.Accepted -> {
+                                        container.updateSettings { current ->
+                                            current.copy(editor = current.editor.copy(quickNoteFontSize = outcome.value))
+                                        }
+                                        true
+                                    }
+                                    NumericSettingCommitResult.Rejected -> {
+                                        container.toastError(container.t("settings.vault.numericInvalid"))
+                                        false
+                                    }
+                                }
+                            },
                         )
                     }
                 }
@@ -883,13 +906,23 @@ fun SettingsScreen(container: AppContainer) {
                     }
                 }
                 SettingsNavCategory.Tools -> SettingsGroup(container.t("settings.group.toolDefaults")) {
-                    SettingRow(container.t("settings.tools.qrSize") + ": ${settings.tools.qrCodeSize}") {
-                        MooSegmented(
-                            options = listOf(200, 300, 400, 600).map { it.toString() to it.toString() },
-                            value = settings.tools.qrCodeSize.toString(),
-                            onChange = { value ->
-                                container.updateSettings { it.copy(tools = it.tools.copy(qrCodeSize = value.toInt())) }
-                            }
+                    SettingRow(container.t("settings.tools.qrSize")) {
+                        SettingCommitTextField(
+                            settings.tools.qrCodeSize.toString(),
+                            onCommit = { draft ->
+                                when (val outcome = SettingsToolsNumericNormalize.commitQrCodeSize(draft)) {
+                                    is NumericSettingCommitResult.Accepted -> {
+                                        container.updateSettings { current ->
+                                            current.copy(tools = current.tools.copy(qrCodeSize = outcome.value))
+                                        }
+                                        true
+                                    }
+                                    NumericSettingCommitResult.Rejected -> {
+                                        container.toastError(container.t("settings.vault.numericInvalid"))
+                                        false
+                                    }
+                                }
+                            },
                         )
                     }
                     SettingRow(container.t("settings.tools.qrError")) {
@@ -901,13 +934,23 @@ fun SettingsScreen(container: AppContainer) {
                             }
                         )
                     }
-                    SettingRow(container.t("settings.tools.randomLength") + ": ${settings.tools.randomStringLength}") {
-                        MooSegmented(
-                            options = listOf(8, 16, 32, 64).map { it.toString() to it.toString() },
-                            value = settings.tools.randomStringLength.toString(),
-                            onChange = { value ->
-                                container.updateSettings { it.copy(tools = it.tools.copy(randomStringLength = value.toInt())) }
-                            }
+                    SettingRow(container.t("settings.tools.randomLength")) {
+                        SettingCommitTextField(
+                            settings.tools.randomStringLength.toString(),
+                            onCommit = { draft ->
+                                when (val outcome = SettingsToolsNumericNormalize.commitRandomStringLength(draft)) {
+                                    is NumericSettingCommitResult.Accepted -> {
+                                        container.updateSettings { current ->
+                                            current.copy(tools = current.tools.copy(randomStringLength = outcome.value))
+                                        }
+                                        true
+                                    }
+                                    NumericSettingCommitResult.Rejected -> {
+                                        container.toastError(container.t("settings.vault.numericInvalid"))
+                                        false
+                                    }
+                                }
+                            },
                         )
                     }
                     Text(container.t("settings.tools.exportDirHint"), color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))

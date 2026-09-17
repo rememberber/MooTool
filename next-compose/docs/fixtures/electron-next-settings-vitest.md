@@ -3,6 +3,7 @@
 | caseId | Electron vitest | Compose |
 | --- | --- | --- |
 | numeric-boundaries | `normalizes numeric settings at their supported boundaries` | `SettingsNumericBoundsTest`（[DIFF-485](../diff/485-settings-numeric-bounds-normalize.md)） |
+| tools-editor-numeric-commit | `SettingsWindow` tools `NumberSetting` + editor font size 11–24 | `SettingsToolsEditorNumericNormalizeTest`（[DIFF-521](../diff/521-settings-tools-editor-numeric-commit.md)） |
 | translation-languages | `migrates legacy localized translation language names` | `SettingsTranslationLanguageTest` / load sanitize（[DIFF-481](../diff/481-settings-translation-language-normalize.md)） |
 | editor-font-names | `normalizes editor font family names` | `EditorFontSettingsTest`（[DIFF-482](../diff/482-settings-editor-font-normalize.md)） |
 | vault-tree-expand | `normalizes unknown vault tree expand modes` | `SettingsVaultPathSanitizeTest`（[DIFF-480](../diff/480-vault-tree-expand-mode-normalize.md)） |
