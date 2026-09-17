@@ -67,7 +67,6 @@ export MOOTOOL_COMPOSE_DATA_DIR="${ROOT}"
 # JSON Vault（含 merge 冲突）: ${VAULT_JSON}
 # 预期: git -C "${VAULT_JSON}" diff --name-only --diff-filter=U → conflict.json
 $(mootool_evidence_print_run_distributable_hint)
-# JSON → Vault Git 面板 → conflict.json → resolve → 继续合并
+$(mootool_evidence_print_git_merge_product_hint)
 # 截图: NNN-json-vault-git-merge-conflict-product.png
-# 登记: docs/evidence/2026-09-17-vault-conflict-product-window/results.md §B
 EOF

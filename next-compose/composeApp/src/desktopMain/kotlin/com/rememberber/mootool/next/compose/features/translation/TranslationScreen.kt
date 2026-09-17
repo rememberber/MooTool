@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.toHttpProxyConfig
 import com.rememberber.mootool.next.compose.domain.TranslationAutoPresentation
+import com.rememberber.mootool.next.compose.domain.TranslationResponsePresentation
 import com.rememberber.mootool.next.compose.domain.TranslationEngine
 import com.rememberber.mootool.next.compose.domain.TranslationHistoryRestore
 import com.rememberber.mootool.next.compose.domain.TranslationErrorCode
@@ -71,6 +72,7 @@ import com.rememberber.mootool.next.compose.ui.components.setPaneSize
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
+import com.rememberber.mootool.next.compose.ui.components.mooTranslationEditorSeam
 import com.rememberber.mootool.next.compose.ui.components.mooTranslationHistoryArticle
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
@@ -150,7 +152,16 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
         scope.launch(Dispatchers.IO) {
             val result = TranslationEngine.translate(input, proxy)
             withContext(Dispatchers.Main) {
-                if (session.sequence != expectedSeq || session.requestId != requestId) return@withContext
+                if (
+                    !TranslationResponsePresentation.shouldApplyResult(
+                        expectedSeq,
+                        session.sequence,
+                        session.requestId,
+                        result.requestId,
+                    )
+                ) {
+                    return@withContext
+                }
                 session.translating = false
                 session.requestId = ""
                 if (result.ok) {
@@ -160,7 +171,7 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
                     session.notice = buildNotice(container, result.provider, result.fallbackUsed)
                     session.error = ""
                     container.translations.saveHistory(text, result.text, sourceLang, targetLang, result.provider)
-                } else if (result.errorCode != TranslationErrorCode.ABORTED) {
+                } else if (TranslationResponsePresentation.shouldShowError(result.errorCode)) {
                     session.error = messageFor(container, result.errorCode, result.statusText)
                     session.notice = ""
                 }
@@ -204,7 +215,7 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
             return@LaunchedEffect
         }
         delay(TranslationAutoPresentation.AUTO_DEBOUNCE_MS)
-        if (seq != session.sequence) return@LaunchedEffect
+        if (!TranslationResponsePresentation.shouldProceedAutoDebounce(seq, session.sequence)) return@LaunchedEffect
         send(session.source, seq)
     }
 
@@ -515,7 +526,7 @@ private fun TranslatePane(
                 onDelta = { container.setPaneSize(TRANSLATION_EDITOR_PANE_KEY, 0, sourceWidth + it, 1) },
                 onReset = { container.setPaneSize(TRANSLATION_EDITOR_PANE_KEY, 0, defaultSource, 1) }
             )
-            Column(Modifier.weight(1f).widthIn(min = 280.dp).fillMaxHeight()) {
+            Column(Modifier.weight(1f).widthIn(min = 280.dp).fillMaxHeight().mooTranslationEditorSeam()) {
                 SelectionContainer(Modifier.weight(1f).fillMaxWidth()) {
                     MooTextField(
                         if (session.translating) container.t("translation.translating") else session.target,

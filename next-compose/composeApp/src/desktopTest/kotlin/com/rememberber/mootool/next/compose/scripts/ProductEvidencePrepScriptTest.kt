@@ -20,6 +20,8 @@ class ProductEvidencePrepScriptTest {
             val sample = dataRoot.resolve("data/vaults/json/sample.json")
             assertTrue(sample.isRegularFile(), "missing sample.json at $sample")
             assertTrue(sample.toFile().readText().contains("vault-external-conflict"))
+            val quickNote = dataRoot.resolve("data/vaults/quick-note/sample-external.md")
+            assertTrue(quickNote.isRegularFile(), "missing quick-note sample at $quickNote")
         } finally {
             dataRoot.toFile().deleteRecursively()
         }

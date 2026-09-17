@@ -15,3 +15,4 @@
 | public-multipart-post | （可选 httpbin，`MOOTOOL_HTTP_MULTIPART_SMOKE=1`） | `HttpEngineTest.optionalHttpBinMultipartPostSmoke`（[DIFF-528](../diff/528-http-multipart-editor-tray-git-slice.md)，默认 CI 跳过） |
 | format-body | `formatCodeEditorContent`（Quick Note/HTTP Body，`codeEditorFormatting.test.ts`） | `HttpEngine.formatBody` → `DocumentFormatEngine.format`（[DIFF-541](../diff/541-git-diff-update-tray-http-slice.md)）；`HttpEngineTest.formatBodyUsesDocumentFormatEngineForXmlAndJson` |
 | format-body-js | `text/javascript` 单线 `const value={ready:true}` | `HttpEngineTest.formatBodyFormatsJavascriptLikeElectron`（[DIFF-542](../diff/542-vault-git-diff-editorformat-conflict-slice.md)） |
+| stale-response | 发送中保留上一响应 + requestId | `HttpResponsePresentation` + `HttpRequestPresentation`（[DIFF-546](../diff/546-translate-http-pdf-style-f19-slice.md)、[DIFF-547](../diff/547-http-translation-net-style-git-slice.md)） |

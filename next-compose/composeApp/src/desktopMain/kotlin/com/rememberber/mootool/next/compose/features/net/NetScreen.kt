@@ -56,6 +56,7 @@ import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooNetCommandRow
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
@@ -460,7 +461,7 @@ private fun CommandSection(
         Row(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.onPreviewKeyEvent { event ->
+            modifier = Modifier.mooNetCommandRow().onPreviewKeyEvent { event ->
                 if (!event.blockedByIme() && event.type == KeyEventType.KeyDown && event.key == Key.Enter && !disabled) {
                     onRun()
                     true

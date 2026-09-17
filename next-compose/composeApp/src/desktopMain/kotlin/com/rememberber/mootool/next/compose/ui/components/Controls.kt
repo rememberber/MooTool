@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -1273,6 +1274,44 @@ fun Modifier.mooTranslationHistoryArticle(hovered: Boolean): Modifier {
     return clip(shape).background(if (hovered) colors.control else colors.surfaceCard)
         .border(1.dp, colors.borderSoft, shape)
 }
+
+/** Electron `.http-saved-item` / `.host-profile` 集合行悬停/选中。 */
+@Composable
+fun Modifier.mooHttpSavedItem(active: Boolean, hovered: Boolean): Modifier {
+    val colors = MooTheme.colors
+    val shape = RoundedCornerShape(5.dp)
+    return clip(shape).background(if (active || hovered) colors.control else Color.Transparent)
+}
+
+/** Electron `.http-entry-row` 键值表行高与底部分隔。 */
+@Composable
+fun Modifier.mooHttpEntryRow(): Modifier {
+    val colors = MooTheme.colors
+    return heightIn(min = 35.dp).drawBehind {
+        val y = size.height - 0.5f
+        drawLine(colors.borderSoft, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+    }
+}
+
+/** Electron `.http-response-pane` 响应区 workspace 底。 */
+@Composable
+fun Modifier.mooHttpResponsePane(): Modifier {
+    val colors = MooTheme.colors
+    return background(colors.surfaceSubtle).padding(8.dp)
+}
+
+/** Electron `.translation-editor-grid` 目标列左侧中缝。 */
+@Composable
+fun Modifier.mooTranslationEditorSeam(): Modifier {
+    val colors = MooTheme.colors
+    return drawBehind {
+        drawLine(colors.borderSoft, Offset(0.5f, 0f), Offset(0.5f, size.height), 1.dp.toPx())
+    }
+}
+
+/** Electron `.net-command-row` / `.net-port-scan-row` dense 命令行。 */
+@Composable
+fun Modifier.mooNetCommandRow(): Modifier = heightIn(min = 35.dp)
 
 @Composable
 fun Modifier.mooWorkspaceBackground(): Modifier {

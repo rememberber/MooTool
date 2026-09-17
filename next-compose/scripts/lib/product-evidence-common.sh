@@ -43,6 +43,11 @@ mootool_evidence_print_vault_conflict_product_hint() {
   echo "# 产品主窗 §A/B PNG 仍须 runDistributable + 手工截图（见 vault-conflict-product-window/results.md）"
 }
 
+mootool_evidence_print_git_merge_product_hint() {
+  echo "# Vault Git merge 产品窗 §B: F04 JSON → Vault Git → conflict.json → 解决冲突 → 继续合并"
+  echo "# 登记 PNG: docs/evidence/2026-09-17-vault-conflict-product-window/results.md §B"
+}
+
 mootool_evidence_print_tray_tcc_hint() {
   local compose_root
   compose_root="$(mootool_evidence_compose_root)"

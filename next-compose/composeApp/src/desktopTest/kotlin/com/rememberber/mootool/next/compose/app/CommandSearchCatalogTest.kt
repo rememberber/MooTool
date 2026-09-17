@@ -82,6 +82,8 @@ class CommandSearchCatalogTest {
         val en = Translator(AppLanguage.EnUS)
         assertEquals("network", CommandSearchCatalog.search("curl", en::t).single().categoryId)
         assertEquals("network", CommandSearchCatalog.search("pdf", en::t).single().categoryId)
+        assertEquals("network", CommandSearchCatalog.search("httpbin", en::t).single().categoryId)
+        assertEquals("tools", CommandSearchCatalog.search("debounce", en::t).single().categoryId)
     }
 
     @Test

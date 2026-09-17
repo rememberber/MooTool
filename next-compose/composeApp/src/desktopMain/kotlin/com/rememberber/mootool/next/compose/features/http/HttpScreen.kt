@@ -72,6 +72,7 @@ import com.rememberber.mootool.next.compose.domain.HttpPair
 import com.rememberber.mootool.next.compose.domain.toHttpProxyConfig
 import com.rememberber.mootool.next.compose.domain.HttpRequestTab
 import com.rememberber.mootool.next.compose.domain.HttpResponseFind
+import com.rememberber.mootool.next.compose.domain.HttpRequestPresentation
 import com.rememberber.mootool.next.compose.domain.HttpResponsePresentation
 import com.rememberber.mootool.next.compose.domain.HttpResponseResult
 import com.rememberber.mootool.next.compose.domain.HttpResponseTab
@@ -98,7 +99,10 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.MooToolTab
 import com.rememberber.mootool.next.compose.ui.components.mooEditorFrame
+import com.rememberber.mootool.next.compose.ui.components.mooHttpEntryRow
 import com.rememberber.mootool.next.compose.ui.components.mooHttpRequestPane
+import com.rememberber.mootool.next.compose.ui.components.mooHttpResponsePane
+import com.rememberber.mootool.next.compose.ui.components.mooHttpSavedItem
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooToolTabsBackground
@@ -297,7 +301,10 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
         }
         val timeout = timeoutResult.sessionMs
         val requestId = "http-${UUID.randomUUID()}"
-        session.previousResponse = HttpEngine.usableResponse(session.response, session.previousResponse)
+        session.previousResponse = HttpRequestPresentation.previousResponseBeforeSend(
+            session.response,
+            session.previousResponse,
+        )
         session.requestId = requestId
         session.sending = true
         session.error = ""
@@ -308,7 +315,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
         scope.launch(Dispatchers.IO) {
             val result = HttpEngine.send(draft, requestId, timeout, proxy)
             withContext(Dispatchers.Main) {
-                if (session.requestId != requestId) return@withContext
+                if (!HttpRequestPresentation.shouldApplyResponse(session.requestId, result.requestId)) return@withContext
                 session.sending = false
                 session.response = result
                 session.findIndex = HttpResponseFind.FIND_INDEX_UNSET
@@ -643,7 +650,13 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                         }
                     }
                 }
-                Column(Modifier.fillMaxWidth().height(responseHeight.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(responseHeight.dp)
+                        .mooHttpResponsePane(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         if (showingPrevious) container.t("http.previousResponse") else container.t("http.response"),
@@ -803,8 +816,8 @@ private fun CollectionPane(
                     val active = item.id == session.selectedId
                     val shape = RoundedCornerShape(5.dp)
                     Column(
-                        Modifier.fillMaxWidth().clip(shape)
-                            .background(if (active || hovered) colors.control else Color.Transparent)
+                        Modifier.fillMaxWidth()
+                            .mooHttpSavedItem(active = active, hovered = hovered)
                             .hoverable(interaction)
                             .mooFocusClickable(shape = shape) { onSelect(item) }
                             .padding(horizontal = 9.dp, vertical = 8.dp)
@@ -890,7 +903,7 @@ private fun PairEditor(container: AppContainer, items: List<HttpPair>, onChange:
         LazyColumn(Modifier.weight(1f)) {
             itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = 35.dp).padding(horizontal = 8.dp, vertical = 3.dp),
+                    Modifier.fillMaxWidth().mooHttpEntryRow().padding(horizontal = 8.dp, vertical = 3.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
@@ -917,7 +930,6 @@ private fun PairEditor(container: AppContainer, items: List<HttpPair>, onChange:
                         Text("×", color = colors.textMuted, fontSize = 16.sp)
                     }
                 }
-                androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
             }
         }
         Text(
