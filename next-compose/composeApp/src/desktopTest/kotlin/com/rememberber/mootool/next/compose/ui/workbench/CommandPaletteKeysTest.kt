@@ -17,18 +17,63 @@ class CommandPaletteKeysTest {
     }
 
     @Test
-    fun tabFocusTransition_movesBetweenSearchAndSelectedResult() {
+    fun tabFocusTransition_movesSearchCloseAndResult() {
+        assertEquals(
+            CommandPaletteFocusTarget.Close,
+            commandPaletteTabFocusTransition(
+                shift = false,
+                from = CommandPaletteFocusTarget.Search,
+                resultCount = 3,
+            ),
+        )
         assertEquals(
             CommandPaletteFocusTarget.Result,
-            commandPaletteTabFocusTransition(shift = false, fromResultRow = false, resultCount = 3),
+            commandPaletteTabFocusTransition(
+                shift = false,
+                from = CommandPaletteFocusTarget.Close,
+                resultCount = 3,
+            ),
+        )
+        assertEquals(
+            CommandPaletteFocusTarget.Close,
+            commandPaletteTabFocusTransition(
+                shift = true,
+                from = CommandPaletteFocusTarget.Result,
+                resultCount = 3,
+            ),
         )
         assertEquals(
             CommandPaletteFocusTarget.Search,
-            commandPaletteTabFocusTransition(shift = true, fromResultRow = true, resultCount = 3),
+            commandPaletteTabFocusTransition(
+                shift = true,
+                from = CommandPaletteFocusTarget.Close,
+                resultCount = 3,
+            ),
         )
-        assertEquals(null, commandPaletteTabFocusTransition(shift = false, fromResultRow = false, resultCount = 0))
-        assertEquals(null, commandPaletteTabFocusTransition(shift = true, fromResultRow = false, resultCount = 2))
-        assertEquals(null, commandPaletteTabFocusTransition(shift = false, fromResultRow = true, resultCount = 2))
+        assertEquals(
+            null,
+            commandPaletteTabFocusTransition(
+                shift = false,
+                from = CommandPaletteFocusTarget.Close,
+                resultCount = 0,
+            ),
+        )
+        assertEquals(
+            null,
+            commandPaletteTabFocusTransition(
+                shift = true,
+                from = CommandPaletteFocusTarget.Search,
+                resultCount = 2,
+            ),
+        )
+        assertEquals(
+            null,
+            commandPaletteTabFocusTransition(
+                shift = false,
+                from = CommandPaletteFocusTarget.Result,
+                resultCount = 2,
+            ),
+        )
     }
 
     @Test

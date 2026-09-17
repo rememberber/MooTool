@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.sp
@@ -418,6 +419,51 @@ class ToolbarFocusCaptureTest {
         val image = onRoot().captureToImage().toAwtImage()
         assertTrue(ImageIO.write(image, "png", file))
         assertTrue(countRingPixels(image, expected) >= 8, "command palette result row focus ring")
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun captureCommandPaletteCloseButtonFocusRing() = runDesktopComposeUiTest(width = 200, height = 72) {
+        val zh = Translator(AppLanguage.ZhCN)
+        val closeFocus = FocusRequester()
+        setContent {
+            MooTheme(preference = ThemePreference.Light, systemDark = false, interfaceStyle = "modern") {
+                val colors = MooTheme.colors
+                val interaction = remember { MutableInteractionSource() }
+                val focused by interaction.collectIsFocusedAsState()
+                val shape = RoundedCornerShape(MooTheme.dimens.navRadius)
+                Text(
+                    "×",
+                    color = colors.textSecondary,
+                    fontSize = 18.sp,
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .background(colors.workspace)
+                        .focusRequester(closeFocus)
+                        .mooFocusOutline(focused, shape)
+                        .clip(shape)
+                        .border(2.dp, colors.focusRing, shape)
+                        .focusable(true, interaction)
+                        .clickable(interactionSource = interaction, indication = null, onClick = {})
+                        .padding(6.dp)
+                        .semantics {
+                            role = Role.Button
+                            contentDescription = zh.t("app.search.close")
+                        },
+                )
+            }
+        }
+        val cwd = File(".").canonicalFile
+        val root = if (cwd.name == "composeApp") cwd.parentFile else cwd
+        val dir = File(root, "docs/evidence/2026-09-15-inspector-screencapture/windows")
+        dir.mkdirs()
+        val expected = 0x316DC0
+        runOnIdle { closeFocus.requestFocus() }
+        waitForIdle()
+        val file = File(dir, "149-compose-command-palette-close-tab-focus.png")
+        val image = onRoot().captureToImage().toAwtImage()
+        assertTrue(ImageIO.write(image, "png", file))
+        assertTrue(countRingPixels(image, expected) >= 8, "command palette close button focus ring")
     }
 
     @OptIn(ExperimentalTestApi::class)

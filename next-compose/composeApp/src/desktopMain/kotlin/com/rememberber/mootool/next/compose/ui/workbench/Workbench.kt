@@ -285,6 +285,7 @@ private fun CommandSearch(container: AppContainer) {
         ToolRegistry.search(query) { container.t(it) }
     }
     val searchFocus = remember { FocusRequester() }
+    val closeFocus = remember { FocusRequester() }
     val resultFocus = remember { FocusRequester() }
     LaunchedEffect(results) { selected = nextCommandIndex(selected, results.size, stay = true) }
     LaunchedEffect(Unit) { searchFocus.requestFocus() }
@@ -295,15 +296,19 @@ private fun CommandSearch(container: AppContainer) {
     fun focusCommandPaletteTarget(target: CommandPaletteFocusTarget) {
         when (target) {
             CommandPaletteFocusTarget.Search -> searchFocus.requestFocus()
+            CommandPaletteFocusTarget.Close -> closeFocus.requestFocus()
             CommandPaletteFocusTarget.Result -> resultFocus.requestFocus()
         }
     }
-    fun onPaletteKey(event: androidx.compose.ui.input.key.KeyEvent, fromResultRow: Boolean = false): Boolean {
+    fun onPaletteKey(
+        event: androidx.compose.ui.input.key.KeyEvent,
+        from: CommandPaletteFocusTarget = CommandPaletteFocusTarget.Search,
+    ): Boolean {
         if (event.type != KeyEventType.KeyDown || event.blockedByIme()) return false
         if (event.key == Key.Tab) {
             val next = commandPaletteTabFocusTransition(
                 shift = event.isShiftPressed,
-                fromResultRow = fromResultRow,
+                from = from,
                 resultCount = results.size,
             )
             if (next != null) {
@@ -311,11 +316,35 @@ private fun CommandSearch(container: AppContainer) {
                 return true
             }
         }
-        if (!fromResultRow) {
+        if (from != CommandPaletteFocusTarget.Result) {
             return when (event.key) {
-                Key.DirectionDown -> { selected = nextCommandIndex(selected, results.size, down = true); true }
-                Key.DirectionUp -> { selected = nextCommandIndex(selected, results.size, down = false); true }
-                Key.Enter -> { choose(selected); true }
+                Key.DirectionDown -> {
+                    if (from == CommandPaletteFocusTarget.Search && results.isNotEmpty()) {
+                        selected = nextCommandIndex(selected, results.size, down = true)
+                        true
+                    } else {
+                        false
+                    }
+                }
+                Key.DirectionUp -> {
+                    if (from == CommandPaletteFocusTarget.Search && results.isNotEmpty()) {
+                        selected = nextCommandIndex(selected, results.size, down = false)
+                        true
+                    } else {
+                        false
+                    }
+                }
+                Key.Enter -> {
+                    if (from == CommandPaletteFocusTarget.Close) {
+                        container.setSearchOpen(false)
+                        true
+                    } else if (from == CommandPaletteFocusTarget.Search && results.isNotEmpty()) {
+                        choose(selected)
+                        true
+                    } else {
+                        false
+                    }
+                }
                 Key.Escape -> { container.setSearchOpen(false); true }
                 else -> false
             }
@@ -371,6 +400,8 @@ private fun CommandSearch(container: AppContainer) {
                     color = colors.textSecondary,
                     fontSize = 18.sp,
                     modifier = Modifier
+                        .focusRequester(closeFocus)
+                        .onPreviewKeyEvent { onPaletteKey(it, CommandPaletteFocusTarget.Close) }
                         .mooFocusClickable { container.setSearchOpen(false) }
                         .padding(6.dp)
                         .semantics {
@@ -400,7 +431,7 @@ private fun CommandSearch(container: AppContainer) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .then(if (active) Modifier.focusRequester(resultFocus) else Modifier)
-                                .onPreviewKeyEvent { onPaletteKey(it, fromResultRow = true) }
+                                .onPreviewKeyEvent { onPaletteKey(it, CommandPaletteFocusTarget.Result) }
                                 .mooFocusOutline(rowFocused, rowShape)
                                 .clip(rowShape)
                                 .background(colors.sidebarItemBrush(active, card = false, hovered = false))
@@ -455,20 +486,24 @@ private fun CommandSearch(container: AppContainer) {
 
 internal enum class CommandPaletteFocusTarget {
     Search,
+    Close,
     Result,
 }
 
-/** Tab / Shift+Tab between搜索框与当前选中结果行（对齐 Electron 结果按钮可 Tab 聚焦）。 */
+/** Tab / Shift+Tab：搜索框 → 关闭钮 → 当前选中结果行（对齐 Electron 搜索行内关闭按钮与结果 `<button>` 的 Tab 序）。 */
 internal fun commandPaletteTabFocusTransition(
     shift: Boolean,
-    fromResultRow: Boolean,
+    from: CommandPaletteFocusTarget,
     resultCount: Int,
 ): CommandPaletteFocusTarget? {
-    if (resultCount <= 0) return null
-    return when {
-        !shift && !fromResultRow -> CommandPaletteFocusTarget.Result
-        shift && fromResultRow -> CommandPaletteFocusTarget.Search
-        else -> null
+    return when (from) {
+        CommandPaletteFocusTarget.Search -> if (shift) null else CommandPaletteFocusTarget.Close
+        CommandPaletteFocusTarget.Close -> when {
+            shift -> CommandPaletteFocusTarget.Search
+            resultCount > 0 -> CommandPaletteFocusTarget.Result
+            else -> null
+        }
+        CommandPaletteFocusTarget.Result -> if (shift && resultCount > 0) CommandPaletteFocusTarget.Close else null
     }
 }
 
