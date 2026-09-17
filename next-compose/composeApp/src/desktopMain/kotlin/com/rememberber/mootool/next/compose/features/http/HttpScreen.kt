@@ -148,7 +148,12 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
 
     fun formatBody() {
         onEdt {
-            val formatted = HttpEngine.formatBody(session.bodyEditor.text, session.bodyType)
+            val formatted = HttpEngine.formatBody(
+                session.bodyEditor.text,
+                session.bodyType,
+                sqlDialect = settings.editor.sqlDialect,
+                indent = 2,
+            )
             session.bodyEditor.setText(formatted, recordUndo = true)
             session.body = formatted
         }

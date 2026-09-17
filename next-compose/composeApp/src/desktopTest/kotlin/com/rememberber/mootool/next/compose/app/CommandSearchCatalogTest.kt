@@ -108,6 +108,18 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun classicNavigationQueryOpensLayoutSettings() {
+        val hits = CommandSearchCatalog.search("classic", Translator(AppLanguage.EnUS)::t)
+        assertEquals("layout", hits.single().categoryId)
+    }
+
+    @Test
+    fun chineseCheckUpdateQueryOpensAboutSettings() {
+        val hits = CommandSearchCatalog.search("检查更新", Translator(AppLanguage.ZhCN)::t)
+        assertEquals("about", hits.single().categoryId)
+    }
+
+    @Test
     fun catalogCoversEverySettingsNavCategory() {
         val covered = CommandSearchCatalog.targets.map { it.categoryId }.toSet()
         SettingsNavCategory.entries.forEach { category ->

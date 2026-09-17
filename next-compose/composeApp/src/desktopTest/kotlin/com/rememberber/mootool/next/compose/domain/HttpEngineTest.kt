@@ -544,6 +544,18 @@ class HttpEngineTest {
         assertEquals("", HttpEngine.contentTypeFromHeaders("X-Test: 1"))
         assertEquals("application/json; charset=utf-8", HttpEngine.contentTypeFromHeaders("content-type: application/json; charset=utf-8"))
     }
+    @Test
+    fun formatBodyUsesDocumentFormatEngineForXmlAndJson() {
+        val json = HttpEngine.formatBody("{\"a\":1}", "application/json")
+        assertTrue(json.contains("\n"))
+        val xml = HttpEngine.formatBody("<root><item/></root>", "text/xml")
+        assertTrue(xml.contains("<root>"))
+    }
+
+    @Test
+    fun formatBodyLeavesBlankUntouched() {
+        assertEquals("", HttpEngine.formatBody("   ", "application/json"))
+    }
 }
 
 private fun sampleResponse(

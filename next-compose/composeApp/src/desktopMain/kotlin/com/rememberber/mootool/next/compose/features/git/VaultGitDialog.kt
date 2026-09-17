@@ -38,6 +38,7 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.DiffEngine
 import com.rememberber.mootool.next.compose.domain.GitCommitInfo
 import com.rememberber.mootool.next.compose.domain.GitDiffPreview
+import com.rememberber.mootool.next.compose.domain.GitDiffPresentation
 import com.rememberber.mootool.next.compose.domain.GitDiffSelection
 import com.rememberber.mootool.next.compose.domain.GitEditorFlushPolicy
 import com.rememberber.mootool.next.compose.domain.GitVaultFlushAction
@@ -696,7 +697,7 @@ private fun GitFileDiffPane(
             Text(container.t("git.diffEmpty"), color = colors.textSecondary, fontSize = 12.sp)
             return@Column
         }
-        if (files.size > 1) {
+        if (GitDiffPresentation.showFilePicker(files.size)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(container.t("git.diffFile"), color = colors.textSecondary, fontSize = 11.sp)
                 Box {
@@ -716,34 +717,34 @@ private fun GitFileDiffPane(
         } else {
             Text(GitDiffSelection.fileLabel(fileDiff), color = colors.textSecondary, fontSize = 11.sp)
         }
-        when (fileDiff.preview) {
-            GitDiffPreview.Binary -> Text(container.t("git.diffBinary"), color = colors.warning, fontSize = 12.sp)
-            GitDiffPreview.TooLarge -> Text(container.t("git.diffTooLarge"), color = colors.warning, fontSize = 12.sp)
-            GitDiffPreview.Text -> {
-                val comparison = remember(fileDiff.before, fileDiff.after) {
-                    DiffEngine.compare(fileDiff.before, fileDiff.after, ignoreWhitespace = false)
+        GitDiffPresentation.previewMessageKey(fileDiff.preview)?.let { key ->
+            Text(container.t(key), color = colors.warning, fontSize = 12.sp)
+            return@Column
+        }
+        if (GitDiffPresentation.showSideBySide(fileDiff.preview)) {
+            val comparison = remember(fileDiff.before, fileDiff.after) {
+                DiffEngine.compare(fileDiff.before, fileDiff.after, ignoreWhitespace = false)
+            }
+            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.weight(1f).fillMaxHeight()) {
+                    Text(container.t("git.diffBefore"), color = colors.textSecondary, fontSize = 11.sp)
+                    Text(
+                        annotateSide(fileDiff.before, comparison.segments, "left", "both", colors.success, colors.danger, colors.accent),
+                        color = colors.textPrimary,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(leftScroll)
+                    )
                 }
-                Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Column(Modifier.weight(1f).fillMaxHeight()) {
-                        Text(container.t("git.diffBefore"), color = colors.textSecondary, fontSize = 11.sp)
-                        Text(
-                            annotateSide(fileDiff.before, comparison.segments, "left", "both", colors.success, colors.danger, colors.accent),
-                            color = colors.textPrimary,
-                            fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace,
-                            modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(leftScroll)
-                        )
-                    }
-                    Column(Modifier.weight(1f).fillMaxHeight()) {
-                        Text(container.t("git.diffAfter"), color = colors.textSecondary, fontSize = 11.sp)
-                        Text(
-                            annotateSide(fileDiff.after, comparison.segments, "right", "both", colors.success, colors.danger, colors.accent),
-                            color = colors.textPrimary,
-                            fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace,
-                            modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rightScroll)
-                        )
-                    }
+                Column(Modifier.weight(1f).fillMaxHeight()) {
+                    Text(container.t("git.diffAfter"), color = colors.textSecondary, fontSize = 11.sp)
+                    Text(
+                        annotateSide(fileDiff.after, comparison.segments, "right", "both", colors.success, colors.danger, colors.accent),
+                        color = colors.textPrimary,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rightScroll)
+                    )
                 }
             }
         }

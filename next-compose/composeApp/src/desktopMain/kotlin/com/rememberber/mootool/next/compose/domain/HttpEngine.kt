@@ -350,13 +350,16 @@ object HttpEngine {
         return parts.joinToString(" ")
     }
 
-    fun formatBody(body: String, bodyType: String): String {
-        if (body.isBlank()) return body
-        val type = bodyType.lowercase()
-        if (type.contains("json")) {
-            return runCatching { mapper.readTree(body).toPrettyString() }.getOrDefault(body)
-        }
-        return body
+    fun formatBody(
+        body: String,
+        bodyType: String,
+        sqlDialect: String = "Standard SQL",
+        indent: Int = 2,
+    ): String {
+        if (body.isBlank()) return ""
+        return runCatching {
+            DocumentFormatEngine.format(body, bodyType, sqlDialect, indent)
+        }.getOrDefault(body)
     }
 
     fun mimeType(value: String): String = value.substringBefore(';').trim().lowercase()

@@ -34,6 +34,7 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.rememberber.mootool.next.compose.app.AppContainer
+import com.rememberber.mootool.next.compose.domain.TraySyncPresentation
 import com.rememberber.mootool.next.compose.app.AppTray
 import com.rememberber.mootool.next.compose.app.AppTrayHostProfile
 import com.rememberber.mootool.next.compose.app.AppTrayModel
@@ -180,7 +181,7 @@ fun main(args: Array<String>) {
         closeDialog = false
         persistBounds()
         visible = false
-        if (settings.general.trayEnabled && AppTray.supported()) {
+        if (TraySyncPresentation.shouldInstallTray(settings.general.trayEnabled, AppTray.supported())) {
             tray.sync(true, trayModel())
         }
     }
@@ -194,7 +195,13 @@ fun main(args: Array<String>) {
         }
     }
 
-    LaunchedEffect(settings.general.trayEnabled, settings.general.language, revision, hostProfileMenuRevision) {
+    val trayMenuRevision = TraySyncPresentation.menuRevision(
+        trayEnabled = settings.general.trayEnabled,
+        language = settings.general.language,
+        hostProfileMenuRevision = hostProfileMenuRevision,
+        generalRevision = revision,
+    )
+    LaunchedEffect(trayMenuRevision) {
         tray.sync(settings.general.trayEnabled, trayModel())
     }
     DisposableEffect(Unit) {

@@ -55,6 +55,7 @@ import com.rememberber.mootool.next.compose.domain.SettingsVaultGitNormalize
 import com.rememberber.mootool.next.compose.domain.TimeoutCommitResult
 import com.rememberber.mootool.next.compose.domain.VaultNumericCommitResult
 import com.rememberber.mootool.next.compose.app.UpdateUiState
+import com.rememberber.mootool.next.compose.domain.UpdateAboutPresentation
 import com.rememberber.mootool.next.compose.model.AppLanguage
 import com.rememberber.mootool.next.compose.model.CloseBehavior
 import com.rememberber.mootool.next.compose.model.InterfaceStyle
@@ -567,9 +568,9 @@ fun SettingsScreen(container: AppContainer) {
                     if (result?.latestVersion?.isNotBlank() == true && result.status.name.lowercase() != "unpublished") {
                         Text(container.t("settings.update.latest", mapOf("version" to result.latestVersion)), color = colors.textSecondary)
                     }
-                    if (result?.releaseNotes?.isNotBlank() == true) {
+                    if (UpdateAboutPresentation.showReleaseNotes(result?.releaseNotes, result?.latestVersion, result?.status?.name)) {
                         Label(container.t("settings.update.notes"))
-                        Text(result.releaseNotes, color = colors.textSecondary, fontSize = 12.sp)
+                        Text(result!!.releaseNotes, color = colors.textSecondary, fontSize = 12.sp)
                     }
                     val progress = update.progress
                     if (progress != null && (update.status == "downloading" || update.status == "ready")) {
@@ -592,7 +593,11 @@ fun SettingsScreen(container: AppContainer) {
                             enabled = !update.busy,
                             onClick = { container.updates.check(autoDownload = settings.general.autoDownloadUpdates) }
                         )
-                        if (result?.download != null && update.downloaded == null) {
+                        if (UpdateAboutPresentation.showDownloadAction(
+                                hasDownloadPack = result?.download != null,
+                                installerReady = update.downloaded != null,
+                            )
+                        ) {
                             MooButton(
                                 container.t("settings.update.download"),
                                 prominent = true,
@@ -600,10 +605,10 @@ fun SettingsScreen(container: AppContainer) {
                                 onClick = { container.updates.download() }
                             )
                         }
-                        if (update.status == "downloading") {
+                        if (UpdateAboutPresentation.showCancelDownloadAction(update.status)) {
                             MooButton(container.t("settings.update.cancel"), onClick = { container.updates.cancel() })
                         }
-                        if (update.downloaded != null) {
+                        if (UpdateAboutPresentation.showOpenInstallerAction(update.downloaded != null)) {
                             MooButton(
                                 container.t("settings.update.openInstaller"),
                                 prominent = true,
@@ -1237,20 +1242,14 @@ private fun commitVaultPath(container: AppContainer, raw: String, apply: (String
 private fun updateStatusLabel(container: AppContainer, state: UpdateUiState): String {
     if (state.error.isNotBlank()) return state.error
     val result = state.result
-    return when (state.status) {
-        "checking" -> container.t("settings.update.checking")
-        "downloading" -> container.t("settings.update.downloading")
-        "ready" -> container.t("settings.update.ready")
-        "cancelled" -> container.t("settings.update.cancelled")
-        "available" -> if (result?.download == null) {
-            container.t("settings.update.noPackage")
-        } else {
-            container.t("settings.update.available", mapOf("version" to result.latestVersion))
-        }
-        "latest" -> container.t("settings.update.upToDate")
-        "unpublished" -> container.t("settings.update.unpublished")
-        "idle" -> container.t("settings.update.idle")
-        else -> state.message.ifBlank { container.t("settings.update.idle") }
+    val key = UpdateAboutPresentation.statusMessageKey(
+        status = state.status,
+        hasDownloadPack = result?.download != null,
+    )
+    return if (key == "settings.update.available" && result != null) {
+        container.t(key, mapOf("version" to result.latestVersion))
+    } else {
+        container.t(key)
     }
 }
 
