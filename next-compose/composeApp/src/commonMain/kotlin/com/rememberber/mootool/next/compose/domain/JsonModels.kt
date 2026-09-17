@@ -9,6 +9,14 @@ data class JsonStatus(
     enum class Kind { Idle, Valid, Error }
 }
 
+/** 解析成功后的结构指标（对齐 Tauri `analyzeJson` / feature-parity 结构摘要）。 */
+data class JsonAnalysis(
+    val rootType: String,
+    val nodes: Int,
+    val keys: Int,
+    val maxDepth: Int,
+)
+
 data class JsonFormatOptions(
     val spaces: Int = 2,
     val sortKeys: Boolean = false,

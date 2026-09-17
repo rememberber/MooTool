@@ -51,8 +51,19 @@ object JsonEngine {
             return JsonStatus(JsonStatus.Kind.Idle, t.t("json.valid.idle"))
         }
         return try {
-            val type = describeType(parsePreserving(input, t))
-            JsonStatus(JsonStatus.Kind.Valid, t.t("json.valid.ok", mapOf("type" to type)))
+            val node = parsePreserving(input, t)
+            val analysis = summarizeStructure(node)
+            JsonStatus(
+                JsonStatus.Kind.Valid,
+                t.t(
+                    "json.valid.summary",
+                    mapOf(
+                        "type" to analysis.rootType,
+                        "nodes" to analysis.nodes.toString(),
+                        "depth" to analysis.maxDepth.toString(),
+                    ),
+                ),
+            )
         } catch (error: JsonException) {
             JsonStatus(JsonStatus.Kind.Error, error.message ?: t.t("json.valid.error"), error.line, error.column)
         } catch (error: Exception) {
@@ -87,6 +98,34 @@ object JsonEngine {
     fun findDuplicateKeys(input: String, ignoreCase: Boolean = false): List<String> {
         mapper.readTree(input)
         return DuplicateKeyParser(input, ignoreCase).parse()
+    }
+
+    fun analyzeStructure(input: String, t: JsonTranslator): JsonAnalysis? {
+        if (input.isBlank()) return null
+        return try {
+            summarizeStructure(parsePreserving(input, t))
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun summarizeStructure(node: JsonNode): JsonAnalysis {
+        var nodes = 0
+        var keys = 0
+        var maxDepth = 0
+        fun visit(current: JsonNode, depth: Int) {
+            nodes++
+            if (depth > maxDepth) maxDepth = depth
+            when {
+                current.isArray -> current.forEach { visit(it, depth + 1) }
+                current.isObject -> {
+                    keys += current.size()
+                    current.forEach { visit(it, depth + 1) }
+                }
+            }
+        }
+        visit(node, 0)
+        return JsonAnalysis(describeType(node), nodes, keys, maxDepth)
     }
 
     fun escapeJsonString(input: String): String = mapper.writeValueAsString(input)

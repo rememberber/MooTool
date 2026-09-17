@@ -9,6 +9,7 @@ private val t = JsonTranslator { key, params ->
     var message = when (key) {
         "json.valid.idle" -> "idle"
         "json.valid.ok" -> "valid ${params["type"]}"
+        "json.valid.summary" -> "valid ${params["type"]} · ${params["nodes"]} nodes · depth ${params["depth"]}"
         "json.valid.error" -> "invalid"
         "json.error.empty" -> "empty"
         "json.error.notString" -> "not string"
@@ -55,8 +56,19 @@ class JsonEngineTest {
     @Test
     fun reportsIdleValidAndInvalid() {
         assertEquals(JsonStatus.Kind.Idle, JsonEngine.validate("", t).kind)
-        assertEquals("valid Array", JsonEngine.validate("[]", t).message)
+        assertEquals("valid Array · 1 nodes · depth 0", JsonEngine.validate("[]", t).message)
         assertEquals(JsonStatus.Kind.Error, JsonEngine.validate("{", t).kind)
+    }
+
+    /** 对照 next-tauri `jsonTools.test.ts` `validates input and reports structural metrics`。 */
+    @Test
+    fun analyzeStructure_matchesTauriFixture() {
+        val analysis = JsonEngine.analyzeStructure("""{"items":[1,2]}""", t)
+        assertEquals(JsonAnalysis("Object", 4, 1, 2), analysis)
+        assertEquals(
+            "valid Object · 4 nodes · depth 2",
+            JsonEngine.validate("""{"items":[1,2]}""", t).message,
+        )
     }
 
     @Test
