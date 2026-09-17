@@ -129,6 +129,9 @@
 | `146-compose-vault-conflict-deleted-savecopy-tab-focus.png` | Compose 场景外部删除冲突（无「载入磁盘」）「另存副本」钮焦点环（[DIFF-441](../../diff/441-vault-conflict-reload-keep-deleted-ui.md)） |
 | `147-compose-json-inspector-inline-path-query.png` | Compose 场景 JSON 检查器内联路径树双击查询结果 + 选中行预览（[DIFF-456](../../diff/456-json-inspector-inline-path-capture.md)；非产品主窗） |
 | `148-compose-json-path-picker-use-tab-focus.png` | Compose 场景 JSONPath 选择器弹层（[DIFF-457](../../diff/457-json-path-picker-dialog-extract.md)；非产品主窗） |
+| `149-compose-command-palette-close-tab-focus.png` | Compose 场景命令盘关闭钮 Tab 焦点环（[DIFF-492](../../diff/492-command-palette-close-tab-focus.md)） |
+| `150-compose-modern-flatten-tool-shell.png` | Compose 场景 modern 非 p5 双栏 `mooToolShell` 压平（[DIFF-510](../../diff/510-settings-group-command-shell-capture.md)；非产品主窗） |
+| `151-compose-command-palette-search-row-tab.png` | Compose 场景命令盘搜索行（输入 + 关闭钮焦点环，[DIFF-510](../../diff/510-settings-group-command-shell-capture.md)；与 `140`/`149` 互补） |
 
 有窗口帧不等于该工具整行已验收。Vault/Git 冲突**产品主窗**步骤见 [2026-09-17-vault-conflict-product-window](../2026-09-17-vault-conflict-product-window/results.md)（未执行）。曾用 Unicode `type "中"` 插入 JSON，那不是系统 IME 预编辑，不能当 IME 验收。
 

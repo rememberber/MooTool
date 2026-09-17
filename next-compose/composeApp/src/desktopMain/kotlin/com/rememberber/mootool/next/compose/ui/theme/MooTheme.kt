@@ -171,6 +171,25 @@ data class MooColors(
     /** When true, JSON/HTTP/Host vault side panels use flat workspace edges (Electron `.tool-page--workspace`). */
     fun flattenWorkspaceToolPanels(): Boolean = !restoresWorkspaceChrome()
 
+    /** Electron `settings-group__rows` uses `--surface`, not `--surface-card`. */
+    fun settingsGroupRowsFill(): Color {
+        val dark = workspace.luminance() < 0.5f
+        return when (styleId) {
+            "modern", "quiet" -> workspace
+            "hero" -> if (dark) toolbar else raisedTop
+            "claude" -> if (dark) raisedBottom else raisedTop
+            "miui-v5" -> if (dark) raisedBottom else raisedTop
+            "smartisan" -> if (dark) raisedBottom else Color(0xFFF5F3EF)
+            else -> workspace
+        }
+    }
+
+    fun settingsGroupRowsBorder(): Color = when (styleId) {
+        "hero" -> borderSoft
+        "smartisan" -> borderControl
+        else -> border
+    }
+
     fun prominentFill(dark: Boolean, hovered: Boolean, pressed: Boolean): Color {
         val (rest, hover) = when (styleId) {
             "hero", "smartisan" -> accentAction to lerp(accentAction, Color.Black, 0.12f)

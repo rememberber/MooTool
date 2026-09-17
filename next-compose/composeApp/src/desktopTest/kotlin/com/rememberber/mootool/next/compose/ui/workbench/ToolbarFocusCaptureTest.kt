@@ -468,6 +468,68 @@ class ToolbarFocusCaptureTest {
 
     @OptIn(ExperimentalTestApi::class)
     @Test
+    fun captureCommandPaletteSearchRowTabChrome() = runDesktopComposeUiTest(width = 420, height = 56) {
+        val zh = Translator(AppLanguage.ZhCN)
+        val closeFocus = FocusRequester()
+        setContent {
+            MooTheme(preference = ThemePreference.Light, systemDark = false, interfaceStyle = "modern") {
+                val colors = MooTheme.colors
+                val closeInteraction = remember { MutableInteractionSource() }
+                val closeFocused by closeInteraction.collectIsFocusedAsState()
+                val shape = RoundedCornerShape(MooTheme.dimens.commandRadius)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .background(colors.workspace)
+                        .clip(shape)
+                        .background(colors.toolbar)
+                        .border(1.dp, colors.borderSoft, shape)
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    MooTextField(
+                        "",
+                        {},
+                        modifier = Modifier.weight(1f),
+                        placeholder = zh.t("app.search.placeholder"),
+                    )
+                    Text(
+                        "×",
+                        color = colors.textSecondary,
+                        fontSize = 18.sp,
+                        modifier = Modifier
+                            .focusRequester(closeFocus)
+                            .mooFocusOutline(closeFocused, RoundedCornerShape(MooTheme.dimens.navRadius))
+                            .clip(RoundedCornerShape(MooTheme.dimens.navRadius))
+                            .border(2.dp, colors.focusRing, RoundedCornerShape(MooTheme.dimens.navRadius))
+                            .focusable(true, closeInteraction)
+                            .clickable(interactionSource = closeInteraction, indication = null, onClick = {})
+                            .padding(6.dp)
+                            .semantics {
+                                role = Role.Button
+                                contentDescription = zh.t("app.search.close")
+                            },
+                    )
+                }
+            }
+        }
+        val cwd = File(".").canonicalFile
+        val root = if (cwd.name == "composeApp") cwd.parentFile else cwd
+        val dir = File(root, "docs/evidence/2026-09-15-inspector-screencapture/windows")
+        dir.mkdirs()
+        val expected = 0x316DC0
+        runOnIdle { closeFocus.requestFocus() }
+        waitForIdle()
+        val file = File(dir, "151-compose-command-palette-search-row-tab.png")
+        val image = onRoot().captureToImage().toAwtImage()
+        assertTrue(ImageIO.write(image, "png", file))
+        assertTrue(countRingPixels(image, expected) >= 8, "command palette search row close focus ring")
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
     fun captureSidebarNavItemFocusRing() = runDesktopComposeUiTest(width = 240, height = 72) {
         val zh = Translator(AppLanguage.ZhCN)
         val navFocus = FocusRequester()

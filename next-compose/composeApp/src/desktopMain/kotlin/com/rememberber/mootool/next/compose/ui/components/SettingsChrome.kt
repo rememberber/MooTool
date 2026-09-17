@@ -125,18 +125,16 @@ fun SettingsNavItem(
 @Composable
 fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
     val colors = MooTheme.colors
-    val radius = MooTheme.dimens.shellRadius
-    val fill = if (colors.styleId == "modern" || colors.styleId == "quiet") colors.workspace else colors.surfaceCard
+    val dimens = MooTheme.dimens
+    val radius = dimens.shellRadius
+    val fill = colors.settingsGroupRowsFill()
     val elevated = colors.styleId != "quiet"
-    val elevation = when (colors.styleId) {
-        "hero", "smartisan" -> 5.dp
-        "claude", "miui-v5" -> 3.dp
-        else -> 2.dp
-    }
-    val stroke = when (colors.styleId) {
-        "smartisan" -> colors.borderControl
-        "hero" -> colors.borderSoft
-        else -> colors.border
+    val elevation = dimens.shellElevation
+    val stroke = colors.settingsGroupRowsBorder()
+    val titleWeight = when (colors.styleId) {
+        "smartisan" -> FontWeight(650)
+        "modern", "hero" -> FontWeight.SemiBold
+        else -> FontWeight.Medium
     }
     Column(
         modifier = Modifier.widthIn(max = 680.dp).fillMaxWidth(),
@@ -146,8 +144,12 @@ fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
             title,
             color = colors.textMuted,
             fontSize = 12.sp,
-            fontWeight = if (colors.styleId == "smartisan" || colors.styleId == "modern") FontWeight.SemiBold else FontWeight.Medium,
-            letterSpacing = if (colors.styleId == "miui-v5") 0.42.sp else 0.sp
+            fontWeight = titleWeight,
+            letterSpacing = when (colors.styleId) {
+                "miui-v5" -> 0.42.sp
+                "claude" -> 0.15.sp
+                else -> 0.sp
+            },
         )
         Column(
             modifier = Modifier
