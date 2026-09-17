@@ -25,6 +25,10 @@ enum class ImageSvgPreset { Poster, Photo, Bw }
 enum class ImageSvgDetail { Low, Medium, High }
 
 data class ImageCropRect(val x: Int, val y: Int, val width: Int, val height: Int)
+
+/** Corner handles for region-screenshot resize (aligns with Electron `CaptureResizeHandle`). */
+enum class CaptureResizeHandle { Nw, Ne, Se, Sw }
+
 data class ImageSize(val width: Int, val height: Int)
 
 data class CompressImageOptions(
@@ -260,6 +264,52 @@ object ImageEngine {
             width = rect.width.coerceIn(1, widthLimit - x),
             height = rect.height.coerceIn(1, heightLimit - y)
         )
+    }
+
+    fun moveCaptureRect(rect: ImageCropRect, deltaX: Int, deltaY: Int, width: Int, height: Int): ImageCropRect {
+        val normalized = clampCaptureRect(rect, width, height)
+        val widthLimit = max(1, width)
+        val heightLimit = max(1, height)
+        return normalized.copy(
+            x = (normalized.x + deltaX).coerceIn(0, widthLimit - normalized.width),
+            y = (normalized.y + deltaY).coerceIn(0, heightLimit - normalized.height)
+        )
+    }
+
+    fun resizeCaptureRect(
+        rect: ImageCropRect,
+        handle: CaptureResizeHandle,
+        deltaX: Int,
+        deltaY: Int,
+        width: Int,
+        height: Int
+    ): ImageCropRect {
+        val normalized = clampCaptureRect(rect, width, height)
+        val widthLimit = max(1, width)
+        val heightLimit = max(1, height)
+        var left = normalized.x
+        var top = normalized.y
+        var right = left + normalized.width
+        var bottom = top + normalized.height
+        when (handle) {
+            CaptureResizeHandle.Nw -> {
+                left = (left + deltaX).coerceIn(0, right - 1)
+                top = (top + deltaY).coerceIn(0, bottom - 1)
+            }
+            CaptureResizeHandle.Ne -> {
+                right = (right + deltaX).coerceIn(left + 1, widthLimit)
+                top = (top + deltaY).coerceIn(0, bottom - 1)
+            }
+            CaptureResizeHandle.Se -> {
+                right = (right + deltaX).coerceIn(left + 1, widthLimit)
+                bottom = (bottom + deltaY).coerceIn(top + 1, heightLimit)
+            }
+            CaptureResizeHandle.Sw -> {
+                left = (left + deltaX).coerceIn(0, right - 1)
+                bottom = (bottom + deltaY).coerceIn(top + 1, heightLimit)
+            }
+        }
+        return ImageCropRect(left, top, right - left, bottom - top)
     }
 
     fun vectorize(image: BufferedImage, options: ImageVectorizeOptions): String = ImageSvg.convert(image, options)

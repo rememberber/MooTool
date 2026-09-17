@@ -32,6 +32,46 @@ class ImageEngineTest {
     }
 
     @Test
+    fun captureSelectionGeometryMatchesElectronCaptureSelectionFixture() {
+        val width = 1920
+        val height = 1080
+        assertEquals(
+            ImageCropRect(200, 100, 700, 600),
+            ImageEngine.captureRectFromPoints(900, 700, 200, 100, width, height)
+        )
+        assertEquals(
+            ImageCropRect(1900, 0, 20, 1),
+            ImageEngine.clampCaptureRect(ImageCropRect(1900, -20, 200, 0), width, height)
+        )
+        assertEquals(
+            ImageCropRect(1420, 0, 500, 300),
+            ImageEngine.moveCaptureRect(ImageCropRect(100, 100, 500, 300), 2000, -500, width, height)
+        )
+        assertEquals(
+            ImageCropRect(599, 399, 1, 1),
+            ImageEngine.resizeCaptureRect(
+                ImageCropRect(100, 100, 500, 300),
+                CaptureResizeHandle.Nw,
+                600,
+                400,
+                width,
+                height
+            )
+        )
+        assertEquals(
+            ImageCropRect(100, 100, 1820, 980),
+            ImageEngine.resizeCaptureRect(
+                ImageCropRect(100, 100, 500, 300),
+                CaptureResizeHandle.Se,
+                2000,
+                2000,
+                width,
+                height
+            )
+        )
+    }
+
+    @Test
     fun compressesWatermarksAndVectorizesWithoutEmbeddedBitmap() {
         val source = numbered(48, 32)
         val compressed = ImageEngine.encodeCompressed(

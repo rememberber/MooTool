@@ -1,0 +1,110 @@
+# next-compose P7 package smoke (2026-09-17T04:01Z)
+# Run from: /Users/zhoubo/IdeaProjectsCE/MooTool/next-compose
+
+JAVA_HOME=/Users/zhoubo/Library/Java/JavaVirtualMachines/azul-21.0.12.1/Contents/Home
+openjdk version "21.0.12.1" 2026-08-18 LTS
+OpenJDK Runtime Environment Zulu21.52+203-CA (build 21.0.12.1+1-LTS)
+OpenJDK 64-Bit Server VM Zulu21.52+203-CA (build 21.0.12.1+1-LTS, mixed mode, sharing)
+
+------------------------------------------------------------
+Gradle 8.14.3
+------------------------------------------------------------
+
+Build time:    2025-07-04 13:15:44 UTC
+Revision:      e5ee1df3d88b8ca3a8074787a94f373e3090e1db
+
+Kotlin:        2.0.21
+Groovy:        3.0.24
+Ant:           Apache Ant(TM) version 1.10.15 compiled on August 25 2024
+Launcher JVM:  21.0.12.1 (Azul Systems, Inc. 21.0.12.1+1-LTS)
+Daemon JVM:    /Users/zhoubo/Library/Java/JavaVirtualMachines/azul-21.0.12.1/Contents/Home (no JDK specified, using current Java home)
+OS:            Mac OS X 26.7 x86_64
+
+Starting a Gradle Daemon, 1 busy and 1 incompatible Daemons could not be reused, use --status for details
+
+> Task :composeApp:printTooling
+appVersion=0.1.0
+nativePackageVersion=1.1.0
+kotlin=2.2.21
+compose=1.12.0
+java.home=/Users/zhoubo/Library/Java/JavaVirtualMachines/azul-21.0.12.1/Contents/Home
+java.version=21.0.12.1
+os.name=Mac OS X
+os.arch=x86_64
+protobuf=4.29.3
+
+BUILD SUCCESSFUL in 32s
+1 actionable task: 1 executed
+
+## Gradle tooling
+
+> Task :composeApp:printTooling
+appVersion=0.1.0
+nativePackageVersion=1.1.0
+kotlin=2.2.21
+compose=1.12.0
+java.home=/Users/zhoubo/Library/Java/JavaVirtualMachines/azul-21.0.12.1/Contents/Home
+java.version=21.0.12.1
+os.name=Mac OS X
+os.arch=x86_64
+protobuf=4.29.3
+
+BUILD SUCCESSFUL in 2s
+1 actionable task: 1 executed
+
+## Native package metadata (no installer build)
+
+> Task :composeApp:verifyNativePackageMetadata
+verifyNativePackageMetadata=OK appVersion=0.1.0 nativePackageVersion=1.1.0
+
+BUILD SUCCESSFUL in 2s
+1 actionable task: 1 executed
+
+## Unit/desktop tests (offline)
+> Task :composeApp:checkDesktopMainComposeLibrariesCompatibility
+> Task :composeApp:kmpPartiallyResolvedDependenciesChecker
+> Task :composeApp:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :composeApp:convertXmlValueResourcesForCommonMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForCommonMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForCommonMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForCommonMain SKIPPED
+> Task :composeApp:convertXmlValueResourcesForDesktopMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForDesktopMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForDesktopMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForDesktopMain SKIPPED
+> Task :composeApp:generateActualResourceCollectorsForDesktopMain SKIPPED
+> Task :composeApp:generateComposeResClass SKIPPED
+> Task :composeApp:generateExpectResourceCollectorsForCommonMain SKIPPED
+> Task :composeApp:syncProtocHelpers UP-TO-DATE
+> Task :composeApp:compileKotlinDesktop UP-TO-DATE
+> Task :composeApp:compileDesktopMainJava UP-TO-DATE
+> Task :composeApp:checkDesktopTestComposeLibrariesCompatibility
+> Task :composeApp:assembleDesktopMainResources UP-TO-DATE
+> Task :composeApp:desktopProcessResources UP-TO-DATE
+> Task :composeApp:processDesktopMainResources SKIPPED
+> Task :composeApp:desktopMainClasses UP-TO-DATE
+> Task :composeApp:desktopJar UP-TO-DATE
+> Task :composeApp:convertXmlValueResourcesForCommonTest NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForCommonTest NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForCommonTest NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForCommonTest SKIPPED
+> Task :composeApp:convertXmlValueResourcesForDesktopTest NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForDesktopTest NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForDesktopTest NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForDesktopTest SKIPPED
+> Task :composeApp:compileTestKotlinDesktop UP-TO-DATE
+> Task :composeApp:compileDesktopTestJava NO-SOURCE
+> Task :composeApp:assembleDesktopTestResources UP-TO-DATE
+> Task :composeApp:desktopTestProcessResources UP-TO-DATE
+> Task :composeApp:processDesktopTestResources SKIPPED
+> Task :composeApp:desktopTestClasses UP-TO-DATE
+> Task :composeApp:desktopTest
+
+BUILD SUCCESSFUL in 2m 21s
+13 actionable tasks: 4 executed, 9 up-to-date
+
+## Current OS distributable (optional; may take several minutes)
+# Set MOOTOOL_P7_BUILD_DIST=1 to also run packageDistributionForCurrentOS on this host.
+# Windows MSI / Linux DEB·RPM must be built on those OSes (not verified from macOS smoke).
+
+OK: smoke checks finished. Record results in docs/acceptance.md; P7 install/sign/notarize still manual.
