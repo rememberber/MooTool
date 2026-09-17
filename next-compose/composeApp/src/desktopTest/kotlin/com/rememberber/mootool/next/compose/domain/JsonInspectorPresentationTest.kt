@@ -19,5 +19,16 @@ class JsonInspectorPresentationTest {
     fun showDuplicatePaths_whenCountPositive() {
         assertFalse(JsonInspectorPresentation.showDuplicatePaths(0))
         assertTrue(JsonInspectorPresentation.showDuplicatePaths(2))
+        assertTrue(JsonInspectorPresentation.showDuplicatePathList(2))
+    }
+
+    @Test
+    fun structurePanel_whenAnalysisPresent() {
+        assertFalse(JsonInspectorPresentation.structurePanelVisible(null))
+        assertTrue(
+            JsonInspectorPresentation.structurePanelVisible(
+                JsonAnalysis(rootType = "object", nodes = 1, keys = 1, maxDepth = 1, bytes = 2),
+            ),
+        )
     }
 }

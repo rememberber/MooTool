@@ -2,6 +2,7 @@ package com.rememberber.mootool.next.compose.domain
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class EditorColumnEditPresentationTest {
@@ -10,6 +11,14 @@ class EditorColumnEditPresentationTest {
         assertEquals("quickNote.columnEdit.wrap", EditorColumnEditPresentation.columnNoticeKey(columnLatch = true, wrap = true))
         assertEquals("quickNote.columnEdit.hint", EditorColumnEditPresentation.columnNoticeKey(columnLatch = true, wrap = false))
         assertEquals(null, EditorColumnEditPresentation.columnNoticeKey(columnLatch = false, wrap = true))
+    }
+
+    @Test
+    fun columnGestureMatchesElectronAltOrLatch() {
+        assertTrue(EditorColumnEditPresentation.columnGestureActive(altDown = true, columnLatch = false))
+        assertTrue(EditorColumnEditPresentation.columnGestureActive(altDown = false, columnLatch = true))
+        assertFalse(EditorColumnEditPresentation.columnGestureActive(altDown = false, columnLatch = false))
+        assertTrue(EditorColumnEditPresentation.columnDragWithoutAlt(columnLatch = true))
     }
 
     @Test

@@ -5,4 +5,8 @@ object JsonInspectorPresentation {
     fun inferSchemaEnabled(analysis: JsonAnalysis?): Boolean = analysis != null
 
     fun showDuplicatePaths(duplicateCount: Int): Boolean = duplicateCount > 0
+
+    fun showDuplicatePathList(duplicateCount: Int): Boolean = showDuplicatePaths(duplicateCount)
+
+    fun structurePanelVisible(analysis: JsonAnalysis?): Boolean = analysis != null
 }

@@ -8,6 +8,7 @@ import javax.swing.undo.CompoundEdit
 import javax.swing.undo.UndoManager
 import com.rememberber.mootool.next.compose.domain.DiffSegment
 import com.rememberber.mootool.next.compose.domain.DiffSegmentType
+import com.rememberber.mootool.next.compose.domain.EditorColumnEditPresentation
 import com.rememberber.mootool.next.compose.domain.GitDiffDecoration
 import com.rememberber.mootool.next.compose.ui.theme.EditorPalette
 import com.rememberber.mootool.next.compose.ui.theme.toAwtColor
@@ -49,6 +50,7 @@ class EditorBuffer(
     private val findHighlights = mutableListOf<Any>()
     private val diffHighlights = mutableListOf<Any>()
     private var suppressUserDocumentChange = 0
+    private var lastLineWrap: Boolean? = null
 
     /** 用户直接改文档时触发；[setText] 等批量加载不触发。 */
     var onUserDocumentChange: (() -> Unit)? = null
@@ -155,6 +157,12 @@ class EditorBuffer(
     ) {
         area.syntaxEditingStyle = syntax
         area.font = java.awt.Font(fontName, java.awt.Font.PLAIN, fontSize)
+        if (lastLineWrap != null && lastLineWrap != wrap &&
+            EditorColumnEditPresentation.clearSelectionOnWrapChange(columnEdits.selection != null)
+        ) {
+            columnEdits.clearSelection()
+        }
+        lastLineWrap = wrap
         area.lineWrap = wrap
         area.wrapStyleWord = wrap
         val fg = palette?.foreground?.toAwtColor() ?: if (dark) java.awt.Color(0xED, 0xED, 0xEE) else java.awt.Color(0x20, 0x21, 0x24)

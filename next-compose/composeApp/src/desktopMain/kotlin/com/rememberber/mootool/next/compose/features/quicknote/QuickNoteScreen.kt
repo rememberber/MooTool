@@ -1362,7 +1362,7 @@ private fun QuickNoteEditor(
                 wrap = session.wrap,
                 modifier = Modifier.fillMaxSize().mooEditorFrame(),
                 columnEditing = true,
-                columnDragWithoutAlt = session.columnLatch,
+                columnDragWithoutAlt = EditorColumnEditPresentation.columnDragWithoutAlt(session.columnLatch),
                 lineSpacing = session.metadata.lineSpacing,
                 shortcuts = shortcuts,
                 onFilesDropped = dropHandler
@@ -1377,7 +1377,7 @@ private fun QuickNoteEditor(
             wrap = session.wrap,
             modifier = Modifier.fillMaxSize().mooEditorFrame(),
             columnEditing = true,
-            columnDragWithoutAlt = session.columnLatch,
+            columnDragWithoutAlt = EditorColumnEditPresentation.columnDragWithoutAlt(session.columnLatch),
             lineSpacing = session.metadata.lineSpacing,
             shortcuts = shortcuts,
             onFilesDropped = dropHandler

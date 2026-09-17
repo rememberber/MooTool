@@ -398,7 +398,7 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
                     fontSize = EditorSettingsLiveApply.jsonEditorFontSize(settings.editor.jsonFontSize),
                     wrap = session.wrap,
                     columnEditing = true,
-                    columnDragWithoutAlt = session.columnLatch,
+                    columnDragWithoutAlt = EditorColumnEditPresentation.columnDragWithoutAlt(session.columnLatch),
                     onFilesDropped = jsonDropHandler,
                     shortcuts = EditorAppShortcuts(
                         onFind = {

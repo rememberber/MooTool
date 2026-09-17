@@ -60,4 +60,29 @@ class GitMergeProductFlowPresentationTest {
         )
         assertFalse(GitMergeProductFlowPresentation.evidenceReady(true, 0, listOf("a")))
     }
+
+    @Test
+    fun resolveActionsRequireSelectedConflictAndIdle() {
+        assertTrue(
+            GitMergeProductFlowPresentation.resolveActionsEnabled(
+                merging = true,
+                selectedConflict = true,
+                busy = false,
+            ),
+        )
+        assertFalse(
+            GitMergeProductFlowPresentation.resolveActionsEnabled(
+                merging = true,
+                selectedConflict = false,
+                busy = false,
+            ),
+        )
+        assertFalse(
+            GitMergeProductFlowPresentation.resolveActionsEnabled(
+                merging = true,
+                selectedConflict = true,
+                busy = true,
+            ),
+        )
+    }
 }

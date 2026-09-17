@@ -15,6 +15,15 @@ class NetWiringPresentationTest {
     }
 
     @Test
+    fun pingStartTrimsAndValidatesHost() {
+        val ready = NetWiringPresentation.pingStart(" example.com ")
+        assertTrue(ready is NetWiringPresentation.HostCommandStart.Ready)
+        ready as NetWiringPresentation.HostCommandStart.Ready
+        assertEquals("example.com", ready.target)
+        assertTrue(NetWiringPresentation.pingStart("") is NetWiringPresentation.HostCommandStart.Blocked)
+    }
+
+    @Test
     fun portScanStartRejectsEmptyAndInvalid() {
         assertTrue(
             NetWiringPresentation.portScanStart("", "22") is NetWiringPresentation.PortScanStart.Blocked,

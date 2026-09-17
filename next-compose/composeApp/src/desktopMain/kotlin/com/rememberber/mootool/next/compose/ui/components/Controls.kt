@@ -1476,6 +1476,22 @@ fun Modifier.mooEnvVarRow(): Modifier = heightIn(min = 36.dp)
 @Composable
 fun Modifier.mooNetSection(): Modifier = padding(vertical = 12.dp)
 
+/** Electron JSON 检查器结构指标行。 */
+@Composable
+fun Modifier.mooJsonInspectorStructureRow(): Modifier = heightIn(min = 22.dp)
+
+/** Vault Git merge 产品走查提示行。 */
+@Composable
+fun Modifier.mooGitMergeFlowHint(): Modifier = padding(top = 4.dp)
+
+/** Electron 环境变量底栏计数/路径行。 */
+@Composable
+fun Modifier.mooEnvStatusFooter(): Modifier = heightIn(min = 30.dp)
+
+/** Electron 系统信息工具栏采集时间/meta 行。 */
+@Composable
+fun Modifier.mooHardwareToolbarMeta(): Modifier = heightIn(min = 28.dp)
+
 /** Electron `.color-board` 色码侧栏宽。 */
 @Composable
 fun Modifier.mooColorHexColumn(): Modifier = widthIn(min = 136.dp)

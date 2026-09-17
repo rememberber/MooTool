@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.HardwareEngine
+import com.rememberber.mootool.next.compose.domain.HardwareWiringPresentation
 import com.rememberber.mootool.next.compose.domain.HardwareTab
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.ui.components.MooButton
@@ -39,6 +40,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooToolTab
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooHardwareStatRow
+import com.rememberber.mootool.next.compose.ui.components.mooHardwareToolbarMeta
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
@@ -126,7 +128,8 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
             Text(
                 snapshot?.collectedAt?.atZone(ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern("HH:mm:ss")).orEmpty(),
                 color = colors.textMuted,
-                fontSize = 10.sp
+                fontSize = 10.sp,
+                modifier = Modifier.mooHardwareToolbarMeta(),
             )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Checkbox(session.revealSensitive, {
@@ -135,12 +138,21 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
                 })
                 Text(container.t("hardware.revealSerials"), color = colors.textMuted, fontSize = 10.sp)
             }
-            MooButton(container.t("hardware.refresh"), onClick = { collect() }, enabled = !session.loading, p5Toolbar = true)
+            MooButton(
+                container.t("hardware.refresh"),
+                onClick = { collect() },
+                enabled = HardwareWiringPresentation.refreshEnabled(session.loading),
+                p5Toolbar = true,
+            )
             OverflowActionCluster(
                 overflow = overflow,
                 moreLabel = container.t("json.action.overflow"),
                 actions = buildList {
-                    add(OverflowAction(container.t("hardware.copy"), enabled = groups.isNotEmpty() && !session.loading) {
+                    add(
+                        OverflowAction(
+                            container.t("hardware.copy"),
+                            enabled = HardwareWiringPresentation.copyReportEnabled(session.loading, groups.isNotEmpty()),
+                        ) {
                         if (snapshot == null) return@OverflowAction
                         val text = HardwareEngine.plainText(snapshot, session.tab, session.revealSensitive) { container.t(it) }
                         if (!container.copyText(text)) {

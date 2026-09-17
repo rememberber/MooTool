@@ -140,7 +140,23 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                 }
             }
         } else {
-            resolvedTarget = target
+            val hostStart = when (action) {
+                NetworkAction.Ping -> NetWiringPresentation.pingStart(target.orEmpty())
+                NetworkAction.PingRange -> NetWiringPresentation.ipRangeStart(target.orEmpty())
+                NetworkAction.Resolve -> NetWiringPresentation.resolveStart(target.orEmpty())
+                NetworkAction.Whois -> NetWiringPresentation.whoisStart(target.orEmpty())
+                else -> null
+            }
+            if (hostStart is NetWiringPresentation.HostCommandStart.Blocked) {
+                session.error = errorMessage(container, hostStart.errorCode, "")
+                persist()
+                return
+            }
+            if (hostStart is NetWiringPresentation.HostCommandStart.Ready) {
+                resolvedTarget = hostStart.target
+            } else {
+                resolvedTarget = target
+            }
             resolvedPorts = ports
         }
         handle.cancel()
@@ -350,7 +366,9 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                     title = container.t("net.ping"),
                     value = session.pingTarget,
                     button = "PING",
-                    disabled = session.running != null,
+                    runEnabled = session.running == null &&
+                        NetWiringPresentation.pingStart(session.pingTarget)
+                            is NetWiringPresentation.HostCommandStart.Ready,
                     placeholder = null,
                     onChange = { session.pingTarget = it; persist() },
                     onRun = { runAction(NetworkAction.Ping, session.pingTarget) }
@@ -359,7 +377,9 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                     title = container.t("net.ipRangeScan"),
                     value = session.ipRange,
                     button = container.t("net.scan"),
-                    disabled = session.running != null,
+                    runEnabled = session.running == null &&
+                        NetWiringPresentation.ipRangeStart(session.ipRange)
+                            is NetWiringPresentation.HostCommandStart.Ready,
                     placeholder = container.t("net.ipRangePlaceholder"),
                     onChange = { session.ipRange = it; persist() },
                     onRun = { runAction(NetworkAction.PingRange, session.ipRange) }
@@ -408,7 +428,9 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                     title = container.t("net.resolve"),
                     value = session.hostTarget,
                     button = container.t("net.resolveAction"),
-                    disabled = session.running != null,
+                    runEnabled = session.running == null &&
+                        NetWiringPresentation.resolveStart(session.hostTarget)
+                            is NetWiringPresentation.HostCommandStart.Ready,
                     placeholder = null,
                     onChange = { session.hostTarget = it; persist() },
                     onRun = { runAction(NetworkAction.Resolve, session.hostTarget) }
@@ -417,7 +439,9 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                     title = container.t("net.whois"),
                     value = session.whoisTarget,
                     button = container.t("net.query"),
-                    disabled = session.running != null,
+                    runEnabled = session.running == null &&
+                        NetWiringPresentation.whoisStart(session.whoisTarget)
+                            is NetWiringPresentation.HostCommandStart.Ready,
                     placeholder = null,
                     onChange = { session.whoisTarget = it; persist() },
                     onRun = { runAction(NetworkAction.Whois, session.whoisTarget) }
@@ -479,7 +503,7 @@ private fun CommandSection(
     title: String,
     value: String,
     button: String,
-    disabled: Boolean,
+    runEnabled: Boolean,
     placeholder: String?,
     onChange: (String) -> Unit,
     onRun: () -> Unit
@@ -489,14 +513,14 @@ private fun CommandSection(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.mooNetCommandRow().onPreviewKeyEvent { event ->
-                if (!event.blockedByIme() && event.type == KeyEventType.KeyDown && event.key == Key.Enter && !disabled) {
+                if (!event.blockedByIme() && event.type == KeyEventType.KeyDown && event.key == Key.Enter && runEnabled) {
                     onRun()
                     true
                 } else false
             }
         ) {
             MooTextField(value, onChange, modifier = Modifier.weight(1f), placeholder = placeholder.orEmpty(), dense = true)
-            MooButton(button, onClick = onRun, enabled = !disabled, p5Toolbar = true)
+            MooButton(button, onClick = onRun, enabled = runEnabled, p5Toolbar = true)
         }
     }
 }

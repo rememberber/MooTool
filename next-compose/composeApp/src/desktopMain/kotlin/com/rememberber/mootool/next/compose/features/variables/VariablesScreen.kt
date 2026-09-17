@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.EnvDisplayScope
 import com.rememberber.mootool.next.compose.domain.EnvEngine
+import com.rememberber.mootool.next.compose.domain.EnvWiringPresentation
 import com.rememberber.mootool.next.compose.domain.EnvEntry
 import com.rememberber.mootool.next.compose.domain.EnvException
 import com.rememberber.mootool.next.compose.domain.EnvPersistScope
@@ -63,6 +64,7 @@ import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
+import com.rememberber.mootool.next.compose.ui.components.mooEnvStatusFooter
 import com.rememberber.mootool.next.compose.ui.components.mooEnvTableHead
 import com.rememberber.mootool.next.compose.ui.components.mooEnvVarRow
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
@@ -155,19 +157,19 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                     session.targetScope = if (session.scope == EnvDisplayScope.System) EnvPersistScope.System else EnvPersistScope.User
                     session.editorOpen = true
                     persist()
-                }, enabled = !session.saving, p5Toolbar = true)
+                }, enabled = EnvWiringPresentation.addVariableEnabled(canEdit, session.saving), p5Toolbar = true)
             }
             MooButton(
                 container.t("common.refresh"),
                 onClick = { refresh() },
-                enabled = !session.loading && !session.saving,
+                enabled = EnvWiringPresentation.refreshEnabled(session.loading, session.saving),
                 p5Toolbar = true
             )
             OverflowActionCluster(
                 overflow = overflow,
                 moreLabel = container.t("json.action.overflow"),
                 actions = buildList {
-                    add(OverflowAction(container.t("common.export"), enabled = snapshot != null) {
+                    add(OverflowAction(container.t("common.export"), enabled = EnvWiringPresentation.exportEnabled(snapshot != null)) {
                         val current = session.snapshot ?: return@OverflowAction
                         val file = chooseSave(container.t("common.export"), "mootool-next-compose-environment.txt") ?: return@OverflowAction
                         runCatching { file.writeText(EnvEngine.formatExport(current)) }
@@ -319,7 +321,7 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
         }
         }
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 30.dp).mooToolbarBackground().padding(horizontal = 11.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().mooEnvStatusFooter().mooToolbarBackground().padding(horizontal = 11.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -470,7 +472,7 @@ private fun EditorDialog(
                             if (result.isSuccess) onSaved()
                         }
                     }
-                }, enabled = session.editorKey.trim().isNotEmpty() && !session.saving)
+                }, enabled = EnvWiringPresentation.saveEditorEnabled(session.editorKey.trim(), session.saving))
                 MooButton(container.t("common.cancel"), onClick = { session.editorOpen = false; persist() })
             }
         }

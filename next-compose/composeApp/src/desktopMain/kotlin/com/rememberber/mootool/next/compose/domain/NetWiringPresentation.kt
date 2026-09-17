@@ -7,6 +7,33 @@ object NetWiringPresentation {
         data class Blocked(val errorCode: NetworkErrorCode) : PortScanStart
     }
 
+    sealed interface HostCommandStart {
+        data class Ready(val target: String) : HostCommandStart
+        data class Blocked(val errorCode: NetworkErrorCode) : HostCommandStart
+    }
+
+    fun hostCommandStart(raw: String, normalize: (String?) -> String): HostCommandStart {
+        val trimmed = raw.trim()
+        if (trimmed.isEmpty()) return HostCommandStart.Blocked(NetworkErrorCode.INVALID_TARGET)
+        return try {
+            HostCommandStart.Ready(normalize(trimmed))
+        } catch (error: NetException) {
+            HostCommandStart.Blocked(error.code)
+        }
+    }
+
+    fun pingStart(target: String): HostCommandStart =
+        hostCommandStart(target, NetEngine::normalizeHostTarget)
+
+    fun resolveStart(target: String): HostCommandStart =
+        hostCommandStart(target, NetEngine::normalizeHostTarget)
+
+    fun whoisStart(target: String): HostCommandStart =
+        hostCommandStart(target, NetEngine::normalizeWhoisTarget)
+
+    fun ipRangeStart(target: String): HostCommandStart =
+        hostCommandStart(target, NetEngine::normalizeHostTarget)
+
     fun portScanStart(target: String, portSpec: String): PortScanStart {
         val trimmedTarget = target.trim()
         val trimmedPorts = portSpec.trim()

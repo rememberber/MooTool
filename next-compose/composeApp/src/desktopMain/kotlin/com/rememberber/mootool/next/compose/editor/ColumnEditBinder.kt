@@ -2,6 +2,7 @@ package com.rememberber.mootool.next.compose.editor
 
 import com.rememberber.mootool.next.compose.domain.ColumnEditEngine
 import com.rememberber.mootool.next.compose.domain.ColumnRange
+import com.rememberber.mootool.next.compose.domain.EditorColumnEditPresentation
 import java.text.CharacterIterator
 import java.awt.Color
 import java.awt.Cursor
@@ -73,7 +74,10 @@ class ColumnEditBinder(private val buffer: EditorBuffer) {
 
         override fun mouseMoved(event: MouseEvent) {
             if (!enabled) return
-            area.cursor = if (event.isAltDown || dragWithoutAlt || selection != null) {
+            area.cursor = if (
+                EditorColumnEditPresentation.columnGestureActive(event.isAltDown, dragWithoutAlt) ||
+                selection != null
+            ) {
                 Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR)
             } else {
                 Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR)
@@ -82,7 +86,7 @@ class ColumnEditBinder(private val buffer: EditorBuffer) {
 
         override fun mouseDragged(event: MouseEvent) {
             if (!enabled || selection == null) return
-            if (!event.isAltDown && !dragWithoutAlt) return
+            if (!EditorColumnEditPresentation.columnGestureActive(event.isAltDown, dragWithoutAlt)) return
             event.consume()
             val point = pointOf(event)
             val origin = selection ?: return
@@ -91,7 +95,7 @@ class ColumnEditBinder(private val buffer: EditorBuffer) {
         }
 
         override fun mouseReleased(event: MouseEvent) {
-            if (selection != null && (event.isAltDown || dragWithoutAlt)) {
+            if (selection != null && EditorColumnEditPresentation.columnGestureActive(event.isAltDown, dragWithoutAlt)) {
                 event.consume()
                 area.requestFocusInWindow()
             }
@@ -250,7 +254,8 @@ class ColumnEditBinder(private val buffer: EditorBuffer) {
         Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor) as? String
     }.getOrNull()
 
-    private fun columnGesture(event: MouseEvent): Boolean = event.isAltDown || dragWithoutAlt
+    private fun columnGesture(event: MouseEvent): Boolean =
+        EditorColumnEditPresentation.columnGestureActive(event.isAltDown, dragWithoutAlt)
 
     private fun tabSize(): Int = area.tabSize.coerceAtLeast(1)
 

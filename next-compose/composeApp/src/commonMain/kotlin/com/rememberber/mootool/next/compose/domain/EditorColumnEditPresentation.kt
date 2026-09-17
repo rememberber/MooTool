@@ -12,6 +12,15 @@ object EditorColumnEditPresentation {
         else -> "quickNote.columnEdit.hint"
     }
 
+    /** 对齐 Electron `columnEditingExtensions`：闩锁后等同始终 Alt 列选手势。 */
+    fun columnDragWithoutAlt(columnLatch: Boolean): Boolean = columnLatch
+
+    fun columnGestureActive(altDown: Boolean, columnLatch: Boolean): Boolean =
+        altDown || columnLatch
+
+    /** 换行切换时列选基于逻辑行，清掉旧选区（对齐 CodeMirror 重配 wrap/列选）。 */
+    fun clearSelectionOnWrapChange(hasColumnSelection: Boolean): Boolean = hasColumnSelection
+
     val commandPaletteKeywords: List<String> = listOf(
         "column",
         "columnedit",
@@ -22,5 +31,8 @@ object EditorColumnEditPresentation {
         "列编辑",
         "闩锁",
         "输入法",
+        "logical",
+        "wrap",
+        "alt-drag",
     )
 }

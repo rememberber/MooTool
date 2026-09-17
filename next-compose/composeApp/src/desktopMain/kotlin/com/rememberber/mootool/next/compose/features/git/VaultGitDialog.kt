@@ -65,6 +65,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooStatusPill
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
+import com.rememberber.mootool.next.compose.ui.components.mooGitMergeFlowHint
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import java.nio.file.Path
@@ -356,6 +357,7 @@ fun VaultGitDialog(
                                     container.t(flowKey),
                                     color = colors.textMuted,
                                     fontSize = 11.sp,
+                                    modifier = Modifier.mooGitMergeFlowHint(),
                                 )
                             }
                         }
@@ -574,7 +576,11 @@ fun VaultGitDialog(
                                             MooButton(
                                                 container.t("git.ours"),
                                                 p5Toolbar = true,
-                                                enabled = GitOperationPresentation.resolveConflictEnabled(busy),
+                                                enabled = GitMergeProductFlowPresentation.resolveActionsEnabled(
+                                                    status.merging,
+                                                    selectedChange.conflict,
+                                                    busy,
+                                                ),
                                                 leading = { GitPanelIcon(GitPanelIconKind.ShieldCheck, colors.textBody) },
                                                 onClick = {
                                                     runAction(
@@ -586,7 +592,11 @@ fun VaultGitDialog(
                                             MooButton(
                                                 container.t("git.theirs"),
                                                 p5Toolbar = true,
-                                                enabled = GitOperationPresentation.resolveConflictEnabled(busy),
+                                                enabled = GitMergeProductFlowPresentation.resolveActionsEnabled(
+                                                    status.merging,
+                                                    selectedChange.conflict,
+                                                    busy,
+                                                ),
                                                 leading = { GitPanelIcon(GitPanelIconKind.ShieldCheck, colors.textBody) },
                                                 onClick = {
                                                     runAction(

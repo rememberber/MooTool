@@ -29,4 +29,13 @@ object GitMergeProductFlowPresentation {
 
     fun evidenceReady(merging: Boolean, conflicts: Int, unmergedPaths: List<String>): Boolean =
         merging && conflicts > 0 && unmergedPaths.isNotEmpty()
+
+    fun showProductFlowPanel(merging: Boolean, conflicts: Int): Boolean =
+        merging && conflicts > 0
+
+    fun resolveActionsEnabled(
+        merging: Boolean,
+        selectedConflict: Boolean,
+        busy: Boolean,
+    ): Boolean = !busy && showResolveActions(merging, selectedConflict)
 }
