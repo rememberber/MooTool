@@ -4,6 +4,7 @@ import com.rememberber.mootool.next.compose.app.AppDirectories
 import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.domain.EditorFontSettings
 import com.rememberber.mootool.next.compose.domain.NavigationToolVisibility
+import com.rememberber.mootool.next.compose.domain.SettingsNumericBounds
 import com.rememberber.mootool.next.compose.domain.TranslationEngine
 import com.rememberber.mootool.next.compose.ui.components.normalizeVaultTreeExpandMode
 import com.rememberber.mootool.next.compose.model.AppSettings
@@ -105,19 +106,7 @@ class SettingsRepository(
             translationTargetLang = translationLanguages.second,
         )
         val editor = EditorFontSettings.normalizeEditorSettings(settings.editor, AppSettings.Default.editor)
-        if (quickNotePath == vault.quickNotePath &&
-            jsonPath == vault.jsonPath &&
-            exportDirectory == settings.tools.exportDirectory &&
-            dataDirectory == settings.data.directory &&
-            layout == settings.layout &&
-            jsonTreeExpandMode == vault.jsonTreeExpandMode &&
-            quickNoteTreeExpandMode == vault.quickNoteTreeExpandMode &&
-            tools == settings.tools &&
-            editor == settings.editor
-        ) {
-            return settings
-        }
-        return settings.copy(
+        val merged = settings.copy(
             layout = layout,
             data = settings.data.copy(directory = dataDirectory),
             editor = editor,
@@ -129,6 +118,11 @@ class SettingsRepository(
             ),
             tools = tools,
         )
+        val normalized = SettingsNumericBounds.normalize(merged, AppSettings.Default)
+        if (normalized == settings) {
+            return settings
+        }
+        return normalized
     }
 
     companion object {

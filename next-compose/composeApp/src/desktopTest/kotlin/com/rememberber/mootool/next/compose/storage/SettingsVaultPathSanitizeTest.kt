@@ -111,6 +111,43 @@ class SettingsVaultPathSanitizeTest {
     }
 
     @Test
+    fun loadNormalizesNumericSettingBoundaries() {
+        val root = kotlin.io.path.createTempDirectory("mootool-settings-numeric-")
+        val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }
+        val repository = SettingsRepository(directories)
+        repository.save(
+            AppSettings.Default.copy(
+                appearance = AppSettings.Default.appearance.copy(fontSize = 200),
+                editor = AppSettings.Default.editor.copy(jsonFontSize = 1),
+                network = AppSettings.Default.network.copy(
+                    requestTimeoutMs = 50,
+                    translationTimeoutMs = 999_999,
+                ),
+                vault = AppSettings.Default.vault.copy(
+                    autoCommitIdleSeconds = 1,
+                    autoCommitInactiveSeconds = 999_999,
+                ),
+                tools = AppSettings.Default.tools.copy(
+                    qrCodeSize = 12,
+                    randomStringLength = 99_999,
+                    translationProvider = "bing",
+                ),
+            )
+        )
+        val loaded = SettingsRepository(directories).load()
+        assertEquals(18, loaded.appearance.fontSize)
+        assertEquals(11, loaded.editor.jsonFontSize)
+        assertEquals(120, loaded.tools.qrCodeSize)
+        assertEquals(4_096, loaded.tools.randomStringLength)
+        assertEquals(1_000, loaded.network.requestTimeoutMs)
+        assertEquals(120_000, loaded.network.translationTimeoutMs)
+        assertEquals(5, loaded.vault.autoCommitIdleSeconds)
+        assertEquals(3_600, loaded.vault.autoCommitInactiveSeconds)
+        assertEquals("bing", loaded.tools.translationProvider)
+        root.toFile().deleteRecursively()
+    }
+
+    @Test
     fun saveNormalizesHiddenNavigationToolIds() {
         val root = kotlin.io.path.createTempDirectory("mootool-settings-nav-save-")
         val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }

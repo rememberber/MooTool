@@ -106,7 +106,7 @@ object ElectronNextSettingsImport {
                 theme = normalizeTheme(patch.appearance.theme),
                 accentColor = patch.appearance.accentColor,
                 fontFamily = patch.appearance.fontFamily,
-                fontSize = patch.appearance.fontSize.coerceIn(12, 18),
+                fontSize = SettingsNumericBounds.clampNumber(patch.appearance.fontSize, 12, 18),
                 unifiedBackground = patch.appearance.unifiedBackground
             ),
             layout = current.layout.copy(
@@ -130,12 +130,12 @@ object ElectronNextSettingsImport {
                     patch.editor.jsonFontName,
                     AppSettings.Default.editor.jsonFontName,
                 ),
-                jsonFontSize = patch.editor.jsonFontSize.coerceIn(11, 24),
+                jsonFontSize = SettingsNumericBounds.clampNumber(patch.editor.jsonFontSize, 11, 24),
                 quickNoteFontName = EditorFontSettings.normalizeFontName(
                     patch.editor.quickNoteFontName,
                     AppSettings.Default.editor.quickNoteFontName,
                 ),
-                quickNoteFontSize = patch.editor.quickNoteFontSize.coerceIn(11, 24),
+                quickNoteFontSize = SettingsNumericBounds.clampNumber(patch.editor.quickNoteFontSize, 11, 24),
                 softWrap = patch.editor.softWrap
             ),
             network = current.network.copy(
@@ -144,8 +144,8 @@ object ElectronNextSettingsImport {
                 proxyPort = patch.network.proxyPort,
                 proxyUsername = patch.network.proxyUsername,
                 proxyPassword = patch.network.proxyPassword,
-                requestTimeoutMs = patch.network.requestTimeoutMs.coerceIn(1_000, 120_000),
-                translationTimeoutMs = patch.network.translationTimeoutMs.coerceIn(1_000, 60_000)
+                requestTimeoutMs = SettingsNumericBounds.clampNumber(patch.network.requestTimeoutMs, 1_000, 120_000),
+                translationTimeoutMs = SettingsNumericBounds.clampNumber(patch.network.translationTimeoutMs, 1_000, 120_000),
             ),
             data = current.data.copy(directory = patch.data.directory),
             vault = current.vault.copy(
@@ -155,9 +155,9 @@ object ElectronNextSettingsImport {
                 gitUsername = patch.vault.gitUsername,
                 gitToken = patch.vault.gitToken,
                 autoCommit = patch.vault.autoCommit,
-                autoCommitIdleSeconds = patch.vault.autoCommitIdleSeconds.coerceAtLeast(5),
-                autoCommitInactiveSeconds = patch.vault.autoCommitInactiveSeconds.coerceAtLeast(30),
-                autoPullMinutes = patch.vault.autoPullMinutes.coerceAtLeast(0),
+                autoCommitIdleSeconds = SettingsNumericBounds.clampNumber(patch.vault.autoCommitIdleSeconds, 5, 3_600),
+                autoCommitInactiveSeconds = SettingsNumericBounds.clampNumber(patch.vault.autoCommitInactiveSeconds, 5, 3_600),
+                autoPullMinutes = SettingsNumericBounds.clampNumber(patch.vault.autoPullMinutes, 0, 1_440),
                 hideGitignoredFiles = patch.vault.hideGitignoredFiles,
                 jsonTreeExpandMode = patch.vault.jsonTreeExpandMode,
                 quickNoteTreeExpandMode = patch.vault.quickNoteTreeExpandMode
@@ -169,9 +169,12 @@ object ElectronNextSettingsImport {
                 nodePath = patch.runtime.nodePath
             ),
             tools = current.tools.copy(
-                qrCodeSize = patch.tools.qrCodeSize.coerceIn(120, 2_000),
-                qrErrorCorrection = patch.tools.qrErrorCorrection,
-                randomStringLength = patch.tools.randomStringLength.coerceIn(4, 256),
+                qrCodeSize = SettingsNumericBounds.clampNumber(patch.tools.qrCodeSize, 120, 2_000),
+                qrErrorCorrection = SettingsNumericBounds.normalizeQrErrorCorrection(
+                    patch.tools.qrErrorCorrection,
+                    AppSettings.Default.tools.qrErrorCorrection,
+                ),
+                randomStringLength = SettingsNumericBounds.clampNumber(patch.tools.randomStringLength, 1, 4_096),
                 exportDirectory = patch.tools.exportDirectory,
                 translationProvider = patch.tools.translationProvider,
                 translationSourceLang = patch.tools.translationSourceLang,
@@ -196,7 +199,7 @@ object ElectronNextSettingsImport {
         } else {
             imported.general
         }
-        return imported.copy(
+        val base = imported.copy(
             general = general,
             editor = EditorFontSettings.normalizeEditorSettings(imported.editor, AppSettings.Default.editor),
             layout = imported.layout.copy(customGroups = groups),
@@ -212,6 +215,7 @@ object ElectronNextSettingsImport {
             ),
             tools = normalizeTranslationTools(imported.tools),
         )
+        return SettingsNumericBounds.normalize(base, AppSettings.Default)
     }
 
     private fun normalizeTranslationTools(tools: ToolSettings): ToolSettings {
