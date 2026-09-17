@@ -76,4 +76,14 @@ object LayoutPolicy {
 
     fun p5ToolbarFontWeightMedium(dense: Boolean, interfaceStyle: String): Boolean =
         dense || interfaceStyle == "modern" || interfaceStyle == "quiet"
+
+    /** Shared by p5 and `.editor-toolbar` non-p5 buttons (DIFF-501/502). */
+    fun nonP5ToolbarFontSp(dense: Boolean, interfaceStyle: String): Float? = when {
+        dense -> null
+        interfaceStyle == "modern" || interfaceStyle == "quiet" -> 13f
+        else -> null
+    }
+
+    fun nonP5ToolbarFontWeightMedium(dense: Boolean, interfaceStyle: String): Boolean =
+        !dense && (interfaceStyle == "modern" || interfaceStyle == "quiet")
 }

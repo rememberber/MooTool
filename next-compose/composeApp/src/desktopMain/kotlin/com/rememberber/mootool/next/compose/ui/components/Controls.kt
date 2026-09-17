@@ -121,13 +121,20 @@ fun MooButton(
     } else {
         null
     }
+    val nonP5FontSp = if (!p5Toolbar) {
+        LayoutPolicy.nonP5ToolbarFontSp(dense, colors.styleId)
+    } else {
+        null
+    }
     val compactFontSize = when {
         p5FontSp != null -> p5FontSp.sp
+        nonP5FontSp != null -> nonP5FontSp.sp
         dense -> 11.sp
         else -> 12.sp
     }
     val compactFontWeight = when {
         p5Toolbar && LayoutPolicy.p5ToolbarFontWeightMedium(dense || p5Dense, colors.styleId) -> FontWeight.Medium
+        !p5Toolbar && LayoutPolicy.nonP5ToolbarFontWeightMedium(dense, colors.styleId) -> FontWeight.Medium
         dense || p5Dense -> FontWeight.Medium
         else -> FontWeight.SemiBold
     }
@@ -158,6 +165,7 @@ fun MooButton(
     }
     val elevation = when {
         p5Toolbar && primary && (colors.styleId == "modern" || colors.styleId == "quiet") -> 1.dp
+        !p5Toolbar && primary && (colors.styleId == "modern" || colors.styleId == "quiet") -> 1.dp
         pressed || primary || danger || colors.styleId == "smartisan" || colors.styleId == "miui-v5" -> 0.dp
         else -> 1.dp
     }

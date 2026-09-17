@@ -3,6 +3,7 @@ package com.rememberber.mootool.next.compose.ui.workbench
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class LayoutPolicyTest {
@@ -65,6 +66,16 @@ class LayoutPolicyTest {
         assertEquals(11f, LayoutPolicy.p5ToolbarFontSp(dense = true, interfaceStyle = "modern"))
         assertTrue(LayoutPolicy.p5ToolbarFontWeightMedium(dense = false, interfaceStyle = "modern"))
         assertFalse(LayoutPolicy.p5ToolbarFontWeightMedium(dense = false, interfaceStyle = "hero"))
+    }
+
+    @Test
+    fun modernNonP5ToolbarTypographyMatchesElectronEditorToolbar() {
+        assertEquals(13f, LayoutPolicy.nonP5ToolbarFontSp(dense = false, interfaceStyle = "modern"))
+        assertEquals(13f, LayoutPolicy.nonP5ToolbarFontSp(dense = false, interfaceStyle = "quiet"))
+        assertNull(LayoutPolicy.nonP5ToolbarFontSp(dense = false, interfaceStyle = "hero"))
+        assertNull(LayoutPolicy.nonP5ToolbarFontSp(dense = true, interfaceStyle = "modern"))
+        assertTrue(LayoutPolicy.nonP5ToolbarFontWeightMedium(dense = false, interfaceStyle = "modern"))
+        assertFalse(LayoutPolicy.nonP5ToolbarFontWeightMedium(dense = true, interfaceStyle = "modern"))
     }
 
     @Test
