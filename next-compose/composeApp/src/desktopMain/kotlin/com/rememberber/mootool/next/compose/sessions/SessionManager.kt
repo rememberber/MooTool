@@ -206,8 +206,8 @@ class JsonSession {
             spaces = snapshot.spaces,
             sortKeys = snapshot.sortKeys,
             ignoreCase = snapshot.ignoreCase,
-            checkDuplicateKeys = snapshot.checkDuplicateKeys
-        )
+            checkDuplicateKeys = snapshot.checkDuplicateKeys,
+        ).normalizeInspectorIndent()
         vaultQuery = snapshot.vaultQuery
         includeContent = snapshot.includeContent
         vaultSort = VaultSort.normalize(snapshot.vaultSort, allowCreated = false)

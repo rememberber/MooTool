@@ -14,7 +14,13 @@ data class JsonFormatOptions(
     val sortKeys: Boolean = false,
     val ignoreCase: Boolean = false,
     val checkDuplicateKeys: Boolean = true
-)
+) {
+    /** Aligns with Electron `JsonInspector` indent `<select>` (only 2 or 4). */
+    fun normalizeInspectorIndent(): JsonFormatOptions {
+        val normalized = if (spaces == 4) 4 else 2
+        return if (normalized == spaces) this else copy(spaces = normalized)
+    }
+}
 
 data class JsonPathEntry(
     val path: String,
