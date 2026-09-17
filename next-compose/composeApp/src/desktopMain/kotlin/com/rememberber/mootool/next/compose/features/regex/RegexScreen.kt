@@ -49,6 +49,8 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.CommonRegex
 import com.rememberber.mootool.next.compose.domain.RegexEngine
+import com.rememberber.mootool.next.compose.domain.RegexHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.RegexHistoryRestore
 import com.rememberber.mootool.next.compose.domain.RegexMatch
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.RegexSession
@@ -79,8 +81,6 @@ import com.rememberber.mootool.next.compose.ui.workbench.applyUserEditClearingSt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 @Composable
 fun RegexScreen(container: AppContainer, detached: Boolean) {
@@ -164,11 +164,7 @@ fun RegexScreen(container: AppContainer, detached: Boolean) {
             toolId = ToolId.Regex.id,
             title = container.t("common.action.history"),
             onRestore = { item ->
-                session.pattern = item.input
-                session.source = item.output
-                session.options = runCatching { historyCodec.decodeFromString(com.rememberber.mootool.next.compose.domain.RegexOptions.serializer(), item.options) }
-                    .getOrDefault(session.options)
-                session.tab = "test"
+                RegexHistoryRestore.apply(session, item)
                 session.historyOpen = false
                 refresh()
                 runMatch(container, session, { refresh() }, saveHistory = false)
@@ -414,8 +410,6 @@ private fun PatternCard(container: AppContainer, item: CommonRegex, modifier: Mo
     }
 }
 
-private val historyCodec = Json { ignoreUnknownKeys = true; encodeDefaults = true }
-
 private fun runMatch(container: AppContainer, session: RegexSession, onChanged: () -> Unit, saveHistory: Boolean = true) {
     if (session.running) return
     session.matchGeneration += 1
@@ -441,7 +435,7 @@ private fun runMatch(container: AppContainer, session: RegexSession, onChanged: 
                         session.notice,
                         session.pattern,
                         session.source,
-                        historyCodec.encodeToString(session.options)
+                        RegexHistoryMetadata.encode(session.options)
                     )
                 }
             } else {

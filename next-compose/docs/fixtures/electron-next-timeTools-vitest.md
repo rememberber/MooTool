@@ -8,4 +8,7 @@
 | leap-day | 闰日往返 | `TimeEngineTest` |
 | dst-america-new-york | 美东 DST 边界（与 Electron cron-parser 差异见 DIFF-519） | `TimeEngineTest.localToTimestamp_*America/New_York*` |
 
-登记：[DIFF-531](../diff/531-tools-defaults-live-git-keywords-slice.md)
+| local-roundtrip | 非法本地时间（Luxon 格式化 round-trip） | `TimeEngineTest.rejectsLocalTimeThatDoesNotRoundTripFormat` |
+| history-options | 历史 zone/unit 恢复 | `TimeHistoryRestoreTest` |
+
+登记：[DIFF-532](../diff/532-f15-f18-history-restore-time-roundtrip.md)（DIFF-531 初版登记仍有效）

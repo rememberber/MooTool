@@ -1,15 +1,9 @@
 package com.rememberber.mootool.next.compose.domain
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-
 /**
  * Parses Java MooTool `TimeConvert` left-panel log (`t_func_content`) into compose time-convert history rows.
  */
 object LegacyTimeConvertDraft {
-    private val json = Json { encodeDefaults = true }
-
     private val timestampToLocal = Regex(
         """^(?:时间戳|Timestamp|タイムスタンプ):\s*(\d+)\s*-->\s*(?:时间|Time|時間)\(([^)]+)\):\s*(.+)$""",
         RegexOption.IGNORE_CASE
@@ -66,12 +60,11 @@ object LegacyTimeConvertDraft {
         return null
     }
 
-    fun optionsJson(zone: String, unit: String): String =
-        json.encodeToString(TimeHistoryOptions(zone = zone, unit = unit))
+    fun optionsJson(zone: String, unit: String): String {
+        val unitEnum = if (unit == "millisecond") TimestampUnit.Millisecond else TimestampUnit.Second
+        return TimeHistoryMetadata.encode(zone, unitEnum)
+    }
 
     private fun unitForTimestamp(timestamp: String): String =
         if (timestamp.length >= 13) "millisecond" else "second"
-
-    @Serializable
-    private data class TimeHistoryOptions(val zone: String, val unit: String)
 }

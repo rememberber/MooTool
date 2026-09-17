@@ -69,9 +69,10 @@ object TimeEngine {
     }
 
     fun localToTimestamp(input: String, unit: TimestampUnit, zone: String): String {
+        val trimmed = input.trim()
         val zoneId = zoneId(zone)
         val local = try {
-            LocalDateTime.parse(input.trim(), formatter)
+            LocalDateTime.parse(trimmed, formatter)
         } catch (_: DateTimeParseException) {
             throw TimeException("invalid-local-time", "invalid-local-time")
         }
@@ -80,6 +81,9 @@ object TimeEngine {
             offsets.isEmpty() -> throw TimeException("dst-gap", "dst-gap")
             offsets.size > 1 -> throw TimeException("dst-overlap", "dst-overlap")
             else -> ZonedDateTime.of(local, zoneId)
+        }
+        if (zoned.format(formatter) != trimmed) {
+            throw TimeException("invalid-local-time", "invalid-local-time")
         }
         val milliseconds = zoned.toInstant().toEpochMilli()
         return if (unit == TimestampUnit.Second) (milliseconds / 1000).toString() else milliseconds.toString()

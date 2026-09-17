@@ -36,6 +36,13 @@ class TimeEngineTest {
     }
 
     @Test
+    fun rejectsLocalTimeThatDoesNotRoundTripFormat() {
+        assertFailsWith<TimeException> {
+            TimeEngine.localToTimestamp("2024-01-01 24:00:00", TimestampUnit.Second, "UTC")
+        }
+    }
+
+    @Test
     fun supportsNegativeEpochAndLeapDay() {
         assertEquals("1969-12-31 23:59:59", TimeEngine.timestampToLocal("-1", TimestampUnit.Second, "UTC").localTime)
         assertEquals("2024-02-29 12:00:00", TimeEngine.timestampToLocal(

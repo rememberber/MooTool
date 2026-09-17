@@ -44,6 +44,8 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.TimeEngine
 import com.rememberber.mootool.next.compose.domain.TimeException
+import com.rememberber.mootool.next.compose.domain.TimeHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.TimeHistoryRestore
 import com.rememberber.mootool.next.compose.domain.TimestampUnit
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
@@ -66,13 +68,6 @@ import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
 import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
 import com.rememberber.mootool.next.compose.ui.workbench.onUserInput
 import kotlinx.coroutines.delay
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-
-@Serializable
-private data class TimeHistoryOptions(val zone: String, val unit: String)
-
 @Composable
 fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolean) {
     val session = remember { container.sessionManager.timeSession() }
@@ -266,7 +261,7 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
             toolId = ToolId.TimeConvert.id,
             title = container.t("time.history"),
             onRestore = { item ->
-                applyHistory(session, item)
+                TimeHistoryRestore.apply(session, item)
                 session.historyOpen = false
                 refresh()
             },
@@ -353,9 +348,6 @@ private fun ClockOverlay(container: AppContainer, session: TimeSession, nowMilli
     }
 }
 
-private val historyCodec = Json { ignoreUnknownKeys = true }
-private val timestampPattern = Regex("^[+-]?\\d+$")
-
 private fun convertToLocal(container: AppContainer, session: TimeSession, refresh: () -> Unit) {
     runCatching { TimeEngine.timestampToLocal(session.timestamp, session.unit, session.zone) }
         .onSuccess { result ->
@@ -392,31 +384,8 @@ private fun convertToTimestamp(container: AppContainer, session: TimeSession, re
 }
 
 private fun saveHistory(container: AppContainer, session: TimeSession, summary: String, input: String, output: String) {
-    val options = historyCodec.encodeToString(
-        TimeHistoryOptions(session.zone, if (session.unit == TimestampUnit.Millisecond) "millisecond" else "second")
-    )
+    val options = TimeHistoryMetadata.encode(session.zone, session.unit)
     container.history.save(ToolId.TimeConvert.id, summary, summary, input, output, options)
-}
-
-private fun applyHistory(session: TimeSession, item: HistoryRecord) {
-    val options = runCatching { historyCodec.decodeFromString<TimeHistoryOptions>(item.options) }.getOrNull()
-    if (options != null) {
-        session.zone = options.zone.ifBlank { session.zone }
-        session.unit = if (options.unit == "millisecond") TimestampUnit.Millisecond else TimestampUnit.Second
-    }
-    val input = item.input.trim()
-    val output = item.output.trim()
-    if (timestampPattern.matches(input)) {
-        session.timestamp = input
-        if (output.isNotEmpty()) session.localTime = output
-    } else if (timestampPattern.matches(output)) {
-        session.localTime = input.ifBlank { session.localTime }
-        session.timestamp = output
-    } else {
-        val value = output.ifBlank { input }
-        if (timestampPattern.matches(value)) session.timestamp = value else session.localTime = value
-    }
-    session.error = ""
 }
 
 private fun copyField(container: AppContainer, session: TimeSession, value: String, refresh: () -> Unit) {
