@@ -102,6 +102,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooCard
 import com.rememberber.mootool.next.compose.ui.components.mooEditorFrame
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
+import com.rememberber.mootool.next.compose.ui.components.mooJsonVaultSearch
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
@@ -871,7 +872,12 @@ private fun VaultPane(
     var vaultMoreOpen by remember { mutableStateOf(false) }
     Column(Modifier.width(width.dp).fillMaxHeight().mooToolShell(colors.sidebar, flatten = true).padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(container.t("json.vault.title"), color = colors.textPrimary, fontSize = 12.sp)
-        MooCompactSearch(session.vaultQuery, { session.vaultQuery = it; onFilter() }, placeholder = container.t("app.search.placeholder"))
+        MooCompactSearch(
+            session.vaultQuery,
+            { session.vaultQuery = it; onFilter() },
+            placeholder = container.t("app.search.placeholder"),
+            modifier = Modifier.mooJsonVaultSearch(),
+        )
         MooButton(
             container.t("quickNote.searchContent") + ": ${session.includeContent}",
             onClick = { session.includeContent = !session.includeContent; onFilter() }

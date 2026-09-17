@@ -51,6 +51,16 @@ mootool_evidence_print_git_merge_product_hint() {
   echo "# 登记 PNG: docs/evidence/2026-09-17-vault-conflict-product-window/results.md §B"
 }
 
+mootool_evidence_print_editor_column_ime_hint() {
+  local compose_root
+  compose_root="$(mootool_evidence_compose_root)"
+  echo "# Column edit + system IME product window (manual PNG, not Compose frame):"
+  echo "# cd ${compose_root} && ./scripts/prepare-editor-ime-evidence.sh"
+  echo "# Samples: data/vaults/json/ime-sample.json + data/vaults/quick-note/ime-sample.md"
+  echo "# Walkthrough: Alt-drag / latch column select → ASCII commit; then system IME preedit/commit"
+  echo "# Register: docs/evidence/2026-09-16-editor-manual-acceptance/results.md"
+}
+
 mootool_evidence_print_p7_smoke_hint() {
   local compose_root
   compose_root="$(mootool_evidence_compose_root)"

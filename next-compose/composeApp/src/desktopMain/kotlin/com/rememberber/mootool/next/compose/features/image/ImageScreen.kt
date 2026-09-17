@@ -54,6 +54,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
+import com.rememberber.mootool.next.compose.domain.ImageSvgWiringPresentation
 import com.rememberber.mootool.next.compose.domain.ToolsExportWiringPresentation
 import com.rememberber.mootool.next.compose.domain.ScreenCaptureFailureMessages
 import com.rememberber.mootool.next.compose.domain.CompressImageOptions
@@ -83,6 +84,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
+import com.rememberber.mootool.next.compose.ui.components.mooImageToolToolbar
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
@@ -192,7 +194,12 @@ fun ImageScreen(container: AppContainer, detached: Boolean) {
     }
     Column(Modifier.fillMaxSize().background(colors.workspace)) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 8.dp).horizontalScroll(rememberScrollState()),
+            modifier = Modifier
+                .fillMaxWidth()
+                .mooImageToolToolbar()
+                .mooToolbarBackground()
+                .padding(horizontal = 8.dp)
+                .horizontalScroll(rememberScrollState()),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
@@ -651,7 +658,7 @@ private fun SvgDialog(container: AppContainer, session: ImageSession, count: Int
                     session.svgColors.toString(),
                     { value ->
                         session.onUserInput {
-                            session.svgColors = value.toIntOrNull()?.coerceIn(2, 64) ?: session.svgColors
+                            session.svgColors = ImageSvgWiringPresentation.parseColorsField(value, session.svgColors)
                             container.sessionManager.bump()
                         }
                     },
@@ -664,7 +671,7 @@ private fun SvgDialog(container: AppContainer, session: ImageSession, count: Int
                 session.svgSpeckle.toString(),
                 { value ->
                     session.onUserInput {
-                        session.svgSpeckle = value.toIntOrNull()?.coerceIn(0, 128) ?: session.svgSpeckle
+                        session.svgSpeckle = ImageSvgWiringPresentation.parseSpeckleField(value, session.svgSpeckle)
                         container.sessionManager.bump()
                     }
                 },

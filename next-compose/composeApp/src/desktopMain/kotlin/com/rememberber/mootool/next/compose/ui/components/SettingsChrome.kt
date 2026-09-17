@@ -49,6 +49,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
+import com.rememberber.mootool.next.compose.domain.SettingsRowPresentation
 import com.rememberber.mootool.next.compose.ui.theme.AccentPresets
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 
@@ -176,9 +177,16 @@ fun SettingRow(label: String, control: @Composable () -> Unit) {
     val min = MooTheme.dimens.settingsRowMin
     Column {
         Row(
-            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = min).padding(horizontal = 14.dp, vertical = 6.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = min)
+                .mooSettingsSettingRow()
+                .padding(
+                    horizontal = SettingsRowPresentation.HORIZONTAL_PADDING_DP.dp,
+                    vertical = SettingsRowPresentation.VERTICAL_PADDING_DP.dp,
+                ),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(24.dp)
+            horizontalArrangement = Arrangement.spacedBy(SettingsRowPresentation.LABEL_CONTROL_GAP_DP.dp)
         ) {
             Text(label, color = colors.textBody, fontSize = 13.sp, modifier = Modifier.weight(1f))
             Box { control() }

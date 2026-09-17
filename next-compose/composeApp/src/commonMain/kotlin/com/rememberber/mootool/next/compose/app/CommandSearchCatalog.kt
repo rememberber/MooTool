@@ -1,5 +1,6 @@
 package com.rememberber.mootool.next.compose.app
 
+import com.rememberber.mootool.next.compose.domain.EditorColumnEditPresentation
 import java.util.Locale
 
 /** 命令盘深链设置分类（对齐 Electron `openSettings(category)` / 侧栏 MCP·Vault Git 入口）。 */
@@ -47,8 +48,11 @@ object CommandSearchCatalog {
                 "接入",
                 "連携",
                 "json_format",
+                "json_query",
                 "encode",
                 "uuid",
+                "diff",
+                "hash",
             ),
         ),
         CommandSettingsTarget(
@@ -118,7 +122,7 @@ object CommandSearchCatalog {
                 "方言",
                 "格式化",
                 "路径",
-            ),
+            ) + EditorColumnEditPresentation.commandPaletteKeywords,
         ),
         CommandSettingsTarget(
             categoryId = "network",
@@ -161,11 +165,15 @@ object CommandSearchCatalog {
             navIcon = ">_",
             keywords = listOf(
                 "runtime",
+                "detect",
+                "codrun",
+                "process",
                 "java",
                 "python",
                 "node",
                 "groovy",
                 "运行环境",
+                "检测",
                 "hardware",
                 "cpu",
                 "memory",

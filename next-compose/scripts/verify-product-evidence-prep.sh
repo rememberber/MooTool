@@ -49,6 +49,7 @@ echo "ok prepare-p7-package-smoke.sh"
 echo "all product evidence prep checks passed"
 # shellcheck source=lib/product-evidence-common.sh
 source "${ROOT}/scripts/lib/product-evidence-common.sh"
+mootool_evidence_print_editor_column_ime_hint
 mootool_evidence_print_p7_smoke_hint
 mootool_evidence_print_http_public_smoke_hint
 mootool_evidence_print_http_multipart_smoke_hint

@@ -207,6 +207,24 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun columnEditQueryOpensEditorSettings() {
+        val hits = CommandSearchCatalog.search("column", Translator(AppLanguage.EnUS)::t)
+        assertEquals("editor", hits.single().categoryId)
+    }
+
+    @Test
+    fun jsonQueryKeywordOpensAiSettings() {
+        val hits = CommandSearchCatalog.search("json_query", Translator(AppLanguage.EnUS)::t)
+        assertEquals("ai", hits.single().categoryId)
+    }
+
+    @Test
+    fun detectQueryOpensRuntimeSettings() {
+        val hits = CommandSearchCatalog.search("detect", Translator(AppLanguage.EnUS)::t)
+        assertEquals("runtime", hits.single().categoryId)
+    }
+
+    @Test
     fun catalogCoversEverySettingsNavCategory() {
         val covered = CommandSearchCatalog.targets.map { it.categoryId }.toSet()
         SettingsNavCategory.entries.forEach { category ->

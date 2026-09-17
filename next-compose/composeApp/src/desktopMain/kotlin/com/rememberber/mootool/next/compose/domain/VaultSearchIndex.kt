@@ -5,7 +5,7 @@ import com.rememberber.mootool.next.compose.storage.VaultIndexRecord
 
 object VaultSearchIndex {
     fun filter(records: List<VaultIndexRecord>, query: String, includeContent: Boolean): List<VaultEntry> {
-        val needle = query.trim().lowercase()
+        val needle = JsonVaultSearchPresentation.normalizeQuery(query)
         if (needle.isEmpty()) return records.map { it.entry }
         val keep = linkedSetOf<String>()
         records.forEach { record ->

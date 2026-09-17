@@ -1319,6 +1319,23 @@ fun Modifier.mooNetCommandRow(): Modifier = heightIn(min = 35.dp)
 @Composable
 fun Modifier.mooNetPortScanRow(): Modifier = heightIn(min = 35.dp)
 
+/** Electron 运行台输出区 `.runtime-output` 等宽正文。 */
+@Composable
+fun Modifier.mooRuntimeOutputPane(): Modifier = clip(RoundedCornerShape(0.dp))
+
+/** Electron JSON Vault 搜索行。 */
+fun Modifier.mooJsonVaultSearch(): Modifier = fillMaxWidth()
+
+/** Electron 网络工具输出区等宽区。 */
+fun Modifier.mooNetOutputMonospace(): Modifier = padding(horizontal = 16.dp, vertical = 14.dp)
+
+/** Electron 设置分组行块内单行。 */
+fun Modifier.mooSettingsSettingRow(): Modifier = fillMaxWidth()
+
+/** Electron 图片工具主工具栏行。 */
+@Composable
+fun Modifier.mooImageToolToolbar(): Modifier = heightIn(min = MooTheme.dimens.toolbar)
+
 /** Electron `.http-collection` / `.host-profiles` 侧栏集合区。 */
 @Composable
 fun Modifier.mooHttpCollection(): Modifier {

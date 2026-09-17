@@ -49,6 +49,7 @@ import com.rememberber.mootool.next.compose.domain.NetCommandHandle
 import com.rememberber.mootool.next.compose.domain.NetConvertException
 import com.rememberber.mootool.next.compose.domain.NetEngine
 import com.rememberber.mootool.next.compose.domain.NetHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.NetWiringPresentation
 import com.rememberber.mootool.next.compose.domain.NetHistoryRestore
 import com.rememberber.mootool.next.compose.domain.NetworkAction
 import com.rememberber.mootool.next.compose.domain.NetworkErrorCode
@@ -57,6 +58,7 @@ import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooNetCommandRow
+import com.rememberber.mootool.next.compose.ui.components.mooNetOutputMonospace
 import com.rememberber.mootool.next.compose.ui.components.mooNetPortScanRow
 import com.rememberber.mootool.next.compose.ui.components.mooNetSection
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
@@ -123,6 +125,24 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
 
     fun runAction(action: NetworkAction, target: String? = null, ports: String? = null) {
         if (session.running != null) return
+        val resolvedTarget: String?
+        val resolvedPorts: String?
+        if (action == NetworkAction.PortScan) {
+            when (val start = NetWiringPresentation.portScanStart(target.orEmpty(), ports.orEmpty())) {
+                is NetWiringPresentation.PortScanStart.Blocked -> {
+                    session.error = errorMessage(container, start.errorCode, "")
+                    persist()
+                    return
+                }
+                is NetWiringPresentation.PortScanStart.Ready -> {
+                    resolvedTarget = start.target
+                    resolvedPorts = start.portSpec
+                }
+            }
+        } else {
+            resolvedTarget = target
+            resolvedPorts = ports
+        }
         handle.cancel()
         val current = NetCommandHandle()
         handle = current
@@ -133,7 +153,7 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
         persist()
         commandJob = session.commandScope.launch {
             val timeout = container.settings.value.network.requestTimeoutMs
-            val result = NetEngine.run(action, target, ports, timeout, current) { chunk ->
+            val result = NetEngine.run(action, resolvedTarget, resolvedPorts, timeout, current) { chunk ->
                 session.commandScope.launch(Dispatchers.Main) {
                     if (session.running != action) return@launch
                     session.output = if (session.output == container.t("net.running")) chunk else session.output + chunk
@@ -161,9 +181,9 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                 if (session.error.isNotEmpty()) container.toastError(session.error) else container.toastSuccess(label)
                 val historyOutput = session.output.take(8_000)
                 val wire = NetHistoryMetadata.actionWireId(action)
-                val summary = "${label} ${target.orEmpty()} ${ports.orEmpty()}".trim()
+                val summary = "${label} ${resolvedTarget.orEmpty()} ${resolvedPorts.orEmpty()}".trim()
                 val historyOptions = if (action == NetworkAction.PortScan) {
-                    NetHistoryMetadata.encodePortSpec(ports)
+                    NetHistoryMetadata.encodePortSpec(resolvedPorts)
                 } else {
                     ""
                 }
@@ -171,7 +191,7 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                     ToolId.Net.id,
                     wire,
                     summary,
-                    target.orEmpty(),
+                    resolvedTarget.orEmpty(),
                     historyOutput,
                     historyOptions,
                 )
@@ -271,7 +291,7 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                         color = if (session.output.isBlank()) colors.textMuted else colors.textBody,
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
-                        modifier = Modifier.fillMaxSize().verticalScroll(outputScroll).padding(horizontal = 16.dp, vertical = 14.dp)
+                        modifier = Modifier.fillMaxSize().verticalScroll(outputScroll).mooNetOutputMonospace()
                     )
                 }
             }
@@ -376,7 +396,9 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                         MooButton(
                             container.t("net.scan"),
                             onClick = { runAction(NetworkAction.PortScan, session.portScanTarget, session.portSpec) },
-                            enabled = session.running == null,
+                            enabled = session.running == null &&
+                                NetWiringPresentation.portScanStart(session.portScanTarget, session.portSpec)
+                                    is NetWiringPresentation.PortScanStart.Ready,
                             p5Toolbar = true
                         )
                     }

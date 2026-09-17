@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.features.settings.SettingsNavCategory
 import com.rememberber.mootool.next.compose.domain.CodeRunEngine
+import com.rememberber.mootool.next.compose.domain.CodeRunWiringPresentation
 import com.rememberber.mootool.next.compose.domain.CodeRunHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.CodeRunHistoryRestore
 import com.rememberber.mootool.next.compose.domain.EditorSettingsLiveApply
@@ -69,6 +70,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooToolTab
 import com.rememberber.mootool.next.compose.ui.components.mooToolTabsBackground
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooEditorFrame
+import com.rememberber.mootool.next.compose.ui.components.mooRuntimeOutputPane
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooStatusKind
@@ -127,9 +129,7 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
         onDispose { editorBuffer.onUserDocumentChange = null }
     }
 
-    fun paths() = settings.runtime.let {
-        CodeRunPaths(it.javaPath, it.groovyPath, it.pythonPath, it.nodePath)
-    }
+    fun paths() = CodeRunWiringPresentation.pathsFrom(settings.runtime)
 
     fun detect() {
         session.detecting = true
@@ -150,7 +150,7 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
 
     fun run() {
         if (session.running) return
-        if (status?.available == false) {
+        if (!CodeRunWiringPresentation.canRun(status)) {
             session.error = container.t("runtime.configure", mapOf("name" to CodeRunEngine.displayName(runtime)))
             persist()
             return
@@ -287,7 +287,7 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
             MooPageTitle(container.t("runtime.title"))
             if (revision < 0) Spacer(Modifier.width(0.dp))
             Spacer(Modifier.weight(1f))
-            val available = statuses.count { it.available }
+            val available = CodeRunWiringPresentation.availableCount(statuses)
             MooStatusPill(
                 if (session.detecting) container.t("common.processing") else container.t("runtime.detected", mapOf("count" to available.toString())),
                 kind = if (available > 0) MooStatusKind.Valid else MooStatusKind.Error
@@ -355,7 +355,7 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
             )
         }
         Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (status?.available == false) {
+            if (CodeRunWiringPresentation.showConfigureBanner(status)) {
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(colors.control).padding(horizontal = 10.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -500,7 +500,7 @@ private fun RuntimeOutputPane(
         result != null -> container.t("runtime.completed")
         else -> container.t("runtime.ready")
     }
-    Column(modifier.mooToolShell(colors.sidebar)) {
+    Column(modifier.mooToolShell(colors.sidebar).mooRuntimeOutputPane()) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
