@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -233,14 +234,31 @@ fun SettingsScreen(container: AppContainer) {
                             }
                         )
                     }
-                    SettingRow(container.t("settings.fontSize") + ": ${settings.appearance.fontSize}") {
-                        MooSegmented(
-                            options = listOf(12, 13, 14, 16, 18).map { it.toString() to it.toString() },
-                            value = settings.appearance.fontSize.toString(),
-                            onChange = { value ->
-                                container.updateSettings { it.copy(appearance = it.appearance.copy(fontSize = value.toInt())) }
-                            }
-                        )
+                    SettingRow(container.t("settings.fontSize")) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Slider(
+                                value = settings.appearance.fontSize.toFloat(),
+                                onValueChange = { value ->
+                                    val size = value.toInt().coerceIn(12, 18)
+                                    container.updateSettings {
+                                        it.copy(appearance = it.appearance.copy(fontSize = size))
+                                    }
+                                },
+                                valueRange = 12f..18f,
+                                steps = 5,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                settings.appearance.fontSize.toString(),
+                                color = colors.textPrimary,
+                                fontSize = 12.sp,
+                                modifier = Modifier.widthIn(min = 20.dp),
+                            )
+                        }
                     }
                     Toggle(container, container.t("settings.unifiedBackground"), settings.appearance.unifiedBackground) {
                         container.updateSettings { it.copy(appearance = it.appearance.copy(unifiedBackground = !it.appearance.unifiedBackground)) }

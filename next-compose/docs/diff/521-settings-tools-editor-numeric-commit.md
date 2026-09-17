@@ -23,4 +23,4 @@ DIFF-520「未做」仍列设置 **工具默认值** 中 QR 尺寸/随机串长�
 
 ## 未做
 
-产品主窗 Git/设置截图、六套 CSS 皮肤、P7 安装、HTTP 联网/二进制大走查、PDF/加解密大切片、界面字号 `appearance.fontSize` 仍用分段（Electron 为 range 即时提交）。
+产品主窗 Git/设置截图、六套 CSS 皮肤、P7 安装、HTTP 联网/二进制大走查、PDF/加解密大切片；界面字号 range 见 [DIFF-522](522-settings-appearance-fontsize-range.md)。

@@ -35,4 +35,12 @@ class SettingsNumericBoundsTest {
         assertEquals(3_600, normalized.vault.autoCommitInactiveSeconds)
         assertEquals("bing", normalized.tools.translationProvider)
     }
+
+    @Test
+    fun appearanceFontSize_keepsMidRangeValues() {
+        val raw = AppSettings.Default.copy(
+            appearance = AppSettings.Default.appearance.copy(fontSize = 15),
+        )
+        assertEquals(15, SettingsNumericBounds.normalize(raw).appearance.fontSize)
+    }
 }
