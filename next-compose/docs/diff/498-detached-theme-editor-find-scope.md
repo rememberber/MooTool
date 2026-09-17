@@ -7,7 +7,7 @@ DIFF-497 在主窗与 `Themed` 分离窗传入 `compactNavigation`，但两处 `
 ## 行为
 
 - **`AppMooTheme` / `AppMooThemeInputs`**：主窗 `Main.kt` 与 `DetachedToolWindow` 共用同一套外观 + `layout.compactNavigation`，保证分离工具窗 p5 工具栏 dense 与主窗一致。
-- **`EditorFindToolScope`**：Electron 壳层查找覆盖 JSON、随手记、Host、HTTP 响应；Compose 另含 F05 代码运行 RSTA 只读查找条（497 已接 `EditorFindOnlyBar` + 快捷键）。
+- **`EditorFindToolScope`**：Electron 壳层查找覆盖 JSON、随手记、Host、HTTP 响应；Compose 另含 F05 代码运行 RSTA 只读查找条（497 已接 `EditorFindOnlyBar` + 快捷键）。壳层快捷键接线见 [DIFF-499](499-editor-find-shortcut-policy.md)。
 
 ## 验证
 

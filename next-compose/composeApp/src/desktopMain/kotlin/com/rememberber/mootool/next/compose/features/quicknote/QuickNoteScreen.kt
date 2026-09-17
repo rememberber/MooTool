@@ -77,7 +77,7 @@ import com.rememberber.mootool.next.compose.features.vault.dismissVaultScopedOve
 import com.rememberber.mootool.next.compose.features.vault.vaultMoveFolderOptions
 import com.rememberber.mootool.next.compose.features.vault.vaultPathsAfterDelete
 import com.rememberber.mootool.next.compose.editor.EditorAppShortcuts
-import com.rememberber.mootool.next.compose.editor.FindReplaceShortcutPolicy
+import com.rememberber.mootool.next.compose.editor.EditorFindShortcutPolicy
 import com.rememberber.mootool.next.compose.editor.onFindBarRowKeys
 import com.rememberber.mootool.next.compose.editor.onFindQueryEnterKey
 import com.rememberber.mootool.next.compose.editor.openFindBarSeedingSelection
@@ -313,7 +313,8 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                 true
             } else if (
                 event.type == KeyEventType.KeyDown &&
-                FindReplaceShortcutPolicy.opensFindReplace(
+                EditorFindShortcutPolicy.opensShellFind(
+                    ToolId.QuickNote,
                     event.key,
                     meta = event.isMetaPressed || event.isCtrlPressed,
                     shift = event.isShiftPressed,

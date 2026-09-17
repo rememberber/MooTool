@@ -55,7 +55,7 @@ import com.rememberber.mootool.next.compose.editor.EditorAppShortcuts
 import com.rememberber.mootool.next.compose.editor.EditorFindHighlight
 import com.rememberber.mootool.next.compose.editor.EditorFindOnlyBar
 import com.rememberber.mootool.next.compose.editor.EditorHost
-import com.rememberber.mootool.next.compose.editor.FindReplaceShortcutPolicy
+import com.rememberber.mootool.next.compose.editor.EditorFindShortcutPolicy
 import com.rememberber.mootool.next.compose.editor.openFindBarSeedingSelection
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
@@ -257,7 +257,8 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                     if (!session.running) run()
                     true
                 }
-                FindReplaceShortcutPolicy.opensFindReplace(
+                EditorFindShortcutPolicy.opensShellFind(
+                    ToolId.Java,
                     event.key,
                     meta = meta,
                     shift = event.isShiftPressed,

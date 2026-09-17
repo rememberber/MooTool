@@ -73,6 +73,7 @@ import com.rememberber.mootool.next.compose.domain.HttpResponseResult
 import com.rememberber.mootool.next.compose.domain.HttpResponseTab
 import com.rememberber.mootool.next.compose.domain.HttpTimeoutSettings
 import com.rememberber.mootool.next.compose.editor.EditorAppShortcuts
+import com.rememberber.mootool.next.compose.editor.EditorFindShortcutPolicy
 import com.rememberber.mootool.next.compose.editor.EditorHost
 import com.rememberber.mootool.next.compose.editor.EditorFindHighlight
 import com.rememberber.mootool.next.compose.editor.onFindBarRowKeys
@@ -345,7 +346,13 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
         if (event.type != KeyEventType.KeyDown || event.blockedByIme()) return@onPreviewKeyEvent false
         val meta = event.isMetaPressed || event.isCtrlPressed
         when {
-            meta && !event.isShiftPressed && !event.isAltPressed && event.key == Key.F -> {
+            EditorFindShortcutPolicy.opensShellFind(
+                ToolId.Http,
+                event.key,
+                meta = meta,
+                shift = event.isShiftPressed,
+                alt = event.isAltPressed,
+            ) -> {
                 if (!HttpFindShortcutPolicy.shouldOpenResponseFindFromShell(session)) {
                     false
                 } else {

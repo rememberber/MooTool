@@ -79,7 +79,7 @@ import com.rememberber.mootool.next.compose.features.vault.jsonVaultRenameDefaul
 import com.rememberber.mootool.next.compose.features.vault.vaultMoveFolderOptions
 import com.rememberber.mootool.next.compose.features.vault.vaultPathsAfterDelete
 import com.rememberber.mootool.next.compose.editor.EditorAppShortcuts
-import com.rememberber.mootool.next.compose.editor.FindReplaceShortcutPolicy
+import com.rememberber.mootool.next.compose.editor.EditorFindShortcutPolicy
 import com.rememberber.mootool.next.compose.editor.onFindBarRowKeys
 import com.rememberber.mootool.next.compose.editor.onFindQueryEnterKey
 import com.rememberber.mootool.next.compose.editor.openFindBarSeedingSelection
@@ -276,7 +276,8 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
                 refresh()
                 true
             }
-            FindReplaceShortcutPolicy.opensFindReplace(
+            EditorFindShortcutPolicy.opensShellFind(
+                ToolId.Json,
                 event.key,
                 meta = meta,
                 shift = event.isShiftPressed,

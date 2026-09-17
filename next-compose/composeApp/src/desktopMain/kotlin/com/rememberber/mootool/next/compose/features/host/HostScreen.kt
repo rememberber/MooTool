@@ -223,7 +223,8 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                     closeHostFindReplace()
                     true
                 }
-                com.rememberber.mootool.next.compose.editor.FindReplaceShortcutPolicy.opensFindReplace(
+                com.rememberber.mootool.next.compose.editor.EditorFindShortcutPolicy.opensShellFind(
+                    ToolId.Host,
                     event.key,
                     meta = meta,
                     shift = event.isShiftPressed,
