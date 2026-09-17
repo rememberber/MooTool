@@ -70,6 +70,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenu
 import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
+import com.rememberber.mootool.next.compose.ui.components.mooMessageBoardFormatRow
 import com.rememberber.mootool.next.compose.ui.components.mooMessagePresetChip
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
@@ -258,15 +259,17 @@ private fun ControlPanel(
                 )
             }
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("${container.t("messageBoard.size")} ${session.size}%", color = colors.textSecondary, fontSize = 12.sp)
+        Column(Modifier.fillMaxWidth().mooMessageBoardFormatRow(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("${container.t("messageBoard.size")} ${session.size}%", color = colors.textSecondary, fontSize = 12.sp)
+            }
+            Slider(
+                value = session.size.toFloat(),
+                onValueChange = { session.size = MessageBoardEngine.snapSize(it.toInt()); onChanged() },
+                valueRange = MessageBoardEngine.MIN_SIZE.toFloat()..MessageBoardEngine.MAX_SIZE.toFloat(),
+                steps = ((MessageBoardEngine.MAX_SIZE - MessageBoardEngine.MIN_SIZE) / MessageBoardEngine.SIZE_STEP) - 1
+            )
         }
-        Slider(
-            value = session.size.toFloat(),
-            onValueChange = { session.size = MessageBoardEngine.snapSize(it.toInt()); onChanged() },
-            valueRange = MessageBoardEngine.MIN_SIZE.toFloat()..MessageBoardEngine.MAX_SIZE.toFloat(),
-            steps = ((MessageBoardEngine.MAX_SIZE - MessageBoardEngine.MIN_SIZE) / MessageBoardEngine.SIZE_STEP) - 1
-        )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(container.t("messageBoard.alignment"), color = colors.textSecondary, fontSize = 12.sp)
             Box {

@@ -1620,6 +1620,21 @@ fun Modifier.mooMessagePresetChip(): Modifier = heightIn(min = 34.dp)
 @Composable
 fun Modifier.mooRegexTestPane(): Modifier = heightIn(min = 280.dp)
 
+/** Electron `.regex-results` 侧栏。 */
+@Composable
+fun Modifier.mooRegexResultsPane(): Modifier {
+    val colors = MooTheme.colors
+    return background(colors.surfaceSubtle).padding(14.dp)
+}
+
+/** Electron `.regex-results article` 命中卡内边距。 */
+@Composable
+fun Modifier.mooRegexMatchCard(): Modifier = padding(10.dp)
+
+/** Electron `.message-board-format-row` 字号滑条行。 */
+@Composable
+fun Modifier.mooMessageBoardFormatRow(): Modifier = heightIn(min = 38.dp)
+
 /** Electron UA 解析结果格。 */
 @Composable
 fun Modifier.mooUaResultCell(): Modifier = heightIn(min = 72.dp)

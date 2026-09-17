@@ -1,6 +1,7 @@
 package com.rememberber.mootool.next.compose.domain
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -29,6 +30,22 @@ class UaRegexTimeWiringPresentationTest {
         val outcome = RegexWiringPresentation.runMatch("moo", "mootool", RegexOptions())
         assertTrue(outcome is RegexWiringPresentation.MatchOutcome.Success)
         assertTrue((outcome as RegexWiringPresentation.MatchOutcome.Success).matches.isNotEmpty())
+    }
+
+    @Test
+    fun runMatchAlignsWithRegexEngineDirectMatch() {
+        val options = RegexOptions(global = true, ignoreCase = true)
+        val outcome = RegexWiringPresentation.runMatch("(moo)(\\d+)", "MOO1 moo22", options)
+        val direct = RegexEngine.match("(moo)(\\d+)", "MOO1 moo22", options)
+        assertTrue(outcome is RegexWiringPresentation.MatchOutcome.Success)
+        assertEquals(direct, (outcome as RegexWiringPresentation.MatchOutcome.Success).matches)
+    }
+
+    @Test
+    fun runMatchSurfacesInvalidPattern() {
+        val outcome = RegexWiringPresentation.runMatch("(", "a", RegexOptions())
+        assertTrue(outcome is RegexWiringPresentation.MatchOutcome.Failure)
+        assertTrue((outcome as RegexWiringPresentation.MatchOutcome.Failure).error is RegexException)
     }
 
     @Test

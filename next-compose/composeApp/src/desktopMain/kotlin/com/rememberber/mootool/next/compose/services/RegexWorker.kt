@@ -3,6 +3,7 @@ package com.rememberber.mootool.next.compose.services
 import com.rememberber.mootool.next.compose.domain.RegexEngine
 import com.rememberber.mootool.next.compose.domain.RegexException
 import com.rememberber.mootool.next.compose.domain.RegexOptions
+import com.rememberber.mootool.next.compose.domain.RegexWiringPresentation
 import com.rememberber.mootool.next.compose.domain.RegexWorkerRequest
 import com.rememberber.mootool.next.compose.domain.RegexWorkerResponse
 import kotlinx.serialization.encodeToString
@@ -18,13 +19,25 @@ object RegexWorker {
     fun main(args: Array<String>) {
         val raw = System.`in`.bufferedReader(Charsets.UTF_8).readText()
         val request = codec.decodeFromString<RegexWorkerRequest>(raw)
-        val response = try {
-            val matches = RegexEngine.match(request.pattern, request.source, request.options, request.maxMatches)
-            RegexWorkerResponse(ok = true, matches = matches)
-        } catch (error: RegexException) {
-            RegexWorkerResponse(ok = false, code = error.code, error = error.message ?: error.code)
-        } catch (error: Exception) {
-            RegexWorkerResponse(ok = false, code = "failed", error = error.message ?: "failed")
+        val response = when (
+            val outcome = RegexWiringPresentation.runMatch(
+                request.pattern,
+                request.source,
+                request.options,
+                request.maxMatches,
+            )
+        ) {
+            is RegexWiringPresentation.MatchOutcome.Success ->
+                RegexWorkerResponse(ok = true, matches = outcome.matches)
+            is RegexWiringPresentation.MatchOutcome.Failure -> {
+                val error = outcome.error
+                when (error) {
+                    is RegexException ->
+                        RegexWorkerResponse(ok = false, code = error.code, error = error.message ?: error.code)
+                    else ->
+                        RegexWorkerResponse(ok = false, code = "failed", error = error.message ?: "failed")
+                }
+            }
         }
         System.out.write(codec.encodeToString(response).toByteArray(Charsets.UTF_8))
         System.out.flush()

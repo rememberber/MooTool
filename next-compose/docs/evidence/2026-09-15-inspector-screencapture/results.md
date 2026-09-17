@@ -138,6 +138,8 @@
 | `155-compose-settings-about-update-download-tab-focus.png` | Compose 场景设置 · 关于页「下载更新」钮焦点环（[DIFF-561](../../diff/561-mcp-reformat-update-env-net-vault-css-slice.md)；与 `152` 互补） |
 | `156-compose-git-vault-remote-save-tab-focus.png` | Compose 场景 Vault Git remote 行「保存 remote」钮焦点环（[DIFF-562](../../diff/562-vault-mcp-f-tools-http-translate-pdf-git-css-slice.md)；非产品主窗） |
 | `157-compose-vault-conflict-savecopy-tab-focus.png` | Compose 场景 Vault 外部冲突（删除态）「另存副本」钮焦点环（[DIFF-563](../../diff/563-f-tools-engines-css-vault-mcp-p7-slice.md)；非产品主窗） |
+| `158-compose-git-merge-resolve-tab-focus.png` | Compose 场景 Vault Git merge ours/theirs 行「采用 ours」钮焦点环（[DIFF-564](../../diff/564-f-tools-run-engines-css-vault-mcp-git-p7-slice.md)；非产品主窗） |
+| `159-compose-regex-test-tab-focus.png` | Compose 场景 F15 正则「测试」钮 + 结果侧栏命中卡焦点环（[DIFF-565](../../diff/565-f15-regex-worker-css-vault-mcp-p7-slice.md)；非产品主窗） |
 
 有窗口帧不等于该工具整行已验收。Vault/Git 冲突**产品主窗**步骤见 [2026-09-17-vault-conflict-product-window](../2026-09-17-vault-conflict-product-window/results.md)（未执行）。曾用 Unicode `type "中"` 插入 JSON，那不是系统 IME 预编辑，不能当 IME 验收。
 

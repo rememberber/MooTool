@@ -5,6 +5,9 @@ import io.modelcontextprotocol.client.transport.ServerParameters
 import io.modelcontextprotocol.client.transport.StdioClientTransport
 import io.modelcontextprotocol.json.McpJsonDefaults
 import io.modelcontextprotocol.spec.McpSchema
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.nio.file.Files
 import java.time.Duration
 import kotlin.io.path.createDirectories
@@ -199,6 +202,108 @@ class AiIntegrationVaultMcpConnectionTest {
             }
         } finally {
             jsonRoot.toFile().deleteRecursively()
+            productRoot.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun subprocessNotesReadHonorsOffsetAndLength() {
+        val notesRoot = Files.createTempDirectory("mootool-mcp-vault-notes-read-page-")
+        val productRoot = Files.createTempDirectory("mootool-mcp-vault-notes-read-page-product-")
+        try {
+            notesRoot.resolve("note.md").writeText(
+                "---\ntitle: 分页\nsyntax: text/markdown\n---\nMooTool fixture 🐮",
+            )
+            val directories = com.rememberber.mootool.next.compose.app.AppPaths
+                .resolve(productRoot.toString())
+                .also { it.ensureCreated() }
+            val accessFile = McpLaunchResolver.accessFile(directories).also { path ->
+                path.parent.createDirectories()
+                path.writeText(
+                    """{"version":1,"notes":"${notesRoot.toRealPath()}","json":null}""",
+                )
+            }
+            val launch = desktopTestMcpLaunch(accessFile)
+            val transport = StdioClientTransport(
+                ServerParameters.builder(launch.command).args(launch.args).build(),
+                McpJsonDefaults.getMapper(),
+            )
+            McpClient.sync(transport).requestTimeout(Duration.ofSeconds(15)).build().use { client ->
+                client.initialize()
+                val first = client.callTool(
+                    McpSchema.CallToolRequest.builder()
+                        .name("mootool_notes_read")
+                        .arguments(mapOf("path" to "note.md", "offset" to 0, "length" to 7))
+                        .build(),
+                )
+                assertFalse(first.isError)
+                val firstJson = first.content.firstOrNull()?.let {
+                    if (it is McpSchema.TextContent) it.text else null
+                } ?: ""
+                val firstBody = Json.parseToJsonElement(firstJson).jsonObject
+                val nextOffset = firstBody["nextOffset"]?.jsonPrimitive?.content?.toInt()
+                assertTrue(nextOffset != null && nextOffset > 0)
+                val second = client.callTool(
+                    McpSchema.CallToolRequest.builder()
+                        .name("mootool_notes_read")
+                        .arguments(mapOf("path" to "note.md", "offset" to nextOffset, "length" to 50))
+                        .build(),
+                )
+                assertFalse(second.isError)
+                val secondJson = second.content.firstOrNull()?.let {
+                    if (it is McpSchema.TextContent) it.text else null
+                } ?: ""
+                val secondBody = Json.parseToJsonElement(secondJson).jsonObject
+                val combined = firstBody["content"]!!.jsonPrimitive.content +
+                    secondBody["content"]!!.jsonPrimitive.content
+                assertTrue(combined.contains("MooTool fixture"))
+                assertTrue(combined.contains("🐮"))
+            }
+        } finally {
+            notesRoot.toFile().deleteRecursively()
+            productRoot.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun subprocessListToolsIncludesVaultReadToolsWithNotesGrant() {
+        val notesRoot = Files.createTempDirectory("mootool-mcp-vault-list-notes-")
+        val productRoot = Files.createTempDirectory("mootool-mcp-vault-list-notes-product-")
+        try {
+            notesRoot.resolve("note.md").writeText("---\ntitle: t\nsyntax: text/markdown\n---\nbody")
+            val directories = com.rememberber.mootool.next.compose.app.AppPaths
+                .resolve(productRoot.toString())
+                .also { it.ensureCreated() }
+            val accessFile = McpLaunchResolver.accessFile(directories).also { path ->
+                path.parent.createDirectories()
+                path.writeText(
+                    """{"version":1,"notes":"${notesRoot.toRealPath()}","json":null}""",
+                )
+            }
+            val launch = desktopTestMcpLaunch(accessFile)
+            val transport = StdioClientTransport(
+                ServerParameters.builder(launch.command).args(launch.args).build(),
+                McpJsonDefaults.getMapper(),
+            )
+            McpClient.sync(transport).requestTimeout(Duration.ofSeconds(15)).build().use { client ->
+                client.initialize()
+                val tools = client.listTools().tools.map { it.name() }.toSet()
+                assertTrue("mootool_notes_search" in tools)
+                assertTrue("mootool_notes_read" in tools)
+                val read = client.callTool(
+                    McpSchema.CallToolRequest.builder()
+                        .name("mootool_notes_read")
+                        .arguments(mapOf("path" to "note.md", "offset" to 0, "length" to 200))
+                        .build(),
+                )
+                assertFalse(read.isError)
+                assertTrue(
+                    read.content.firstOrNull()?.let { if (it is McpSchema.TextContent) it.text else null }.orEmpty()
+                        .contains("body"),
+                )
+            }
+        } finally {
+            notesRoot.toFile().deleteRecursively()
             productRoot.toFile().deleteRecursively()
         }
     }

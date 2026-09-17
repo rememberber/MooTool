@@ -65,6 +65,8 @@ import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
+import com.rememberber.mootool.next.compose.ui.components.mooRegexMatchCard
+import com.rememberber.mootool.next.compose.ui.components.mooRegexResultsPane
 import com.rememberber.mootool.next.compose.ui.components.mooRegexTestPane
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
@@ -290,7 +292,7 @@ private fun TestWorkspace(
                 onReset = { container.setPaneSize(ToolId.Regex.id, 0, defaultSource, 1) }
             )
             Column(
-                modifier = Modifier.weight(1f).widthIn(min = 220.dp).fillMaxHeight().background(colors.surfaceSubtle).padding(14.dp)
+                modifier = Modifier.weight(1f).widthIn(min = 220.dp).fillMaxHeight().mooRegexResultsPane(),
             ) {
                 val status = when {
                     session.error.isNotEmpty() -> session.error
@@ -340,7 +342,7 @@ private fun MatchCard(index: Int, match: RegexMatch) {
             .clip(RoundedCornerShape(6.dp))
             .background(colors.workspace)
             .border(1.dp, colors.borderSoft, RoundedCornerShape(6.dp))
-            .padding(10.dp),
+            .mooRegexMatchCard(),
         verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
         Text("#${index + 1} · ${match.index}", color = colors.textMuted, fontSize = 9.sp)
