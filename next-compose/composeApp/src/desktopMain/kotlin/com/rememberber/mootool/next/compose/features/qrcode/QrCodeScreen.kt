@@ -41,6 +41,7 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.QrEngine
 import com.rememberber.mootool.next.compose.domain.QrErrorCorrection
 import com.rememberber.mootool.next.compose.domain.QrException
+import com.rememberber.mootool.next.compose.domain.ToolsSettingsLiveApply
 import com.rememberber.mootool.next.compose.domain.QrTab
 import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.storage.VaultPathConfig
@@ -106,6 +107,22 @@ fun QrCodeScreen(container: AppContainer, detached: Boolean) {
     fun refresh() {
         container.sessionManager.bump()
         container.sessionManager.persistQr()
+    }
+
+    LaunchedEffect(settings.tools.qrCodeSize, settings.tools.qrErrorCorrection) {
+        val size = ToolsSettingsLiveApply.qrCodeSize(settings.tools.qrCodeSize)
+        val correctionName = ToolsSettingsLiveApply.qrErrorCorrection(settings.tools.qrErrorCorrection)
+        val correction = QrErrorCorrection.entries.find { it.name == correctionName } ?: QrErrorCorrection.M
+        var changed = false
+        if (session.size != size) {
+            session.size = size
+            changed = true
+        }
+        if (session.correction != correction) {
+            session.correction = correction
+            changed = true
+        }
+        if (changed) refresh()
     }
 
     LaunchedEffect(session.tab, session.historyTick, revision) {

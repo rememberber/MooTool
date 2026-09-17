@@ -43,6 +43,7 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.AsymmetricAlgorithm
 import com.rememberber.mootool.next.compose.domain.BaseAlgorithm
 import com.rememberber.mootool.next.compose.domain.CryptoEngine
+import com.rememberber.mootool.next.compose.domain.ToolsSettingsLiveApply
 import com.rememberber.mootool.next.compose.domain.CryptoException
 import com.rememberber.mootool.next.compose.domain.CryptoTab
 import com.rememberber.mootool.next.compose.domain.DigestAlgorithm
@@ -104,6 +105,15 @@ fun CryptoScreen(container: AppContainer, detached: Boolean) {
     fun refresh() {
         container.sessionManager.bump()
         container.sessionManager.persistCrypto()
+    }
+
+    LaunchedEffect(settings.tools.randomStringLength) {
+        val length = ToolsSettingsLiveApply.randomStringLength(settings.tools.randomStringLength)
+            .coerceIn(CryptoEngine.MIN_RANDOM_LENGTH, CryptoEngine.MAX_RANDOM_LENGTH)
+        if (session.randomLength != length) {
+            session.randomLength = length
+            refresh()
+        }
     }
 
     BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {

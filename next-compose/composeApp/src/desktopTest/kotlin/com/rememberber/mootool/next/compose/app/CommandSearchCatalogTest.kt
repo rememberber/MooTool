@@ -72,6 +72,18 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun qrQueryOpensToolsDefaults() {
+        val hits = CommandSearchCatalog.search("qr", Translator(AppLanguage.EnUS)::t)
+        assertEquals("tools", hits.single().categoryId)
+    }
+
+    @Test
+    fun rebaseQueryOpensVaultGitSettings() {
+        val hits = CommandSearchCatalog.search("rebase", Translator(AppLanguage.EnUS)::t)
+        assertEquals("vault", hits.single().categoryId)
+    }
+
+    @Test
     fun integrationQueryOpensAiSettings() {
         val hits = CommandSearchCatalog.search("integration", Translator(AppLanguage.EnUS)::t)
         assertEquals("ai", hits.single().categoryId)

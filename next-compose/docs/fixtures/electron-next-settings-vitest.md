@@ -10,6 +10,7 @@
 | editor-font-names | `normalizes editor font family names` | `EditorFontSettingsTest`（[DIFF-482](../diff/482-settings-editor-font-normalize.md)） |
 | editor-sql-dialect | `SettingsWindow` SQL dialect select presets | `EditorFontSettingsTest.normalizeSqlDialect_*`（[DIFF-530](../diff/530-editor-sql-dialect-http-font-slice.md)） |
 | json-editor-font-size-live | JSON/HTTP/CodeRun `EditorHost` 读 `jsonFontSize` | `EditorSettingsLiveApplyTest` + `HttpScreen` 响应区（[DIFF-530](../diff/530-editor-sql-dialect-http-font-slice.md)） |
+| tools-defaults-live | QR 尺寸/纠错、随机串默认长度 | `ToolsSettingsLiveApplyTest` + `QrCodeScreen`/`CryptoScreen`（[DIFF-531](../diff/531-tools-defaults-live-git-keywords-slice.md)） |
 | vault-tree-expand | `normalizes unknown vault tree expand modes` | `SettingsVaultPathSanitizeTest`（[DIFF-480](../diff/480-vault-tree-expand-mode-normalize.md)） |
 | custom-groups | `normalizes custom navigation groups` | `SettingsLayoutNormalizeTest`（[DIFF-486](../diff/486-settings-layout-interface-custom-groups.md)） |
 | hidden-nav | `normalizes hidden navigation tools` | `SettingsVaultPathSanitizeTest`（[DIFF-177](../diff/177-settings-hidden-nav-normalize.md)） |
