@@ -47,8 +47,19 @@ class LayoutPolicyTest {
         assertEquals(13f, LayoutPolicy.navigationItemFontSp(compactNavigation = false))
         assertEquals(30f, LayoutPolicy.navigationItemMinHeightDp(compactNavigation = true))
         assertEquals(34f, LayoutPolicy.navigationItemMinHeightDp(compactNavigation = false))
-        assertEquals(12, LayoutPolicy.navigationGroupTopPaddingDp(compactNavigation = true))
-        assertEquals(10, LayoutPolicy.navigationGroupTopPaddingDp(compactNavigation = false))
+        assertEquals(12, LayoutPolicy.navigationGroupTopPaddingDp("modern", compactNavigation = true))
+        assertEquals(10, LayoutPolicy.navigationGroupTopPaddingDp("modern", compactNavigation = false))
+        assertEquals(3, LayoutPolicy.navigationGroupTopPaddingDp("classic", compactNavigation = true))
+        assertTrue(LayoutPolicy.p5ToolbarDense(compactNavigation = true))
+        assertFalse(LayoutPolicy.p5ToolbarDense(compactNavigation = false))
+    }
+
+    @Test
+    fun classicNavigationHidesBuiltinGroupLabels() {
+        assertFalse(LayoutPolicy.showNavigationGroupLabel("classic", showSeparators = true, customGroup = false))
+        assertTrue(LayoutPolicy.showNavigationGroupLabel("classic", showSeparators = true, customGroup = true))
+        assertTrue(LayoutPolicy.showNavigationGroupLabel("grouped", showSeparators = true, customGroup = false))
+        assertFalse(LayoutPolicy.showNavigationGroupLabel("modern", showSeparators = false, customGroup = true))
     }
 
     @Test

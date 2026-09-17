@@ -119,7 +119,7 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     true
                 }
                 matchesShortcut(event, settings.shortcuts.settings) -> {
-                    container.openSettings(true)
+                    container.openSettings(!showSettings)
                     true
                 }
                 event.key == Key.Escape -> {

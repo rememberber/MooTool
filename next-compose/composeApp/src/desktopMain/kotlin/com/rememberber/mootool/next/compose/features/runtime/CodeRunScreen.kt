@@ -32,8 +32,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
@@ -50,7 +52,11 @@ import com.rememberber.mootool.next.compose.domain.CodeRunResult
 import com.rememberber.mootool.next.compose.domain.CodeRuntime
 import com.rememberber.mootool.next.compose.domain.CodeRuntimeStatus
 import com.rememberber.mootool.next.compose.editor.EditorAppShortcuts
+import com.rememberber.mootool.next.compose.editor.EditorFindHighlight
+import com.rememberber.mootool.next.compose.editor.EditorFindOnlyBar
 import com.rememberber.mootool.next.compose.editor.EditorHost
+import com.rememberber.mootool.next.compose.editor.FindReplaceShortcutPolicy
+import com.rememberber.mootool.next.compose.editor.openFindBarSeedingSelection
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.CodeRunSession
@@ -223,17 +229,50 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
         }
     }
 
+    fun openSourceFind() {
+        openFindBarSeedingSelection(session.editor(runtime)) { selected ->
+            if (selected != null) session.findQuery = selected
+            session.findOpen = true
+            persist()
+        }
+    }
+
+    val sourceEditor = session.editor(runtime)
+
     OnToolLeaveUnlessDetached(container, ToolId.Java) { cancelRun() }
+
+    LaunchedEffect(session.findOpen, session.findQuery, session.findOptions, revision, sourceEditor.revision) {
+        EditorFindHighlight.sync(sourceEditor, session.findOpen, session.findQuery, session.findOptions, colors)
+    }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
     Column(
         Modifier.fillMaxSize().background(colors.workspace).onPreviewKeyEvent { event ->
-            if (event.blockedByIme()) false
-            else if (event.type == KeyEventType.KeyDown && event.key == Key.Enter && (event.isMetaPressed || event.isCtrlPressed)) {
-                if (!session.running) run()
-                true
-            } else false
+            if (event.blockedByIme()) return@onPreviewKeyEvent false
+            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+            val meta = event.isMetaPressed || event.isCtrlPressed
+            when {
+                meta && event.key == Key.Enter -> {
+                    if (!session.running) run()
+                    true
+                }
+                FindReplaceShortcutPolicy.opensFindReplace(
+                    event.key,
+                    meta = meta,
+                    shift = event.isShiftPressed,
+                    alt = event.isAltPressed,
+                ) -> {
+                    openSourceFind()
+                    true
+                }
+                event.key == Key.Escape && session.findOpen -> {
+                    session.findOpen = false
+                    persist()
+                    true
+                }
+                else -> false
+            }
         }
     ) {
         Row(
@@ -346,6 +385,19 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 left = {
                     Column(Modifier.fillMaxSize().mooEditorFrame(flatten = true)) {
+                        if (session.findOpen) {
+                            EditorFindOnlyBar(
+                                container = container,
+                                editor = sourceEditor,
+                                findQuery = session.findQuery,
+                                onFindQueryChange = { session.findQuery = it; persist() },
+                                findOptions = session.findOptions,
+                                onFindOptionsChange = { session.findOptions = it; persist() },
+                                onClose = { session.findOpen = false; persist() },
+                                onChanged = { persist() },
+                                placeholderKey = "json.find.placeholder",
+                            )
+                        }
                         Row(
                             Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -355,13 +407,14 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                             Text(CodeRunEngine.displayName(runtime), color = colors.textSecondary, fontSize = 11.sp)
                         }
                         EditorHost(
-                            buffer = session.editor(runtime),
+                            buffer = sourceEditor,
                             dark = MooTheme.dark,
                             fontName = com.rememberber.mootool.next.compose.domain.DocumentFormatEngine.editorFont(settings.editor.jsonFontName),
                             fontSize = settings.editor.jsonFontSize,
                             wrap = settings.editor.softWrap,
                             modifier = Modifier.weight(1f).fillMaxWidth(),
                             shortcuts = EditorAppShortcuts(
+                                onFind = { openSourceFind() },
                                 onFormat = { formatSource() },
                                 onSend = { if (!session.running) run() }
                             )

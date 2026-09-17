@@ -306,6 +306,7 @@ val LocalMooColors = staticCompositionLocalOf { LightColors }
 val LocalMooDimens = staticCompositionLocalOf { MooDimens() }
 val LocalDarkTheme = staticCompositionLocalOf { false }
 val LocalUiFontFamily = staticCompositionLocalOf<FontFamily> { FontFamily.SansSerif }
+val LocalCompactNavigation = staticCompositionLocalOf { false }
 
 object MooTheme {
     val colors: MooColors @Composable get() = LocalMooColors.current
@@ -350,6 +351,7 @@ fun MooTheme(
     accentColor: String = "blue",
     unifiedBackground: Boolean = true,
     fontFamily: String = "system",
+    compactNavigation: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val dark = when (preference) {
@@ -361,7 +363,8 @@ fun MooTheme(
         LocalMooColors provides resolveColors(dark, interfaceStyle, accentColor, unifiedBackground),
         LocalMooDimens provides resolveDimens(interfaceStyle),
         LocalDarkTheme provides dark,
-        LocalUiFontFamily provides resolveUiFontFamily(fontFamily)
+        LocalUiFontFamily provides resolveUiFontFamily(fontFamily),
+        LocalCompactNavigation provides compactNavigation,
     ) {
         val colors = LocalMooColors.current
         val material = if (dark) {

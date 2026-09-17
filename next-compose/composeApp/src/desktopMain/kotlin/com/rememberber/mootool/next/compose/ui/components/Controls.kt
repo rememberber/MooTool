@@ -64,7 +64,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rememberber.mootool.next.compose.ui.theme.LocalCompactNavigation
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import androidx.compose.material.Text
 
 @Composable
@@ -93,24 +95,25 @@ fun MooButton(
         primary -> colors.textStrong
         else -> colors.textBody
     }
+    val p5Dense = p5Toolbar && LayoutPolicy.p5ToolbarDense(LocalCompactNavigation.current)
     val shape = if (p5Toolbar) RoundedCornerShape(6.dp) else RoundedCornerShape(radius)
     val compactHeight = when {
-        dense -> 26.dp
+        dense || p5Dense -> 26.dp
         p5Toolbar -> 30.dp
         else -> MooTheme.dimens.controlHeight
     }
     val compactPaddingH = when {
-        dense -> 8.dp
+        dense || p5Dense -> 8.dp
         p5Toolbar -> 9.dp
         else -> 10.dp
     }
     val compactPaddingV = when {
-        dense -> 3.dp
+        dense || p5Dense -> 3.dp
         p5Toolbar -> 4.dp
         else -> 6.dp
     }
-    val compactFontSize = if (dense) 11.sp else 12.sp
-    val compactFontWeight = if (dense) FontWeight.Medium else FontWeight.SemiBold
+    val compactFontSize = if (dense || p5Dense) 11.sp else 12.sp
+    val compactFontWeight = if (dense || p5Dense) FontWeight.Medium else FontWeight.SemiBold
     val dangerFill = colors.danger.copy(alpha = if (hovered || pressed) 0.22f else 0.14f).compositeOver(colors.workspace)
     val tactile = colors.styleId == "smartisan" || colors.styleId == "miui-v5"
     val fill = when {

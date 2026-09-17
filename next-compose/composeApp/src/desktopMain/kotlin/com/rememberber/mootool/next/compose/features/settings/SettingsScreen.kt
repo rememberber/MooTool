@@ -26,8 +26,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.storage.BackupInfo
@@ -91,7 +96,27 @@ fun SettingsScreen(container: AppContainer) {
         val defaultNav = (maxWidth.value * (220f / 1000f)).coerceIn(minNav, maxNav)
         val navWidth = settings.layout.pane(SETTINGS_PANE_KEY, 0, defaultNav, minNav, maxNav)
         Row(Modifier.fillMaxSize()) {
-        Column(Modifier.width(navWidth.dp).widthIn(min = 180.dp).fillMaxHeight().mooSidebarBackground().padding(vertical = 12.dp)) {
+        Column(
+            Modifier.width(navWidth.dp).widthIn(min = 180.dp).fillMaxHeight().mooSidebarBackground().padding(vertical = 12.dp)
+                .onPreviewKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                    when (event.key) {
+                        Key.DirectionDown -> {
+                            val next = settingsNavCategoryStep(category, 1)
+                            category = next
+                            container.settingsNavCategoryId = next.storageId()
+                            true
+                        }
+                        Key.DirectionUp -> {
+                            val next = settingsNavCategoryStep(category, -1)
+                            category = next
+                            container.settingsNavCategoryId = next.storageId()
+                            true
+                        }
+                        else -> false
+                    }
+                },
+        ) {
             SettingsNavCategory.entries.forEach { item ->
                 SettingsNavItem(
                     label = container.t("settings.${item.name.lowercase()}"),

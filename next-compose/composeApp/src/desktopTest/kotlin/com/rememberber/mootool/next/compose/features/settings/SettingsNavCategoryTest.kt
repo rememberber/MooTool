@@ -16,4 +16,11 @@ class SettingsNavCategoryTest {
     fun unknown_id_falls_back_to_general() {
         assertEquals(SettingsNavCategory.General, settingsNavCategoryFromStorageId("not-a-category"))
     }
+
+    @Test
+    fun arrowStepMovesWithinCategories() {
+        assertEquals(SettingsNavCategory.Appearance, settingsNavCategoryStep(SettingsNavCategory.General, 1))
+        assertEquals(SettingsNavCategory.General, settingsNavCategoryStep(SettingsNavCategory.Appearance, -1))
+        assertEquals(SettingsNavCategory.About, settingsNavCategoryStep(SettingsNavCategory.About, 1))
+    }
 }

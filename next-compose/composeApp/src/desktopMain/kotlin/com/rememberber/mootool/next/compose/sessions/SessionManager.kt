@@ -1899,6 +1899,10 @@ class CodeRunSession {
     var error: String = ""
     var historyOpen: Boolean = false
     var optionsOpen: Boolean = false
+    var findOpen: Boolean = false
+    var findQuery: String = ""
+    var findOptions: com.rememberber.mootool.next.compose.domain.FindReplaceOptions =
+        com.rememberber.mootool.next.compose.domain.FindReplaceOptions()
 
     fun currentRuntime(): CodeRuntime =
         if (tab == "java") CodeRunEngine.parseProvider(javaMode) else CodeRunEngine.parseProvider(tab)

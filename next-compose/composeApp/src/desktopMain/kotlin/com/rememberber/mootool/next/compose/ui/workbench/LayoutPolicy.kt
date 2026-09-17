@@ -42,8 +42,22 @@ object LayoutPolicy {
 
     fun navigationItemMinHeightDp(compactNavigation: Boolean): Float = if (compactNavigation) 30f else 34f
 
-    /** Electron `.app-shell--compact-nav .tool-group { margin-top: 12px; gap: 1px }`. */
-    fun navigationGroupTopPaddingDp(compactNavigation: Boolean): Int = if (compactNavigation) 12 else 10
+    /** Electron `.app-shell--compact-nav .tool-group` vs `.app-shell--nav-classic .tool-group { margin-top: 3px }`. */
+    fun navigationGroupTopPaddingDp(navigationStyle: String, compactNavigation: Boolean): Int = when {
+        navigationStyle == "classic" -> 3
+        compactNavigation -> 12
+        else -> 10
+    }
 
     fun navigationItemVerticalPaddingDp(compactNavigation: Boolean): Int = if (compactNavigation) 4 else 8
+
+    /** Electron `.app-shell--nav-classic .tool-group h2 { display: none }` but custom groups keep titles. */
+    fun showNavigationGroupLabel(navigationStyle: String, showSeparators: Boolean, customGroup: Boolean): Boolean {
+        if (!showSeparators) return false
+        if (customGroup) return true
+        return navigationStyle != "classic"
+    }
+
+    /** DIFF-496 follow-up: tool `p5Toolbar` buttons shrink when layout compact navigation is on. */
+    fun p5ToolbarDense(compactNavigation: Boolean): Boolean = compactNavigation
 }

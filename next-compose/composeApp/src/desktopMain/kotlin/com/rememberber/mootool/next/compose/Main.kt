@@ -205,7 +205,8 @@ fun main(args: Array<String>) {
         interfaceStyle = settings.appearance.interfaceStyle,
         accentColor = settings.appearance.accentColor,
         unifiedBackground = settings.appearance.unifiedBackground,
-        fontFamily = settings.appearance.fontFamily
+        fontFamily = settings.appearance.fontFamily,
+        compactNavigation = settings.layout.compactNavigation,
     ) {
         if (visible) {
             Window(
@@ -484,6 +485,7 @@ private fun Themed(container: AppContainer, systemDark: Boolean, content: @Compo
         accentColor = settings.appearance.accentColor,
         unifiedBackground = settings.appearance.unifiedBackground,
         fontFamily = settings.appearance.fontFamily,
+        compactNavigation = settings.layout.compactNavigation,
         content = content
     )
 }
