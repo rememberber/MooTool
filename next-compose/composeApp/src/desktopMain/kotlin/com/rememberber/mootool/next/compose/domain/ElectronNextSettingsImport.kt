@@ -51,22 +51,24 @@ object ElectronNextSettingsImport {
     }
 
     fun mergeCodeRunSnapshots(current: CodeRunSessionSnapshot, patch: CodeRunSessionSnapshot): CodeRunSessionSnapshot {
-        val limit = CodeRunEngine.MAX_CODE_BYTES
+        val normalizedPatch = CodeRunRuntimeOptionsNormalize.normalizeSnapshot(patch)
         fun pick(patchValue: String, currentValue: String): String =
             patchValue.takeIf { it.isNotEmpty() } ?: currentValue
-        return current.copy(
-            javaCode = pick(patch.javaCode.take(limit), current.javaCode),
-            groovyCode = pick(patch.groovyCode.take(limit), current.groovyCode),
-            pythonCode = pick(patch.pythonCode.take(limit), current.pythonCode),
-            nodeCode = pick(patch.nodeCode.take(limit), current.nodeCode),
-            javaArguments = pick(patch.javaArguments, current.javaArguments),
-            groovyArguments = pick(patch.groovyArguments, current.groovyArguments),
-            pythonArguments = pick(patch.pythonArguments, current.pythonArguments),
-            nodeArguments = pick(patch.nodeArguments, current.nodeArguments),
-            javaWorkingDirectory = pick(patch.javaWorkingDirectory, current.javaWorkingDirectory),
-            groovyWorkingDirectory = pick(patch.groovyWorkingDirectory, current.groovyWorkingDirectory),
-            pythonWorkingDirectory = pick(patch.pythonWorkingDirectory, current.pythonWorkingDirectory),
-            nodeWorkingDirectory = pick(patch.nodeWorkingDirectory, current.nodeWorkingDirectory)
+        return CodeRunRuntimeOptionsNormalize.normalizeSnapshot(
+            current.copy(
+                javaCode = pick(normalizedPatch.javaCode, current.javaCode),
+                groovyCode = pick(normalizedPatch.groovyCode, current.groovyCode),
+                pythonCode = pick(normalizedPatch.pythonCode, current.pythonCode),
+                nodeCode = pick(normalizedPatch.nodeCode, current.nodeCode),
+                javaArguments = pick(normalizedPatch.javaArguments, current.javaArguments),
+                groovyArguments = pick(normalizedPatch.groovyArguments, current.groovyArguments),
+                pythonArguments = pick(normalizedPatch.pythonArguments, current.pythonArguments),
+                nodeArguments = pick(normalizedPatch.nodeArguments, current.nodeArguments),
+                javaWorkingDirectory = pick(normalizedPatch.javaWorkingDirectory, current.javaWorkingDirectory),
+                groovyWorkingDirectory = pick(normalizedPatch.groovyWorkingDirectory, current.groovyWorkingDirectory),
+                pythonWorkingDirectory = pick(normalizedPatch.pythonWorkingDirectory, current.pythonWorkingDirectory),
+                nodeWorkingDirectory = pick(normalizedPatch.nodeWorkingDirectory, current.nodeWorkingDirectory),
+            ),
         )
     }
 
@@ -243,19 +245,21 @@ object ElectronNextSettingsImport {
         val groovyOpt = option("groovy")
         val pythonOpt = option("python")
         val nodeOpt = option("node")
-        return CodeRunSessionSnapshot(
-            javaCode = draft("java"),
-            groovyCode = draft("groovy"),
-            pythonCode = draft("python"),
-            nodeCode = draft("node"),
-            javaArguments = javaOpt.first,
-            groovyArguments = groovyOpt.first,
-            pythonArguments = pythonOpt.first,
-            nodeArguments = nodeOpt.first,
-            javaWorkingDirectory = javaOpt.second,
-            groovyWorkingDirectory = groovyOpt.second,
-            pythonWorkingDirectory = pythonOpt.second,
-            nodeWorkingDirectory = nodeOpt.second
+        return CodeRunRuntimeOptionsNormalize.normalizeSnapshot(
+            CodeRunSessionSnapshot(
+                javaCode = draft("java"),
+                groovyCode = draft("groovy"),
+                pythonCode = draft("python"),
+                nodeCode = draft("node"),
+                javaArguments = javaOpt.first,
+                groovyArguments = groovyOpt.first,
+                pythonArguments = pythonOpt.first,
+                nodeArguments = nodeOpt.first,
+                javaWorkingDirectory = javaOpt.second,
+                groovyWorkingDirectory = groovyOpt.second,
+                pythonWorkingDirectory = pythonOpt.second,
+                nodeWorkingDirectory = nodeOpt.second,
+            ),
         )
     }
 }

@@ -177,4 +177,28 @@ class ElectronNextSettingsImportTest {
         assertEquals("print(42)", merged.pythonCode)
         assertTrue(ElectronNextSettingsImport.hasCodeRunPatch(patch))
     }
+
+    @Test
+    fun loadCodeRunPatchTruncatesOversizedOptionsLikeElectronNormalize() {
+        val dir = createTempDirectory("electron-runtime-truncate-")
+        val store = dir.resolve("mootool-next.json")
+        val longArgs = "x".repeat(CodeRunRuntimeOptionsNormalize.MAX_ARGUMENTS_CHARS + 10)
+        val longDir = "/w/" + "y".repeat(CodeRunRuntimeOptionsNormalize.MAX_WORKING_DIRECTORY_CHARS)
+        store.writeText(
+            """
+            {
+              "settings": {
+                "runtime": {
+                  "options": {
+                    "java": { "arguments": "$longArgs", "workingDirectory": "$longDir" }
+                  }
+                }
+              }
+            }
+            """.trimIndent()
+        )
+        val patch = ElectronNextSettingsImport.loadCodeRunPatchFromStore(store)!!
+        assertEquals(CodeRunRuntimeOptionsNormalize.MAX_ARGUMENTS_CHARS, patch.javaArguments.length)
+        assertEquals(CodeRunRuntimeOptionsNormalize.MAX_WORKING_DIRECTORY_CHARS, patch.javaWorkingDirectory.length)
+    }
 }

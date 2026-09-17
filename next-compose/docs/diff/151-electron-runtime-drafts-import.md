@@ -16,5 +16,6 @@ Electron `mootool-next.json` 的 `settings.runtime` 除可执行路径外，还�
 
 ## 仍未覆盖
 
+- 运行参数/工作目录与会话快照长度规范化见 [DIFF-506](506-coderun-runtime-options-normalize.md)。
 - SQLite `t_func_content` 写入工具会话见 [DIFF-152](152-legacy-tool-draft-sessions.md)；仍同时写入 history。
 - `t_next_migration_run` 逐行幂等与 safeStorage 密文迁移未做。

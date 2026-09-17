@@ -36,6 +36,7 @@ import com.rememberber.mootool.next.compose.domain.TranslationEngine
 import com.rememberber.mootool.next.compose.domain.TranslationTab
 import com.rememberber.mootool.next.compose.domain.VaultSort
 import com.rememberber.mootool.next.compose.domain.CodeRunEngine
+import com.rememberber.mootool.next.compose.domain.CodeRunRuntimeOptionsNormalize
 import com.rememberber.mootool.next.compose.domain.CodeRunResult
 import com.rememberber.mootool.next.compose.domain.CodeRuntime
 import com.rememberber.mootool.next.compose.domain.EnvDisplayScope
@@ -1946,41 +1947,42 @@ class CodeRunSession {
         }
     }
 
-    fun snapshotState(): CodeRunSessionSnapshot {
-        val limit = CodeRunEngine.MAX_CODE_BYTES
-        return CodeRunSessionSnapshot(
-            tab = tab,
-            javaMode = javaMode,
-            javaCode = javaEditor.text.take(limit),
-            groovyCode = groovyEditor.text.take(limit),
-            pythonCode = pythonEditor.text.take(limit),
-            nodeCode = nodeEditor.text.take(limit),
-            javaArguments = javaArguments,
-            groovyArguments = groovyArguments,
-            pythonArguments = pythonArguments,
-            nodeArguments = nodeArguments,
-            javaWorkingDirectory = javaWorkingDirectory,
-            groovyWorkingDirectory = groovyWorkingDirectory,
-            pythonWorkingDirectory = pythonWorkingDirectory,
-            nodeWorkingDirectory = nodeWorkingDirectory
+    fun snapshotState(): CodeRunSessionSnapshot =
+        CodeRunRuntimeOptionsNormalize.normalizeSnapshot(
+            CodeRunSessionSnapshot(
+                tab = tab,
+                javaMode = javaMode,
+                javaCode = javaEditor.text,
+                groovyCode = groovyEditor.text,
+                pythonCode = pythonEditor.text,
+                nodeCode = nodeEditor.text,
+                javaArguments = javaArguments,
+                groovyArguments = groovyArguments,
+                pythonArguments = pythonArguments,
+                nodeArguments = nodeArguments,
+                javaWorkingDirectory = javaWorkingDirectory,
+                groovyWorkingDirectory = groovyWorkingDirectory,
+                pythonWorkingDirectory = pythonWorkingDirectory,
+                nodeWorkingDirectory = nodeWorkingDirectory,
+            ),
         )
-    }
 
     fun restore(snapshot: CodeRunSessionSnapshot) {
-        tab = snapshot.tab
-        javaMode = snapshot.javaMode
-        if (snapshot.javaCode.isNotEmpty()) javaEditor.setText(snapshot.javaCode, recordUndo = false)
-        if (snapshot.groovyCode.isNotEmpty()) groovyEditor.setText(snapshot.groovyCode, recordUndo = false)
-        if (snapshot.pythonCode.isNotEmpty()) pythonEditor.setText(snapshot.pythonCode, recordUndo = false)
-        if (snapshot.nodeCode.isNotEmpty()) nodeEditor.setText(snapshot.nodeCode, recordUndo = false)
-        javaArguments = snapshot.javaArguments
-        groovyArguments = snapshot.groovyArguments
-        pythonArguments = snapshot.pythonArguments
-        nodeArguments = snapshot.nodeArguments
-        javaWorkingDirectory = snapshot.javaWorkingDirectory
-        groovyWorkingDirectory = snapshot.groovyWorkingDirectory
-        pythonWorkingDirectory = snapshot.pythonWorkingDirectory
-        nodeWorkingDirectory = snapshot.nodeWorkingDirectory
+        val normalized = CodeRunRuntimeOptionsNormalize.normalizeSnapshot(snapshot)
+        tab = normalized.tab
+        javaMode = normalized.javaMode
+        if (normalized.javaCode.isNotEmpty()) javaEditor.setText(normalized.javaCode, recordUndo = false)
+        if (normalized.groovyCode.isNotEmpty()) groovyEditor.setText(normalized.groovyCode, recordUndo = false)
+        if (normalized.pythonCode.isNotEmpty()) pythonEditor.setText(normalized.pythonCode, recordUndo = false)
+        if (normalized.nodeCode.isNotEmpty()) nodeEditor.setText(normalized.nodeCode, recordUndo = false)
+        javaArguments = normalized.javaArguments
+        groovyArguments = normalized.groovyArguments
+        pythonArguments = normalized.pythonArguments
+        nodeArguments = normalized.nodeArguments
+        javaWorkingDirectory = normalized.javaWorkingDirectory
+        groovyWorkingDirectory = normalized.groovyWorkingDirectory
+        pythonWorkingDirectory = normalized.pythonWorkingDirectory
+        nodeWorkingDirectory = normalized.nodeWorkingDirectory
         stdout = ""
         stderr = ""
         running = false
