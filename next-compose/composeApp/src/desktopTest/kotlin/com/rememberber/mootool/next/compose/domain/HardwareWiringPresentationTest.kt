@@ -17,4 +17,11 @@ class HardwareWiringPresentationTest {
         assertFalse(HardwareWiringPresentation.copyReportEnabled(loading = false, hasGroups = false))
         assertTrue(HardwareWiringPresentation.copyReportEnabled(loading = false, hasGroups = true))
     }
+
+    @Test
+    fun interfacesCommandRequiresIdle() {
+        assertFalse(HardwareWiringPresentation.interfacesCommandEnabled(loading = true, running = false))
+        assertFalse(HardwareWiringPresentation.interfacesCommandEnabled(loading = false, running = true))
+        assertTrue(HardwareWiringPresentation.interfacesCommandEnabled(loading = false, running = false))
+    }
 }

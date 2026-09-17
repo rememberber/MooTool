@@ -34,6 +34,12 @@ object NetWiringPresentation {
     fun ipRangeStart(target: String): HostCommandStart =
         hostCommandStart(target, NetEngine::normalizeHostTarget)
 
+    fun stopEnabled(running: Boolean): Boolean = running
+
+    fun outputActionsEnabled(outputNotBlank: Boolean): Boolean = outputNotBlank
+
+    fun runCommandEnabled(idle: Boolean, startReady: Boolean): Boolean = idle && startReady
+
     fun portScanStart(target: String, portSpec: String): PortScanStart {
         val trimmedTarget = target.trim()
         val trimmedPorts = portSpec.trim()

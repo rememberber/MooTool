@@ -44,7 +44,6 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.ReformatEngine
 import com.rememberber.mootool.next.compose.domain.ReformatWiringPresentation
-import com.rememberber.mootool.next.compose.domain.ReformatException
 import com.rememberber.mootool.next.compose.domain.ReformatType
 import com.rememberber.mootool.next.compose.domain.ReformatHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.ReformatHistoryRestore
@@ -390,11 +389,13 @@ private fun runFormat(container: AppContainer, session: ReformatSession, onChang
     session.notice = container.t("reformat.processing")
     onChanged()
     container.scope.launch {
-        val result = runCatching { ReformatEngine.format(input, type, indent) }
+        val result = ReformatWiringPresentation.runFormat(input, type, indent)
         withContext(Dispatchers.Swing) {
             if (generation != session.formatGeneration) return@withContext
             session.busy = false
-            result.onSuccess { output ->
+            when (result) {
+                is ReformatWiringPresentation.FormatRunOutcome.Success -> {
+                val output = result.output
                 if (tab == "file") session.fileResult = output else session.text = output
                 session.error = ""
                 session.notice = container.t("reformat.formatted")
@@ -408,9 +409,11 @@ private fun runFormat(container: AppContainer, session: ReformatSession, onChang
                     output,
                     ReformatHistoryMetadata.encode(type, tab, indent, fileName),
                 )
-            }.onFailure { error ->
+                }
+                is ReformatWiringPresentation.FormatRunOutcome.Failure -> {
                 session.notice = ""
-                session.error = messageFor(container, error)
+                session.error = messageFor(container, result.error)
+                }
             }
             onChanged()
         }
@@ -418,15 +421,8 @@ private fun runFormat(container: AppContainer, session: ReformatSession, onChang
 }
 
 private fun messageFor(container: AppContainer, error: Throwable): String {
-    val reformat = error as? ReformatException
-    return if (reformat != null && reformat.line >= 1) {
-        container.t(
-            "reformat.error.located",
-            mapOf("line" to reformat.line.toString(), "column" to reformat.column.coerceAtLeast(0).toString(), "message" to (reformat.message ?: ""))
-        )
-    } else {
-        container.t("reformat.error.generic", mapOf("message" to (error.message ?: "")))
-    }
+    val message = ReformatWiringPresentation.formatErrorMessage(error)
+    return container.t(message.key, message.params)
 }
 
 private fun chooseSourceFile(container: AppContainer, session: ReformatSession) {

@@ -10,4 +10,8 @@ object EnvWiringPresentation {
 
     fun saveEditorEnabled(trimmedKey: String, saving: Boolean): Boolean =
         trimmedKey.isNotEmpty() && !saving
+
+    fun deleteRowEnabled(canDelete: Boolean, saving: Boolean): Boolean = canDelete && !saving
+
+    fun confirmDeleteEnabled(saving: Boolean): Boolean = !saving
 }

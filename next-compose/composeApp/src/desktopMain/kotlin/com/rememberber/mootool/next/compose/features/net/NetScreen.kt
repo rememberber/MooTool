@@ -271,28 +271,34 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                     MooButton(
                         NetEngine.interfacesCommandLabel(),
                         onClick = { runAction(NetworkAction.Interfaces) },
-                        enabled = session.running == null,
+                        enabled = NetWiringPresentation.runCommandEnabled(idle = session.running == null, startReady = true),
                         p5Toolbar = true
                     )
                     MooButton(
                         "netstat",
                         onClick = { runAction(NetworkAction.Connections) },
-                        enabled = session.running == null,
+                        enabled = NetWiringPresentation.runCommandEnabled(idle = session.running == null, startReady = true),
                         p5Toolbar = true
                     )
                     Spacer(Modifier.weight(1f))
-                    if (session.running != null) {
+                    if (NetWiringPresentation.stopEnabled(session.running != null)) {
                         MooButton(container.t("common.stop"), onClick = { stop() }, p5Toolbar = true)
                     }
                     OverflowActionCluster(
                         overflow = overflow,
                         moreLabel = container.t("json.action.overflow"),
                         actions = listOf(
-                            OverflowAction(container.t("common.action.copy"), enabled = session.output.isNotBlank()) {
+                            OverflowAction(
+                                container.t("common.action.copy"),
+                                enabled = NetWiringPresentation.outputActionsEnabled(session.output.isNotBlank()),
+                            ) {
                                 session.notice = copyText(session.output, container)
                                 persist()
                             },
-                            OverflowAction(container.t("common.action.clear"), enabled = session.output.isNotBlank()) {
+                            OverflowAction(
+                                container.t("common.action.clear"),
+                                enabled = NetWiringPresentation.outputActionsEnabled(session.output.isNotBlank()),
+                            ) {
                                 session.output = ""
                                 session.error = ""
                                 persist()
@@ -366,9 +372,11 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                     title = container.t("net.ping"),
                     value = session.pingTarget,
                     button = "PING",
-                    runEnabled = session.running == null &&
-                        NetWiringPresentation.pingStart(session.pingTarget)
+                    runEnabled = NetWiringPresentation.runCommandEnabled(
+                        idle = session.running == null,
+                        startReady = NetWiringPresentation.pingStart(session.pingTarget)
                             is NetWiringPresentation.HostCommandStart.Ready,
+                    ),
                     placeholder = null,
                     onChange = { session.pingTarget = it; persist() },
                     onRun = { runAction(NetworkAction.Ping, session.pingTarget) }
@@ -377,9 +385,11 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                     title = container.t("net.ipRangeScan"),
                     value = session.ipRange,
                     button = container.t("net.scan"),
-                    runEnabled = session.running == null &&
-                        NetWiringPresentation.ipRangeStart(session.ipRange)
+                    runEnabled = NetWiringPresentation.runCommandEnabled(
+                        idle = session.running == null,
+                        startReady = NetWiringPresentation.ipRangeStart(session.ipRange)
                             is NetWiringPresentation.HostCommandStart.Ready,
+                    ),
                     placeholder = container.t("net.ipRangePlaceholder"),
                     onChange = { session.ipRange = it; persist() },
                     onRun = { runAction(NetworkAction.PingRange, session.ipRange) }
@@ -416,9 +426,11 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                         MooButton(
                             container.t("net.scan"),
                             onClick = { runAction(NetworkAction.PortScan, session.portScanTarget, session.portSpec) },
-                            enabled = session.running == null &&
-                                NetWiringPresentation.portScanStart(session.portScanTarget, session.portSpec)
+                            enabled = NetWiringPresentation.runCommandEnabled(
+                                idle = session.running == null,
+                                startReady = NetWiringPresentation.portScanStart(session.portScanTarget, session.portSpec)
                                     is NetWiringPresentation.PortScanStart.Ready,
+                            ),
                             p5Toolbar = true
                         )
                     }
@@ -428,9 +440,11 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                     title = container.t("net.resolve"),
                     value = session.hostTarget,
                     button = container.t("net.resolveAction"),
-                    runEnabled = session.running == null &&
-                        NetWiringPresentation.resolveStart(session.hostTarget)
+                    runEnabled = NetWiringPresentation.runCommandEnabled(
+                        idle = session.running == null,
+                        startReady = NetWiringPresentation.resolveStart(session.hostTarget)
                             is NetWiringPresentation.HostCommandStart.Ready,
+                    ),
                     placeholder = null,
                     onChange = { session.hostTarget = it; persist() },
                     onRun = { runAction(NetworkAction.Resolve, session.hostTarget) }
@@ -439,9 +453,11 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                     title = container.t("net.whois"),
                     value = session.whoisTarget,
                     button = container.t("net.query"),
-                    runEnabled = session.running == null &&
-                        NetWiringPresentation.whoisStart(session.whoisTarget)
+                    runEnabled = NetWiringPresentation.runCommandEnabled(
+                        idle = session.running == null,
+                        startReady = NetWiringPresentation.whoisStart(session.whoisTarget)
                             is NetWiringPresentation.HostCommandStart.Ready,
+                    ),
                     placeholder = null,
                     onChange = { session.whoisTarget = it; persist() },
                     onRun = { runAction(NetworkAction.Whois, session.whoisTarget) }

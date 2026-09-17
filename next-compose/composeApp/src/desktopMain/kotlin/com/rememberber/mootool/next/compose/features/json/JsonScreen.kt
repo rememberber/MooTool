@@ -105,6 +105,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooCard
 import com.rememberber.mootool.next.compose.ui.components.mooEditorFrame
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.components.mooJsonVaultFooter
+import com.rememberber.mootool.next.compose.ui.components.mooJsonVaultFooterActions
 import com.rememberber.mootool.next.compose.ui.components.mooJsonVaultSearch
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
@@ -1132,10 +1133,13 @@ private fun VaultPane(
         if (JsonVaultFooterPresentation.showFooter(vaultFooterPath)) {
             val footerEntry = items.find { it.relativePath == vaultFooterPath }
             Row(
-                modifier = Modifier.mooJsonVaultFooter(),
+                modifier = Modifier.mooJsonVaultFooter().mooJsonVaultFooterActions(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                MooButton(container.t("json.vault.rename"), onClick = {
+                MooButton(
+                    container.t("json.vault.rename"),
+                    enabled = JsonVaultFooterPresentation.canRename(footerEntry?.directory),
+                    onClick = {
                     val entry = footerEntry ?: VaultEntry(
                         vaultFooterPath,
                         vaultFooterPath.substringAfterLast('/'),

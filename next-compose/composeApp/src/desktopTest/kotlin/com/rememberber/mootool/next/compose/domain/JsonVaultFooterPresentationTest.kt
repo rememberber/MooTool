@@ -18,4 +18,12 @@ class JsonVaultFooterPresentationTest {
         assertFalse(JsonVaultFooterPresentation.canDuplicate(isDirectory = true))
         assertFalse(JsonVaultFooterPresentation.canDuplicate(isDirectory = null))
     }
+
+    @Test
+    fun renameMatchesDuplicateRules() {
+        assertTrue(JsonVaultFooterPresentation.canRename(isDirectory = false))
+        assertFalse(JsonVaultFooterPresentation.canRename(isDirectory = true))
+        assertFalse(JsonVaultFooterPresentation.canShowVaultActions("dir/", isDirectory = true))
+        assertTrue(JsonVaultFooterPresentation.canShowVaultActions("a.json", isDirectory = false))
+    }
 }

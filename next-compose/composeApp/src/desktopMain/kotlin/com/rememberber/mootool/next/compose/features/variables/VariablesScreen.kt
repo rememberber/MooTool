@@ -306,6 +306,9 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                                 }
                                 if (canDelete) {
                                     MooGhostButton(container.t("common.delete"), onClick = {
+                                        if (!EnvWiringPresentation.deleteRowEnabled(canDelete = true, saving = session.saving)) {
+                                            return@MooGhostButton
+                                        }
                                         session.deleteKey = entry.key
                                         persist()
                                     }, size = 28.dp) {
@@ -352,7 +355,11 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
             ) {
                 Text(container.t("variables.confirmDelete", mapOf("key" to session.deleteKey)), color = colors.textPrimary)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MooButton(container.t("common.delete"), danger = true, onClick = {
+                    MooButton(
+                        container.t("common.delete"),
+                        danger = true,
+                        enabled = EnvWiringPresentation.confirmDeleteEnabled(session.saving),
+                        onClick = {
                         val persistScope = persistScope(session.scope) ?: return@MooButton
                         val key = session.deleteKey
                         session.deleteKey = ""

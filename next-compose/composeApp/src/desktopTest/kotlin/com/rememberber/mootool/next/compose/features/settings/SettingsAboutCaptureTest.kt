@@ -98,6 +98,70 @@ class SettingsAboutCaptureTest {
         productRoot.toFile().deleteRecursively()
     }
 
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun captureAboutUpdateDownloadButtonFocusRing() = runDesktopComposeUiTest(width = 720, height = 520) {
+        val downloadFocus = FocusRequester()
+        val productRoot = createTempDirectory("mootool-settings-about-download-ui-")
+        val directories = AppPaths.resolve(productRoot.toString()).also { it.ensureCreated() }
+        val settingsRepo = SettingsRepository(directories).also { it.load() }
+        val database = AppDatabase(directories)
+        val container = AppContainer(
+            directories = directories,
+            settingsRepository = settingsRepo,
+            database = database,
+            history = HistoryRepository(database),
+            migrationRows = LegacyMigrationRowRepository(database),
+            sessions = SessionStore(database),
+        )
+        val settings = settingsRepo.current
+        val update = UpdateUiState(
+            result = UpdateCheckResult(
+                status = UpdateCheckStatus.Available,
+                productId = "next-compose",
+                productName = "MooTool",
+                currentVersion = "0.1.0",
+                latestVersion = "0.2.0",
+                releaseUrl = "https://example.com/release",
+                releaseNotes = "Notes",
+                platform = "macos",
+                architecture = "aarch64",
+                download = UpdateDownload(
+                    fileName = "MooTool-next-compose-0.2.0-macos-aarch64.dmg",
+                    url = "https://example.com/pkg.dmg",
+                    sha512 = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+                    size = 1_024,
+                ),
+            ),
+            status = "available",
+        )
+        setContent {
+            MooTheme(preference = ThemePreference.Light, systemDark = false, interfaceStyle = "modern") {
+                val colors = MooTheme.colors
+                Box(Modifier.fillMaxSize().background(colors.workspace).padding(16.dp)) {
+                    SettingsAboutPanel(
+                        container = container,
+                        settings = settings,
+                        update = update,
+                        downloadButtonModifier = Modifier.focusRequester(downloadFocus),
+                    )
+                }
+            }
+        }
+        val cwd = File(".").canonicalFile
+        val root = if (cwd.name == "composeApp") cwd.parentFile else cwd
+        val dir = File(root, "docs/evidence/2026-09-15-inspector-screencapture/windows")
+        dir.mkdirs()
+        val expected = 0x316DC0
+        runOnIdle { downloadFocus.requestFocus() }
+        waitForIdle()
+        val file = File(dir, "155-compose-settings-about-update-download-tab-focus.png")
+        val image = onRoot().captureToImage().toAwtImage()
+        assertTrue(ImageIO.write(image, "png", file))
+        assertTrue(countRingPixels(image, expected) >= 8, "settings about update download focus ring")
+        productRoot.toFile().deleteRecursively()
+    }
+
     private fun countRingPixels(image: java.awt.image.BufferedImage, rgb: Int): Int {
         var hits = 0
         for (y in 0 until image.height) {

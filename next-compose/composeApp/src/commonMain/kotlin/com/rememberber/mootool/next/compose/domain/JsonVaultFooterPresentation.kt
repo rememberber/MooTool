@@ -11,4 +11,9 @@ object JsonVaultFooterPresentation {
         path == currentFile && editorText != savedText
 
     fun canDuplicate(isDirectory: Boolean?): Boolean = isDirectory == false
+
+    fun canRename(isDirectory: Boolean?): Boolean = isDirectory == false
+
+    fun canShowVaultActions(path: String, isDirectory: Boolean?): Boolean =
+        showFooter(path) && canRename(isDirectory)
 }

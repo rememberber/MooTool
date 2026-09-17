@@ -1,0 +1,128 @@
+package com.rememberber.mootool.next.compose.app
+
+import com.rememberber.mootool.next.compose.domain.UpdateEngine
+import java.io.ByteArrayInputStream
+import java.nio.file.Files
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+
+/** `UpdateCoordinator` 检查→自动下载→ready 状态（mock HTTPS fetcher，对齐 DIFF-411/192）。 */
+class UpdateCoordinatorDownloadFlowTest {
+    @Test
+    fun autoDownloadAfterCheckLeavesInstallerReady() {
+        runBlocking {
+        val payload = "compose-update".toByteArray()
+        val sha = UpdateEngine.sha512Base64(payload)
+        val manifest = manifestWithCompose(sha, payload.size.toLong())
+        val root = Files.createTempDirectory("mootool-update-coordinator-")
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            val coordinator = UpdateCoordinator(
+                cacheRoot = root,
+                scope = scope,
+                feedUrl = "https://example.com/feed.json",
+                textFetcher = { _ -> 200 to manifest },
+                bytesFetcher = { _ -> 200 to ByteArrayInputStream(payload) },
+            )
+            coordinator.check(autoDownload = true)
+            for (attempt in 0 until 200) {
+                val state = coordinator.state.value
+                if (state.status == "ready" && state.downloaded != null) break
+                delay(25)
+            }
+            val final = coordinator.state.value
+            assertEquals("ready", final.status)
+            assertNotNull(final.downloaded)
+            assertTrue(Files.exists(final.downloaded))
+            assertEquals(payload.toList(), Files.readAllBytes(final.downloaded).toList())
+        } finally {
+            scope.cancel()
+            root.toFile().deleteRecursively()
+        }
+        }
+    }
+
+    @Test
+    fun applyAutoDownloadSettingStartsWhenAlreadyAvailable() {
+        runBlocking {
+        val payload = "compose-update-2".toByteArray()
+        val sha = UpdateEngine.sha512Base64(payload)
+        val manifest = manifestWithCompose(sha, payload.size.toLong())
+        val root = Files.createTempDirectory("mootool-update-auto-setting-")
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            val coordinator = UpdateCoordinator(
+                cacheRoot = root,
+                scope = scope,
+                feedUrl = "https://example.com/feed.json",
+                textFetcher = { _ -> 200 to manifest },
+                bytesFetcher = { _ -> 200 to ByteArrayInputStream(payload) },
+            )
+            coordinator.check(autoDownload = false)
+            for (attempt in 0 until 200) {
+                if (coordinator.state.value.result?.status == com.rememberber.mootool.next.compose.domain.UpdateCheckStatus.Available) {
+                    break
+                }
+                delay(25)
+            }
+            coordinator.applyAutoDownloadSetting(enabled = true)
+            for (attempt in 0 until 200) {
+                val state = coordinator.state.value
+                if (state.status == "ready" && state.downloaded != null) break
+                delay(25)
+            }
+            assertEquals("ready", coordinator.state.value.status)
+            assertNotNull(coordinator.state.value.downloaded)
+        } finally {
+            scope.cancel()
+            root.toFile().deleteRecursively()
+        }
+        }
+    }
+
+    private fun manifestWithCompose(sha512: String, size: Long): String {
+        val identity = UpdateEngine.detectIdentity()
+        val packageType = when (identity.platform) {
+            "darwin" -> "dmg"
+            "win32" -> "msi"
+            else -> "deb"
+        }
+        val fileName = UpdateEngine.artifactName("0.2.0", identity.platform, identity.architecture, packageType)
+        return """
+            {
+              "schemaVersion": 1,
+              "products": {
+                "next-compose": {
+                  "displayName": "MooTool Next Compose",
+                  "status": "active",
+                  "releases": [{
+                    "version": "0.2.0",
+                    "title": "Compose 0.2.0",
+                    "notes": "newer",
+                    "prerelease": false,
+                    "releaseUrl": "https://example.com/compose-020",
+                    "assets": [{
+                      "platform": "${identity.platform}",
+                      "architecture": "${identity.architecture}",
+                      "packageType": "$packageType",
+                      "priority": 10,
+                      "fileName": "$fileName",
+                      "url": "https://example.com/compose.pkg",
+                      "sha512": "$sha512",
+                      "size": $size
+                    }]
+                  }]
+                }
+              }
+            }
+        """.trimIndent()
+    }
+}

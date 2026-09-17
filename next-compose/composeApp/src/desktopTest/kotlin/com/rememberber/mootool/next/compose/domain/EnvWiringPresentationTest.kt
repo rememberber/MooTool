@@ -24,4 +24,11 @@ class EnvWiringPresentationTest {
         assertFalse(EnvWiringPresentation.saveEditorEnabled(trimmedKey = "A", saving = true))
         assertTrue(EnvWiringPresentation.saveEditorEnabled(trimmedKey = "A", saving = false))
     }
+
+    @Test
+    fun deleteBlockedWhileSaving() {
+        assertFalse(EnvWiringPresentation.deleteRowEnabled(canDelete = true, saving = true))
+        assertFalse(EnvWiringPresentation.confirmDeleteEnabled(saving = true))
+        assertTrue(EnvWiringPresentation.deleteRowEnabled(canDelete = true, saving = false))
+    }
 }

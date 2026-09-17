@@ -2,6 +2,7 @@ package com.rememberber.mootool.next.compose.domain
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class NetWiringPresentationTest {
@@ -35,5 +36,19 @@ class NetWiringPresentationTest {
             NetWiringPresentation.portScanStart("127.0.0.1", "99999")
                 is NetWiringPresentation.PortScanStart.Blocked,
         )
+    }
+
+    @Test
+    fun outputAndRunGuards() {
+        assertTrue(NetWiringPresentation.stopEnabled(running = true))
+        assertFalse(NetWiringPresentation.outputActionsEnabled(outputNotBlank = false))
+        assertTrue(
+            NetWiringPresentation.runCommandEnabled(
+                idle = true,
+                startReady = NetWiringPresentation.pingStart("127.0.0.1")
+                    is NetWiringPresentation.HostCommandStart.Ready,
+            ),
+        )
+        assertFalse(NetWiringPresentation.runCommandEnabled(idle = false, startReady = true))
     }
 }

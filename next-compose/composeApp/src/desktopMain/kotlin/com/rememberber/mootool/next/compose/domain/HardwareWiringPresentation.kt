@@ -5,4 +5,6 @@ object HardwareWiringPresentation {
     fun refreshEnabled(loading: Boolean): Boolean = !loading
 
     fun copyReportEnabled(loading: Boolean, hasGroups: Boolean): Boolean = !loading && hasGroups
+
+    fun interfacesCommandEnabled(loading: Boolean, running: Boolean): Boolean = !loading && !running
 }

@@ -1528,6 +1528,14 @@ fun Modifier.mooSettingsUpdateResultNotes(): Modifier {
 @Composable
 fun Modifier.mooSettingsUpdateResultFile(): Modifier = padding(top = 4.dp)
 
+/** Electron `.settings-update-actions` 检查/下载/打开安装包按钮行。 */
+@Composable
+fun Modifier.mooSettingsUpdateActionsRow(): Modifier = fillMaxWidth().heightIn(min = 34.dp)
+
+/** Electron JSON Vault 底栏操作按钮簇。 */
+@Composable
+fun Modifier.mooJsonVaultFooterActions(): Modifier = padding(horizontal = 8.dp, vertical = 4.dp)
+
 /** Vault 外部冲突相对路径行。 */
 @Composable
 fun Modifier.mooVaultConflictPathRow(): Modifier = heightIn(min = 18.dp)
