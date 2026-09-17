@@ -48,7 +48,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
-import com.rememberber.mootool.next.compose.domain.DiffEngine
 import com.rememberber.mootool.next.compose.domain.TextDiffPresentation
 import com.rememberber.mootool.next.compose.domain.DiffHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.DiffHistoryRestore
@@ -156,7 +155,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                 MooButton(container.t("common.action.clear"), p5Toolbar = true, onClick = {
                     session.left = ""
                     session.right = ""
-                    session.result = DiffEngine.compare("", "", session.ignoreWhitespace)
+                    session.result = TextDiffPresentation.runCompare("", "", session.ignoreWhitespace)
                     session.notice = container.t("diff.status.cleared")
                     session.navIndex = -1
                     refresh()
@@ -165,7 +164,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                     val previousLeft = session.left
                     session.left = session.right
                     session.right = previousLeft
-                    session.result = DiffEngine.compare(session.left, session.right, session.ignoreWhitespace)
+                    session.result = TextDiffPresentation.runCompare(session.left, session.right, session.ignoreWhitespace)
                     session.notice = container.t("diff.status.swapped")
                     session.navIndex = -1
                     refresh()
@@ -205,7 +204,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                             moreOpen = false
                             session.left = ""
                             session.right = ""
-                            session.result = DiffEngine.compare("", "", session.ignoreWhitespace)
+                            session.result = TextDiffPresentation.runCompare("", "", session.ignoreWhitespace)
                             session.notice = container.t("diff.status.cleared")
                             session.navIndex = -1
                             refresh()
@@ -215,7 +214,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                             val previousLeft = session.left
                             session.left = session.right
                             session.right = previousLeft
-                            session.result = DiffEngine.compare(session.left, session.right, session.ignoreWhitespace)
+                            session.result = TextDiffPresentation.runCompare(session.left, session.right, session.ignoreWhitespace)
                             session.notice = container.t("diff.status.swapped")
                             session.navIndex = -1
                             refresh()
@@ -491,7 +490,7 @@ private fun runCompare(container: AppContainer, session: DiffSession, saveHistor
     val right = session.right
     val ignore = session.ignoreWhitespace
     container.scope.launch {
-        val result = DiffEngine.compare(left, right, ignore)
+        val result = TextDiffPresentation.runCompare(left, right, ignore)
         withContext(Dispatchers.Swing) {
             if (generation != session.compareGeneration) return@withContext
             session.result = result

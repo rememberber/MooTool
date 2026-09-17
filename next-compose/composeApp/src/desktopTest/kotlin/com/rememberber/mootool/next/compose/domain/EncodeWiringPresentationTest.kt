@@ -10,4 +10,17 @@ class EncodeWiringPresentationTest {
         assertFalse(EncodeWiringPresentation.canConvert("   "))
         assertTrue(EncodeWiringPresentation.canConvert("abc"))
     }
+
+    @Test
+    fun runConvertUsesEncodeEngine() {
+        val outcome = EncodeWiringPresentation.runConvert(
+            EncodeTab.Url,
+            forward = true,
+            input = "a b",
+            charset = UrlCharset.Utf8,
+            asciiFormat = AsciiFormat.Decimal,
+        )
+        assertTrue(outcome is EncodeWiringPresentation.ConvertOutcome.Success)
+        assertTrue((outcome as EncodeWiringPresentation.ConvertOutcome.Success).output.contains("a"))
+    }
 }

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # P7 打包前本机烟雾检查（不代替三平台安装/升级/卸载验收）。
+# DIFF-563：仍依赖 MOOTOOL_P7_BUILD_DIST=1 才构建当前 OS 安装包；三平台/公证未验收。
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"

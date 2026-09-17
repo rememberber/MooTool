@@ -25,4 +25,10 @@ class TextDiffPresentationTest {
         assertFalse(TextDiffPresentation.canManualCompare("", ""))
         assertTrue(TextDiffPresentation.canManualCompare("a", ""))
     }
+
+    @Test
+    fun runCompareUsesDiffEngine() {
+        val result = TextDiffPresentation.runCompare("a", "b", ignoreWhitespace = false)
+        assertTrue(result.unified.contains("-") || result.segments.isNotEmpty())
+    }
 }

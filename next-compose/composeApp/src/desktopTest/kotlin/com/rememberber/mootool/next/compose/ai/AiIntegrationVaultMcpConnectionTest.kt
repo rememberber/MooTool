@@ -121,6 +121,47 @@ class AiIntegrationVaultMcpConnectionTest {
     }
 
     @Test
+    fun subprocessReadJsonVaultHonorsOffsetAndLength() {
+        val jsonRoot = Files.createTempDirectory("mootool-mcp-vault-read-offset-")
+        val productRoot = Files.createTempDirectory("mootool-mcp-vault-read-offset-product-")
+        try {
+            jsonRoot.resolve("page.json").writeText("""{"head":"skip","tail":"563"}""")
+            val directories = com.rememberber.mootool.next.compose.app.AppPaths
+                .resolve(productRoot.toString())
+                .also { it.ensureCreated() }
+            val accessFile = McpLaunchResolver.accessFile(directories).also { path ->
+                path.parent.createDirectories()
+                path.writeText(
+                    """{"version":1,"notes":null,"json":"${jsonRoot.toRealPath()}"}""",
+                )
+            }
+            val launch = desktopTestMcpLaunch(accessFile)
+            val transport = StdioClientTransport(
+                ServerParameters.builder(launch.command).args(launch.args).build(),
+                McpJsonDefaults.getMapper(),
+            )
+            McpClient.sync(transport).requestTimeout(Duration.ofSeconds(15)).build().use { client ->
+                client.initialize()
+                val read = client.callTool(
+                    McpSchema.CallToolRequest.builder()
+                        .name("mootool_json_documents_read")
+                        .arguments(mapOf("path" to "page.json", "offset" to 18, "length" to 20))
+                        .build(),
+                )
+                assertFalse(read.isError)
+                val body = read.content.firstOrNull()?.let {
+                    if (it is McpSchema.TextContent) it.text else null
+                } ?: ""
+                assertTrue(body.contains("563"))
+                assertFalse(body.contains("skip"))
+            }
+        } finally {
+            jsonRoot.toFile().deleteRecursively()
+            productRoot.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun subprocessSearchBothVaultKindsInOneAccessPolicy() {
         val notesRoot = Files.createTempDirectory("mootool-mcp-vault-dual-notes-")
         val jsonRoot = Files.createTempDirectory("mootool-mcp-vault-dual-json-")

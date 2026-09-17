@@ -102,7 +102,10 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
         session.error = ""
         persist()
         scope.launch(Dispatchers.IO) {
-            val result = runCatching { EnvEngine.snapshot(config) }
+            val result = when (val outcome = EnvWiringPresentation.runSnapshot(config)) {
+                is EnvWiringPresentation.SnapshotOutcome.Success -> Result.success(outcome.snapshot)
+                is EnvWiringPresentation.SnapshotOutcome.Failure -> Result.failure(outcome.error)
+            }
             withContext(Dispatchers.Main) {
                 session.loading = false
                 result.onSuccess {
@@ -402,7 +405,14 @@ private fun EditorDialog(
     val colors = MooTheme.colors
     val scope = rememberCoroutineScope()
     val persistScope = if (session.scope == EnvDisplayScope.Process) session.targetScope else persistScope(session.scope) ?: session.targetScope
-    val diff = snapshot?.let { EnvEngine.previewDiff(it, persistScope, session.editorKey.trim().ifBlank { "(key)" }, session.editorValue) }.orEmpty()
+    val diff = snapshot?.let {
+        EnvWiringPresentation.runPreviewDiff(
+            it,
+            persistScope,
+            session.editorKey.trim().ifBlank { "(key)" },
+            session.editorValue,
+        )
+    }.orEmpty()
     MooOverlay(onDismiss = { session.editorOpen = false; persist() }) {
         Column(
             Modifier.width(560.dp).mooDialogSurface().padding(16.dp).verticalScroll(rememberScrollState()),

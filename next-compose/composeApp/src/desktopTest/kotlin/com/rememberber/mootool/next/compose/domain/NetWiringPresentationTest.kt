@@ -51,4 +51,10 @@ class NetWiringPresentationTest {
         )
         assertFalse(NetWiringPresentation.runCommandEnabled(idle = false, startReady = true))
     }
+
+    @Test
+    fun runLocalAddressesReturnsSnapshot() {
+        val snapshot = NetWiringPresentation.runLocalAddresses()
+        assertTrue(snapshot.ipv4.isNotEmpty() || snapshot.ipv6.isNotEmpty())
+    }
 }

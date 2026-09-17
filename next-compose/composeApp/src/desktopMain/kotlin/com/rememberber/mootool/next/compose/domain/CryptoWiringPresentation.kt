@@ -12,4 +12,15 @@ object CryptoWiringPresentation {
 
     fun canSymmetricCrypt(keyValid: Boolean, busy: Boolean = false): Boolean =
         keyValid && !busy
+
+    sealed interface DigestOutcome {
+        data class Success(val output: String) : DigestOutcome
+        data class Failure(val error: Throwable) : DigestOutcome
+    }
+
+    fun runDigestText(algorithm: DigestAlgorithm, input: String): DigestOutcome =
+        runCatching { CryptoEngine.digestText(algorithm, input) }.fold(
+            onSuccess = { DigestOutcome.Success(it) },
+            onFailure = { DigestOutcome.Failure(it) },
+        )
 }

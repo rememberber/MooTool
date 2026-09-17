@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.border
 import com.rememberber.mootool.next.compose.app.AppContainer
-import com.rememberber.mootool.next.compose.domain.DiffEngine
 import com.rememberber.mootool.next.compose.domain.VaultConflictPresentation
 import com.rememberber.mootool.next.compose.domain.VaultConflictState
 import com.rememberber.mootool.next.compose.ui.components.MooButton
@@ -30,6 +29,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.ui.components.mooVaultConflictActions
 import com.rememberber.mootool.next.compose.ui.components.mooVaultConflictDiffPreview
+import com.rememberber.mootool.next.compose.ui.components.mooVaultConflictHintRow
 import com.rememberber.mootool.next.compose.ui.components.mooVaultConflictPathRow
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 
@@ -48,9 +48,7 @@ fun VaultConflictDialog(
     val unified = if (conflict.deleted) {
         ""
     } else {
-        DiffEngine.compare(conflict.editorText, conflict.diskText.orEmpty(), ignoreWhitespace = false)
-            .unified
-            .take(4_000)
+        VaultConflictPresentation.buildUnifiedPreview(conflict.editorText, conflict.diskText.orEmpty())
     }
     val preview = VaultConflictPresentation.previewText(
         deleted = conflict.deleted,
@@ -70,7 +68,12 @@ fun VaultConflictDialog(
                 fontSize = 12.sp,
                 modifier = Modifier.mooVaultConflictPathRow(),
             )
-            Text(container.t(VaultConflictPresentation.hintMessageKey(conflict.deleted)), color = colors.textSecondary, fontSize = 12.sp)
+            Text(
+                container.t(VaultConflictPresentation.hintMessageKey(conflict.deleted)),
+                color = colors.textSecondary,
+                fontSize = 12.sp,
+                modifier = Modifier.mooVaultConflictHintRow(),
+            )
             val previewModifier = if (VaultConflictPresentation.showDiffPreview(conflict.deleted)) {
                 Modifier.weight(1f).mooVaultConflictDiffPreview().verticalScroll(rememberScrollState())
             } else {

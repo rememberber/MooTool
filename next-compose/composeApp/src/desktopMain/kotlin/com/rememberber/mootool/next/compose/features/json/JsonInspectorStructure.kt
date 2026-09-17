@@ -17,6 +17,7 @@ import com.rememberber.mootool.next.compose.domain.JsonInspectorPresentation
 import com.rememberber.mootool.next.compose.ui.theme.MooColors
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
+import com.rememberber.mootool.next.compose.ui.components.mooJsonInspectorDuplicatePath
 import com.rememberber.mootool.next.compose.ui.components.mooJsonInspectorStructureRow
 import androidx.compose.ui.text.font.FontFamily
 
@@ -97,7 +98,11 @@ internal fun JsonInspectorStructurePanel(
                         color = colors.danger,
                         fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace,
-                        modifier = Modifier.mooFocusClickable { onDuplicatePathClick(path) },
+                        modifier = Modifier
+                            .mooJsonInspectorDuplicatePath()
+                            .mooFocusClickable(enabled = JsonInspectorPresentation.duplicatePathClickEnabled(path)) {
+                                onDuplicatePathClick(path)
+                            },
                     )
                 }
             }

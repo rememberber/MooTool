@@ -109,7 +109,7 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
 
     fun refreshAddresses() {
         scope.launch(Dispatchers.IO) {
-            val snapshot = runCatching { NetEngine.localAddresses() }
+            val snapshot = runCatching { NetWiringPresentation.runLocalAddresses() }
             withContext(Dispatchers.Main) {
                 snapshot.onSuccess {
                     session.ipv4Addresses = it.ipv4.joinToString("\n")

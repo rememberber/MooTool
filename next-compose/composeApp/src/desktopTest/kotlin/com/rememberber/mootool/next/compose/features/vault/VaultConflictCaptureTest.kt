@@ -228,6 +228,56 @@ class VaultConflictCaptureTest {
         productRoot.toFile().deleteRecursively()
     }
 
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun captureExternalConflictDeletedSaveCopyHintRowFocusRing() = runDesktopComposeUiTest(width = 680, height = 460) {
+        val copyFocus = FocusRequester()
+        val productRoot = createTempDirectory("mootool-vault-conflict-deleted-hint-ui-")
+        val directories = AppPaths.resolve(productRoot.toString()).also { it.ensureCreated() }
+        val settings = SettingsRepository(directories).also { it.load() }
+        val database = AppDatabase(directories)
+        val container = AppContainer(
+            directories = directories,
+            settingsRepository = settings,
+            database = database,
+            history = HistoryRepository(database),
+            migrationRows = LegacyMigrationRowRepository(database),
+            sessions = SessionStore(database),
+        )
+        setContent {
+            MooTheme(preference = ThemePreference.Light, systemDark = false, interfaceStyle = "modern") {
+                val colors = MooTheme.colors
+                Box(Modifier.fillMaxSize().background(colors.workspace)) {
+                    VaultConflictDialog(
+                        container = container,
+                        conflict = VaultConflictState(
+                            relativePath = "notes/deleted.md",
+                            editorText = "local body",
+                            diskText = null,
+                            deleted = true,
+                        ),
+                        onReload = {},
+                        onSaveCopy = {},
+                        onKeep = {},
+                        saveCopyButtonModifier = Modifier.focusRequester(copyFocus),
+                    )
+                }
+            }
+        }
+        val cwd = File(".").canonicalFile
+        val root = if (cwd.name == "composeApp") cwd.parentFile else cwd
+        val dir = File(root, "docs/evidence/2026-09-15-inspector-screencapture/windows")
+        dir.mkdirs()
+        val expected = 0x316DC0
+        runOnIdle { copyFocus.requestFocus() }
+        waitForIdle()
+        val file = File(dir, "157-compose-vault-conflict-savecopy-tab-focus.png")
+        val image = onRoot().captureToImage().toAwtImage()
+        assertTrue(ImageIO.write(image, "png", file))
+        assertTrue(countRingPixels(image, expected) >= 8, "vault conflict deleted save copy hint row focus ring")
+        productRoot.toFile().deleteRecursively()
+    }
+
     private fun countRingPixels(image: java.awt.image.BufferedImage, rgb: Int): Int {
         var hits = 0
         for (y in 0 until image.height) {

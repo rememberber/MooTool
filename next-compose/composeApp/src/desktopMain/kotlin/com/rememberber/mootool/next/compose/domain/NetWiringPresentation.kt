@@ -40,6 +40,8 @@ object NetWiringPresentation {
 
     fun runCommandEnabled(idle: Boolean, startReady: Boolean): Boolean = idle && startReady
 
+    fun runLocalAddresses(): LocalAddressSnapshot = NetEngine.localAddresses()
+
     fun portScanStart(target: String, portSpec: String): PortScanStart {
         val trimmedTarget = target.trim()
         val trimmedPorts = portSpec.trim()

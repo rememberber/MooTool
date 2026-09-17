@@ -56,4 +56,10 @@ class VaultConflictPresentationTest {
         assertTrue(VaultConflictPresentation.reloadProminent(deleted = false))
         assertFalse(VaultConflictPresentation.showDiffPreview(deleted = true))
     }
+
+    @Test
+    fun buildUnifiedPreviewUsesDiffEngine() {
+        val preview = VaultConflictPresentation.buildUnifiedPreview("line\n", "line2\n")
+        assertTrue(preview.contains("line"))
+    }
 }

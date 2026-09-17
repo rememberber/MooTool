@@ -374,14 +374,12 @@ private fun applyExpression(session: CronSession, expression: String) {
 
 private fun parseRuns(container: AppContainer, session: CronSession, language: String, onChanged: () -> Unit) {
     container.scope.launch {
-        val result = runCatching {
-            val runs = CronEngine.nextRuns(session.expression, session.zone)
-            val description = CronEngine.describe(session.expression, language)
-            runs to description
-        }
+        val result = CronWiringPresentation.runPreview(session.expression, session.zone, language)
         withContext(Dispatchers.Swing) {
-            result.fold(
-                onSuccess = { (runs, description) ->
+            when (result) {
+                is CronWiringPresentation.ScheduleOutcome.Success -> {
+                    val runs = result.runs
+                    val description = result.description
                     session.runs = runs
                     session.description = description
                     session.error = ""
@@ -395,15 +393,16 @@ private fun parseRuns(container: AppContainer, session: CronSession, language: S
                         runs.joinToString("\n"),
                         CronHistoryMetadata.encodeTimeZone(session.zone),
                     )
-                },
-                onFailure = { error ->
+                }
+                is CronWiringPresentation.ScheduleOutcome.Failure -> {
+                    val error = result.error
                     session.runs = emptyList()
                     session.notice = ""
                     val message = (error as? CronException)?.message ?: error.message.orEmpty()
                     session.error = container.t("cron.invalid", mapOf("message" to message.ifBlank { "invalid" }))
                     container.toastError(session.error)
                 }
-            )
+            }
             onChanged()
         }
     }

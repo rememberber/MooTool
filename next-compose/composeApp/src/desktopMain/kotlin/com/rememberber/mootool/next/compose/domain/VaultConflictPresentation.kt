@@ -10,6 +10,13 @@ object VaultConflictPresentation {
     fun hintMessageKey(deleted: Boolean): String =
         if (deleted) "vault.conflict.hintDeleted" else "vault.conflict.hint"
 
+    fun buildUnifiedPreview(
+        editorText: String,
+        diskText: String,
+        maxChars: Int = 4_000,
+    ): String =
+        DiffEngine.compare(editorText, diskText, ignoreWhitespace = false).unified.take(maxChars)
+
     fun previewText(
         deleted: Boolean,
         deletedMessage: String,

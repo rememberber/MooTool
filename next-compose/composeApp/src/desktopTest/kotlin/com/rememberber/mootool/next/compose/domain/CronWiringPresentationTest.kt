@@ -25,4 +25,11 @@ class CronWiringPresentationTest {
         assertFalse(CronWiringPresentation.canCopyRuns(emptyList()))
         assertTrue(CronWiringPresentation.canCopyRuns(listOf("2026-01-01")))
     }
+
+    @Test
+    fun runPreviewUsesCronEngine() {
+        val outcome = CronWiringPresentation.runPreview("0 0 12 * * ?", "UTC", "en-US")
+        assertTrue(outcome is CronWiringPresentation.ScheduleOutcome.Success)
+        assertTrue((outcome as CronWiringPresentation.ScheduleOutcome.Success).runs.isNotEmpty())
+    }
 }

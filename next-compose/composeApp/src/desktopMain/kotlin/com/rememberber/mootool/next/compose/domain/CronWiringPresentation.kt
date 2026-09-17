@@ -13,4 +13,19 @@ object CronWiringPresentation {
     fun canParse(expression: String): Boolean = expression.isNotBlank()
 
     fun canCopyRuns(runs: List<String>): Boolean = runs.isNotEmpty()
+
+    sealed interface ScheduleOutcome {
+        data class Success(val runs: List<String>, val description: String) : ScheduleOutcome
+        data class Failure(val error: Throwable) : ScheduleOutcome
+    }
+
+    fun runPreview(expression: String, zone: String, language: String): ScheduleOutcome =
+        runCatching {
+            val runs = CronEngine.nextRuns(expression, zone)
+            val description = CronEngine.describe(expression, language)
+            runs to description
+        }.fold(
+            onSuccess = { (runs, description) -> ScheduleOutcome.Success(runs, description) },
+            onFailure = { ScheduleOutcome.Failure(it) },
+        )
 }

@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.AsciiFormat
-import com.rememberber.mootool.next.compose.domain.EncodeEngine
 import com.rememberber.mootool.next.compose.domain.EncodeException
 import com.rememberber.mootool.next.compose.domain.EncodeTab
 import com.rememberber.mootool.next.compose.domain.UrlCharset
@@ -45,6 +44,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
 import com.rememberber.mootool.next.compose.ui.components.mooEncodeControlColumn
+import com.rememberber.mootool.next.compose.ui.components.mooEncodeConvertButton
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
@@ -168,6 +168,7 @@ fun EncodeScreen(container: AppContainer, detached: Boolean) {
                     prominent = true,
                     p5Toolbar = true,
                     enabled = EncodeWiringPresentation.canConvert(session.left()),
+                    modifier = Modifier.mooEncodeConvertButton(),
                     onClick = {
                         convert(container, session, forward = true)
                         refresh()
@@ -177,6 +178,7 @@ fun EncodeScreen(container: AppContainer, detached: Boolean) {
                     labels.reverse,
                     p5Toolbar = true,
                     enabled = EncodeWiringPresentation.canConvert(session.right()),
+                    modifier = Modifier.mooEncodeConvertButton(),
                     onClick = {
                         convert(container, session, forward = false)
                         refresh()
@@ -296,8 +298,17 @@ private fun convert(container: AppContainer, session: EncodeSession, forward: Bo
     val input = if (forward) session.left() else session.right()
     val labels = tabLabels(container, session.tab)
     val summary = if (forward) labels.forward else labels.reverse
-    runCatching { EncodeEngine.convert(session.tab, forward, input, session.charset, session.asciiFormat) }
-        .onSuccess { output ->
+    when (
+        val outcome = EncodeWiringPresentation.runConvert(
+            session.tab,
+            forward,
+            input,
+            session.charset,
+            session.asciiFormat,
+        )
+    ) {
+        is EncodeWiringPresentation.ConvertOutcome.Success -> {
+            val output = outcome.output
             if (forward) session.setRight(output) else session.setLeft(output)
             session.error = ""
             session.notice = summary
@@ -305,12 +316,13 @@ private fun convert(container: AppContainer, session: EncodeSession, forward: Bo
             val options = EncodeHistoryMetadata.encode(session.tab, forward, session.charset, session.asciiFormat)
             container.history.save(ToolId.Encode.id, summary, summary, input, output, options)
         }
-        .onFailure { error ->
+        is EncodeWiringPresentation.ConvertOutcome.Failure -> {
             session.notice = ""
-            val message = messageFor(container, error)
+            val message = messageFor(container, outcome.error)
             session.error = message
             container.toastError(message)
         }
+    }
 }
 
 private fun messageFor(container: AppContainer, error: Throwable): String {

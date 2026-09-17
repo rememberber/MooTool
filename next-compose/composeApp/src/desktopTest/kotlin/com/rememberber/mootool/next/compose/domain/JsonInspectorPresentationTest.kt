@@ -23,6 +23,12 @@ class JsonInspectorPresentationTest {
     }
 
     @Test
+    fun pathCopyEnabledRequiresNonBlankPath() {
+        assertFalse(JsonInspectorPresentation.pathCopyEnabled(""))
+        assertTrue(JsonInspectorPresentation.pathCopyEnabled("$.books[0]"))
+    }
+
+    @Test
     fun structurePanel_whenAnalysisPresent() {
         assertFalse(JsonInspectorPresentation.structurePanelVisible(null))
         assertTrue(

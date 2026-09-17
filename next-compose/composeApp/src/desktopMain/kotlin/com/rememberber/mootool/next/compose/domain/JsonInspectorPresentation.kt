@@ -9,4 +9,8 @@ object JsonInspectorPresentation {
     fun showDuplicatePathList(duplicateCount: Int): Boolean = showDuplicatePaths(duplicateCount)
 
     fun structurePanelVisible(analysis: JsonAnalysis?): Boolean = analysis != null
+
+    fun duplicatePathClickEnabled(path: String): Boolean = path.isNotBlank()
+
+    fun pathCopyEnabled(selectedPath: String): Boolean = selectedPath.isNotBlank()
 }

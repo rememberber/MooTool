@@ -1458,6 +1458,18 @@ fun Modifier.mooTranslationLangBar(): Modifier {
 @Composable
 fun Modifier.mooEncodeControlColumn(): Modifier = widthIn(min = 120.dp).padding(horizontal = 4.dp)
 
+/** Electron `encode-panes` 中间转换钮（对齐 `.toolbar-button` 行高）。 */
+@Composable
+fun Modifier.mooEncodeConvertButton(): Modifier = fillMaxWidth().heightIn(min = 34.dp)
+
+/** Electron JSON 检查器重复键路径行。 */
+@Composable
+fun Modifier.mooJsonInspectorDuplicatePath(): Modifier = heightIn(min = 20.dp)
+
+/** Vault 外部冲突说明行。 */
+@Composable
+fun Modifier.mooVaultConflictHintRow(): Modifier = heightIn(min = 16.dp)
+
 /** Electron `.qrcode-options` 尺寸/纠错行。 */
 @Composable
 fun Modifier.mooQrOptionsRow(): Modifier = heightIn(min = 34.dp)

@@ -512,9 +512,14 @@ private fun DigestPanel(
             )
             MooButton(container.t("crypto.textDigest"), prominent = true, p5Toolbar = true, onClick = {
                 runCrypto(container, session, "digest", "text", digestLabel(session.digestAlgorithm), session.digestInput) {
-                    session.digestOutput = CryptoEngine.digestText(session.digestAlgorithm, session.digestInput)
-                    session.digestFileName = ""
-                    session.digestOutput
+                    when (val outcome = CryptoWiringPresentation.runDigestText(session.digestAlgorithm, session.digestInput)) {
+                        is CryptoWiringPresentation.DigestOutcome.Success -> {
+                            session.digestOutput = outcome.output
+                            session.digestFileName = ""
+                            outcome.output
+                        }
+                        is CryptoWiringPresentation.DigestOutcome.Failure -> throw outcome.error
+                    }
                 }
                 onChanged()
             })

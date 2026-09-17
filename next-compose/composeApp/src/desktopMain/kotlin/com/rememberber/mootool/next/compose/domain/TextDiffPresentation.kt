@@ -12,4 +12,7 @@ object TextDiffPresentation {
     fun canNavigateDiffs(visibleSegmentCount: Int): Boolean = visibleSegmentCount > 0
 
     fun canManualCompare(left: String, right: String): Boolean = left.isNotEmpty() || right.isNotEmpty()
+
+    fun runCompare(left: String, right: String, ignoreWhitespace: Boolean): DiffResult =
+        DiffEngine.compare(left, right, ignoreWhitespace)
 }
