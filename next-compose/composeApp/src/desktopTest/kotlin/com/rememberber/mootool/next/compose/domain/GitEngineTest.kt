@@ -365,6 +365,46 @@ class GitEngineTest {
         }
     }
 
+    /** 对照 Electron `VaultGitService.status`：分叉后 `fetch` 同时更新 ahead/behind，且不 merge 工作区。 */
+    @Test
+    fun fetchReportsAheadAndBehindWhenBranchesDiverge() {
+        assumeGit()
+        val bare = Files.createTempDirectory("mootool-compose-git-fetch-diverge-bare-")
+        val upstream = Files.createTempDirectory("mootool-compose-git-fetch-diverge-up-")
+        val client = Files.createTempDirectory("mootool-compose-git-fetch-diverge-client-")
+        try {
+            git(bare, "init", "--bare", "-b", "main")
+            val url = bare.toAbsolutePath().toUri().toString()
+            git(upstream, "clone", url, ".")
+            upstream.resolve("shared.txt").writeText("v1\n")
+            git(upstream, "add", "--all")
+            git(upstream, "commit", "-m", "Base")
+            assertTrue(GitEngine.push(upstream, isolateConfig = true).success)
+            git(client, "clone", url, ".")
+            client.resolve("local-only.txt").writeText("local\n")
+            git(client, "add", "--all")
+            git(client, "commit", "-m", "Local only")
+            upstream.resolve("remote-only.txt").writeText("remote\n")
+            git(upstream, "add", "--all")
+            git(upstream, "commit", "-m", "Remote only")
+            assertTrue(GitEngine.push(upstream, isolateConfig = true).success)
+            assertFalse(Files.exists(client.resolve("remote-only.txt")))
+            val beforeFetch = GitEngine.status(client, isolateConfig = true)
+            assertEquals(0, beforeFetch.behind, "behind=${beforeFetch.behind} branch=${beforeFetch.branch}")
+            assertTrue(beforeFetch.ahead >= 1, "ahead=${beforeFetch.ahead}")
+            val fetched = GitEngine.fetch(client, isolateConfig = true)
+            assertTrue(fetched.success, fetched.message)
+            val afterFetch = GitEngine.status(client, isolateConfig = true)
+            assertTrue(afterFetch.ahead >= 1, "ahead=${afterFetch.ahead}")
+            assertTrue(afterFetch.behind >= 1, "behind=${afterFetch.behind} branch=${afterFetch.branch}")
+            assertFalse(Files.exists(client.resolve("remote-only.txt")))
+        } finally {
+            bare.toFile().deleteRecursively()
+            upstream.toFile().deleteRecursively()
+            client.toFile().deleteRecursively()
+        }
+    }
+
     @Test
     fun discardsChangesAndPushesToLocalRemote() {
         assumeGit()
