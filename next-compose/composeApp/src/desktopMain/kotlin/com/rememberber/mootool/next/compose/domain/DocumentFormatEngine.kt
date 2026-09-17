@@ -19,7 +19,7 @@ object DocumentFormatEngine {
             "text/typescript", "typescript", "ts" ->
                 CodeEditorSurfaceFormatEngine.formatTypescript(content)
             "text/markdown", "markdown", "md" ->
-                CodeEditorSurfaceFormatEngine.trimTrailingWhitespace(content)
+                CodeEditorSurfaceFormatEngine.formatMarkdown(content, tab)
             "text/plain", "plain" ->
                 CodeEditorSurfaceFormatEngine.trimTrailingWhitespace(content)
             else -> CodeEditorSurfaceFormatEngine.trimTrailingWhitespace(content)

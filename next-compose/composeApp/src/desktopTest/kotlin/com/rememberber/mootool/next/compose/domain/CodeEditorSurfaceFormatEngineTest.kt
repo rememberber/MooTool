@@ -48,4 +48,47 @@ class CodeEditorSurfaceFormatEngineTest {
             DocumentFormatEngine.format("\tdef greet():  \n\t\tprint(\"moo\")\t\n", "text/python", "MySQL", 4),
         )
     }
+
+    @Test
+    fun formatsMarkdownLikePrettierSamples() {
+        val messy =
+            "# Title\n\n- item1\n-   item2\n\nparagraph   with   spaces  \n\n## Sub\n\n1. one\n2. two"
+        assertEquals(
+            "# Title\n\n- item1\n- item2\n\nparagraph with spaces\n\n## Sub\n\n1. one\n2. two\n",
+            CodeEditorSurfaceFormatEngine.formatMarkdown(messy),
+        )
+    }
+
+    @Test
+    fun insertsBlankLineAfterHeadingBeforeParagraph() {
+        assertEquals(
+            "# Title\n\nparagraph\n",
+            CodeEditorSurfaceFormatEngine.formatMarkdown("# Title\nparagraph\n"),
+        )
+    }
+
+    @Test
+    fun preservesFencedCodeInternalSpacing() {
+        val input = "# Title\n\n```\ncode   here\n```\n\npara   x"
+        assertEquals(
+            "# Title\n\n```\ncode   here\n```\n\npara x\n",
+            CodeEditorSurfaceFormatEngine.formatMarkdown(input),
+        )
+    }
+
+    @Test
+    fun normalizesBlockquoteSpacing() {
+        assertEquals(
+            "> quote line\n> second\n",
+            CodeEditorSurfaceFormatEngine.formatMarkdown("> quote   line\n>   second"),
+        )
+    }
+
+    @Test
+    fun documentFormatEngineRoutesMarkdown() {
+        assertEquals(
+            "# Hello\n\n- one\n",
+            DocumentFormatEngine.format("# Hello\n\n-   one", "text/markdown", "MySQL", 2),
+        )
+    }
 }
