@@ -102,7 +102,7 @@ object ElectronNextSettingsImport {
                 interfaceStyle = SettingsLayoutNormalize.normalizeInterfaceStyle(patch.appearance.interfaceStyle),
                 theme = SettingsLayoutNormalize.normalizeTheme(patch.appearance.theme),
                 accentColor = SettingsLayoutNormalize.normalizeAccentColor(patch.appearance.accentColor),
-                fontFamily = patch.appearance.fontFamily,
+                fontFamily = SettingsLayoutNormalize.normalizeUiFontFamily(patch.appearance.fontFamily),
                 fontSize = SettingsNumericBounds.clampNumber(patch.appearance.fontSize, 12, 18),
                 unifiedBackground = patch.appearance.unifiedBackground
             ),

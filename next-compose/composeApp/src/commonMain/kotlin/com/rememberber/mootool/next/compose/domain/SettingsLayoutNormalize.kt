@@ -18,6 +18,7 @@ object SettingsLayoutNormalize {
                 interfaceStyle = normalizeInterfaceStyle(settings.appearance.interfaceStyle, defaults.appearance.interfaceStyle),
                 theme = normalizeTheme(settings.appearance.theme, defaults.appearance.theme),
                 accentColor = normalizeAccentColor(settings.appearance.accentColor, defaults.appearance.accentColor),
+                fontFamily = normalizeUiFontFamily(settings.appearance.fontFamily, defaults.appearance.fontFamily),
             ),
             layout = settings.layout.copy(
                 navigationStyle = normalizeNavigationStyle(settings.layout.navigationStyle, defaults.layout.navigationStyle),
@@ -48,6 +49,16 @@ object SettingsLayoutNormalize {
             else -> normalized
         }
         return if (mapped in accentColorPresetIds) mapped else fallback
+    }
+
+    /** Trims UI font id, maps Electron `system-ui` to Compose `system` preset. */
+    fun normalizeUiFontFamily(value: String, fallback: String = "system"): String {
+        val trimmed = EditorFontSettings.normalizeFontName(value, fallback)
+        return when (trimmed.lowercase()) {
+            "system-ui" -> "system"
+            "system", "sans-serif", "serif", "monospace" -> trimmed.lowercase()
+            else -> trimmed
+        }
     }
 
     fun normalizeNavigationStyle(value: String, fallback: String = NavigationStyle.Classic.name.lowercase()): String =

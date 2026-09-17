@@ -136,6 +136,15 @@ class ElectronNextSettingsImportTest {
     }
 
     @Test
+    fun merge_normalizesUiFontFamily() {
+        val imported = AppSettings.Default.copy(
+            appearance = AppSettings.Default.appearance.copy(fontFamily = "  system-ui  "),
+        )
+        val merged = ElectronNextSettingsImport.mergeInto(AppSettings.Default, imported)
+        assertEquals("system", merged.appearance.fontFamily)
+    }
+
+    @Test
     fun loadsRuntimeDraftsAndOptionsIntoCodeRunPatch() {
         val dir = createTempDirectory("electron-runtime-")
         val store = dir.resolve("mootool-next.json")

@@ -166,6 +166,26 @@ class SettingsVaultPathSanitizeTest {
     }
 
     @Test
+    fun loadNormalizesUiFontFamily() {
+        val root = kotlin.io.path.createTempDirectory("mootool-settings-ui-font-")
+        val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }
+        val repository = SettingsRepository(directories)
+        repository.save(
+            AppSettings.Default.copy(
+                appearance = AppSettings.Default.appearance.copy(fontFamily = "  system-ui  "),
+            )
+        )
+        assertEquals("system", SettingsRepository(directories).load().appearance.fontFamily)
+        repository.save(
+            AppSettings.Default.copy(
+                appearance = AppSettings.Default.appearance.copy(fontFamily = "   "),
+            )
+        )
+        assertEquals("system", SettingsRepository(directories).load().appearance.fontFamily)
+        root.toFile().deleteRecursively()
+    }
+
+    @Test
     fun loadNormalizesUnknownInterfaceStyleAndCustomGroups() {
         val root = kotlin.io.path.createTempDirectory("mootool-settings-layout-")
         val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }

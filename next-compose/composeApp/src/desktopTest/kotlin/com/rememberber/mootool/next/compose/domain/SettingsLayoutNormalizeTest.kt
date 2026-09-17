@@ -41,6 +41,15 @@ class SettingsLayoutNormalizeTest {
     }
 
     @Test
+    fun normalizeUiFontFamily_trimsAndMapsSystemUiAlias() {
+        assertEquals("system", SettingsLayoutNormalize.normalizeUiFontFamily("system-ui"))
+        assertEquals("system", SettingsLayoutNormalize.normalizeUiFontFamily("  system-ui  "))
+        assertEquals("serif", SettingsLayoutNormalize.normalizeUiFontFamily("  Serif  "))
+        assertEquals("system", SettingsLayoutNormalize.normalizeUiFontFamily("   "))
+        assertEquals("PingFang SC", SettingsLayoutNormalize.normalizeUiFontFamily("  PingFang SC  "))
+    }
+
+    @Test
     fun sanitizePaneSizes_dropsUnsafeKeysAndKeepsDpWidths() {
         val sanitized = SettingsLayoutNormalize.sanitizePaneSizes(
             mapOf(
