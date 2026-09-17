@@ -267,7 +267,11 @@ fun FileDropRow(
         Modifier
     }
     Row(
-        modifier = modifier.fillMaxWidth().then(dropModifier).padding(if (onDropFiles != null) 2.dp else 0.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .mooFileDropRow()
+            .then(dropModifier)
+            .padding(if (onDropFiles != null) 2.dp else 0.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -1749,6 +1753,10 @@ fun Modifier.mooCronRunCell(): Modifier = heightIn(min = 38.dp)
 /** Electron `.reformat-file-layout` 文件 Tab 双栏。 */
 @Composable
 fun Modifier.mooReformatFileLayout(): Modifier = heightIn(min = 320.dp)
+
+/** Electron `.file-drop-row` 选择行（10dp 间距 + 最小高度对齐 control）。 */
+@Composable
+fun Modifier.mooFileDropRow(): Modifier = heightIn(min = 34.dp)
 
 /** 配置转换校验/转换中栏行高。 */
 @Composable

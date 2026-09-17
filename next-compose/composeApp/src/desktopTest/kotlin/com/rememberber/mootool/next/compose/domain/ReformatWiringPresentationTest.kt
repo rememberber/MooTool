@@ -45,4 +45,27 @@ class ReformatWiringPresentationTest {
         assertEquals("reformat.error.located", message.key)
         assertEquals("2", message.params["line"])
     }
+
+    @Test
+    fun inferTypeFromFileNameMatchesExtensions() {
+        assertEquals(ReformatType.Java, ReformatWiringPresentation.inferTypeFromFileName("App.java"))
+        assertEquals(ReformatType.Nginx, ReformatWiringPresentation.inferTypeFromFileName("site.conf"))
+        assertEquals(ReformatType.Html, ReformatWiringPresentation.inferTypeFromFileName("index.htm"))
+        assertEquals(null, ReformatWiringPresentation.inferTypeFromFileName("readme.txt"))
+    }
+
+    @Test
+    fun runReadSourceFileReturnsContentAndInferredType() {
+        val file = kotlin.io.path.createTempFile(suffix = ".xml").toFile()
+        try {
+            file.writeText("<root/>")
+            val outcome = ReformatWiringPresentation.runReadSourceFile(file)
+            assertTrue(outcome is ReformatWiringPresentation.ReadSourceOutcome.Success)
+            outcome as ReformatWiringPresentation.ReadSourceOutcome.Success
+            assertEquals("<root/>", outcome.content)
+            assertEquals(ReformatType.Xml, outcome.inferredType)
+        } finally {
+            file.delete()
+        }
+    }
 }

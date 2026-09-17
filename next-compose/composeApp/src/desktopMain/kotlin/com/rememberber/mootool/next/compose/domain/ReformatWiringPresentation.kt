@@ -1,5 +1,8 @@
 package com.rememberber.mootool.next.compose.domain
 
+import java.io.File
+import java.nio.charset.StandardCharsets
+
 /** F03 格式化：引擎调用、另存默认名与 UI 守卫（对齐 `ReformatScreen`）。 */
 object ReformatWiringPresentation {
     fun canRunFormat(busy: Boolean, inputNotBlank: Boolean): Boolean = !busy && inputNotBlank
@@ -44,4 +47,45 @@ object ReformatWiringPresentation {
         val base = sourceFileName.replace(Regex("\\.[^.]+$"), "").ifEmpty { "formatted" }
         return "$base.$extension"
     }
+
+    sealed interface ReadSourceOutcome {
+        data class Success(
+            val fileName: String,
+            val content: String,
+            val inferredType: ReformatType?,
+        ) : ReadSourceOutcome
+
+        data class Failure(val error: Throwable) : ReadSourceOutcome
+    }
+
+    fun runReadSourceFile(file: File): ReadSourceOutcome =
+        runCatching {
+            ReadSourceOutcome.Success(
+                fileName = file.name,
+                content = file.readText(StandardCharsets.UTF_8),
+                inferredType = inferTypeFromFileName(file.name),
+            )
+        }.getOrElse { ReadSourceOutcome.Failure(it) }
+
+    fun inferTypeFromFileName(fileName: String): ReformatType? {
+        val ext = fileName.substringAfterLast('.', "").lowercase()
+        return when (ext) {
+            "conf", "nginx" -> ReformatType.Nginx
+            "java" -> ReformatType.Java
+            "xml", "xsd", "svg" -> ReformatType.Xml
+            "html", "htm" -> ReformatType.Html
+            else -> null
+        }
+    }
+
+    sealed interface WriteResultOutcome {
+        data object Success : WriteResultOutcome
+        data class Failure(val error: Throwable) : WriteResultOutcome
+    }
+
+    fun runWriteResult(file: File, content: String): WriteResultOutcome =
+        runCatching { file.writeText(content, StandardCharsets.UTF_8) }.fold(
+            onSuccess = { WriteResultOutcome.Success },
+            onFailure = { WriteResultOutcome.Failure(it) },
+        )
 }

@@ -81,7 +81,6 @@ import kotlinx.coroutines.withContext
 import com.rememberber.mootool.next.compose.ui.chooseFileWithExportDirectory
 import com.rememberber.mootool.next.compose.ui.persistToolsExportDirectory
 import java.io.File
-import java.nio.charset.StandardCharsets
 
 @Composable
 fun ReformatScreen(container: AppContainer, detached: Boolean) {
@@ -431,18 +430,23 @@ private fun chooseSourceFile(container: AppContainer, session: ReformatSession) 
 }
 
 private fun loadSourceFile(container: AppContainer, session: ReformatSession, file: File) {
-    runCatching { file.readText(StandardCharsets.UTF_8) }
-        .onSuccess { content ->
-            session.fileName = file.name
-            session.fileSource = content
+    when (val outcome = ReformatWiringPresentation.runReadSourceFile(file)) {
+        is ReformatWiringPresentation.ReadSourceOutcome.Success -> {
+            session.fileName = outcome.fileName
+            session.fileSource = outcome.content
             session.fileResult = ""
+            outcome.inferredType?.let { session.type = it }
             session.error = ""
             session.notice = container.t("json.notice.imported")
             container.toastSuccess(container.t("json.notice.imported"))
         }
-        .onFailure { error ->
-            session.error = container.t("reformat.error.read", mapOf("message" to (error.message ?: file.path)))
+        is ReformatWiringPresentation.ReadSourceOutcome.Failure -> {
+            session.error = container.t(
+                "reformat.error.read",
+                mapOf("message" to (outcome.error.message ?: file.path)),
+            )
         }
+    }
 }
 
 private fun saveResult(container: AppContainer, session: ReformatSession) {
@@ -457,16 +461,20 @@ private fun saveResult(container: AppContainer, session: ReformatSession) {
         title = container.t("reformat.save"),
         defaultFileName = ReformatWiringPresentation.defaultSaveFileName(session.fileName, session.type),
     ) ?: return
-    runCatching { file.writeText(content, StandardCharsets.UTF_8) }
-        .onSuccess {
+    when (val outcome = ReformatWiringPresentation.runWriteResult(file, content)) {
+        ReformatWiringPresentation.WriteResultOutcome.Success -> {
             session.error = ""
             session.notice = container.t("reformat.saved")
             persistToolsExportDirectory(container, file)
             container.toastSuccess(container.t("reformat.saved"))
         }
-        .onFailure { error ->
-            session.error = container.t("reformat.error.write", mapOf("message" to (error.message ?: file.path)))
+        is ReformatWiringPresentation.WriteResultOutcome.Failure -> {
+            session.error = container.t(
+                "reformat.error.write",
+                mapOf("message" to (outcome.error.message ?: file.path)),
+            )
         }
+    }
 }
 
 
