@@ -238,6 +238,102 @@ class TranslationEngineTest {
             server.stop(0)
         }
     }
+
+    @Test
+    fun bingPreferredWiringUsesBingWithoutGoogleCall() {
+        val googleHits = AtomicInteger(0)
+        val bingTranslateHits = AtomicInteger(0)
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.executor = Executors.newCachedThreadPool()
+        server.createContext("/google") { exchange ->
+            googleHits.incrementAndGet()
+            exchange.sendResponseHeaders(500, -1)
+            exchange.close()
+        }
+        server.createContext("/translator") { exchange ->
+            val html = """IG:"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" params_AbusePreventionHelper = [1,"tok",600000]"""
+            val bytes = html.toByteArray()
+            exchange.sendResponseHeaders(200, bytes.size.toLong())
+            exchange.responseBody.write(bytes)
+            exchange.close()
+        }
+        server.createContext("/ttranslatev3") { exchange ->
+            bingTranslateHits.incrementAndGet()
+            val body = exchange.requestBody.readBytes().decodeToString()
+            val text = formParam(body, "text")
+            val payload = """[{"translations":[{"text":"B:$text"}]}]"""
+            val bytes = payload.toByteArray()
+            exchange.sendResponseHeaders(200, bytes.size.toLong())
+            exchange.responseBody.write(bytes)
+            exchange.close()
+        }
+        server.start()
+        try {
+            val origin = "http://127.0.0.1:${server.address.port}"
+            val endpoints = TranslationEndpoints("$origin/google", "$origin/translator", "$origin/ttranslatev3")
+            val input = TranslationWiringPresentation.buildInput(
+                requestId = "bing-only",
+                text = "wire",
+                sourceLangWire = "en",
+                targetLangWire = "zh-CN",
+                providerWire = "bing",
+                timeoutWire = 5_000,
+            )
+            val result = TranslationEngine.translate(input, endpointsOverride = endpoints)
+            assertTrue(result.ok)
+            assertEquals("B:wire", result.text)
+            assertEquals("bing", result.provider)
+            assertFalse(result.fallbackUsed)
+            assertEquals(0, googleHits.get())
+            assertEquals(1, bingTranslateHits.get())
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun googleWiringSendsMappedSlTlAndClient() {
+        var capturedSl = ""
+        var capturedTl = ""
+        var capturedClient = ""
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/google") { exchange ->
+            capturedSl = queryParam(exchange.requestURI.rawQuery, "sl")
+            capturedTl = queryParam(exchange.requestURI.rawQuery, "tl")
+            capturedClient = queryParam(exchange.requestURI.rawQuery, "client")
+            val q = queryParam(exchange.requestURI.rawQuery, "q")
+            val payload = """[[["G:$q","$q",null,null,1]]]"""
+            val bytes = payload.toByteArray()
+            exchange.sendResponseHeaders(200, bytes.size.toLong())
+            exchange.responseBody.write(bytes)
+            exchange.close()
+        }
+        server.start()
+        try {
+            val origin = "http://127.0.0.1:${server.address.port}"
+            val endpoints = TranslationEndpoints(
+                "$origin/google",
+                "$origin/translator",
+                "$origin/ttranslatev3",
+            )
+            val input = TranslationWiringPresentation.buildInput(
+                requestId = "google-wire",
+                text = "jp",
+                sourceLangWire = "jp",
+                targetLangWire = "kor",
+                providerWire = "google",
+                timeoutWire = 5_000,
+            )
+            val result = TranslationEngine.translate(input, endpointsOverride = endpoints)
+            assertTrue(result.ok)
+            assertEquals("ja", capturedSl)
+            assertEquals("ko", capturedTl)
+            assertEquals("gtx", capturedClient)
+            assertEquals("google", result.provider)
+        } finally {
+            server.stop(0)
+        }
+    }
 }
 
 private fun queryParam(rawQuery: String?, name: String): String {

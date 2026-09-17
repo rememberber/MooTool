@@ -99,10 +99,16 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.MooToolTab
 import com.rememberber.mootool.next.compose.ui.components.mooEditorFrame
+import com.rememberber.mootool.next.compose.ui.components.mooHttpCollection
+import com.rememberber.mootool.next.compose.ui.components.mooHttpCollectionFooter
+import com.rememberber.mootool.next.compose.ui.components.mooHttpCollectionHeader
+import com.rememberber.mootool.next.compose.ui.components.mooHttpEntryHead
 import com.rememberber.mootool.next.compose.ui.components.mooHttpEntryRow
 import com.rememberber.mootool.next.compose.ui.components.mooHttpRequestPane
 import com.rememberber.mootool.next.compose.ui.components.mooHttpResponsePane
 import com.rememberber.mootool.next.compose.ui.components.mooHttpSavedItem
+import com.rememberber.mootool.next.compose.ui.components.mooHttpTimeoutChip
+import com.rememberber.mootool.next.compose.ui.components.mooHttpUrlBar
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooToolTabsBackground
@@ -443,7 +449,11 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                     .mooToolShell(p5 = true, endBorder = false),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().mooHttpUrlBar(),
+                ) {
                     Box {
                         MooButton("${container.t("http.method")}: ${session.method.name}", onClick = { methodOpen = true }, p5Toolbar = true)
                         MooMenu(expanded = methodOpen, onDismissRequest = { methodOpen = false }) {
@@ -472,23 +482,30 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                         }
                     )
                     MooTooltip(container.t("http.timeoutHint")) {
-                        MooTextField(
-                            session.timeoutMs.toString(),
-                            {
-                                session.timeoutMs = it.toIntOrNull() ?: session.timeoutMs
-                                persist()
-                            },
-                            modifier = Modifier.width(90.dp),
-                            placeholder = container.t("http.timeout"),
-                            dense = true,
-                            fieldModifier = Modifier
-                                .onFocusChanged { if (!it.isFocused) commitTimeout() }
-                                .onPreviewKeyEvent { event ->
-                                    if (event.type != KeyEventType.KeyDown || event.key != Key.Enter) return@onPreviewKeyEvent false
-                                    commitTimeout(andSend = true)
-                                    true
-                                }
-                        )
+                        Row(
+                            Modifier.mooHttpTimeoutChip(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        ) {
+                            MooTextField(
+                                session.timeoutMs.toString(),
+                                {
+                                    session.timeoutMs = it.toIntOrNull() ?: session.timeoutMs
+                                    persist()
+                                },
+                                modifier = Modifier.width(72.dp),
+                                placeholder = container.t("http.timeout"),
+                                dense = true,
+                                fieldModifier = Modifier
+                                    .onFocusChanged { if (!it.isFocused) commitTimeout() }
+                                    .onPreviewKeyEvent { event ->
+                                        if (event.type != KeyEventType.KeyDown || event.key != Key.Enter) return@onPreviewKeyEvent false
+                                        commitTimeout(andSend = true)
+                                        true
+                                    }
+                            )
+                            Text(container.t("http.timeout"), color = colors.textMuted, fontSize = 11.sp)
+                        }
                     }
                     if (session.sending) {
                         MooButton(
@@ -791,10 +808,10 @@ private fun CollectionPane(
 ) {
     val colors = MooTheme.colors
     Column(
-        Modifier.width(width.dp).fillMaxHeight().mooToolShell(colors.sidebar, flatten = true)
+        Modifier.width(width.dp).fillMaxHeight().mooHttpCollection()
     ) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(7.dp),
+            Modifier.fillMaxWidth().mooHttpCollectionHeader().padding(7.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
@@ -842,7 +859,7 @@ private fun CollectionPane(
             }
         }
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 40.dp).padding(horizontal = 7.dp, vertical = 5.dp),
+            Modifier.fillMaxWidth().mooHttpCollectionFooter().padding(horizontal = 7.dp, vertical = 5.dp),
             horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.End)
         ) {
             MooButton(container.t("http.importCurl"), onClick = { session.curlOpen = true; onChanged() }, p5Toolbar = true)
@@ -890,7 +907,7 @@ private fun PairEditor(container: AppContainer, items: List<HttpPair>, onChange:
     val colors = MooTheme.colors
     Column(Modifier.fillMaxWidth().height(200.dp)) {
         Row(
-            Modifier.fillMaxWidth().height(35.dp).background(colors.workspace).padding(horizontal = 8.dp),
+            Modifier.fillMaxWidth().mooHttpEntryHead().padding(horizontal = 8.dp, vertical = 3.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {

@@ -84,6 +84,15 @@ class CommandSearchCatalogTest {
         assertEquals("network", CommandSearchCatalog.search("pdf", en::t).single().categoryId)
         assertEquals("network", CommandSearchCatalog.search("httpbin", en::t).single().categoryId)
         assertEquals("tools", CommandSearchCatalog.search("debounce", en::t).single().categoryId)
+        assertEquals("network", CommandSearchCatalog.search("ping", en::t).single().categoryId)
+        assertEquals("network", CommandSearchCatalog.search("portscan", en::t).single().categoryId)
+    }
+
+    @Test
+    fun jsonpathQueryOpensVaultOrEditorSettings() {
+        val en = Translator(AppLanguage.EnUS)
+        val hits = CommandSearchCatalog.search("jsonpath", en::t).map { it.categoryId }.toSet()
+        assertTrue("vault" in hits || "editor" in hits)
     }
 
     @Test

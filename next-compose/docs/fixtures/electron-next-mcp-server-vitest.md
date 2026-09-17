@@ -12,4 +12,4 @@
 | list-tools-11-readonly | 同上 | `negotiates MCP, discovers schemas…`（11 tools、`readOnlyHint`、`inputSchema.type===object`） | `McpToolCatalogTest` + `AiIntegrationMcpListToolsTest`（[DIFF-471](../diff/471-mcp-list-tools-catalog.md)） |
 | list-tools-metadata | 同上 | `negotiates MCP, discovers schemas…` 11 tools + readOnlyHint | `AiIntegrationMcpListToolsTest` + `McpToolCatalogTest`（[DIFF-471](../diff/471-mcp-list-tools-catalog.md)） |
 
-UI JSON 检查器仍可使用 filter/slice JSONPath；MCP `mootool_json_query` 拒绝 `?(` 过滤表达式，对齐 Electron `eval: false`。
+UI JSON 检查器仍可使用 filter/slice JSONPath；MCP `mootool_json_query` 拒绝 `?(` 过滤表达式，对齐 Electron `eval: false`。F20 翻译 Google/Bing 引擎接线（非 MCP 工具）见 `TranslationWiringPresentationTest` / `TranslationEngineTest`（[DIFF-548](../diff/548-f-tools-translation-css-mcp-p7-slice.md)）。

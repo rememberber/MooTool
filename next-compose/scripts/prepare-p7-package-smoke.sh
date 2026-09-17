@@ -53,3 +53,4 @@ echo "# Without network, mark 未测 in docs/acceptance.md — see docs/diff/526
 echo ""
 echo "OK: smoke checks finished. Record results in docs/acceptance.md; P7 install/sign/notarize still manual."
 echo "# See docs/diff/543-git-diff-decoration-f-tools-p7-slice.md — desktopTest gate only, not tri-platform install."
+echo "# DIFF-548: F02/F07/F16 历史 restore 单测 + F20 接线单测仍属 offline gate；三平台安装/公证未验收。"

@@ -1313,6 +1313,83 @@ fun Modifier.mooTranslationEditorSeam(): Modifier {
 @Composable
 fun Modifier.mooNetCommandRow(): Modifier = heightIn(min = 35.dp)
 
+/** Electron `.net-port-scan-row` 端口扫描输入行。 */
+@Composable
+fun Modifier.mooNetPortScanRow(): Modifier = heightIn(min = 35.dp)
+
+/** Electron `.http-collection` / `.host-profiles` 侧栏集合区。 */
+@Composable
+fun Modifier.mooHttpCollection(): Modifier {
+    val colors = MooTheme.colors
+    return background(colors.surfaceSubtle).drawBehind {
+        drawLine(colors.borderSoft, Offset(size.width - 0.5f, 0f), Offset(size.width - 0.5f, size.height), 1.dp.toPx())
+    }
+}
+
+/** Electron `.http-collection > header`。 */
+@Composable
+fun Modifier.mooHttpCollectionHeader(): Modifier {
+    val colors = MooTheme.colors
+    return heightIn(min = 44.dp).drawBehind {
+        drawLine(colors.borderSoft, Offset(0f, size.height - 0.5f), Offset(size.width, size.height - 0.5f), 1.dp.toPx())
+    }
+}
+
+/** Electron `.http-collection > footer`。 */
+@Composable
+fun Modifier.mooHttpCollectionFooter(): Modifier {
+    val colors = MooTheme.colors
+    return heightIn(min = 40.dp).drawBehind {
+        drawLine(colors.borderSoft, Offset(0f, 0.5f), Offset(size.width, 0.5f), 1.dp.toPx())
+    }
+}
+
+/** Electron `.http-url-bar` 方法/URL/超时行。 */
+@Composable
+fun Modifier.mooHttpUrlBar(): Modifier {
+    val colors = MooTheme.colors
+    return background(colors.toolbar)
+        .padding(horizontal = 10.dp, vertical = 8.dp)
+        .drawBehind {
+            drawLine(colors.borderSoft, Offset(0f, size.height - 0.5f), Offset(size.width, size.height - 0.5f), 1.dp.toPx())
+        }
+}
+
+/** Electron `.http-timeout` 超时输入胶囊。 */
+@Composable
+fun Modifier.mooHttpTimeoutChip(): Modifier {
+    val colors = MooTheme.colors
+    val shape = RoundedCornerShape(8.dp)
+    return clip(shape)
+        .background(colors.workspace)
+        .border(1.dp, colors.borderSoft, shape)
+        .padding(horizontal = 8.dp)
+        .heightIn(min = 34.dp)
+}
+
+/** Electron `.http-entry-head` / `.http-cookie-head` 表头行。 */
+@Composable
+fun Modifier.mooHttpEntryHead(): Modifier {
+    val colors = MooTheme.colors
+    return heightIn(min = 35.dp)
+        .background(colors.workspace)
+        .drawBehind {
+            drawLine(colors.borderSoft, Offset(0f, size.height - 0.5f), Offset(size.width, size.height - 0.5f), 1.dp.toPx())
+        }
+}
+
+/** Electron `.translation-toolbar` 语言/提供商工具条。 */
+@Composable
+fun Modifier.mooTranslationLangBar(): Modifier {
+    val colors = MooTheme.colors
+    return heightIn(min = 46.dp)
+        .background(colors.toolbar)
+        .padding(horizontal = 10.dp, vertical = 7.dp)
+        .drawBehind {
+            drawLine(colors.borderSoft, Offset(0f, size.height - 0.5f), Offset(size.width, size.height - 0.5f), 1.dp.toPx())
+        }
+}
+
 @Composable
 fun Modifier.mooWorkspaceBackground(): Modifier {
     val colors = MooTheme.colors

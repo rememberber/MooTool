@@ -47,8 +47,8 @@ import com.rememberber.mootool.next.compose.domain.TranslationAutoPresentation
 import com.rememberber.mootool.next.compose.domain.TranslationResponsePresentation
 import com.rememberber.mootool.next.compose.domain.TranslationEngine
 import com.rememberber.mootool.next.compose.domain.TranslationHistoryRestore
+import com.rememberber.mootool.next.compose.domain.TranslationWiringPresentation
 import com.rememberber.mootool.next.compose.domain.TranslationErrorCode
-import com.rememberber.mootool.next.compose.domain.TranslationInput
 import com.rememberber.mootool.next.compose.domain.TranslationProvider
 import com.rememberber.mootool.next.compose.domain.TranslationTab
 import com.rememberber.mootool.next.compose.model.ToolId
@@ -74,6 +74,7 @@ import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.components.mooTranslationEditorSeam
 import com.rememberber.mootool.next.compose.ui.components.mooTranslationHistoryArticle
+import com.rememberber.mootool.next.compose.ui.components.mooTranslationLangBar
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
@@ -103,7 +104,6 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
     val sourceLang = settings.tools.translationSourceLang
     val targetLang = settings.tools.translationTargetLang
     val provider = TranslationEngine.parseProvider(settings.tools.translationProvider)
-    val timeoutMs = TranslationEngine.clampTimeout(settings.network.translationTimeoutMs)
 
     fun persist() {
         container.sessionManager.bump()
@@ -141,13 +141,13 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
         session.error = ""
         persist()
         val proxy = settings.network.toHttpProxyConfig()
-        val input = TranslationInput(
+        val input = TranslationWiringPresentation.buildInput(
             requestId = requestId,
             text = text,
-            sourceLang = sourceLang,
-            targetLang = targetLang,
-            preferredProvider = provider,
-            timeoutMs = timeoutMs
+            sourceLangWire = sourceLang,
+            targetLangWire = targetLang,
+            providerWire = settings.tools.translationProvider,
+            timeoutWire = settings.network.translationTimeoutMs,
         )
         scope.launch(Dispatchers.IO) {
             val result = TranslationEngine.translate(input, proxy)
@@ -373,8 +373,15 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
                     val proxy = settings.network.toHttpProxyConfig()
                     scope.launch(Dispatchers.IO) {
                         val result = TranslationEngine.translate(
-                            TranslationInput(requestId, word.sourceText, word.sourceLang, word.targetLang, provider, timeoutMs),
-                            proxy
+                            TranslationWiringPresentation.buildInput(
+                                requestId = requestId,
+                                text = word.sourceText,
+                                sourceLangWire = word.sourceLang,
+                                targetLangWire = word.targetLang,
+                                providerWire = settings.tools.translationProvider,
+                                timeoutWire = settings.network.translationTimeoutMs,
+                            ),
+                            proxy,
                         )
                         withContext(Dispatchers.Main) {
                             if (!result.ok) {
@@ -447,8 +454,7 @@ private fun TranslatePane(
     var providerOpen by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 46.dp).mooToolbarBackground()
-                .padding(horizontal = 10.dp, vertical = 7.dp),
+            Modifier.fillMaxWidth().mooTranslationLangBar(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(7.dp)
         ) {
@@ -506,7 +512,6 @@ private fun TranslatePane(
                 )
             )
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
             val minPane = 280f
             val paneHandle = 10f
