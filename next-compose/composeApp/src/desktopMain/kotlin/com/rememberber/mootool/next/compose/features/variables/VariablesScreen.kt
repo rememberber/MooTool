@@ -64,9 +64,11 @@ import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
+import com.rememberber.mootool.next.compose.ui.components.mooEnvScopeCluster
 import com.rememberber.mootool.next.compose.ui.components.mooEnvStatusFooter
 import com.rememberber.mootool.next.compose.ui.components.mooEnvTableHead
 import com.rememberber.mootool.next.compose.ui.components.mooEnvVarRow
+import com.rememberber.mootool.next.compose.ui.components.mooEnvWorkspaceHeader
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
@@ -175,12 +177,15 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                     add(OverflowAction(container.t("common.export"), enabled = EnvWiringPresentation.exportEnabled(snapshot != null)) {
                         val current = session.snapshot ?: return@OverflowAction
                         val file = chooseSave(container.t("common.export"), "mootool-next-compose-environment.txt") ?: return@OverflowAction
-                        runCatching { file.writeText(EnvEngine.formatExport(current)) }
-                            .onSuccess {
+                        when (val outcome = EnvWiringPresentation.runWriteExport(file, current)) {
+                            EnvWiringPresentation.ExportOutcome.Success -> {
                                 session.notice = container.t("variables.exported")
                                 container.toastSuccess(container.t("variables.exported"))
                             }
-                            .onFailure { session.error = it.message ?: container.t("variables.error.generic") }
+                            is EnvWiringPresentation.ExportOutcome.Failure -> {
+                                session.error = outcome.error.message ?: container.t("variables.error.generic")
+                            }
+                        }
                         persist()
                     })
                     if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.Variables) })
@@ -195,7 +200,7 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                 .mooToolShell(p5 = true, endBorder = false)
         ) {
         Row(
-            Modifier.fillMaxWidth().mooToolbarBackground().padding(start = 10.dp, end = 10.dp),
+            Modifier.mooEnvWorkspaceHeader().padding(start = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -207,6 +212,11 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                 )
             }
             if (session.tab == EnvTab.Environment) {
+                Row(
+                    Modifier.mooEnvScopeCluster(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                 Text(container.t("variables.scope"), color = colors.textMuted, fontSize = 10.sp)
                 Box {
                     MooButton(
@@ -226,6 +236,7 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                             }
                         }
                     }
+                }
                 }
             }
             Spacer(Modifier.weight(1f))

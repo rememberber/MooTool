@@ -1,5 +1,8 @@
 package com.rememberber.mootool.next.compose.domain
 
+import java.io.File
+import java.nio.charset.StandardCharsets
+
 /** F08 环境变量工具栏/对话框启用守卫与引擎路径（可单测）。 */
 object EnvWiringPresentation {
     fun refreshEnabled(loading: Boolean, saving: Boolean): Boolean = !loading && !saving
@@ -32,4 +35,15 @@ object EnvWiringPresentation {
         key: String,
         value: String?,
     ): String = EnvEngine.previewDiff(snapshot, scope, key, value)
+
+    sealed interface ExportOutcome {
+        data object Success : ExportOutcome
+        data class Failure(val error: Throwable) : ExportOutcome
+    }
+
+    fun runWriteExport(file: File, snapshot: EnvSnapshot): ExportOutcome =
+        runCatching { file.writeText(EnvEngine.formatExport(snapshot), StandardCharsets.UTF_8) }.fold(
+            onSuccess = { ExportOutcome.Success },
+            onFailure = { ExportOutcome.Failure(it) },
+        )
 }

@@ -1,5 +1,6 @@
 package com.rememberber.mootool.next.compose.domain
 
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -30,5 +31,28 @@ class EnvWiringPresentationTest {
         assertFalse(EnvWiringPresentation.deleteRowEnabled(canDelete = true, saving = true))
         assertFalse(EnvWiringPresentation.confirmDeleteEnabled(saving = true))
         assertTrue(EnvWiringPresentation.deleteRowEnabled(canDelete = true, saving = false))
+    }
+
+    @Test
+    fun runWriteExportWritesUtf8() {
+        val dir = File.createTempFile("env-export-", ".dir").apply { delete(); mkdirs() }
+        try {
+            val file = File(dir, "env.txt")
+            val snapshot =
+                EnvSnapshot(
+                    process = emptyList(),
+                    runtime = emptyList(),
+                    user = listOf(EnvEntry("A", "1")),
+                    system = emptyList(),
+                    userFile = "/data/environment",
+                    systemFile = "/etc/zshenv",
+                    shellProfile = "/home/u/.zshenv",
+                )
+            val outcome = EnvWiringPresentation.runWriteExport(file, snapshot)
+            assertTrue(outcome is EnvWiringPresentation.ExportOutcome.Success)
+            assertTrue(file.readText().contains("A=1"))
+        } finally {
+            dir.deleteRecursively()
+        }
     }
 }

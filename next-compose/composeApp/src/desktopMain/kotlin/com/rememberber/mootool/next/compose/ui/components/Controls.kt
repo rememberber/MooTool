@@ -1515,6 +1515,14 @@ fun Modifier.mooQrOptionsRow(): Modifier = heightIn(min = 34.dp)
 @Composable
 fun Modifier.mooHardwareStatRow(): Modifier = heightIn(min = 33.dp)
 
+/** Electron `.variables-workspace > header` 工具栏底边与右内边距。 */
+@Composable
+fun Modifier.mooEnvWorkspaceHeader(): Modifier = fillMaxWidth().mooToolbarBackground().padding(end = 10.dp)
+
+/** Electron `.environment-scope` 作用域标签与下拉簇。 */
+@Composable
+fun Modifier.mooEnvScopeCluster(): Modifier = heightIn(min = 26.dp)
+
 /** Electron 环境变量表头行。 */
 @Composable
 fun Modifier.mooEnvTableHead(): Modifier {

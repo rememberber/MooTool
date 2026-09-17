@@ -445,7 +445,10 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
 
 private fun importText(title: String): String? {
     val file = chooseFile(save = false, title = title) ?: return null
-    return runCatching { file.readText(StandardCharsets.UTF_8) }.getOrNull()
+    return when (val outcome = ConfigWiringPresentation.runReadImportFile(file)) {
+        is ConfigWiringPresentation.ImportOutcome.Success -> outcome.content
+        is ConfigWiringPresentation.ImportOutcome.Failure -> null
+    }
 }
 
 private fun exportText(container: AppContainer, session: ConfigSession, content: String, kindKey: String) {
@@ -455,15 +458,17 @@ private fun exportText(container: AppContainer, session: ConfigSession, content:
     }
     val extension = if (kindKey == "config.yaml") "yml" else "properties"
     val file = chooseFile(save = true, title = container.t(kindKey), defaultName = "config.$extension") ?: return
-    runCatching { file.writeText(content, StandardCharsets.UTF_8) }
-        .onSuccess {
+    when (val outcome = ConfigWiringPresentation.runWriteExportFile(file, content)) {
+        ConfigWiringPresentation.WriteExportOutcome.Success -> {
             session.error = ""
             session.notice = container.t("json.notice.exported")
             container.toastSuccess(container.t("json.notice.exported"))
         }
-        .onFailure { error ->
+        is ConfigWiringPresentation.WriteExportOutcome.Failure -> {
+            val error = outcome.error
             session.error = container.t("config.error.write", mapOf("message" to (error.message ?: file.path)))
         }
+    }
 }
 
 private fun chooseFile(save: Boolean, title: String, defaultName: String = ""): File? {

@@ -120,6 +120,7 @@
 | `167-compose-reformat-file-drop-tab-focus.png` | Compose 场景 F03 文件 Tab file-drop-row 选择按钮焦点环（`ReformatFileDropCaptureTest`，[DIFF-572](../../diff/572-reformat-mcp-css-slice.md)，非产品窗） |
 | `168-compose-text-diff-highlight-options-tab-focus.png` | Compose 场景 F02 `.diff-toolbar__options` 高亮选项行焦点环（`TextDiffHighlightModeCaptureTest`，[DIFF-573](../../diff/573-diff-host-mcp-css-slice.md)，非产品窗） |
 | `169-compose-text-diff-editor-grid-tab-focus.png` | Compose 场景 F02 `.diff-editor-grid` 并排编辑区焦点环（`TextDiffEditorGridCaptureTest`，[DIFF-574](../../diff/574-host-diff-mcp-css-slice.md)，非产品窗） |
+| `170-compose-env-environment-tab-focus.png` | Compose 场景 F08 `.variables-workspace > header` 环境 Tab 焦点环（`EnvScopeTabCaptureTest`，[DIFF-575](../../diff/575-env-config-mcp-css-slice.md)，非产品窗） |
 | `133-compose-host-profile-search-tab-focus.png` | Compose 场景 Host 方案列表 `MooCompactSearch`（220dp，[DIFF-429](../../diff/429-electron-jsontools-fixture-host-search-focus.md)） |
 | `134-compose-settings-appearance-nav-tab-focus.png` | Compose 场景设置「外观」导航项焦点环（[DIFF-431](../../diff/431-settings-nav-focusable-tab-evidence.md)，与 `85` 互补） |
 | `135-compose-settings-language-select-tab-focus.png` | Compose 场景设置语言 `MooSelect` 触发钮焦点环（同上） |
