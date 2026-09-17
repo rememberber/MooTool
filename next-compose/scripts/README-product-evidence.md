@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | `prepare-p7-package-smoke.sh` | P7 打包前：toolchain、`printTooling`、`verifyNativePackageMetadata`、`desktopTest --offline`；`MOOTOOL_P7_BUILD_DIST=1` 时额外跑本机 `packageDistributionForCurrentOS`（Windows/Linux 安装包须在对应 OS 构建） | `JAVA_HOME`（JDK 21）、可选 `MOOTOOL_P7_BUILD_DIST=1` |
 | `prepare-vault-git-settings-evidence.sh` | 设置 Vault/Git 字段 + JSON Vault Git 面板走查（file:// bare remote） | 读取或创建 `MOOTOOL_COMPOSE_DATA_DIR` |
-| `prepare-vault-conflict-evidence.sh` | JSON Vault 外部磁盘冲突（§A） | 读取或创建 `MOOTOOL_COMPOSE_DATA_DIR` |
+| `prepare-vault-conflict-evidence.sh` | JSON Vault 外部磁盘冲突（§A）+ 随手记 `sample-external.md`（可选第二组 PNG） | 读取或创建 `MOOTOOL_COMPOSE_DATA_DIR` |
 | `prepare-git-merge-conflict-evidence.sh` | JSON Vault Git merge 冲突（§B） | 同上；会重建 Vault 内 `.git` |
 | `prepare-editor-ime-evidence.sh` | F01/F04 系统 IME 样本文件 | 同上 |
 | `prepare-tray-screencapture-evidence.sh` | 托盘/屏幕录制 TCC 手工走查说明 + 恢复基线 PNG | 同上 |

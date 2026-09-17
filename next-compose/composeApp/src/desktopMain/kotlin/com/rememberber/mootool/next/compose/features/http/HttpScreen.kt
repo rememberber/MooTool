@@ -72,6 +72,7 @@ import com.rememberber.mootool.next.compose.domain.HttpPair
 import com.rememberber.mootool.next.compose.domain.toHttpProxyConfig
 import com.rememberber.mootool.next.compose.domain.HttpRequestTab
 import com.rememberber.mootool.next.compose.domain.HttpResponseFind
+import com.rememberber.mootool.next.compose.domain.HttpResponsePresentation
 import com.rememberber.mootool.next.compose.domain.HttpResponseResult
 import com.rememberber.mootool.next.compose.domain.HttpResponseTab
 import com.rememberber.mootool.next.compose.domain.HttpTimeoutSettings
@@ -97,6 +98,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.MooToolTab
 import com.rememberber.mootool.next.compose.ui.components.mooEditorFrame
+import com.rememberber.mootool.next.compose.ui.components.mooHttpRequestPane
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooToolTabsBackground
@@ -500,6 +502,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                     Modifier
                         .weight(1f)
                         .fillMaxWidth()
+                        .mooHttpRequestPane()
                         .focusGroup()
                         .onFocusChanged { session.requestPaneComposeFocused = it.hasFocus },
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -589,8 +592,16 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                     onDelta = { container.setPaneSize(ToolId.Http.id, 1, responseHeight - it, 2) },
                     onReset = { container.setPaneSize(ToolId.Http.id, 1, 220f, 2) }
                 )
-                val showingPrevious = HttpEngine.showPreviousLabel(session.sending, session.response, session.previousResponse)
-                val visible = HttpEngine.visibleResponse(session.sending, session.response, session.previousResponse)
+                val showingPrevious = HttpResponsePresentation.showPreviousLabel(
+                    session.sending,
+                    session.response,
+                    session.previousResponse,
+                )
+                val visible = HttpResponsePresentation.visibleResponse(
+                    session.sending,
+                    session.response,
+                    session.previousResponse,
+                )
                 val payload = HttpResponseFind.payload(visible, session.responseTab)
                 val matches = if (session.findOpen && payload.isNotEmpty()) {
                     FindReplace.findAll(payload, session.findQuery, session.findOptions)

@@ -28,5 +28,6 @@ export MOOTOOL_COMPOSE_DATA_DIR="$(mktemp -d /tmp/mootool-compose-ime-evidence-X
 
 ## 执行记录
 
+- 本机 2026-09-17（DIFF-546）：`prepare-editor-ime-evidence.sh` 仍经 `verify-product-evidence-prep.sh` 锁定；Vault 外部冲突脚本另含随手记 `sample-external.md`（见 [DIFF-546](../../diff/546-translate-http-pdf-style-f19-slice.md)）；**未执行**系统 IME 产品窗截图与列选+IME 手工项。
 - 本机 2026-09-17（DIFF-513）：`prepare-editor-ime-evidence.sh` 经 `verify-product-evidence-prep.sh` / `ProductEvidencePrepScriptTest` 校验通过；**未执行**系统 IME 产品窗截图与列选+IME 手工项。
 - 本机 2026-09-16：**未执行**上述手工项；`acceptance.md` 中 F04/F01/P0 仍标记列编辑/IME 待验收。

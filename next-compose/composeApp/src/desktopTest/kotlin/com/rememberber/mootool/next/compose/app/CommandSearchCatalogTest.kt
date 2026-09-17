@@ -78,6 +78,13 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun curlAndPdfQueryOpenNetworkSettings() {
+        val en = Translator(AppLanguage.EnUS)
+        assertEquals("network", CommandSearchCatalog.search("curl", en::t).single().categoryId)
+        assertEquals("network", CommandSearchCatalog.search("pdf", en::t).single().categoryId)
+    }
+
+    @Test
     fun qrQueryOpensToolsDefaults() {
         val hits = CommandSearchCatalog.search("qr", Translator(AppLanguage.EnUS)::t)
         assertEquals("tools", hits.single().categoryId)

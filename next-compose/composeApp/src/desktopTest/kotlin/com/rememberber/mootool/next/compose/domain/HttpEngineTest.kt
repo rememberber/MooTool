@@ -230,24 +230,6 @@ class HttpEngineTest {
     }
 
     @Test
-    fun failAndCancelKeepPreviousResponseLabel() {
-        val ok = sampleResponse(ok = true, status = 200, body = "hello")
-        val aborted = sampleResponse(ok = false, status = 0, body = "", error = HttpErrorCode.ABORTED)
-        val timeout = sampleResponse(ok = false, status = 0, body = "", error = HttpErrorCode.TIMEOUT)
-        val tooLarge = sampleResponse(ok = false, status = 200, body = "partial", error = HttpErrorCode.RESPONSE_TOO_LARGE)
-        assertEquals(ok, HttpEngine.usableResponse(ok, null))
-        assertEquals(ok, HttpEngine.usableResponse(aborted, ok))
-        assertTrue(HttpEngine.showPreviousLabel(sending = true, current = ok, previous = ok))
-        assertTrue(HttpEngine.showPreviousLabel(sending = false, current = aborted, previous = ok))
-        assertTrue(HttpEngine.showPreviousLabel(sending = false, current = timeout, previous = ok))
-        assertFalse(HttpEngine.showPreviousLabel(sending = false, current = ok, previous = ok))
-        assertFalse(HttpEngine.showPreviousLabel(sending = false, current = tooLarge, previous = ok))
-        assertEquals(ok, HttpEngine.visibleResponse(sending = false, current = aborted, previous = ok))
-        assertEquals(tooLarge, HttpEngine.visibleResponse(sending = false, current = tooLarge, previous = ok))
-        assertEquals(ok, HttpEngine.visibleResponse(sending = true, current = null, previous = ok))
-    }
-
-    @Test
     fun responseFindReadsTabPayloadAndWrapsIndex() {
         val result = sampleResponse(true, 200, "alpha").copy(headers = "X-Test: 1", cookies = "sid=1")
         assertEquals("alpha", HttpResponseFind.payload(result, HttpResponseTab.Body))

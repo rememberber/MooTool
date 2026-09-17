@@ -10,7 +10,8 @@ VAULT_ROOT="$(mktemp -d /tmp/mootool-compose-evidence-XXXX)"
 export MOOTOOL_COMPOSE_DATA_DIR="${VAULT_ROOT}"
 ./scripts/prepare-vault-conflict-evidence.sh >/dev/null
 test -f "${VAULT_ROOT}/data/vaults/json/sample.json"
-echo "ok sample.json"
+test -f "${VAULT_ROOT}/data/vaults/quick-note/sample-external.md"
+echo "ok sample.json + quick-note sample-external.md"
 
 echo "== verify git merge conflict prep =="
 if ! command -v git >/dev/null 2>&1; then

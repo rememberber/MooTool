@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.storage.VaultPathConfig
 import com.rememberber.mootool.next.compose.domain.PdfEngine
+import com.rememberber.mootool.next.compose.domain.PdfImportPresentation
 import com.rememberber.mootool.next.compose.domain.PdfHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.PdfHistoryRestore
 import com.rememberber.mootool.next.compose.domain.PdfException
@@ -66,6 +67,8 @@ import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
+import com.rememberber.mootool.next.compose.ui.components.mooPdfOutputStrip
+import com.rememberber.mootool.next.compose.ui.components.mooPdfTableWrap
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
@@ -168,7 +171,7 @@ fun PdfScreen(container: AppContainer, detached: Boolean) {
             MergeTable(container, session, Modifier.weight(1f).fillMaxWidth(), ::refresh)
         }
         Row(
-            modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().mooPdfOutputStrip(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -232,9 +235,11 @@ fun PdfScreen(container: AppContainer, detached: Boolean) {
 private fun SplitTable(container: AppContainer, session: PdfSession, modifier: Modifier, onChanged: () -> Unit) {
     val colors = MooTheme.colors
     Column(
-        modifier.desktopFileDropTarget(enabled = !session.busy, acceptMultiple = true) { dropped ->
-            ingestPdfFiles(container, session, dropped, onChanged)
-        }
+        modifier
+            .mooPdfTableWrap()
+            .desktopFileDropTarget(enabled = !session.busy, acceptMultiple = true) { dropped ->
+                ingestPdfFiles(container, session, dropped, onChanged)
+            },
     ) {
         PdfTableHeader {
             Text("#", color = colors.textMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(44.dp))
@@ -317,9 +322,11 @@ private fun SplitTable(container: AppContainer, session: PdfSession, modifier: M
 private fun MergeTable(container: AppContainer, session: PdfSession, modifier: Modifier, onChanged: () -> Unit) {
     val colors = MooTheme.colors
     Column(
-        modifier.desktopFileDropTarget(enabled = !session.busy, acceptMultiple = true) { dropped ->
-            ingestPdfFiles(container, session, dropped, onChanged)
-        }
+        modifier
+            .mooPdfTableWrap()
+            .desktopFileDropTarget(enabled = !session.busy, acceptMultiple = true) { dropped ->
+                ingestPdfFiles(container, session, dropped, onChanged)
+            },
     ) {
         PdfTableHeader {
             Text("#", color = colors.textMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(44.dp))
@@ -470,16 +477,9 @@ private fun ingestPdfFiles(container: AppContainer, session: PdfSession, files: 
     files.take(remaining).forEach { file ->
         runCatching { PdfEngine.inspect(file.toPath()) }
             .onSuccess { info ->
-                if (info.hasSpecialObjects) {
+                if (PdfImportPresentation.shouldShowStructureNotice(info)) {
                     container.toastInfo(
-                        container.t(
-                            "pdf.structureNotice",
-                            mapOf(
-                                "forms" to info.formFieldCount.toString(),
-                                "bookmarks" to info.bookmarkCount.toString(),
-                                "signatures" to info.signatureFieldCount.toString(),
-                            )
-                        )
+                        container.t("pdf.structureNotice", PdfImportPresentation.structureNoticeArgs(info)),
                     )
                 }
                 if (session.tab == PdfTab.Split) {
@@ -504,7 +504,7 @@ private fun ingestPdfFiles(container: AppContainer, session: PdfSession, files: 
             }
             .onFailure { error ->
                 val message = messageFor(container, error)
-                if ((error as? PdfException)?.code == "encrypted") {
+                if (PdfImportPresentation.showEncryptedImportToast(error)) {
                     container.toastError(message)
                 }
                 errors += message

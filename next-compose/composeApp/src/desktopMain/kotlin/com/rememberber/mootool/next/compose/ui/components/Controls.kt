@@ -1235,6 +1235,45 @@ fun Modifier.mooFindBarBackground(json: Boolean = false): Modifier {
     }
 }
 
+/** Electron `.http-request-pane` workspace 子面板底。 */
+@Composable
+fun Modifier.mooHttpRequestPane(): Modifier {
+    val colors = MooTheme.colors
+    return background(colors.surfaceSubtle)
+        .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
+}
+
+/** Electron `.pdf-table-wrap` / `.pdf-table` 卡片表区。 */
+@Composable
+fun Modifier.mooPdfTableWrap(): Modifier {
+    val colors = MooTheme.colors
+    val shape = RoundedCornerShape(MooTheme.dimens.cardRadius)
+    return clip(shape)
+        .background(colors.surfaceCard)
+        .border(1.dp, colors.borderSoft, shape)
+}
+
+/** Electron `.pdf-output-strip` 输出路径条。 */
+@Composable
+fun Modifier.mooPdfOutputStrip(): Modifier {
+    val colors = MooTheme.colors
+    return background(colors.surfaceSubtle)
+        .padding(horizontal = 12.dp, vertical = 8.dp)
+        .drawBehind {
+            val y = size.height - 0.5f
+            drawLine(colors.borderSoft, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+        }
+}
+
+/** Electron `.translation-history-list article` 行底与悬停。 */
+@Composable
+fun Modifier.mooTranslationHistoryArticle(hovered: Boolean): Modifier {
+    val colors = MooTheme.colors
+    val shape = RoundedCornerShape(5.dp)
+    return clip(shape).background(if (hovered) colors.control else colors.surfaceCard)
+        .border(1.dp, colors.borderSoft, shape)
+}
+
 @Composable
 fun Modifier.mooWorkspaceBackground(): Modifier {
     val colors = MooTheme.colors

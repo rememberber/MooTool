@@ -131,28 +131,23 @@ object HttpEngine {
 
     fun clampTimeout(value: Int): Int = value.coerceIn(1_000, 120_000)
 
-    fun isTransportFailure(result: HttpResponseResult?): Boolean {
-        val code = result?.errorCode ?: return false
-        return code == HttpErrorCode.ABORTED ||
-            code == HttpErrorCode.TIMEOUT ||
-            code == HttpErrorCode.NETWORK ||
-            code == HttpErrorCode.INVALID_REQUEST
-    }
+    fun isTransportFailure(result: HttpResponseResult?): Boolean =
+        HttpResponsePresentation.isTransportFailure(result)
 
     fun usableResponse(current: HttpResponseResult?, previous: HttpResponseResult?): HttpResponseResult? =
-        current?.takeUnless { isTransportFailure(it) } ?: previous
+        HttpResponsePresentation.usableResponse(current, previous)
 
     fun showPreviousLabel(
         sending: Boolean,
         current: HttpResponseResult?,
-        previous: HttpResponseResult?
-    ): Boolean = previous != null && (sending || isTransportFailure(current))
+        previous: HttpResponseResult?,
+    ): Boolean = HttpResponsePresentation.showPreviousLabel(sending, current, previous)
 
     fun visibleResponse(
         sending: Boolean,
         current: HttpResponseResult?,
-        previous: HttpResponseResult?
-    ): HttpResponseResult? = if (showPreviousLabel(sending, current, previous)) previous else current
+        previous: HttpResponseResult?,
+    ): HttpResponseResult? = HttpResponsePresentation.visibleResponse(sending, current, previous)
 
     fun downloadBytes(result: HttpResponseResult?): ByteArray? =
         result?.bodyBytes?.takeIf { result.binary && it.isNotEmpty() }

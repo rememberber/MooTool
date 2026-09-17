@@ -38,6 +38,11 @@ mootool_evidence_print_http_multipart_smoke_hint() {
   echo "# Optional F09 multipart POST (httpbin/localhost only, default CI skips): MOOTOOL_HTTP_MULTIPART_SMOKE=1 cd ${compose_root} && ./gradlew :composeApp:desktopTest --tests com.rememberber.mootool.next.compose.domain.HttpEngineTest.optionalHttpBinMultipartPostSmoke --offline"
 }
 
+mootool_evidence_print_vault_conflict_product_hint() {
+  echo "# Compose Overlay 焦点帧（非产品主窗）: docs/evidence/2026-09-15-inspector-screencapture/windows/147-compose-json-vault-conflict-overlay-keep-tab-focus.png"
+  echo "# 产品主窗 §A/B PNG 仍须 runDistributable + 手工截图（见 vault-conflict-product-window/results.md）"
+}
+
 mootool_evidence_print_tray_tcc_hint() {
   local compose_root
   compose_root="$(mootool_evidence_compose_root)"

@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.toHttpProxyConfig
+import com.rememberber.mootool.next.compose.domain.TranslationAutoPresentation
 import com.rememberber.mootool.next.compose.domain.TranslationEngine
 import com.rememberber.mootool.next.compose.domain.TranslationHistoryRestore
 import com.rememberber.mootool.next.compose.domain.TranslationErrorCode
@@ -70,6 +71,7 @@ import com.rememberber.mootool.next.compose.ui.components.setPaneSize
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
+import com.rememberber.mootool.next.compose.ui.components.mooTranslationHistoryArticle
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
@@ -198,9 +200,10 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
             persist()
             return@LaunchedEffect
         }
-        if (session.restoredSource == session.source) return@LaunchedEffect
-        if (!session.autoEnabled) return@LaunchedEffect
-        delay(500)
+        if (TranslationAutoPresentation.skipAutoTranslate(session.restoredSource, session.source, session.autoEnabled)) {
+            return@LaunchedEffect
+        }
+        delay(TranslationAutoPresentation.AUTO_DEBOUNCE_MS)
         if (seq != session.sequence) return@LaunchedEffect
         send(session.source, seq)
     }
@@ -756,8 +759,14 @@ private fun HistoryPane(
         } else {
             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 items(items, key = { it.id }) { item ->
+                    val interaction = remember(item.id) { MutableInteractionSource() }
+                    val hovered by interaction.collectIsHoveredAsState()
                     Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(5.dp)).padding(8.dp),
+                        Modifier
+                            .fillMaxWidth()
+                            .mooTranslationHistoryArticle(hovered = hovered)
+                            .hoverable(interaction)
+                            .padding(8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.Top
                     ) {

@@ -24,6 +24,7 @@ import com.rememberber.mootool.next.compose.domain.ColorEngine
 import com.rememberber.mootool.next.compose.domain.ColorFormat
 import com.rememberber.mootool.next.compose.domain.ColorThemeId
 import com.rememberber.mootool.next.compose.domain.MessageBoardEngine
+import com.rememberber.mootool.next.compose.domain.MessageBoardSessionRestore
 import com.rememberber.mootool.next.compose.domain.HttpEngine
 import com.rememberber.mootool.next.compose.domain.HttpCookie
 import com.rememberber.mootool.next.compose.domain.HttpMethod
@@ -1055,15 +1056,7 @@ class MessageBoardSession {
     )
 
     fun restore(snapshot: MessageBoardSessionSnapshot) {
-        message = MessageBoardEngine.clip(snapshot.message)
-        theme = MessageBoardEngine.themeId(snapshot.theme)
-        alignment = MessageBoardEngine.alignmentId(snapshot.alignment)
-        size = MessageBoardEngine.normalizeSize(snapshot.size)
-        restored = true
-        presenting = false
-        displayAwake = false
-        notice = ""
-        error = ""
+        MessageBoardSessionRestore.apply(this, snapshot)
     }
 }
 
