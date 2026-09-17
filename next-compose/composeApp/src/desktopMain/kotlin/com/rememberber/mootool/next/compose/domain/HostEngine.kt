@@ -13,6 +13,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Base64
+import java.util.Locale
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.isRegularFile
@@ -299,6 +300,24 @@ object HostEngine {
                 "eperm" in message || "error=13" in message -> HostErrorCode.PERMISSION
             else -> HostErrorCode.COMMAND_FAILED
         }
+    }
+
+    /** Host 方案列表过滤：profile id 用 ROOT；名称/正文用默认 locale（对齐命令盘 ToolRegistry 语义）。 */
+    fun matchesProfileSearch(
+        name: String,
+        profileId: String,
+        content: String,
+        query: String,
+        includeContent: Boolean,
+    ): Boolean {
+        val trimmed = query.trim()
+        if (trimmed.isEmpty()) return true
+        val rootNeedle = trimmed.lowercase(Locale.ROOT)
+        val localeNeedle = trimmed.lowercase(Locale.getDefault())
+        if (profileId.lowercase(Locale.ROOT).contains(rootNeedle)) return true
+        if (name.lowercase(Locale.getDefault()).contains(localeNeedle)) return true
+        if (includeContent && content.contains(trimmed, ignoreCase = true)) return true
+        return false
     }
 
     private fun appleScriptString(value: String): String =

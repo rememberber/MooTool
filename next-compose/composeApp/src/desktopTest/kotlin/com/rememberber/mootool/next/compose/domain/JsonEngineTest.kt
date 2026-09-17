@@ -235,4 +235,13 @@ class JsonEngineTest {
             JsonEngine.queryPath("{}", "", t)
         }
     }
+
+    /** 对照 Electron `jsonTools.test.ts` `queries and enumerates JSON paths`。 */
+    @Test
+    fun listPathsMatchesElectronJsonToolsEnumerate() {
+        val input = """{"store":{"books":[{"title":"One"},{"title":"Two"}]}}"""
+        val paths = JsonEngine.listPaths(input, t).map { it.path }
+        assertTrue(paths.contains("$.store.books[0].title"))
+        assertTrue(paths.contains("$.store.books[1].title"))
+    }
 }

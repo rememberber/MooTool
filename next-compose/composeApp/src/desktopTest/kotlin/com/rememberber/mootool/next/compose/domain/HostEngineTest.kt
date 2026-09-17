@@ -37,6 +37,15 @@ class HostEngineTest {
     }
 
     @Test
+    fun matchesProfileSearchUsesRootLocaleForProfileId() {
+        val id = "AbCdEf-1234"
+        assertTrue(HostEngine.matchesProfileSearch("prod", id, "127.0.0.1 x\n", "abcdef", includeContent = false))
+        assertFalse(HostEngine.matchesProfileSearch("prod", id, "127.0.0.1 x\n", "missing", includeContent = false))
+        assertTrue(HostEngine.matchesProfileSearch("prod", id, "127.0.0.1 secret\n", "secret", includeContent = true))
+        assertFalse(HostEngine.matchesProfileSearch("prod", id, "127.0.0.1 secret\n", "secret", includeContent = false))
+    }
+
+    @Test
     fun profileStoreCrudAndSearchStayInComposeDataDir() {
         val root = Files.createTempDirectory("compose-host-store-")
         val directories = AppDirectories(root, root.resolve("data"), root.resolve("cache"), root.resolve("logs"))

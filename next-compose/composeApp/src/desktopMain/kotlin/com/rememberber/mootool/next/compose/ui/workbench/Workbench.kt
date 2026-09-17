@@ -59,7 +59,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.PaddingValues
 import com.rememberber.mootool.next.compose.app.AppContainer
+import com.rememberber.mootool.next.compose.app.CommandSearchEntry
 import com.rememberber.mootool.next.compose.app.ToolRegistry
+import com.rememberber.mootool.next.compose.app.commandSearchEntries
 import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
 import com.rememberber.mootool.next.compose.features.config.ConfigConvertScreen
 import com.rememberber.mootool.next.compose.features.color.ColorBoardScreen
@@ -282,7 +284,7 @@ private fun CommandSearch(container: AppContainer) {
     var selected by remember { mutableStateOf(0) }
     val colors = MooTheme.colors
     val results = remember(query, container.settings.value.general.language) {
-        ToolRegistry.search(query) { container.t(it) }
+        commandSearchEntries(query) { container.t(it) }
     }
     val searchFocus = remember { FocusRequester() }
     val closeFocus = remember { FocusRequester() }
@@ -290,7 +292,11 @@ private fun CommandSearch(container: AppContainer) {
     LaunchedEffect(results) { selected = nextCommandIndex(selected, results.size, stay = true) }
     LaunchedEffect(Unit) { searchFocus.requestFocus() }
     fun choose(index: Int) {
-        results.getOrNull(index)?.let { container.openTool(it.id) }
+        when (val entry = results.getOrNull(index)) {
+            is CommandSearchEntry.Tool -> container.openTool(entry.definition.id)
+            is CommandSearchEntry.Settings -> container.openSettings(true, entry.target.categoryId)
+            null -> Unit
+        }
         container.setSearchOpen(false)
     }
     fun focusCommandPaletteTarget(target: CommandPaletteFocusTarget) {
@@ -421,12 +427,23 @@ private fun CommandSearch(container: AppContainer) {
                 )
             } else {
                 LazyColumn(Modifier.heightIn(max = 500.dp).padding(8.dp)) {
-                    itemsIndexed(results) { index, tool ->
+                    itemsIndexed(results) { index, entry ->
                         val active = index == selected
-                        val groupKey = ToolRegistry.groupTitleKey(tool.groupId)
                         val rowShape = RoundedCornerShape(MooTheme.dimens.navRadius)
                         val rowInteraction = remember(index) { MutableInteractionSource() }
                         val rowFocused by rowInteraction.collectIsFocusedAsState()
+                        val titleKey = when (entry) {
+                            is CommandSearchEntry.Tool -> entry.definition.titleKey
+                            is CommandSearchEntry.Settings -> entry.target.labelKey
+                        }
+                        val groupKey = when (entry) {
+                            is CommandSearchEntry.Tool -> ToolRegistry.groupTitleKey(entry.definition.groupId)
+                            is CommandSearchEntry.Settings -> "app.search.settingsGroup"
+                        }
+                        val leadingGlyph = when (entry) {
+                            is CommandSearchEntry.Tool -> null
+                            is CommandSearchEntry.Settings -> entry.target.navIcon
+                        }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -460,21 +477,30 @@ private fun CommandSearch(container: AppContainer) {
                                 .semantics {
                                     role = Role.Button
                                     this.selected = active
-                                    contentDescription = container.t(tool.titleKey)
+                                    contentDescription = container.t(titleKey)
                                 },
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            ToolIcon(tool.id, if (active) colors.navSelectedIcon() else colors.textSecondary)
+                            when (entry) {
+                                is CommandSearchEntry.Tool ->
+                                    ToolIcon(entry.definition.id, if (active) colors.navSelectedIcon() else colors.textSecondary)
+                                is CommandSearchEntry.Settings ->
+                                    Text(
+                                        leadingGlyph.orEmpty(),
+                                        color = if (active) colors.navSelectedIcon() else colors.textSecondary,
+                                        fontSize = 16.sp,
+                                    )
+                            }
                             Text(
-                                container.t(tool.titleKey),
+                                container.t(titleKey),
                                 color = if (active) colors.navSelectedContent() else colors.textPrimary,
                                 fontSize = 13.sp,
                                 fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
                                 modifier = Modifier.weight(1f)
                             )
-                            if (groupKey != null) {
-                                Text(container.t(groupKey), color = colors.textSecondary, fontSize = 11.sp)
+                            groupKey?.let { key ->
+                                Text(container.t(key), color = colors.textSecondary, fontSize = 11.sp)
                             }
                         }
                     }

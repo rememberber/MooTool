@@ -25,12 +25,15 @@ class HostProfileStore(
     private val file get() = directories.dataRoot.resolve("hosts").resolve("profiles.json")
 
     fun list(keyword: String = "", includeContent: Boolean = true): List<HostProfile> {
-        val query = keyword.trim()
         return load()
             .filter { profile ->
-                if (query.isEmpty()) true
-                else profile.name.contains(query, ignoreCase = true) ||
-                    (includeContent && profile.content.contains(query, ignoreCase = true))
+                HostEngine.matchesProfileSearch(
+                    name = profile.name,
+                    profileId = profile.id,
+                    content = profile.content,
+                    query = keyword,
+                    includeContent = includeContent,
+                )
             }
             .sortedByDescending { it.modifiedAt }
             .map { if (includeContent) it else it.copy(content = "") }
