@@ -3,6 +3,7 @@ package com.rememberber.mootool.next.compose.storage
 import com.rememberber.mootool.next.compose.app.AppDirectories
 import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.domain.NavigationToolVisibility
+import com.rememberber.mootool.next.compose.domain.TranslationEngine
 import com.rememberber.mootool.next.compose.ui.components.normalizeVaultTreeExpandMode
 import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.model.SETTINGS_SCHEMA_VERSION
@@ -93,13 +94,23 @@ class SettingsRepository(
         val layout = settings.layout.copy(hiddenNavigationToolIds = hiddenNavigationToolIds)
         val jsonTreeExpandMode = normalizeVaultTreeExpandMode(vault.jsonTreeExpandMode)
         val quickNoteTreeExpandMode = normalizeVaultTreeExpandMode(vault.quickNoteTreeExpandMode)
+        val translationLanguages = TranslationEngine.normalizeLanguagePair(
+            settings.tools.translationSourceLang,
+            settings.tools.translationTargetLang,
+        )
+        val tools = settings.tools.copy(
+            exportDirectory = exportDirectory,
+            translationSourceLang = translationLanguages.first,
+            translationTargetLang = translationLanguages.second,
+        )
         if (quickNotePath == vault.quickNotePath &&
             jsonPath == vault.jsonPath &&
             exportDirectory == settings.tools.exportDirectory &&
             dataDirectory == settings.data.directory &&
             layout == settings.layout &&
             jsonTreeExpandMode == vault.jsonTreeExpandMode &&
-            quickNoteTreeExpandMode == vault.quickNoteTreeExpandMode
+            quickNoteTreeExpandMode == vault.quickNoteTreeExpandMode &&
+            tools == settings.tools
         ) {
             return settings
         }
@@ -112,7 +123,7 @@ class SettingsRepository(
                 jsonTreeExpandMode = jsonTreeExpandMode,
                 quickNoteTreeExpandMode = quickNoteTreeExpandMode,
             ),
-            tools = settings.tools.copy(exportDirectory = exportDirectory)
+            tools = tools,
         )
     }
 

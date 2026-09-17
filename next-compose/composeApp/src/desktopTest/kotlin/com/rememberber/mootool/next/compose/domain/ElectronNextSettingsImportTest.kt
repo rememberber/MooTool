@@ -110,6 +110,19 @@ class ElectronNextSettingsImportTest {
     }
 
     @Test
+    fun sanitize_normalizesLegacyTranslationLanguageNames() {
+        val imported = AppSettings.Default.copy(
+            tools = AppSettings.Default.tools.copy(
+                translationSourceLang = "English",
+                translationTargetLang = "英语",
+            ),
+        )
+        val merged = ElectronNextSettingsImport.mergeInto(AppSettings.Default, imported)
+        assertEquals("auto", merged.tools.translationSourceLang)
+        assertEquals("en", merged.tools.translationTargetLang)
+    }
+
+    @Test
     fun loadsRuntimeDraftsAndOptionsIntoCodeRunPatch() {
         val dir = createTempDirectory("electron-runtime-")
         val store = dir.resolve("mootool-next.json")

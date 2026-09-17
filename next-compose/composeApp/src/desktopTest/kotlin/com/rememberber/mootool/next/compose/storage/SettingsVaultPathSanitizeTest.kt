@@ -71,6 +71,26 @@ class SettingsVaultPathSanitizeTest {
     }
 
     @Test
+    fun loadNormalizesLegacyTranslationLanguageNames() {
+        val root = kotlin.io.path.createTempDirectory("mootool-settings-translation-lang-")
+        val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }
+        val repository = SettingsRepository(directories)
+        repository.save(
+            AppSettings.Default.copy(
+                tools = AppSettings.Default.tools.copy(
+                    translationSourceLang = "English",
+                    translationTargetLang = "英语",
+                )
+            )
+        )
+        val loaded = SettingsRepository(directories).load()
+        assertEquals("auto", loaded.tools.translationSourceLang)
+        assertEquals("en", loaded.tools.translationTargetLang)
+        assertTrue(directories.settingsFile.readText().contains("\"translationTargetLang\": \"en\""))
+        root.toFile().deleteRecursively()
+    }
+
+    @Test
     fun saveNormalizesHiddenNavigationToolIds() {
         val root = kotlin.io.path.createTempDirectory("mootool-settings-nav-save-")
         val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }

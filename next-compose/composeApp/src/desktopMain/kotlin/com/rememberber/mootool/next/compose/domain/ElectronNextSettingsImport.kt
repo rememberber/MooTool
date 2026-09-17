@@ -3,6 +3,7 @@ package com.rememberber.mootool.next.compose.domain
 import com.rememberber.mootool.next.compose.domain.NavigationToolVisibility
 import com.rememberber.mootool.next.compose.model.AppLanguage
 import com.rememberber.mootool.next.compose.model.AppSettings
+import com.rememberber.mootool.next.compose.model.ToolSettings
 import com.rememberber.mootool.next.compose.model.CloseBehavior
 import com.rememberber.mootool.next.compose.model.CustomToolGroup
 import com.rememberber.mootool.next.compose.model.InterfaceStyle
@@ -168,7 +169,7 @@ object ElectronNextSettingsImport {
                 exportDirectory = patch.tools.exportDirectory,
                 translationProvider = patch.tools.translationProvider,
                 translationSourceLang = patch.tools.translationSourceLang,
-                translationTargetLang = patch.tools.translationTargetLang
+                translationTargetLang = patch.tools.translationTargetLang,
             ),
             shortcuts = current.shortcuts.copy(
                 search = patch.shortcuts.search,
@@ -202,9 +203,19 @@ object ElectronNextSettingsImport {
                 jsonTreeExpandMode = normalizeVaultTreeExpandMode(imported.vault.jsonTreeExpandMode),
                 quickNoteTreeExpandMode = normalizeVaultTreeExpandMode(imported.vault.quickNoteTreeExpandMode),
             ),
-            tools = imported.tools.copy(
-                exportDirectory = VaultPathConfig.effectiveCustomRoot(imported.tools.exportDirectory)
-            )
+            tools = normalizeTranslationTools(imported.tools),
+        )
+    }
+
+    private fun normalizeTranslationTools(tools: ToolSettings): ToolSettings {
+        val languages = TranslationEngine.normalizeLanguagePair(
+            tools.translationSourceLang,
+            tools.translationTargetLang,
+        )
+        return tools.copy(
+            exportDirectory = VaultPathConfig.effectiveCustomRoot(tools.exportDirectory),
+            translationSourceLang = languages.first,
+            translationTargetLang = languages.second,
         )
     }
 
