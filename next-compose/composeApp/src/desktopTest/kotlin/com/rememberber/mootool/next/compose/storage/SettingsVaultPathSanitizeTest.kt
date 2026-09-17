@@ -149,6 +149,23 @@ class SettingsVaultPathSanitizeTest {
     }
 
     @Test
+    fun loadNormalizesUnknownAccentColorAndLegacyAliases() {
+        val root = kotlin.io.path.createTempDirectory("mootool-settings-accent-")
+        val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }
+        val repository = SettingsRepository(directories)
+        repository.save(
+            AppSettings.Default.copy(
+                appearance = AppSettings.Default.appearance.copy(accentColor = "bogus"),
+            )
+        )
+        val loaded = SettingsRepository(directories).load()
+        assertEquals("blue", loaded.appearance.accentColor)
+        repository.save(loaded.copy(appearance = loaded.appearance.copy(accentColor = "orange")))
+        assertEquals("yellow", SettingsRepository(directories).load().appearance.accentColor)
+        root.toFile().deleteRecursively()
+    }
+
+    @Test
     fun loadNormalizesUnknownInterfaceStyleAndCustomGroups() {
         val root = kotlin.io.path.createTempDirectory("mootool-settings-layout-")
         val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }

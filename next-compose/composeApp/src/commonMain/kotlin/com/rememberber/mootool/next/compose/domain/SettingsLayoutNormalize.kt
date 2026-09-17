@@ -10,12 +10,14 @@ import com.rememberber.mootool.next.compose.model.ToolId
 object SettingsLayoutNormalize {
     private val paneKeyPattern = Regex("^[a-z0-9-]{1,64}$", RegexOption.IGNORE_CASE)
     private val customGroupIdPattern = Regex("^[a-z0-9_-]{1,80}$", RegexOption.IGNORE_CASE)
+    private val accentColorPresetIds = setOf("yellow", "coral", "blue", "green", "red", "purple")
 
     fun apply(settings: AppSettings, defaults: AppSettings = AppSettings.Default): AppSettings =
         settings.copy(
             appearance = settings.appearance.copy(
                 interfaceStyle = normalizeInterfaceStyle(settings.appearance.interfaceStyle, defaults.appearance.interfaceStyle),
                 theme = normalizeTheme(settings.appearance.theme, defaults.appearance.theme),
+                accentColor = normalizeAccentColor(settings.appearance.accentColor, defaults.appearance.accentColor),
             ),
             layout = settings.layout.copy(
                 navigationStyle = normalizeNavigationStyle(settings.layout.navigationStyle, defaults.layout.navigationStyle),
@@ -36,6 +38,17 @@ object SettingsLayoutNormalize {
     fun normalizeTheme(value: String, fallback: String = ThemePreference.System.name.lowercase()): String =
         ThemePreference.entries.firstOrNull { it.name.equals(value.trim(), ignoreCase = true) }?.name?.lowercase()
             ?: fallback
+
+    /** Aligns with Electron `accentColorPresets` and legacy Java `orange`/`teal` aliases in theme swatches. */
+    fun normalizeAccentColor(value: String, fallback: String = "blue"): String {
+        val normalized = value.trim().lowercase()
+        val mapped = when (normalized) {
+            "orange" -> "yellow"
+            "teal" -> "green"
+            else -> normalized
+        }
+        return if (mapped in accentColorPresetIds) mapped else fallback
+    }
 
     fun normalizeNavigationStyle(value: String, fallback: String = NavigationStyle.Classic.name.lowercase()): String =
         NavigationStyle.entries.firstOrNull { it.name.equals(value.trim(), ignoreCase = true) }?.name?.lowercase()

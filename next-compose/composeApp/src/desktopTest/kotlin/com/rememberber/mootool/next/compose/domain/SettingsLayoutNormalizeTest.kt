@@ -32,6 +32,15 @@ class SettingsLayoutNormalizeTest {
     }
 
     @Test
+    fun normalizeAccentColor_matchesElectronAccentPresets() {
+        assertEquals("blue", SettingsLayoutNormalize.normalizeAccentColor("unknown"))
+        assertEquals("purple", SettingsLayoutNormalize.normalizeAccentColor("purple"))
+        assertEquals("yellow", SettingsLayoutNormalize.normalizeAccentColor("orange"))
+        assertEquals("green", SettingsLayoutNormalize.normalizeAccentColor("teal"))
+        assertEquals("red", SettingsLayoutNormalize.normalizeAccentColor("  red  "))
+    }
+
+    @Test
     fun sanitizePaneSizes_dropsUnsafeKeysAndKeepsDpWidths() {
         val sanitized = SettingsLayoutNormalize.sanitizePaneSizes(
             mapOf(

@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rememberber.mootool.next.compose.domain.SettingsLayoutNormalize
 import com.rememberber.mootool.next.compose.model.ThemePreference
 import kotlin.math.max
 import kotlin.math.min
@@ -705,11 +706,7 @@ private fun resolveColors(
 object AccentPresets {
     val ids = listOf("yellow", "coral", "blue", "green", "red", "purple")
 
-    fun normalize(id: String): String = when (id) {
-        "orange" -> "yellow"
-        "teal" -> "green"
-        else -> if (id in ids) id else "blue"
-    }
+    fun normalize(id: String): String = SettingsLayoutNormalize.normalizeAccentColor(id)
 
     fun swatch(id: String): Color = when (normalize(id)) {
         "yellow" -> Color(0xFFE0B22B)
