@@ -34,6 +34,11 @@ class GitDiffPresentationTest {
     }
 
     @Test
+    fun diffHighlightModeMatchesTextDiffBoth() {
+        assertEquals(GitDiffDecoration.HIGHLIGHT_BOTH, GitDiffPresentation.diffHighlightMode)
+    }
+
+    @Test
     fun rstaSyntaxFromGitDiffPath() {
         val diff = GitFileDiff(path = "src/App.ts", before = "", after = "")
         assertEquals(

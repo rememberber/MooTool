@@ -8,6 +8,7 @@ import javax.swing.undo.CompoundEdit
 import javax.swing.undo.UndoManager
 import com.rememberber.mootool.next.compose.domain.DiffSegment
 import com.rememberber.mootool.next.compose.domain.DiffSegmentType
+import com.rememberber.mootool.next.compose.domain.GitDiffDecoration
 import com.rememberber.mootool.next.compose.ui.theme.EditorPalette
 import com.rememberber.mootool.next.compose.ui.theme.toAwtColor
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
@@ -260,26 +261,24 @@ class EditorBuffer(
         added: java.awt.Color,
         removed: java.awt.Color,
         changed: java.awt.Color,
+        highlightMode: String = GitDiffDecoration.HIGHLIGHT_BOTH,
     ) {
         clearDiffHighlights()
         val highlighter = area.highlighter ?: return
-        segments.forEach { segment ->
-            when (segment.type) {
-                DiffSegmentType.Insert -> if (side != "right") return@forEach
-                DiffSegmentType.Delete -> if (side != "left") return@forEach
-                DiffSegmentType.Change -> Unit
-            }
-            val from = if (side == "left") segment.leftStart else segment.rightStart
-            val to = if (side == "left") segment.leftEnd else segment.rightEnd
-            if (from < 0 || to < 0 || to <= from) return@forEach
-            val base = when (segment.type) {
+        val body = text
+        GitDiffDecoration.rangesForSide(body, segments, side, highlightMode).forEach { range ->
+            val base = when (range.type) {
                 DiffSegmentType.Insert -> added
                 DiffSegmentType.Delete -> removed
                 DiffSegmentType.Change -> changed
             }
-            val color = java.awt.Color(base.red, base.green, base.blue, 96)
-            val start = from.coerceIn(0, text.length)
-            val end = to.coerceIn(start, text.length)
+            val alpha = when (range.tier) {
+                GitDiffDecoration.Tier.Line -> 41
+                GitDiffDecoration.Tier.Character -> 107
+            }
+            val color = java.awt.Color(base.red, base.green, base.blue, alpha)
+            val start = range.start.coerceIn(0, body.length)
+            val end = range.end.coerceIn(start, body.length)
             if (end <= start) return@forEach
             val painter = javax.swing.text.DefaultHighlighter.DefaultHighlightPainter(color)
             runCatching { diffHighlights += highlighter.addHighlight(start, end, painter) }

@@ -31,4 +31,4 @@ CI/本机无 GUI：`./scripts/verify-product-evidence-prep.sh` 或 `ProductEvide
 
 可选 F09 公网 smoke（仅 httpbin/localhost，默认 `desktopTest --offline` **不跑**）：`MOOTOOL_HTTP_PUBLIC_SMOKE=1` + `HttpEngineTest.optionalHttpBinPublicGetSmoke`（见 [DIFF-526](../docs/diff/526-http-pdf-merge-smoke-p7-slice.md)）。multipart POST：`MOOTOOL_HTTP_MULTIPART_SMOKE=1` + `optionalHttpBinMultipartPostSmoke`（见 [DIFF-528](../docs/diff/528-http-multipart-editor-tray-git-slice.md)）。
 
-登记：`docs/evidence/2026-09-17-vault-conflict-product-window/results.md`、`docs/evidence/2026-09-16-editor-manual-acceptance/results.md`、`docs/evidence/2026-09-17-tray-tcc-screencapture/results.md`。
+登记：`docs/evidence/2026-09-17-vault-conflict-product-window/results.md`（§A 产品主窗 PNG；自动化 Overlay 帧 `147` 见 [DIFF-543](../docs/diff/543-git-diff-decoration-f-tools-p7-slice.md)）、`docs/evidence/2026-09-16-editor-manual-acceptance/results.md`、`docs/evidence/2026-09-17-tray-tcc-screencapture/results.md`。

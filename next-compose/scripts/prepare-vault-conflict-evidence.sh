@@ -28,4 +28,5 @@ export MOOTOOL_COMPOSE_DATA_DIR="${ROOT}"
 #   printf '%s\\n' '{"disk":true}' > "${VAULT_JSON}/sample.json"
 $(mootool_evidence_print_run_distributable_hint)
 # 登记: docs/evidence/2026-09-17-vault-conflict-product-window/results.md §A
+# 自动化 Overlay 焦点帧（非产品主窗）: docs/evidence/2026-09-15-inspector-screencapture/windows/147-compose-json-vault-conflict-overlay-keep-tab-focus.png
 EOF

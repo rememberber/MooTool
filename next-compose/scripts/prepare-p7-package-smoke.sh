@@ -52,3 +52,4 @@ echo "# MOOTOOL_HTTP_PUBLIC_SMOKE=1 runs HttpEngineTest.optionalHttpBinPublicGet
 echo "# Without network, mark 未测 in docs/acceptance.md — see docs/diff/526-http-pdf-merge-smoke-p7-slice.md."
 echo ""
 echo "OK: smoke checks finished. Record results in docs/acceptance.md; P7 install/sign/notarize still manual."
+echo "# See docs/diff/543-git-diff-decoration-f-tools-p7-slice.md — desktopTest gate only, not tri-platform install."

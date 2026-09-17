@@ -30,6 +30,14 @@ class CodeEditorSurfaceFormatEngineTest {
     }
 
     @Test
+    fun formatsTypescriptLikeJavascriptSurface() {
+        assertEquals(
+            "type Item = { id: number };",
+            CodeEditorSurfaceFormatEngine.formatTypescript("type Item={id:number}"),
+        )
+    }
+
+    @Test
     fun documentFormatEngineRoutesJavascriptAndPython() {
         assertEquals(
             "const value = { ready: true };",

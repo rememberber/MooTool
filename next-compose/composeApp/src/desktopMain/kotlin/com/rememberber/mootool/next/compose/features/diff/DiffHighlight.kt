@@ -8,6 +8,7 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import com.rememberber.mootool.next.compose.domain.DiffSegment
 import com.rememberber.mootool.next.compose.domain.DiffSegmentType
+import com.rememberber.mootool.next.compose.domain.GitDiffDecoration
 
 internal class DiffHighlightTransformation(
     private val segments: List<DiffSegment>,
@@ -44,26 +45,15 @@ internal fun annotateSide(
         val end = to.coerceAtMost(text.length)
         val start = from.coerceIn(0, text.length)
         if (start >= end) continue
-        if (highlightMode != "characters") {
-            val lineFrom = lineStartAt(text, start)
-            val lineTo = lineEndAt(text, start)
-            if (lineTo > lineFrom) builder.addStyle(SpanStyle(background = color.copy(alpha = 0.16f)), lineFrom, lineTo)
-        }
-        if (highlightMode != "lines") {
-            builder.addStyle(SpanStyle(background = color.copy(alpha = 0.42f)), start, end)
+        GitDiffDecoration.rangesForSide(text, listOf(segment), side, highlightMode).forEach { range ->
+            val tierColor = when (range.tier) {
+                GitDiffDecoration.Tier.Line -> color.copy(alpha = 0.16f)
+                GitDiffDecoration.Tier.Character -> color.copy(alpha = 0.42f)
+            }
+            val rs = range.start.coerceIn(0, text.length)
+            val re = range.end.coerceIn(rs, text.length)
+            if (re > rs) builder.addStyle(SpanStyle(background = tierColor), rs, re)
         }
     }
     return builder.toAnnotatedString()
-}
-
-internal fun lineStartAt(text: String, offset: Int): Int {
-    val position = offset.coerceIn(0, text.length)
-    if (position == 0) return 0
-    val index = text.lastIndexOf('\n', position - 1)
-    return if (index < 0) 0 else index + 1
-}
-
-internal fun lineEndAt(text: String, offset: Int): Int {
-    val index = text.indexOf('\n', offset.coerceIn(0, text.length))
-    return if (index < 0) text.length else index
 }

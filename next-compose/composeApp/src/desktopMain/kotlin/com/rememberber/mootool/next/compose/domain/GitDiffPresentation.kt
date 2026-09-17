@@ -2,6 +2,9 @@ package com.rememberber.mootool.next.compose.domain
 
 /** Vault Git diff 区 UI 语义（对齐 Electron `VaultGitDiffView`；高亮仍走 Compose `DiffEngine`）。 */
 object GitDiffPresentation {
+    /** 与 F02 默认 `both` 一致：`GitDiffDecoration` 行 16% + 字符 42% 叠层。 */
+    val diffHighlightMode: String = GitDiffDecoration.HIGHLIGHT_BOTH
+
     fun languageForFile(diff: GitFileDiff): TextCodeEditorLanguage {
         val pathHint = diff.originalPath?.takeIf { it.isNotBlank() } ?: diff.path
         return TextCodeEditorLanguages.resolveFromPath(pathHint)

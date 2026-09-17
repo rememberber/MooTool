@@ -50,12 +50,14 @@ internal fun GitDiffSideBySideEditors(
     }
 
     LaunchedEffect(comparison, colors.success, colors.danger, colors.accent) {
+        val highlightMode = GitDiffPresentation.diffHighlightMode
         leftBuffer.markDiffSide(
             comparison.segments,
             side = "left",
             added = colors.success.toAwtColor(),
             removed = colors.danger.toAwtColor(),
             changed = colors.accent.toAwtColor(),
+            highlightMode = highlightMode,
         )
         rightBuffer.markDiffSide(
             comparison.segments,
@@ -63,6 +65,7 @@ internal fun GitDiffSideBySideEditors(
             added = colors.success.toAwtColor(),
             removed = colors.danger.toAwtColor(),
             changed = colors.accent.toAwtColor(),
+            highlightMode = highlightMode,
         )
     }
 

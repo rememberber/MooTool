@@ -6,3 +6,5 @@
 | short-names-fallback | `node`/`py`/`yml`/未知 → 语言或 `text` | `TextCodeEditorLanguageTest.acceptsShortRuntimeNamesAndFallsBackToText` |
 | git-diff-path | `VaultGitDiffView` 按路径扩展名选 CodeMirror 语言 | `TextCodeEditorLanguages.resolveFromPath` + `GitDiffPresentation.languageForFile` / `rstaSyntaxForFile`（[DIFF-542](../diff/542-vault-git-diff-editorformat-conflict-slice.md) EditorHost） |
 | format-js-python | `formatCodeEditorContent` JS 单线样本 / Python tab | `CodeEditorSurfaceFormatEngineTest` + `DocumentFormatEngine`（[DIFF-542](../diff/542-vault-git-diff-editorformat-conflict-slice.md)） |
+| format-ts-surface | TS 仍走 Prettier `typescript` parser（Electron）；Compose 无 Node | `CodeEditorSurfaceFormatEngineTest.formatsTypescriptLikeJavascriptSurface`（[DIFF-543](../diff/543-git-diff-decoration-f-tools-p7-slice.md)） |
+| git-diff-decoration | Vault Git diff 高亮 | `GitDiffDecorationTest` + `GitDiffPresentation.diffHighlightMode`（[DIFF-543](../diff/543-git-diff-decoration-f-tools-p7-slice.md)） |

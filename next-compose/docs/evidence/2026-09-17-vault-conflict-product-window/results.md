@@ -18,6 +18,7 @@
 | merge 中 pull 错误优先于 remote | `GitPullGuardTest`（DIFF-448） |
 | Git pull merge 冲突 resolve/continue | `GitEngineTest.pullLeavesMergeConflictWhenHistoriesDiverge`（DIFF-137） |
 | Compose Tab 焦点帧 | `141`–`144`（DIFF-436～439） |
+| JSON Vault 冲突 Overlay 完整链（非主窗） | `147-compose-json-vault-conflict-overlay-keep-tab-focus.png`（`VaultConflictOverlayCaptureTest`，DIFF-542/543；**不能**代替 §A 产品主窗 PNG） |
 
 ## 待本机产品窗（通过后才可标 F04/F01 冲突 UI 已验收）
 
