@@ -74,6 +74,7 @@ import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.components.mooTranslationEditorSeam
 import com.rememberber.mootool.next.compose.ui.components.mooTranslationHistoryArticle
+import com.rememberber.mootool.next.compose.ui.components.mooTranslationAutoRow
 import com.rememberber.mootool.next.compose.ui.components.mooTranslationLangBar
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
@@ -454,7 +455,7 @@ private fun TranslatePane(
     var providerOpen by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         Row(
-            Modifier.fillMaxWidth().mooTranslationLangBar(),
+            Modifier.fillMaxWidth().mooTranslationLangBar().mooTranslationAutoRow(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(7.dp)
         ) {

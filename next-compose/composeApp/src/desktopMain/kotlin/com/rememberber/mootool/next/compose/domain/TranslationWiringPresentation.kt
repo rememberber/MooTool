@@ -2,6 +2,9 @@ package com.rememberber.mootool.next.compose.domain
 
 /** F20 设置 → `TranslationEngine` 入参（Google/Bing 首选与超时 clamp，可单测）。 */
 object TranslationWiringPresentation {
+    fun languagePairFromSettings(sourceLangWire: String, targetLangWire: String): Pair<String, String> =
+        TranslationEngine.normalizeLanguagePair(sourceLangWire, targetLangWire)
+
     fun buildInput(
         requestId: String,
         text: String,

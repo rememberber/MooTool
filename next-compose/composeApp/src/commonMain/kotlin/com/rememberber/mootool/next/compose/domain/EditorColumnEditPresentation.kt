@@ -5,6 +5,13 @@ object EditorColumnEditPresentation {
     const val JSON_IME_SAMPLE = "ime-sample.json"
     const val QUICK_NOTE_IME_SAMPLE = "ime-sample.md"
 
+    /** JSON/随手记列编辑闩锁时的状态栏 notice 键（wrap 时提示逻辑行语义）。 */
+    fun columnNoticeKey(columnLatch: Boolean, wrap: Boolean): String? = when {
+        !columnLatch -> null
+        wrap -> "quickNote.columnEdit.wrap"
+        else -> "quickNote.columnEdit.hint"
+    }
+
     val commandPaletteKeywords: List<String> = listOf(
         "column",
         "columnedit",

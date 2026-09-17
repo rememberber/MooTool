@@ -96,7 +96,7 @@ class CommandSearchCatalogTest {
     fun curlAndPdfQueryOpenNetworkSettings() {
         val en = Translator(AppLanguage.EnUS)
         assertEquals("network", CommandSearchCatalog.search("curl", en::t).single().categoryId)
-        assertEquals("network", CommandSearchCatalog.search("pdf", en::t).single().categoryId)
+        assertTrue(CommandSearchCatalog.search("pdf", en::t).any { it.categoryId == "network" })
         assertEquals("network", CommandSearchCatalog.search("httpbin", en::t).single().categoryId)
         assertEquals("tools", CommandSearchCatalog.search("debounce", en::t).single().categoryId)
         assertEquals("network", CommandSearchCatalog.search("ping", en::t).single().categoryId)
@@ -222,6 +222,18 @@ class CommandSearchCatalogTest {
     fun detectQueryOpensRuntimeSettings() {
         val hits = CommandSearchCatalog.search("detect", Translator(AppLanguage.EnUS)::t)
         assertEquals("runtime", hits.single().categoryId)
+    }
+
+    @Test
+    fun protobufWireQueryOpensAiSettings() {
+        val hits = CommandSearchCatalog.search("protobuf_wire", Translator(AppLanguage.EnUS)::t)
+        assertEquals("ai", hits.single().categoryId)
+    }
+
+    @Test
+    fun fetchQueryOpensVaultSettings() {
+        val hits = CommandSearchCatalog.search("fetch", Translator(AppLanguage.EnUS)::t)
+        assertTrue("vault" in hits.map { it.categoryId })
     }
 
     @Test

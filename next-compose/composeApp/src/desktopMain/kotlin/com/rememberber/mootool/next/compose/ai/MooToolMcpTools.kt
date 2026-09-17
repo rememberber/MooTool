@@ -5,6 +5,8 @@ import com.rememberber.mootool.next.compose.domain.EncodeEngine
 import com.rememberber.mootool.next.compose.domain.JsonEngine
 import com.rememberber.mootool.next.compose.domain.JsonFormatOptions
 import com.rememberber.mootool.next.compose.domain.JsonTranslator
+import com.rememberber.mootool.next.compose.domain.ProtobufBinaryFormat
+import com.rememberber.mootool.next.compose.domain.ProtobufEngine
 import com.rememberber.mootool.next.compose.domain.TimeEngine
 import com.rememberber.mootool.next.compose.domain.TimestampUnit
 import com.rememberber.mootool.next.compose.domain.UrlCharset
@@ -42,6 +44,7 @@ object MooToolMcpTools {
                 "mootool_diff" -> diff(arguments)
                 "mootool_hash" -> hash(arguments)
                 "mootool_uuid" -> uuid(arguments)
+                "mootool_protobuf_wire" -> protobufWire(arguments)
                 else -> throw IllegalArgumentException("Unknown MooTool tool: $name")
             }
             McpToolResult(text = text, isError = false)
@@ -57,7 +60,8 @@ object MooToolMcpTools {
         "mootool_timestamp",
         "mootool_diff",
         "mootool_hash",
-        "mootool_uuid"
+        "mootool_uuid",
+        "mootool_protobuf_wire",
     )
 
     private fun jsonFormat(args: Map<String, Any?>): String {
@@ -160,6 +164,17 @@ object MooToolMcpTools {
         }
         val digest = MessageDigest.getInstance(algorithm.uppercase())
         return digest.digest(input.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+    }
+
+    private fun protobufWire(args: Map<String, Any?>): String {
+        requireKnownKeys(args, setOf("text", "format"))
+        val input = requireStringArg(args, "text", MCP_TEXT_MAX_CHARS)
+        val format = when (requireStringArg(args, "format")) {
+            "hex" -> ProtobufBinaryFormat.Hex
+            "base64" -> ProtobufBinaryFormat.Base64
+            else -> throw IllegalArgumentException("Unsupported format")
+        }
+        return ProtobufEngine.decodeWire(input, format)
     }
 
     private fun uuid(args: Map<String, Any?>): String {

@@ -1246,6 +1246,14 @@ fun Modifier.mooHttpRequestPane(): Modifier {
         .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
 }
 
+/** Electron PDF 工具栏操作行最小高度。 */
+@Composable
+fun Modifier.mooPdfToolbarActions(): Modifier = heightIn(min = 42.dp)
+
+/** Electron `.pdf-empty` 空表占位。 */
+@Composable
+fun Modifier.mooPdfEmptyState(): Modifier = padding(vertical = 18.dp)
+
 /** Electron `.pdf-table-wrap` / `.pdf-table` 卡片表区。 */
 @Composable
 fun Modifier.mooPdfTableWrap(): Modifier {
@@ -1475,6 +1483,20 @@ fun Modifier.mooUaResultCell(): Modifier = heightIn(min = 72.dp)
 /** Electron Protobuf Wire 输入区壳。 */
 @Composable
 fun Modifier.mooProtobufWirePane(): Modifier = heightIn(min = 200.dp)
+
+/** Electron `.protobuf-convert-grid` 中间转换列。 */
+@Composable
+fun Modifier.mooProtobufConvertGrid(): Modifier = widthIn(min = 120.dp).padding(horizontal = 4.dp)
+
+/** Electron `.translation-toolbar` 自动翻译开关行。 */
+@Composable
+fun Modifier.mooTranslationAutoRow(): Modifier {
+    val colors = MooTheme.colors
+    return heightIn(min = 36.dp)
+        .drawBehind {
+            drawLine(colors.borderSoft, Offset(0f, size.height - 0.5f), Offset(size.width, size.height - 0.5f), 1.dp.toPx())
+        }
+}
 
 /** Electron `.diff-workspace` 工作区最小高度。 */
 @Composable

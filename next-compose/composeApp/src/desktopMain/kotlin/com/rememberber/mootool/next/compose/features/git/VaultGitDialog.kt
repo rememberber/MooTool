@@ -46,6 +46,7 @@ import com.rememberber.mootool.next.compose.domain.GitEngine
 import com.rememberber.mootool.next.compose.domain.GitMergeConflictPresentation
 import com.rememberber.mootool.next.compose.domain.GitMergeProductFlowPresentation
 import com.rememberber.mootool.next.compose.domain.GitOperationPresentation
+import com.rememberber.mootool.next.compose.domain.GitVaultRemotePresentation
 import com.rememberber.mootool.next.compose.domain.GitRemoteCommitResult
 import com.rememberber.mootool.next.compose.domain.SettingsVaultGitNormalize
 import com.rememberber.mootool.next.compose.domain.GitFileDiff
@@ -383,26 +384,20 @@ fun VaultGitDialog(
                         MooButton(
                             container.t("git.fetch"),
                             p5Toolbar = true,
-                            enabled = !busy && GitOperationPresentation.fetchEnabled(status.remote.isNotBlank()),
+                            enabled = !busy && GitVaultRemotePresentation.fetchEnabled(status.remote),
                             onClick = { runAction { GitEngine.fetch(root, token = token()) } },
                             leading = { GitPanelIcon(GitPanelIconKind.CloudDownload, colors.textBody) },
                         )
                         MooButton(
                             container.t("git.pull"),
                             p5Toolbar = true,
-                            enabled = !busy && GitOperationPresentation.pullEnabled(
-                                remotePresent = status.remote.isNotBlank(),
-                                merging = status.merging,
-                            ),
+                            enabled = !busy && GitVaultRemotePresentation.pullEnabled(status.remote, status.merging),
                             onClick = { runAction(workingTree = GitVaultFlushAction.Pull) { GitEngine.pull(root, token = token()) } },
                         )
                         MooButton(
                             container.t("git.push"),
                             p5Toolbar = true,
-                            enabled = !busy && GitOperationPresentation.pushEnabled(
-                                remotePresent = status.remote.isNotBlank(),
-                                merging = status.merging,
-                            ),
+                            enabled = !busy && GitVaultRemotePresentation.pushEnabled(status.remote, status.merging),
                             onClick = { runAction(workingTree = GitVaultFlushAction.Push) { GitEngine.push(root, token = token()) } },
                             leading = { GitPanelIcon(GitPanelIconKind.CloudUpload, colors.textBody) },
                         )
@@ -433,6 +428,7 @@ fun VaultGitDialog(
                 }
             }
             if (status.available) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(container.t("git.remote"), color = colors.textMuted, fontSize = 11.sp)
                     MooTextField(remote, { remote = it }, placeholder = container.t("git.remotePlaceholder"), modifier = Modifier.weight(1f))
@@ -466,6 +462,14 @@ fun VaultGitDialog(
                             ) { GitEngine.setRemote(root, committed) }
                         }
                     )
+                }
+                if (GitVaultRemotePresentation.unsavedRemoteDraft(remote, status.remote)) {
+                    Text(
+                        container.t("git.remoteUnsavedHint"),
+                        color = colors.textMuted,
+                        fontSize = 10.sp,
+                    )
+                }
                 }
             }
             if (!status.available) {

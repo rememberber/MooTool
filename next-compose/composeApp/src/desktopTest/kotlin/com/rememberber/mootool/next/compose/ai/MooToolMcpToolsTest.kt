@@ -153,6 +153,16 @@ class MooToolMcpToolsTest {
     }
 
     @Test
+    fun protobufWireDecodesHexViaMcp() {
+        val result = MooToolMcpTools.call(
+            "mootool_protobuf_wire",
+            mapOf("text" to "0801", "format" to "hex"),
+        )
+        assertFalse(result.isError)
+        assertTrue(result.text.contains("field=1"))
+    }
+
+    @Test
     fun jsonQueryReturnsArrayMatchesForValuesPath() {
         val result = MooToolMcpTools.call(
             "mootool_json_query",

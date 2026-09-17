@@ -38,6 +38,7 @@ import com.rememberber.mootool.next.compose.domain.ProtobufBinaryFormat
 import com.rememberber.mootool.next.compose.domain.ProtobufEngine
 import com.rememberber.mootool.next.compose.domain.ProtobufException
 import com.rememberber.mootool.next.compose.domain.ProtobufHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.ProtobufWiringPresentation
 import com.rememberber.mootool.next.compose.domain.ProtobufHistoryRestore
 import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.model.HistoryRecord
@@ -50,6 +51,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooToolTabsRow
 import com.rememberber.mootool.next.compose.ui.components.IoThreePaneRow
 import com.rememberber.mootool.next.compose.ui.components.IoTwoPaneRow
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooProtobufConvertGrid
 import com.rememberber.mootool.next.compose.ui.components.mooProtobufWirePane
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
@@ -93,11 +95,13 @@ fun ProtobufScreen(container: AppContainer, detached: Boolean) {
                 actions = buildList {
                     add(OverflowAction(container.t("common.action.history")) { session.historyOpen = true; refresh() })
                     add(OverflowAction(container.t("protobuf.copy")) {
-                        val content = when (session.tab) {
-                            "wire" -> session.wireOutput
-                            "convert" -> session.base64.ifEmpty { session.hex }
-                            else -> session.binary
-                        }
+                        val content = ProtobufWiringPresentation.copyPayload(
+                            session.tab,
+                            session.wireOutput,
+                            session.base64,
+                            session.hex,
+                            session.binary,
+                        )
                         if (content.isEmpty()) {
                             session.notice = container.t("protobuf.nothingToCopy")
                         } else {
@@ -214,13 +218,22 @@ private fun JsonTab(
             Text("JSON", color = MooTheme.colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
             MooTextField(session.json, { session.onUserInput { session.json = it; session.error = ""; onChanged() } }, modifier = Modifier.weight(1f).fillMaxWidth(), singleLine = false)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("protobuf.toBinary"), prominent = true, p5Toolbar = true, onClick = {
+                MooButton(
+                    container.t("protobuf.toBinary"),
+                    prominent = true,
+                    p5Toolbar = true,
+                    enabled = ProtobufWiringPresentation.canJsonToBinary(session.proto, session.messageName, session.json),
+                    onClick = {
                     runOp(container, session, container.t("protobuf.history.jsonToBinary"), session.json, "json|jsonToBinary|${session.messageName}|${session.format.name}") {
                         ProtobufEngine.jsonToProtobuf(session.proto, session.messageName, session.json, session.format).also { session.binary = it }
                     }
                     onChanged()
                 })
-                MooButton(container.t("protobuf.toJson"), p5Toolbar = true, onClick = {
+                MooButton(
+                    container.t("protobuf.toJson"),
+                    p5Toolbar = true,
+                    enabled = ProtobufWiringPresentation.canBinaryToJson(session.proto, session.messageName, session.binary),
+                    onClick = {
                     runOp(container, session, container.t("protobuf.history.binaryToJson"), session.binary, "json|binaryToJson|${session.messageName}|${session.format.name}") {
                         ProtobufEngine.protobufToJson(session.proto, session.messageName, session.binary, session.format).also { session.json = it }
                     }
@@ -266,7 +279,12 @@ private fun WireTab(
             ) {
                 MooButton("Hex", primary = session.wireFormat == ProtobufBinaryFormat.Hex, p5Toolbar = true, onClick = { session.wireFormat = ProtobufBinaryFormat.Hex; onChanged() })
                 MooButton("Base64", primary = session.wireFormat == ProtobufBinaryFormat.Base64, p5Toolbar = true, onClick = { session.wireFormat = ProtobufBinaryFormat.Base64; onChanged() })
-                MooButton(container.t("protobuf.decode"), prominent = true, p5Toolbar = true, onClick = {
+                MooButton(
+                    container.t("protobuf.decode"),
+                    prominent = true,
+                    p5Toolbar = true,
+                    enabled = ProtobufWiringPresentation.canDecodeWire(session.wireInput),
+                    onClick = {
                     runOp(container, session, container.t("protobuf.history.wire"), session.wireInput, "wire|decode|${session.wireFormat.name}") {
                         ProtobufEngine.decodeWire(session.wireInput, session.wireFormat).also { session.wireOutput = it }
                     }
@@ -308,17 +326,26 @@ private fun ConvertTab(
         },
         middle = {
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().mooProtobufConvertGrid(),
                 verticalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterVertically),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                MooButton(container.t("protobuf.hexToBase64"), prominent = true, p5Toolbar = true, onClick = {
+                MooButton(
+                    container.t("protobuf.hexToBase64"),
+                    prominent = true,
+                    p5Toolbar = true,
+                    enabled = ProtobufWiringPresentation.canConvertHex(session.hex),
+                    onClick = {
                     runOp(container, session, container.t("protobuf.history.hexToBase64"), session.hex, "convert|hexToBase64") {
                         ProtobufEngine.convertBinary(session.hex, ProtobufBinaryFormat.Hex, ProtobufBinaryFormat.Base64).also { session.base64 = it }
                     }
                     onChanged()
                 })
-                MooButton(container.t("protobuf.base64ToHex"), p5Toolbar = true, onClick = {
+                MooButton(
+                    container.t("protobuf.base64ToHex"),
+                    p5Toolbar = true,
+                    enabled = ProtobufWiringPresentation.canConvertBase64(session.base64),
+                    onClick = {
                     runOp(container, session, container.t("protobuf.history.base64ToHex"), session.base64, "convert|base64ToHex") {
                         ProtobufEngine.convertBinary(session.base64, ProtobufBinaryFormat.Base64, ProtobufBinaryFormat.Hex).also { session.hex = it }
                     }

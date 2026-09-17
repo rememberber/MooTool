@@ -55,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
+import com.rememberber.mootool.next.compose.domain.EditorColumnEditPresentation
 import com.rememberber.mootool.next.compose.domain.EditorSettingsLiveApply
 import com.rememberber.mootool.next.compose.domain.FindReplace
 import com.rememberber.mootool.next.compose.domain.JsonEngine
@@ -584,7 +585,8 @@ private fun JsonToolbar(
 
     fun toggleColumn() {
         session.columnLatch = !session.columnLatch
-        session.notice = if (session.columnLatch) container.t("quickNote.columnEdit.hint") else ""
+        session.notice = EditorColumnEditPresentation.columnNoticeKey(session.columnLatch, wrap = false)
+            ?.let(container::t).orEmpty()
         onChanged()
     }
 

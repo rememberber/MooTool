@@ -12,7 +12,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** 对照 Electron `server.test.ts`：`listTools` 11 项且 `readOnlyHint` + `inputSchema.type === object`。 */
+/** 对照 Electron `server.test.ts`：`listTools` 12 项 MooTool 工具且 `readOnlyHint` + `inputSchema.type === object`。 */
 class AiIntegrationMcpListToolsTest {
     @Test
     fun subprocessListsToolsWithSchemasAndReadOnlyHints() {
@@ -33,7 +33,7 @@ class AiIntegrationMcpListToolsTest {
             McpClient.sync(transport).requestTimeout(Duration.ofSeconds(15)).build().use { client ->
                 client.initialize()
                 val tools = client.listTools().tools
-                assertEquals(11, tools.size)
+                assertEquals(12, tools.size)
                 assertEquals(McpToolCatalog.registrations().map { it.name }.toSet(), tools.map { it.name }.toSet())
                 tools.forEach { tool ->
                     assertTrue(tool.description().length > tool.name().length)

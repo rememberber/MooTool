@@ -40,6 +40,7 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.ToolsExportWiringPresentation
 import com.rememberber.mootool.next.compose.domain.PdfEngine
 import com.rememberber.mootool.next.compose.domain.PdfImportPresentation
+import com.rememberber.mootool.next.compose.domain.PdfWiringPresentation
 import com.rememberber.mootool.next.compose.domain.PdfHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.PdfHistoryRestore
 import com.rememberber.mootool.next.compose.domain.PdfException
@@ -67,8 +68,10 @@ import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
+import com.rememberber.mootool.next.compose.ui.components.mooPdfEmptyState
 import com.rememberber.mootool.next.compose.ui.components.mooPdfOutputStrip
 import com.rememberber.mootool.next.compose.ui.components.mooPdfTableWrap
+import com.rememberber.mootool.next.compose.ui.components.mooPdfToolbarActions
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
@@ -121,7 +124,11 @@ fun PdfScreen(container: AppContainer, detached: Boolean) {
             )
         }
         Row(
-            modifier = Modifier.fillMaxWidth().mooToolTabsBackground().padding(start = 10.dp, end = 10.dp, top = 7.dp, bottom = 0.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .mooToolTabsBackground()
+                .mooPdfToolbarActions()
+                .padding(start = 10.dp, end = 10.dp, top = 7.dp, bottom = 0.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
@@ -140,10 +147,11 @@ fun PdfScreen(container: AppContainer, detached: Boolean) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            val limitReached = currentCount(session) >= PdfEngine.MAX_TASKS
+            val splitCount = session.splitRows.size
+            val mergeCount = session.mergeRows.size
             MooButton(
                 if (session.tab == PdfTab.Split) container.t("pdf.addTask") else container.t("pdf.addFile"),
-                enabled = !session.busy && !limitReached,
+                enabled = PdfWiringPresentation.canAddTask(session.busy, session.tab, splitCount, mergeCount),
                 p5Toolbar = true,
                 onClick = { addFiles(container, session, ::refresh) }
             )
@@ -154,6 +162,16 @@ fun PdfScreen(container: AppContainer, detached: Boolean) {
                     if (session.tab == PdfTab.Split) container.t("pdf.startSplit") else container.t("pdf.startMerge"),
                     prominent = true,
                     p5Toolbar = true,
+                    enabled = when (session.tab) {
+                        PdfTab.Split -> PdfWiringPresentation.canStartSplit(
+                            session.busy,
+                            session.splitRows.count { it.selected },
+                        )
+                        PdfTab.Merge -> PdfWiringPresentation.canStartMerge(
+                            session.busy,
+                            session.mergeRows.count { it.selected },
+                        )
+                    },
                     onClick = {
                         if (session.tab == PdfTab.Split) {
                             session.confirmSplit = true
@@ -407,7 +425,10 @@ private fun PdfTableHeader(content: @Composable RowScope.() -> Unit) {
 
 @Composable
 private fun PdfEmpty(container: AppContainer) {
-    Box(Modifier.fillMaxWidth().height(240.dp), contentAlignment = Alignment.Center) {
+    Box(
+        Modifier.fillMaxWidth().height(240.dp).mooPdfEmptyState(),
+        contentAlignment = Alignment.Center,
+    ) {
         Text(container.t("pdf.empty"), color = MooTheme.colors.textMuted, fontSize = 11.sp)
     }
 }
@@ -472,7 +493,11 @@ private fun addFiles(container: AppContainer, session: PdfSession, onChanged: ()
 
 private fun ingestPdfFiles(container: AppContainer, session: PdfSession, files: List<File>, onChanged: () -> Unit) {
     if (session.busy) return
-    val remaining = PdfEngine.MAX_TASKS - currentCount(session)
+    val remaining = PdfWiringPresentation.ingestRemainingSlots(
+        session.tab,
+        session.splitRows.size,
+        session.mergeRows.size,
+    )
     val errors = mutableListOf<String>()
     files.take(remaining).forEach { file ->
         runCatching { PdfEngine.inspect(file.toPath()) }
@@ -611,9 +636,6 @@ private fun runMerge(
         }
     }
 }
-
-private fun currentCount(session: PdfSession): Int =
-    if (session.tab == PdfTab.Split) session.splitRows.size else session.mergeRows.size
 
 private fun tabTitleKey(tab: PdfTab): String = when (tab) {
     PdfTab.Split -> "pdf.tab.split"

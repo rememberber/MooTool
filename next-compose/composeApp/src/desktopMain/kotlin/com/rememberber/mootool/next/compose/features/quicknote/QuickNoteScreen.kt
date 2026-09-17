@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.DocumentFormatEngine
 import com.rememberber.mootool.next.compose.domain.EditorSettingsLiveApply
+import com.rememberber.mootool.next.compose.domain.EditorColumnEditPresentation
 import com.rememberber.mootool.next.compose.domain.FindReplace
 import com.rememberber.mootool.next.compose.domain.NoteAttachmentEngine
 import com.rememberber.mootool.next.compose.domain.NoteColors
@@ -197,7 +198,8 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
     val gitChangeCount = rememberVaultGitChangeCount(vault.root(), tick + gitCountRev)
     var monitor by remember { mutableStateOf<VaultRevisionMonitor?>(null) }
     DisposableEffect(session.editor) {
-        val columnHint = container.t("quickNote.columnEdit.hint")
+        val columnHint = EditorColumnEditPresentation.columnNoticeKey(session.columnLatch, session.wrap)
+            ?.let(container::t).orEmpty()
         session.editor.onUserDocumentChange = {
             session.notice = quickNoteNoticeOnUserDocumentChange(session.columnLatch, columnHint)
             session.error = quickNoteErrorOnUserDocumentChange()
@@ -492,9 +494,8 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
             if (!overflow) {
             MooButton(container.t("quickNote.columnEdit"), primary = session.columnLatch, onClick = {
                 session.columnLatch = !session.columnLatch
-                session.notice = if (session.columnLatch) {
-                    if (session.wrap) container.t("quickNote.columnEdit.wrap") else container.t("quickNote.columnEdit.hint")
-                } else ""
+                session.notice = EditorColumnEditPresentation.columnNoticeKey(session.columnLatch, session.wrap)
+                    ?.let(container::t).orEmpty()
                 refresh()
             })
             MooButton(container.t("quickNote.pasteImage"), onClick = {
@@ -589,9 +590,8 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                         MooMenuItem(container.t("quickNote.columnEdit")) {
                             moreOpen = false
                             session.columnLatch = !session.columnLatch
-                            session.notice = if (session.columnLatch) {
-                                if (session.wrap) container.t("quickNote.columnEdit.wrap") else container.t("quickNote.columnEdit.hint")
-                            } else ""
+                            session.notice = EditorColumnEditPresentation.columnNoticeKey(session.columnLatch, session.wrap)
+                                ?.let(container::t).orEmpty()
                             refresh()
                         }
                         MooMenuItem(container.t("quickNote.pasteImage")) {

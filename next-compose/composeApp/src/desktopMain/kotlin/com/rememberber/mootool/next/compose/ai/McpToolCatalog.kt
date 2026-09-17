@@ -58,6 +58,11 @@ object McpToolCatalog {
             "Generate random version 4 UUIDs locally.",
             """{"type":"object","properties":{"count":{"type":"integer","minimum":1,"maximum":100,"default":1}},"additionalProperties":false}""",
         ),
+        reg(
+            "mootool_protobuf_wire",
+            "Decode protobuf wire bytes from hex or Base64 into a field tree (no .proto required).",
+            """{"type":"object","properties":{"text":{"type":"string","maxLength":100000},"format":{"type":"string","enum":["hex","base64"]}},"required":["text","format"],"additionalProperties":false}""",
+        ),
     )
 
     fun vaultToolRegistrations(): List<McpToolRegistration> {

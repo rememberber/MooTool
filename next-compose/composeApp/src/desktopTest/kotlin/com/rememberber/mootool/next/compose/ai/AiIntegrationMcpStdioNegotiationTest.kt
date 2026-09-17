@@ -35,7 +35,7 @@ class AiIntegrationMcpStdioNegotiationTest {
                 val init = client.initialize()
                 assertEquals("MooTool", init.serverInfo()?.name())
                 var tools = client.listTools().tools
-                assertEquals(11, tools.size)
+                assertEquals(12, tools.size)
                 assertTrue(tools.all { it.inputSchema().type() == "object" })
                 assertTrue(tools.all { it.annotations()?.readOnlyHint() == true })
 
@@ -66,7 +66,7 @@ class AiIntegrationMcpStdioNegotiationTest {
                 assertTrue(failure.isError)
 
                 tools = client.listTools().tools
-                assertEquals(11, tools.size)
+                assertEquals(12, tools.size)
             }
         } finally {
             productRoot.toFile().deleteRecursively()

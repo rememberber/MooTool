@@ -5,6 +5,13 @@ import kotlin.test.assertEquals
 
 class TranslationWiringPresentationTest {
     @Test
+    fun languagePairFromSettingsNormalizesSameLang() {
+        val (source, target) = TranslationWiringPresentation.languagePairFromSettings("en", "en")
+        assertEquals("auto", source)
+        assertEquals("en", target)
+    }
+
+    @Test
     fun wiresGoogleProviderAndClampsTimeout() {
         val input = TranslationWiringPresentation.buildInput(
             requestId = "r1",

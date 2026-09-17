@@ -8,7 +8,7 @@ class McpToolCatalogTest {
     @Test
     fun registersElevenToolsWithSchemasAndNamesAlignedToHandlers() {
         val registrations = McpToolCatalog.registrations()
-        assertEquals(11, registrations.size)
+        assertEquals(12, registrations.size)
         assertEquals(
             MooToolMcpTools.toolNames().toSet() + VaultMcpTools.toolNames.toSet(),
             registrations.map { it.name }.toSet(),
@@ -21,6 +21,6 @@ class McpToolCatalogTest {
             assertTrue(reg.annotations().openWorldHint() == false)
         }
         assertEquals(4, registrations.count { it.idempotentHint })
-        assertEquals(7, registrations.count { !it.idempotentHint })
+        assertEquals(8, registrations.count { !it.idempotentHint })
     }
 }

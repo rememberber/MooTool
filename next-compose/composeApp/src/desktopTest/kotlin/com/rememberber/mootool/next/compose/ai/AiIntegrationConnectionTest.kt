@@ -43,7 +43,7 @@ class AiIntegrationConnectionTest {
             }
             val result = service.testConnection()
             assertEquals("MooTool", result.serverName)
-            assertEquals(11, result.tools.size)
+            assertEquals(12, result.tools.size)
             assertEquals(
                 MooToolMcpTools.toolNames().toSet() + VaultMcpTools.toolNames.toSet(),
                 result.tools.toSet(),
