@@ -2,6 +2,8 @@ package com.rememberber.mootool.next.compose.domain
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class TranslationWiringPresentationTest {
     @Test
@@ -41,6 +43,19 @@ class TranslationWiringPresentationTest {
         assertEquals("en", input.targetLang)
         assertEquals(TranslationProvider.Bing, input.preferredProvider)
         assertEquals(1_000, input.timeoutMs)
+    }
+
+    @Test
+    fun canRunTranslateRequiresNonEmptyIdleWithinLimit() {
+        assertFalse(TranslationWiringPresentation.canRunTranslate("", translating = false))
+        assertFalse(TranslationWiringPresentation.canRunTranslate("hi", translating = true))
+        assertTrue(TranslationWiringPresentation.canRunTranslate("hello", translating = false))
+        assertFalse(
+            TranslationWiringPresentation.canRunTranslate(
+                "x".repeat(TranslationEngine.MAX_TEXT_UNITS + 1),
+                translating = false,
+            ),
+        )
     }
 
     @Test

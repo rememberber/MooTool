@@ -86,6 +86,8 @@ import com.rememberber.mootool.next.compose.ui.components.mooHostApplyButton
 import com.rememberber.mootool.next.compose.ui.components.mooHostEditBar
 import com.rememberber.mootool.next.compose.ui.components.mooHostProfilesPane
 import com.rememberber.mootool.next.compose.ui.components.mooHostProfileSearch
+import com.rememberber.mootool.next.compose.ui.components.mooHttpSavedItem
+import com.rememberber.mootool.next.compose.ui.components.mooHttpSavedList
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooFindBarBackground
@@ -707,7 +709,7 @@ private fun ProfileList(
                 }
             Text(container.t(emptyKey), color = colors.textSecondary, fontSize = 12.sp)
         } else {
-            LazyColumn(Modifier.weight(1f)) {
+            LazyColumn(Modifier.weight(1f).mooHttpSavedList()) {
                 items(profiles, key = { it.id }) { profile ->
                     val menuOpen = session.profileContextMenuId == profile.id
                     LaunchedEffect(menuOpen) {
@@ -719,8 +721,8 @@ private fun ProfileList(
                     val active = profile.id == session.selectedId
                     val shape = RoundedCornerShape(5.dp)
                     Column(
-                        Modifier.fillMaxWidth().clip(shape)
-                            .background(if (active || hovered) colors.control else Color.Transparent)
+                        Modifier.fillMaxWidth()
+                            .mooHttpSavedItem(active = active, hovered = hovered)
                             .hoverable(interaction)
                             .pointerInput(profile.id) {
                                 awaitPointerEventScope {
@@ -735,8 +737,8 @@ private fun ProfileList(
                                     }
                                 }
                             }
-                            .mooFocusClickable(shape = shape) { onSelect(profile) }
-                            .padding(horizontal = 9.dp, vertical = 8.dp)
+                            .mooFocusClickable(shape = shape) { onSelect(profile) },
+                        verticalArrangement = Arrangement.spacedBy(3.dp),
                     ) {
                         Text(
                             profile.name,

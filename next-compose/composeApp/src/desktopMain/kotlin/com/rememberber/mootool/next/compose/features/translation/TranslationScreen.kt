@@ -504,7 +504,13 @@ private fun TranslatePane(
                 },
                 p5Toolbar = true
             )
-            MooButton(container.t("translation.now"), prominent = true, onClick = onManual, p5Toolbar = true)
+            MooButton(
+                container.t("translation.now"),
+                prominent = true,
+                onClick = onManual,
+                enabled = TranslationWiringPresentation.canRunTranslate(session.source, session.translating),
+                p5Toolbar = true,
+            )
             OverflowActionCluster(
                 overflow = overflow,
                 moreLabel = container.t("json.action.overflow"),

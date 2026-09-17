@@ -48,6 +48,11 @@ mootool_evidence_print_http_response_tab_focus_hint() {
   echo "# 产品主窗 HTTP 响应 Tab 走查 PNG 仍须 runDistributable + 手工截图"
 }
 
+mootool_evidence_print_http_collection_saved_item_tab_focus_hint() {
+  echo "# Compose F09 集合 .http-saved-item 焦点帧（非产品主窗）: docs/evidence/2026-09-15-inspector-screencapture/windows/163-compose-http-saved-item-tab-focus.png"
+  echo "# 产品窗 HTTP 集合搜索 Tab 走查 PNG 仍须 runDistributable + 手工截图（与 118/132 互补）"
+}
+
 mootool_evidence_print_git_merge_product_hint() {
   echo "# Compose merge hint 焦点帧（非产品主窗）: docs/evidence/2026-09-15-inspector-screencapture/windows/153-compose-git-merge-flow-hint-tab-focus.png"
   echo "# Vault Git merge 产品窗 §B（对齐 GitMergeProductFlowPresentation / conflict.json）:"

@@ -113,6 +113,7 @@
 | `130-compose-translation-now-tab-focus.png` | Compose 场景翻译「翻译」`p5Toolbar` 焦点环（同上） |
 | `131-compose-json-vault-search-tab-focus.png` | Compose 场景 `MooCompactSearch`（JSON Vault 搜索）焦点环（[DIFF-427](../../diff/427-json-vault-search-tab-focus-evidence.md)，与 `120` 互补） |
 | `132-compose-http-collection-search-tab-focus.png` | Compose 场景 HTTP 集合 `MooCompactSearch`（210dp，[DIFF-428](../../diff/428-http-collection-search-tab-focus-evidence.md)，与 `118` 互补） |
+| `163-compose-http-saved-item-tab-focus.png` | Compose 场景 HTTP 集合 `.http-saved-item` 行焦点环（`HttpSavedItemCaptureTest`，[DIFF-568](../../diff/568-http-host-translation-mcp-css-slice.md)，非产品窗） |
 | `133-compose-host-profile-search-tab-focus.png` | Compose 场景 Host 方案列表 `MooCompactSearch`（220dp，[DIFF-429](../../diff/429-electron-jsontools-fixture-host-search-focus.md)） |
 | `134-compose-settings-appearance-nav-tab-focus.png` | Compose 场景设置「外观」导航项焦点环（[DIFF-431](../../diff/431-settings-nav-focusable-tab-evidence.md)，与 `85` 互补） |
 | `135-compose-settings-language-select-tab-focus.png` | Compose 场景设置语言 `MooSelect` 触发钮焦点环（同上） |

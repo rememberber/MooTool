@@ -26,4 +26,10 @@ object TranslationWiringPresentation {
 
     fun runTranslate(input: TranslationInput, proxy: HttpProxyConfig = HttpProxyConfig()): TranslationResult =
         TranslationEngine.translate(input, proxy)
+
+    /** F20「立即翻译」：非空、未超限、无在途请求（对齐 Electron 禁用空源）。 */
+    fun canRunTranslate(text: String, translating: Boolean): Boolean =
+        !translating &&
+            text.isNotBlank() &&
+            text.length <= TranslationEngine.MAX_TEXT_UNITS
 }

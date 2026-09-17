@@ -111,6 +111,7 @@ import com.rememberber.mootool.next.compose.ui.components.mooHttpResponseHead
 import com.rememberber.mootool.next.compose.ui.components.mooHttpResponsePane
 import com.rememberber.mootool.next.compose.ui.components.mooHttpStatusMeta
 import com.rememberber.mootool.next.compose.ui.components.mooHttpSavedItem
+import com.rememberber.mootool.next.compose.ui.components.mooHttpSavedList
 import com.rememberber.mootool.next.compose.ui.components.mooHttpTimeoutChip
 import com.rememberber.mootool.next.compose.ui.components.mooHttpUrlBar
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
@@ -850,7 +851,7 @@ private fun CollectionPane(
         if (items.isEmpty()) {
             Text(container.t("http.savedEmpty"), color = colors.textSecondary, fontSize = 12.sp)
         } else {
-            LazyColumn(Modifier.weight(1f).padding(5.dp)) {
+            LazyColumn(Modifier.weight(1f).mooHttpSavedList()) {
                 itemsIndexed(items, key = { _, item -> item.id }) { _, item ->
                     val interaction = remember(item.id) { MutableInteractionSource() }
                     val hovered by interaction.collectIsHoveredAsState()
@@ -860,8 +861,8 @@ private fun CollectionPane(
                         Modifier.fillMaxWidth()
                             .mooHttpSavedItem(active = active, hovered = hovered)
                             .hoverable(interaction)
-                            .mooFocusClickable(shape = shape) { onSelect(item) }
-                            .padding(horizontal = 9.dp, vertical = 8.dp)
+                            .mooFocusClickable(shape = shape) { onSelect(item) },
+                        verticalArrangement = Arrangement.spacedBy(3.dp),
                     ) {
                         Text(
                             item.draft.name,
@@ -871,13 +872,27 @@ private fun CollectionPane(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        Text(
-                            "${item.draft.method.name} ${item.draft.url.ifBlank { container.t("http.noUrl") }}",
-                            color = colors.textMuted,
-                            fontSize = 10.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(
+                                item.draft.method.name,
+                                color = colors.accent,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                            )
+                            Text(
+                                item.draft.url.ifBlank { container.t("http.noUrl") },
+                                color = colors.textMuted,
+                                fontSize = 10.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false),
+                            )
+                        }
                     }
                 }
             }

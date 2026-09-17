@@ -1285,12 +1285,17 @@ fun Modifier.mooTranslationHistoryArticle(hovered: Boolean): Modifier {
         .border(1.dp, colors.borderSoft, shape)
 }
 
+/** Electron `.http-saved-list` / `.host-profiles > div` 滚动区内边距。 */
+fun Modifier.mooHttpSavedList(): Modifier = padding(5.dp)
+
 /** Electron `.http-saved-item` / `.host-profile` 集合行悬停/选中。 */
 @Composable
 fun Modifier.mooHttpSavedItem(active: Boolean, hovered: Boolean): Modifier {
     val colors = MooTheme.colors
     val shape = RoundedCornerShape(5.dp)
-    return clip(shape).background(if (active || hovered) colors.control else Color.Transparent)
+    return clip(shape)
+        .background(if (active || hovered) colors.control else Color.Transparent)
+        .padding(horizontal = 9.dp, vertical = 8.dp)
 }
 
 /** Electron `.http-entry-row` 键值表行高与底部分隔。 */
