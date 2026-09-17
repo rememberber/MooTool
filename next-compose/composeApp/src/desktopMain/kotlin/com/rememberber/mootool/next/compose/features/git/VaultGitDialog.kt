@@ -334,7 +334,10 @@ fun VaultGitDialog(
                         MooButton(
                             container.t("git.push"),
                             p5Toolbar = true,
-                            enabled = !busy && status.remote.isNotBlank() && !status.merging && status.conflicts == 0,
+                            enabled = !busy && GitOperationPresentation.pushEnabled(
+                                remotePresent = status.remote.isNotBlank(),
+                                merging = status.merging,
+                            ),
                             onClick = { runAction(workingTree = GitVaultFlushAction.Push) { GitEngine.push(root, token = token()) } }
                         )
                     }

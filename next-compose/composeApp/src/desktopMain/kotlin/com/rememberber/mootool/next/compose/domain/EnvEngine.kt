@@ -90,6 +90,14 @@ fun detectOsFamily(): OsFamily {
     }
 }
 
+/** 导出文本分区标题（对齐 Electron `VariablesTool` `formatEnvironment`）。 */
+object EnvExportSections {
+    const val USER = "------------Persistent user environment---------------"
+    const val SYSTEM = "------------Persistent system environment---------------"
+    const val PROCESS = "------------Current process environment---------------"
+    const val RUNTIME_COMPOSE = "------------Compose runtime---------------"
+}
+
 object EnvEngine {
     const val SHELL_HOOK_BEGIN = "# >>> MooTool Next Compose environment >>>"
     const val SHELL_HOOK_END = "# <<< MooTool Next Compose environment <<<"
@@ -175,16 +183,16 @@ object EnvEngine {
         write(config, scope, key, null)
 
     fun formatExport(snapshot: EnvSnapshot): String = buildString {
-        appendLine("------------Persistent user environment---------------")
+        appendLine(EnvExportSections.USER)
         snapshot.user.forEach { appendLine("${it.key}=${it.value}") }
         appendLine()
-        appendLine("------------Persistent system environment---------------")
+        appendLine(EnvExportSections.SYSTEM)
         snapshot.system.forEach { appendLine("${it.key}=${it.value}") }
         appendLine()
-        appendLine("------------Current process environment---------------")
+        appendLine(EnvExportSections.PROCESS)
         snapshot.process.forEach { appendLine("${it.key}=${it.value}") }
         appendLine()
-        appendLine("------------Compose runtime---------------")
+        appendLine(EnvExportSections.RUNTIME_COMPOSE)
         snapshot.runtime.forEach { appendLine("${it.key}=${it.value}") }
     }
 

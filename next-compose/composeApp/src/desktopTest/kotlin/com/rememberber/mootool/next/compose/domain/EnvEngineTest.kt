@@ -110,6 +110,49 @@ class EnvEngineTest {
     }
 
     @Test
+    fun previewDiffDescribesScopeFileAndDelete() {
+        val snapshot = EnvSnapshot(
+            process = emptyList(),
+            runtime = emptyList(),
+            user = listOf(EnvEntry("FOO", "bar")),
+            system = emptyList(),
+            userFile = "/data/environment",
+            systemFile = "/etc/zshenv",
+            shellProfile = "/home/u/.zshenv",
+        )
+        val update = EnvEngine.previewDiff(snapshot, EnvPersistScope.User, "FOO", "baz")
+        assertTrue(update.contains("user"))
+        assertTrue(update.contains("/data/environment"))
+        assertTrue(update.contains("FOO: bar"))
+        assertTrue(update.contains("→ baz"))
+        val delete = EnvEngine.previewDiff(snapshot, EnvPersistScope.System, "MISSING", null)
+        assertTrue(delete.contains("system"))
+        assertTrue(delete.contains("MISSING: (absent)"))
+        assertTrue(delete.contains("→ (delete)"))
+    }
+
+    @Test
+    fun formatExportUsesElectronSectionHeaders() {
+        val snapshot = EnvSnapshot(
+            process = listOf(EnvEntry("PATH", "/bin")),
+            runtime = listOf(EnvEntry("mootool.product", "Compose")),
+            user = listOf(EnvEntry("U", "1")),
+            system = listOf(EnvEntry("S", "2")),
+            userFile = "/u",
+            systemFile = "/s",
+            shellProfile = "/p",
+        )
+        val export = EnvEngine.formatExport(snapshot)
+        assertTrue(export.contains(EnvExportSections.USER))
+        assertTrue(export.contains(EnvExportSections.SYSTEM))
+        assertTrue(export.contains(EnvExportSections.PROCESS))
+        assertTrue(export.contains(EnvExportSections.RUNTIME_COMPOSE))
+        assertTrue(export.contains("U=1"))
+        assertTrue(export.contains("PATH=/bin"))
+        assertFalse(export.contains("Electron runtime"))
+    }
+
+    @Test
     fun systemWriteWithoutElevationKeepsOriginalFile() {
         val root = Files.createTempDirectory("compose-env-sys-")
         val locked = root.resolve("locked")

@@ -33,4 +33,13 @@ class GitOperationPresentationTest {
         assertFalse(GitOperationPresentation.pullEnabled(remotePresent = true, merging = true, conflicts = 0))
         assertFalse(GitOperationPresentation.pullEnabled(remotePresent = true, merging = false, conflicts = 1))
     }
+
+    @Test
+    fun pushEnabledMatchesElectronVaultGitDialog() {
+        assertTrue(GitOperationPresentation.pushEnabled(remotePresent = true, merging = false))
+        assertFalse(GitOperationPresentation.pushEnabled(remotePresent = false, merging = false))
+        assertFalse(GitOperationPresentation.pushEnabled(remotePresent = true, merging = true))
+        // 未解决冲突但非 merging：面板仍可点 push，引擎层拒绝（见 GitPushGuardTest）
+        assertTrue(GitOperationPresentation.pushEnabled(remotePresent = true, merging = false))
+    }
 }
