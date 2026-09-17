@@ -456,6 +456,49 @@ object JsonEngine {
             else -> result
         }
     }
+
+    /** Draft-07 JSON Schema inferred from a valid JSON document (structure panel / inspector). */
+    fun inferJsonSchema(input: String, t: JsonTranslator): String {
+        val root = parsePreserving(input, t)
+        val schema = mapper.createObjectNode()
+        schema.put("\$schema", "http://json-schema.org/draft-07/schema#")
+        attachSchemaForValue(schema, root)
+        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(schema)
+    }
+
+    private fun attachSchemaForValue(schema: ObjectNode, node: JsonNode) {
+        when {
+            node.isObject -> {
+                schema.put("type", "object")
+                val properties = mapper.createObjectNode()
+                val required = mapper.createArrayNode()
+                node.fields().forEachRemaining { field ->
+                    val childSchema = mapper.createObjectNode()
+                    attachSchemaForValue(childSchema, field.value)
+                    properties.set<ObjectNode>(field.key, childSchema)
+                    required.add(field.key)
+                }
+                schema.set<ObjectNode>("properties", properties)
+                if (required.size() > 0) {
+                    schema.set<ArrayNode>("required", required)
+                }
+            }
+            node.isArray -> {
+                schema.put("type", "array")
+                val items = mapper.createObjectNode()
+                val first = node.firstOrNull()
+                if (first != null) {
+                    attachSchemaForValue(items, first)
+                }
+                schema.set<ObjectNode>("items", items)
+            }
+            node.isTextual -> schema.put("type", "string")
+            node.isBoolean -> schema.put("type", "boolean")
+            node.isNull -> schema.put("type", "null")
+            node.isNumber -> schema.put("type", if (node.isIntegralNumber) "integer" else "number")
+            else -> schema.put("type", "string")
+        }
+    }
 }
 
 private class LiteralPrettyPrinter(private val spaces: Int) : com.fasterxml.jackson.core.util.DefaultPrettyPrinter() {

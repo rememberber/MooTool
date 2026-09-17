@@ -14,4 +14,13 @@ class JsonPathPickerSelectionTest {
         assertEquals("$", jsonPathPickerInitialSelection("$.missing", listOf("$", "$.a")))
         assertEquals("$.custom", jsonPathPickerInitialSelection("$.custom", emptyList()))
     }
+
+    @Test
+    fun selectionForOpen_matches_initialSelection_contract() {
+        val paths = listOf("$", "$.a", "$.b")
+        assertEquals(
+            jsonPathPickerInitialSelection("$.b", paths),
+            jsonPathPickerSelectionForOpen("$.b", paths),
+        )
+    }
 }

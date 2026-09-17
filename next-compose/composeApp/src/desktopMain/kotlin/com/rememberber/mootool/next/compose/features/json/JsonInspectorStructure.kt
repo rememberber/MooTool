@@ -15,6 +15,7 @@ import com.rememberber.mootool.next.compose.domain.JsonAnalysis
 import com.rememberber.mootool.next.compose.domain.JsonEngine
 import com.rememberber.mootool.next.compose.ui.theme.MooColors
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import androidx.compose.ui.text.font.FontFamily
 
 internal fun jsonInspectorDuplicateKeys(input: String, ignoreCase: Boolean): List<String> =
@@ -38,6 +39,7 @@ internal fun JsonInspectorStructurePanel(
     maxDepthLabel: String,
     duplicatesLabel: String,
     utf8Label: String,
+    onDuplicatePathClick: (String) -> Unit = {},
 ) {
     val colors = MooTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -84,7 +86,13 @@ internal fun JsonInspectorStructurePanel(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 duplicates.forEach { path ->
-                    Text(path, color = colors.danger, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+                    Text(
+                        path,
+                        color = colors.danger,
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier.mooFocusClickable { onDuplicatePathClick(path) },
+                    )
                 }
             }
         }

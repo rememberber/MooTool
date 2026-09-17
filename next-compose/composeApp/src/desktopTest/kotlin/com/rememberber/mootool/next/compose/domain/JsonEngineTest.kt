@@ -72,6 +72,18 @@ class JsonEngineTest {
     }
 
     @Test
+    fun inferJsonSchema_emitsDraft7ObjectWithRequiredKeys() {
+        val schema = JsonEngine.inferJsonSchema("""{"name":"Moo","count":2}""", t)
+        assertTrue(schema.contains("draft-07"), schema)
+        assertTrue(schema.contains("object"), schema)
+        assertTrue(schema.contains("\"name\""))
+        assertTrue(schema.contains("\"count\""))
+        assertTrue(schema.contains("required"))
+        assertTrue(schema.contains("string"))
+        assertTrue(schema.contains("integer") || schema.contains("number"))
+    }
+
+    @Test
     fun formatAdvancedRejectsDuplicateKeysInRawText() {
         val input = """{"alpha":1,"alpha":2}"""
         assertFailsWith<JsonException> {

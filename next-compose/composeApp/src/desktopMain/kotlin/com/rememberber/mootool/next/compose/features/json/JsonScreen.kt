@@ -1343,6 +1343,7 @@ private fun InspectorPane(
     width: Float
 ) {
     val colors = MooTheme.colors
+    var quickPathMenuOpen by remember { mutableStateOf(false) }
     Column(
         Modifier.width(width.dp).fillMaxHeight().mooToolShell(colors.surfaceSubtle, flatten = true, endBorder = false).padding(10.dp).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -1373,6 +1374,9 @@ private fun InspectorPane(
         ) {
             jsonInspectorDuplicateKeys(inspectorText, session.formatOptions.ignoreCase)
         }
+        val pathEntries = remember(inspectorText, session.editor.revision, translator) {
+            runCatching { JsonEngine.listPaths(inspectorText, translator) }.getOrDefault(emptyList())
+        }
         MooCard(Modifier.fillMaxWidth()) {
             Text(container.t("json.panel.structure"), color = colors.textPrimary, fontSize = 12.sp)
             JsonInspectorStructurePanel(
@@ -1384,7 +1388,21 @@ private fun InspectorPane(
                 maxDepthLabel = container.t("json.analysis.maxDepth"),
                 duplicatesLabel = container.t("json.analysis.duplicates"),
                 utf8Label = container.t("json.analysis.utf8"),
+                onDuplicatePathClick = { jsonInspectorCopyJsonPath(it, container) },
             )
+            if (structureAnalysis != null) {
+                MooButton(
+                    container.t("json.action.inferSchema"),
+                    p5Toolbar = true,
+                    modifier = Modifier.padding(top = 6.dp),
+                    onClick = {
+                        showResult(container, session, translator, container.t("json.action.inferSchema")) {
+                            JsonEngine.inferJsonSchema(it, translator)
+                        }
+                        onChanged()
+                    },
+                )
+            }
         }
         MooCard(Modifier.fillMaxWidth()) {
         Text(container.t("json.panel.format"), color = colors.textPrimary, fontSize = 12.sp)
@@ -1497,11 +1515,36 @@ private fun InspectorPane(
         MooCard(Modifier.fillMaxWidth()) {
         Text(container.t("json.panel.jsonPath"), color = colors.textPrimary, fontSize = 12.sp)
         val pathAppliedNotice = container.t("json.notice.pathApplied")
+        if (pathEntries.isNotEmpty()) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(container.t("json.path.picker"), color = colors.textSecondary, fontSize = 11.sp)
+                Box(Modifier.weight(1f)) {
+                    MooButton(
+                        jsonPathQuickPickerButtonLabel(session.jsonPath, pathEntries),
+                        p5Toolbar = true,
+                        onClick = { quickPathMenuOpen = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    MooMenu(expanded = quickPathMenuOpen, onDismissRequest = { quickPathMenuOpen = false }) {
+                        jsonInspectorVisiblePathEntries(pathEntries).forEach { entry ->
+                            MooMenuItem(onClick = {
+                                quickPathMenuOpen = false
+                                session.applyInspectorJsonPathInput(entry.path, pathAppliedNotice)
+                                onChanged()
+                            }) {
+                                Text(jsonPathQuickPickerMenuLabel(entry), fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
         MooTextField(
             session.jsonPath,
             { session.applyInspectorJsonPathInput(it, pathAppliedNotice); onChanged() },
             placeholder = container.t("json.path.placeholder"),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.weight(1f),
             fieldModifier = Modifier.onPreviewKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown || event.blockedByIme()) return@onPreviewKeyEvent false
                 if (event.key == Key.Enter || event.key == Key.NumPadEnter) {
@@ -1512,6 +1555,12 @@ private fun InspectorPane(
                 }
             }
         )
+        MooButton(
+            container.t("json.path.copy"),
+            p5Toolbar = true,
+            onClick = { jsonInspectorCopyJsonPath(session.jsonPath, container) },
+        )
+        }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             MooButton(
                 container.t("json.path.query"),
@@ -1546,11 +1595,10 @@ private fun InspectorPane(
             fontSize = 11.sp
         )
         }
-        val paths = runCatching { JsonEngine.listPaths(session.editor.text, translator) }.getOrDefault(emptyList())
-        if (paths.isNotEmpty()) {
+        if (pathEntries.isNotEmpty()) {
             MooCard(Modifier.fillMaxWidth()) {
             Text(container.t("json.panel.pathTree"), color = colors.textPrimary, fontSize = 12.sp)
-            val visiblePaths = jsonInspectorVisiblePathEntries(paths)
+            val visiblePaths = jsonInspectorVisiblePathEntries(pathEntries)
             val inspectorInput = session.editor.text
             val selectedPathPreview = remember(inspectorInput, session.editor.revision, session.jsonPath) {
                 val fallback = visiblePaths.find { it.path == session.jsonPath }?.preview ?: ""
@@ -1593,11 +1641,11 @@ private fun InspectorPane(
                     }
                 )
             }
-            if (jsonInspectorPathTreeShowsTruncationHint(paths)) {
+            if (jsonInspectorPathTreeShowsTruncationHint(pathEntries)) {
                 Text(
                     container.t(
                         "json.pathTree.truncated",
-                        mapOf("total" to paths.size.toString(), "limit" to JSON_INSPECTOR_INLINE_PATH_LIMIT.toString())
+                        mapOf("total" to pathEntries.size.toString(), "limit" to JSON_INSPECTOR_INLINE_PATH_LIMIT.toString())
                     ),
                     color = colors.textMuted,
                     fontSize = 10.sp,

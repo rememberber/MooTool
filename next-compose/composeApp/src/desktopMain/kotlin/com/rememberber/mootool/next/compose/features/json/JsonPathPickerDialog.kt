@@ -43,10 +43,10 @@ internal fun JsonPathPickerDialog(container: AppContainer, session: JsonSession,
     val translator = JsonTranslator { key, params -> container.t(key, params) }
     val entries = runCatching { JsonEngine.listPaths(session.editor.text, translator) }.getOrDefault(emptyList())
     val entryPaths = entries.map { it.path }
-    LaunchedEffect(session.pathPickerOpen, entryPaths) {
+    LaunchedEffect(session.pathPickerOpen, session.jsonPath, entryPaths) {
         if (!session.pathPickerOpen) return@LaunchedEffect
-        val initial = jsonPathPickerInitialSelection(session.jsonPath, entryPaths)
-        if (session.pathPickerSelection.isBlank() || session.pathPickerSelection !in entryPaths) {
+        val initial = jsonPathPickerSelectionForOpen(session.jsonPath, entryPaths)
+        if (session.pathPickerSelection != initial) {
             session.pathPickerSelection = initial
             onChanged()
         }
