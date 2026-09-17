@@ -455,7 +455,8 @@ fun MooIconButton(
     val focused by interaction.collectIsFocusedAsState()
     val hovered by interaction.collectIsHoveredAsState()
     val pressed by interaction.collectIsPressedAsState()
-    val shape = RoundedCornerShape(MooTheme.dimens.radius)
+    val cornerDp = LayoutPolicy.iconButtonCornerRadiusDp(colors.styleId)
+    val shape = RoundedCornerShape(cornerDp.dp)
     val tactile = colors.styleId == "smartisan" || colors.styleId == "miui-v5"
     val fill = when {
         tactile && pressed && colors.styleId == "miui-v5" -> SolidColor(colors.inset)
@@ -472,7 +473,7 @@ fun MooIconButton(
         hovered -> colors.borderControlHover
         else -> Color.Transparent
     }
-    val elevation = 0.dp
+    val elevation = if (LayoutPolicy.iconButtonSoftShadow(colors.styleId) && !tactile) 1.dp else 0.dp
     Row(
         modifier = modifier
             .semantics { role = Role.Button; contentDescription = label }
@@ -489,7 +490,7 @@ fun MooIconButton(
             .hoverable(interaction)
             .clickable(interactionSource = interaction, indication = LocalIndication.current, onClick = onClick)
             .focusable(true, interaction)
-            .defaultMinSize(minWidth = 32.dp, minHeight = MooTheme.dimens.controlHeight)
+            .defaultMinSize(minWidth = MooTheme.dimens.controlHeight, minHeight = MooTheme.dimens.controlHeight)
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,

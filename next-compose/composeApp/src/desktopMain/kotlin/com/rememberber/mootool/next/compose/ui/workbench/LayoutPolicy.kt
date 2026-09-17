@@ -93,4 +93,20 @@ object LayoutPolicy {
      */
     fun nonP5ToolbarCornerRadiusDp(dense: Boolean, interfaceStyle: String): Float? =
         if (!dense && interfaceStyle == "modern") 7f else null
+
+    /**
+     * Electron `.icon-button` uses `--desktop-control-radius` (not `.toolbar-button`'s 7px on modern).
+     * Values mirror [com.rememberber.mootool.next.compose.ui.theme.resolveDimens] `radius`.
+     */
+    fun iconButtonCornerRadiusDp(interfaceStyle: String): Float = when (interfaceStyle) {
+        "hero" -> 12f
+        "claude" -> 10f
+        "smartisan" -> 7f
+        "miui-v5" -> 4f
+        "quiet" -> 6f
+        else -> 9f
+    }
+
+    /** `:root[data-interface-style='modern'] .icon-button { box-shadow: 0 1px 2px var(--shadow-soft) }`. */
+    fun iconButtonSoftShadow(interfaceStyle: String): Boolean = interfaceStyle == "modern"
 }

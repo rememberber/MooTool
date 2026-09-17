@@ -19,4 +19,4 @@ parity-gap **P1 外观 / 工具页内容区**；延续 DIFF-502，避免设置�
 
 ## 未做
 
-六套 CSS 逐选择器皮肤、产品窗全工具走查、设置未实现分类、Git/Vault 新切片、P7 三平台安装验收、hero/claude 内容区 shell 走查、`MooIconButton` 与 `.icon-button` 圆角对照。
+`MooIconButton` 与 `.icon-button` 见 [DIFF-504](504-modern-icon-button-control-radius.md)；六套 CSS 逐选择器皮肤、产品窗全工具走查、设置未实现分类、Git/Vault 新切片、P7 三平台安装验收、hero/claude 内容区 shell 走查。

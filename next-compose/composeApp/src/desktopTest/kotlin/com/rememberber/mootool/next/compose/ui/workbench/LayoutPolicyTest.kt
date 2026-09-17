@@ -87,6 +87,16 @@ class LayoutPolicyTest {
     }
 
     @Test
+    fun iconButtonCornerRadiusUsesDesktopControlRadiusNotToolbarSevenDp() {
+        assertEquals(9f, LayoutPolicy.iconButtonCornerRadiusDp("modern"))
+        assertEquals(7f, LayoutPolicy.nonP5ToolbarCornerRadiusDp(dense = false, interfaceStyle = "modern"))
+        assertEquals(6f, LayoutPolicy.iconButtonCornerRadiusDp("quiet"))
+        assertEquals(12f, LayoutPolicy.iconButtonCornerRadiusDp("hero"))
+        assertTrue(LayoutPolicy.iconButtonSoftShadow("modern"))
+        assertFalse(LayoutPolicy.iconButtonSoftShadow("quiet"))
+    }
+
+    @Test
     fun classicNavigationHidesBuiltinGroupLabels() {
         assertFalse(LayoutPolicy.showNavigationGroupLabel("classic", showSeparators = true, customGroup = false))
         assertTrue(LayoutPolicy.showNavigationGroupLabel("classic", showSeparators = true, customGroup = true))
