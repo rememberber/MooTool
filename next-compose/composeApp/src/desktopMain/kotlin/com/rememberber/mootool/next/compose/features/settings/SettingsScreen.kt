@@ -43,7 +43,10 @@ import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.app.ToolRegistry
 import com.rememberber.mootool.next.compose.domain.GitRemoteCommitResult
 import com.rememberber.mootool.next.compose.domain.NavigationToolVisibility
+import com.rememberber.mootool.next.compose.domain.ProxyPortCommitResult
+import com.rememberber.mootool.next.compose.domain.SettingsNetworkNormalize
 import com.rememberber.mootool.next.compose.domain.SettingsVaultGitNormalize
+import com.rememberber.mootool.next.compose.domain.TimeoutCommitResult
 import com.rememberber.mootool.next.compose.app.UpdateUiState
 import com.rememberber.mootool.next.compose.model.AppLanguage
 import com.rememberber.mootool.next.compose.model.CloseBehavior
@@ -709,40 +712,134 @@ fun SettingsScreen(container: AppContainer) {
                         container.updateSettings { it.copy(network = it.network.copy(proxyEnabled = !it.network.proxyEnabled)) }
                     }
                     SettingRow(container.t("settings.proxy.host")) {
-                        SettingTextField(settings.network.proxyHost, {
-                            container.updateSettings { current -> current.copy(network = current.network.copy(proxyHost = it)) }
-                        }, enabled = proxyEnabled)
+                        SettingCommitTextField(
+                            settings.network.proxyHost,
+                            onCommit = { draft ->
+                                container.updateSettings { current ->
+                                    current.copy(
+                                        network = current.network.copy(
+                                            proxyHost = draft.trim().take(256),
+                                        ),
+                                    )
+                                }
+                                true
+                            },
+                            enabled = proxyEnabled,
+                        )
                     }
                     SettingRow(container.t("settings.proxy.port")) {
-                        SettingTextField(settings.network.proxyPort, {
-                            container.updateSettings { current -> current.copy(network = current.network.copy(proxyPort = it)) }
-                        }, enabled = proxyEnabled)
+                        SettingCommitTextField(
+                            settings.network.proxyPort,
+                            onCommit = { draft ->
+                                when (val outcome = SettingsNetworkNormalize.commitProxyPort(draft)) {
+                                    ProxyPortCommitResult.Cleared -> {
+                                        container.updateSettings { current ->
+                                            current.copy(network = current.network.copy(proxyPort = ""))
+                                        }
+                                        true
+                                    }
+                                    is ProxyPortCommitResult.Accepted -> {
+                                        container.updateSettings { current ->
+                                            current.copy(network = current.network.copy(proxyPort = outcome.port))
+                                        }
+                                        true
+                                    }
+                                    ProxyPortCommitResult.Rejected -> {
+                                        container.toastError(container.t("settings.network.proxyPortInvalid"))
+                                        false
+                                    }
+                                }
+                            },
+                            enabled = proxyEnabled,
+                        )
                     }
                     SettingRow(container.t("settings.proxy.username")) {
-                        SettingTextField(settings.network.proxyUsername, {
-                            container.updateSettings { current -> current.copy(network = current.network.copy(proxyUsername = it)) }
-                        }, enabled = proxyEnabled)
+                        SettingCommitTextField(
+                            settings.network.proxyUsername,
+                            onCommit = { draft ->
+                                container.updateSettings { current ->
+                                    current.copy(
+                                        network = current.network.copy(
+                                            proxyUsername = draft.trim().take(128),
+                                        ),
+                                    )
+                                }
+                                true
+                            },
+                            enabled = proxyEnabled,
+                        )
                     }
                     SettingRow(container.t("settings.proxy.password")) {
-                        SettingTextField(settings.network.proxyPassword, {
-                            container.updateSettings { current -> current.copy(network = current.network.copy(proxyPassword = it)) }
-                        }, enabled = proxyEnabled)
+                        SettingCommitTextField(
+                            settings.network.proxyPassword,
+                            onCommit = { draft ->
+                                container.updateSettings { current ->
+                                    current.copy(
+                                        network = current.network.copy(
+                                            proxyPassword = draft.trim().take(512),
+                                        ),
+                                    )
+                                }
+                                true
+                            },
+                            enabled = proxyEnabled,
+                        )
                     }
                     }
                     SettingsGroup(container.t("settings.group.timeouts")) {
                     SettingRow(container.t("settings.httpTimeout")) {
-                        SettingTextField(settings.network.requestTimeoutMs.toString(), {
-                            it.toIntOrNull()?.let { value ->
-                                container.updateSettings { current -> current.copy(network = current.network.copy(requestTimeoutMs = value.coerceIn(1_000, 120_000))) }
-                            }
-                        })
+                        SettingCommitTextField(
+                            settings.network.requestTimeoutMs.toString(),
+                            onCommit = { draft ->
+                                when (
+                                    val outcome = SettingsNetworkNormalize.commitTimeoutMs(
+                                        draft,
+                                        minimum = 1_000,
+                                        maximum = 120_000,
+                                    )
+                                ) {
+                                    is TimeoutCommitResult.Accepted -> {
+                                        container.updateSettings { current ->
+                                            current.copy(
+                                                network = current.network.copy(requestTimeoutMs = outcome.milliseconds),
+                                            )
+                                        }
+                                        true
+                                    }
+                                    TimeoutCommitResult.Rejected -> {
+                                        container.toastError(container.t("settings.network.timeoutInvalid"))
+                                        false
+                                    }
+                                }
+                            },
+                        )
                     }
                     SettingRow(container.t("settings.translationTimeout")) {
-                        SettingTextField(settings.network.translationTimeoutMs.toString(), {
-                            it.toIntOrNull()?.let { value ->
-                                container.updateSettings { current -> current.copy(network = current.network.copy(translationTimeoutMs = value.coerceIn(1_000, 120_000))) }
-                            }
-                        })
+                        SettingCommitTextField(
+                            settings.network.translationTimeoutMs.toString(),
+                            onCommit = { draft ->
+                                when (
+                                    val outcome = SettingsNetworkNormalize.commitTimeoutMs(
+                                        draft,
+                                        minimum = 1_000,
+                                        maximum = 120_000,
+                                    )
+                                ) {
+                                    is TimeoutCommitResult.Accepted -> {
+                                        container.updateSettings { current ->
+                                            current.copy(
+                                                network = current.network.copy(translationTimeoutMs = outcome.milliseconds),
+                                            )
+                                        }
+                                        true
+                                    }
+                                    TimeoutCommitResult.Rejected -> {
+                                        container.toastError(container.t("settings.network.timeoutInvalid"))
+                                        false
+                                    }
+                                }
+                            },
+                        )
                     }
                     }
                 }

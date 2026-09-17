@@ -27,7 +27,7 @@ object SettingsLayoutNormalize {
                 paneSizes = sanitizePaneSizes(base.layout.paneSizes),
             ),
         )
-        return SettingsVaultGitNormalize.apply(normalized)
+        return SettingsNetworkNormalize.apply(SettingsVaultGitNormalize.apply(normalized))
     }
 
     fun normalizeInterfaceStyle(value: String, fallback: String = InterfaceStyle.Modern.name.lowercase()): String {

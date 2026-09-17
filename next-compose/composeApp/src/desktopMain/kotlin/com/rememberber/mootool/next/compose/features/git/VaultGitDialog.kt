@@ -42,6 +42,8 @@ import com.rememberber.mootool.next.compose.domain.GitDiffSelection
 import com.rememberber.mootool.next.compose.domain.GitEditorFlushPolicy
 import com.rememberber.mootool.next.compose.domain.GitVaultFlushAction
 import com.rememberber.mootool.next.compose.domain.GitEngine
+import com.rememberber.mootool.next.compose.domain.GitRemoteCommitResult
+import com.rememberber.mootool.next.compose.domain.SettingsVaultGitNormalize
 import com.rememberber.mootool.next.compose.domain.GitFileDiff
 import com.rememberber.mootool.next.compose.domain.GitStatus
 import com.rememberber.mootool.next.compose.features.diff.annotateSide
@@ -345,15 +347,23 @@ fun VaultGitDialog(
                         p5Toolbar = true,
                         enabled = !busy && status.repository && (remoteTrimmed.isNotEmpty() || status.remote.isNotBlank()),
                         onClick = {
-                            val nextRemote = remoteTrimmed
+                            val committed = when (val outcome = SettingsVaultGitNormalize.commitGitRemote(remote)) {
+                                GitRemoteCommitResult.Cleared -> ""
+                                is GitRemoteCommitResult.Accepted -> outcome.remote
+                                GitRemoteCommitResult.Rejected -> {
+                                    container.toastError(container.t("settings.vault.gitRemoteInvalid"))
+                                    return@MooButton
+                                }
+                            }
+                            remote = committed
                             runAction(
-                                remoteOverrideAfterReload = nextRemote,
+                                remoteOverrideAfterReload = committed,
                                 afterSuccess = {
                                     container.updateSettings { current ->
-                                        current.copy(vault = current.vault.copy(gitRemote = nextRemote))
+                                        current.copy(vault = current.vault.copy(gitRemote = committed))
                                     }
                                 },
-                            ) { GitEngine.setRemote(root, nextRemote) }
+                            ) { GitEngine.setRemote(root, committed) }
                         }
                     )
                 }
