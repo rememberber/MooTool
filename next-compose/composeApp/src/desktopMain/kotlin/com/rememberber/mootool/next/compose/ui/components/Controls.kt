@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -411,6 +412,7 @@ fun FavoriteRow(
     Row(
         Modifier
             .fillMaxWidth()
+            .mooFavoriteRow()
             .clip(RoundedCornerShape(6.dp))
             .background(colors.surfaceSubtle)
             .padding(6.dp),
@@ -1476,6 +1478,32 @@ fun Modifier.mooReformatFileLayout(): Modifier = heightIn(min = 320.dp)
 /** 配置转换校验/转换中栏行高。 */
 @Composable
 fun Modifier.mooConfigConvertPane(): Modifier = heightIn(min = 36.dp)
+
+/** Electron `.home-content` 居中内容列。 */
+@Composable
+fun Modifier.mooHomeContent(): Modifier = widthIn(max = 940.dp)
+
+/** Electron `.home-section` 分区顶距。 */
+@Composable
+fun Modifier.mooHomeSection(): Modifier = padding(top = 24.dp)
+
+/** Electron `.detached-tool-placeholder` 主窗占位内边距。 */
+@Composable
+fun Modifier.mooDetachedPlaceholder(): Modifier = fillMaxSize().padding(24.dp)
+
+/** Electron `.favorite-row` 收藏列表行最小高度。 */
+@Composable
+fun Modifier.mooFavoriteRow(): Modifier = heightIn(min = 36.dp)
+
+/** Electron 设置内容区 `settings-content__header` 顶栏。 */
+@Composable
+fun Modifier.mooSettingsNavHeader(): Modifier {
+    val colors = MooTheme.colors
+    return fillMaxWidth()
+        .height(MooTheme.dimens.toolbar)
+        .mooToolbarBackground()
+        .padding(horizontal = 20.dp)
+}
 
 @Composable
 fun Modifier.mooWorkspaceBackground(): Modifier {

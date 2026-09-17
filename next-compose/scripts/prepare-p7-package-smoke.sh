@@ -56,3 +56,4 @@ echo "# See docs/diff/543-git-diff-decoration-f-tools-p7-slice.md — desktopTes
 echo "# DIFF-548: F02/F07/F16 历史 restore 单测 + F20 接线单测仍属 offline gate；三平台安装/公证未验收。"
 echo "# DIFF-549: F13/F09/F14 metadata + QR/随机接线 + encode/env/hardware/net CSS 批次 + MCP url 单测仍属 offline gate。"
 echo "# DIFF-550: 余下 F 工具 metadata + color/calc/host/time 等 CSS 批次 + JSON 检查器/命令盘/托盘·更新关键词仍属 offline gate。"
+echo "# DIFF-552: 工作台/首页/分离/收藏 Presentation + home/detached/favorite/settings CSS + F10/F22/F24 exportDirectory 接线仍属 offline gate。"

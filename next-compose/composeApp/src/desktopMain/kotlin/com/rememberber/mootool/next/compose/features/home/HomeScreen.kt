@@ -45,6 +45,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ProductIdentity
+import com.rememberber.mootool.next.compose.domain.HomePresentation
+import com.rememberber.mootool.next.compose.ui.components.mooHomeContent
+import com.rememberber.mootool.next.compose.ui.components.mooHomeSection
 import com.rememberber.mootool.next.compose.ui.components.loadClasspathImage
 import com.rememberber.mootool.next.compose.ui.components.mooFocusOutline
 import com.rememberber.mootool.next.compose.ui.components.mooWorkspaceBackground
@@ -78,15 +81,18 @@ fun HomeScreen(container: AppContainer) {
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .widthIn(max = 940.dp)
+                .mooHomeContent()
                 .fillMaxWidth()
                 .verticalScroll(scroll)
                 .padding(start = 36.dp, end = 36.dp, top = 12.dp, bottom = 48.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(26.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(HomePresentation.HERO_GAP_DP.dp),
+            ) {
                 if (logo != null) {
                     HomeLink(container.t("home.website"), onClick = { container.openExternal("https://www.luoboduner.com/") }) {
-                        Image(logo, contentDescription = null, modifier = Modifier.size(104.dp))
+                        Image(logo, contentDescription = null, modifier = Modifier.size(HomePresentation.HERO_LOGO_SIZE_DP.dp))
                     }
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -160,7 +166,7 @@ fun HomeScreen(container: AppContainer) {
 private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
     val colors = MooTheme.colors
     Column(
-        Modifier.fillMaxWidth().padding(top = 24.dp),
+        Modifier.fillMaxWidth().mooHomeSection(),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
@@ -183,10 +189,10 @@ private fun ContributorChip(name: String, onClick: () -> Unit) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(7.dp),
-            modifier = Modifier.defaultMinSize(minHeight = 30.dp).hoverable(interaction)
+            modifier = Modifier.defaultMinSize(minHeight = HomePresentation.CONTRIBUTOR_AVATAR_DP.dp + 6.dp).hoverable(interaction)
         ) {
             Box(
-                Modifier.size(24.dp).clip(CircleShape).background(colors.accentAction),
+                Modifier.size(HomePresentation.CONTRIBUTOR_AVATAR_DP.dp).clip(CircleShape).background(colors.accentAction),
                 contentAlignment = Alignment.Center
             ) {
                 Text(name.take(1).uppercase(), color = colors.onAccent, fontSize = 10.sp, fontWeight = FontWeight.Bold)
@@ -205,7 +211,7 @@ private fun WorkRow(title: String, description: String, last: Boolean, onClick: 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .defaultMinSize(minHeight = 56.dp)
+                .defaultMinSize(minHeight = HomePresentation.WORK_ROW_MIN_HEIGHT_DP.dp)
                 .hoverable(interaction)
                 .then(if (last) Modifier else Modifier.padding(bottom = 0.dp)),
             verticalAlignment = Alignment.CenterVertically

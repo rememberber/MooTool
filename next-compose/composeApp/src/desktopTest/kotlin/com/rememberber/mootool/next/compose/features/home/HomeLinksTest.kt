@@ -1,10 +1,18 @@
 package com.rememberber.mootool.next.compose.features.home
 
+import com.rememberber.mootool.next.compose.domain.HomePresentation
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class HomeLinksTest {
+    @Test
+    fun layoutConstantsMatchElectronHomePage() {
+        assertEquals(940, HomePresentation.CONTENT_MAX_WIDTH_DP)
+        assertEquals(104, HomePresentation.HERO_LOGO_SIZE_DP)
+        assertEquals(56, HomePresentation.WORK_ROW_MIN_HEIGHT_DP)
+    }
+
     @Test
     fun contributorsMatchElectronExternalPages() {
         assertEquals("https://gitee.com/felixnan168", HomeContributors.first { it.name == "felixnan168" }.url)

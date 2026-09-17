@@ -15,6 +15,7 @@ import com.rememberber.mootool.next.compose.app.ToolRegistry
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooDetachedPlaceholder
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 
 @Composable
@@ -35,7 +36,7 @@ fun DetachedNotice(container: AppContainer, toolId: ToolId) {
     val tool = ToolRegistry.byId.getValue(toolId)
     val label = container.t(tool.titleKey)
     Column(
-        modifier = Modifier.fillMaxSize().background(MooTheme.colors.workspace).padding(24.dp),
+        modifier = Modifier.mooDetachedPlaceholder().background(MooTheme.colors.workspace),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         MooPageTitle(container.t("app.tool.detachedTitle", mapOf("tool" to label)), large = true)

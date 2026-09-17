@@ -34,6 +34,7 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.rememberber.mootool.next.compose.app.AppContainer
+import com.rememberber.mootool.next.compose.domain.DetachedToolPresentation
 import com.rememberber.mootool.next.compose.domain.TraySyncPresentation
 import com.rememberber.mootool.next.compose.app.AppTray
 import com.rememberber.mootool.next.compose.app.AppTrayHostProfile
@@ -438,7 +439,7 @@ private fun ApplicationScope.DetachedToolWindow(
 ) {
     Window(
         onCloseRequest = { container.sessionManager.reattach(tool) },
-        title = "$title · ${ProductIdentity.DISPLAY_NAME}",
+        title = DetachedToolPresentation.windowTitle(title, ProductIdentity.DISPLAY_NAME),
         state = rememberWindowState(size = size)
     ) {
         val focus by container.detachedFocus.collectAsState()

@@ -69,6 +69,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooKbd
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooSettingsNavHeader
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooSegmented
 import com.rememberber.mootool.next.compose.ui.components.MooSelect
@@ -96,11 +97,11 @@ fun SettingsScreen(container: AppContainer) {
     val sessionGeneration by container.sessionManager.sessionGeneration.collectAsState()
     val showSettings by container.showSettings.collectAsState()
     var category by remember {
-        mutableStateOf(settingsNavCategoryFromStorageId(container.settingsNavCategoryId))
+        mutableStateOf(SettingsNavPresentation.fromStorageId(container.settingsNavCategoryId))
     }
     LaunchedEffect(showSettings, container.settingsNavCategoryId) {
         if (showSettings) {
-            category = settingsNavCategoryFromStorageId(container.settingsNavCategoryId)
+            category = SettingsNavPresentation.fromStorageId(container.settingsNavCategoryId)
         }
     }
     BoxWithConstraints(Modifier.fillMaxSize().mooWorkspaceBackground()) {
@@ -117,13 +118,13 @@ fun SettingsScreen(container: AppContainer) {
                     if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                     when (event.key) {
                         Key.DirectionDown -> {
-                            val next = settingsNavCategoryStep(category, 1)
+                            val next = SettingsNavPresentation.step(category, 1)
                             category = next
                             container.settingsNavCategoryId = next.storageId()
                             true
                         }
                         Key.DirectionUp -> {
-                            val next = settingsNavCategoryStep(category, -1)
+                            val next = SettingsNavPresentation.step(category, -1)
                             category = next
                             container.settingsNavCategoryId = next.storageId()
                             true
@@ -150,17 +151,17 @@ fun SettingsScreen(container: AppContainer) {
         )
         Column(Modifier.weight(1f).widthIn(min = 420.dp).fillMaxHeight()) {
             Row(
-                modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).mooToolbarBackground().padding(horizontal = 20.dp),
+                modifier = Modifier.mooSettingsNavHeader(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
-                    category.navIcon(),
+                    SettingsNavPresentation.contentHeaderIcon(category),
                     color = colors.textSecondary,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
                 )
-                MooPageTitle(container.t(category.categoryLabelKey()), settings = true)
+                MooPageTitle(container.t(SettingsNavPresentation.contentHeaderLabelKey(category)), settings = true)
             }
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             when (category) {

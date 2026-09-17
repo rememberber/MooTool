@@ -42,9 +42,14 @@ export MOOTOOL_COMPOSE_DATA_DIR="${TRAY_ROOT}"
 test -f "${ROOT}/docs/evidence/2026-09-17-tray-tcc-screencapture/reference/57-color-baseline.png"
 echo "ok tray baseline png"
 
+echo "== verify p7 package smoke script syntax =="
+bash -n "${ROOT}/scripts/prepare-p7-package-smoke.sh"
+echo "ok prepare-p7-package-smoke.sh"
+
 echo "all product evidence prep checks passed"
 # shellcheck source=lib/product-evidence-common.sh
 source "${ROOT}/scripts/lib/product-evidence-common.sh"
+mootool_evidence_print_p7_smoke_hint
 mootool_evidence_print_http_public_smoke_hint
 mootool_evidence_print_http_multipart_smoke_hint
 mootool_evidence_print_tray_tcc_hint

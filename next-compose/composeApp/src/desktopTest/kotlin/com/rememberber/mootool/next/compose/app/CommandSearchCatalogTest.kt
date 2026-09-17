@@ -201,6 +201,12 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun detachQueryOpensLayoutSettings() {
+        val hits = CommandSearchCatalog.search("detach", Translator(AppLanguage.EnUS)::t)
+        assertEquals("layout", hits.single().categoryId)
+    }
+
+    @Test
     fun catalogCoversEverySettingsNavCategory() {
         val covered = CommandSearchCatalog.targets.map { it.categoryId }.toSet()
         SettingsNavCategory.entries.forEach { category ->

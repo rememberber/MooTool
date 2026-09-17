@@ -104,8 +104,9 @@ import com.rememberber.mootool.next.compose.ui.workbench.applyUserEditClearingSt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.awt.FileDialog
-import java.awt.Frame
+import com.rememberber.mootool.next.compose.domain.ToolsExportWiringPresentation
+import com.rememberber.mootool.next.compose.ui.chooseFileWithExportDirectory
+import com.rememberber.mootool.next.compose.ui.persistToolsExportDirectory
 import java.io.File
 import java.time.Instant
 import java.time.ZoneId
@@ -288,7 +289,7 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                 },
                 onImport = {
                     if (session.dirty && session.name.isNotBlank() && !saveCurrent(showNotice = false)) return@ProfileList
-                    val file = pickHostFile(false) ?: return@ProfileList
+                    val file = pickHostFile(container, false) ?: return@ProfileList
                     session.selectedId = ""
                     session.name = file.nameWithoutExtension.ifBlank { container.t("host.untitled") }
                     session.content = file.readText()
@@ -297,7 +298,11 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                     persist()
                 },
                 onExport = {
-                    val file = pickHostFile(true, "${session.name.ifBlank { "hosts" }}.txt") ?: return@ProfileList
+                    val file = pickHostFile(
+                        container,
+                        true,
+                        ToolsExportWiringPresentation.defaultHostExportFileName(session.name),
+                    ) ?: return@ProfileList
                     file.writeText(session.content)
                     session.notice = container.t("host.exported")
                     container.toastSuccess(container.t("host.exported"))
@@ -894,13 +899,16 @@ private fun FindBar(
 }
 
 
-private fun pickHostFile(save: Boolean, defaultName: String = "hosts.txt"): File? {
-    val dialog = FileDialog(null as Frame?, if (save) "Export Host" else "Import Host", if (save) FileDialog.SAVE else FileDialog.LOAD)
-    if (save) dialog.file = defaultName
-    dialog.isVisible = true
-    val file = dialog.file ?: return null
-    val directory = dialog.directory ?: return null
-    return File(directory, file)
+private fun pickHostFile(container: AppContainer, save: Boolean, defaultName: String = "hosts.txt"): File? {
+    val title = if (save) "Export Host" else "Import Host"
+    val file = chooseFileWithExportDirectory(
+        container,
+        save = save,
+        title = title,
+        defaultFileName = if (save) defaultName else "",
+    ) ?: return null
+    if (save) persistToolsExportDirectory(container, file)
+    return file
 }
 
 private fun messageFor(container: AppContainer, error: Throwable): String {

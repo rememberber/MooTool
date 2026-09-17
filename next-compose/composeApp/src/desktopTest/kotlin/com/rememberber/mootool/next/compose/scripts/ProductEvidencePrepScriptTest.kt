@@ -61,6 +61,20 @@ class ProductEvidencePrepScriptTest {
     }
 
     @Test
+    fun prepareP7PackageSmokeScriptPassesBashSyntaxCheck() {
+        val composeRoot = locateNextComposeRoot()
+        val script = composeRoot.resolve("scripts/prepare-p7-package-smoke.sh")
+        assertTrue(script.isRegularFile(), "missing script $script")
+        val process =
+            ProcessBuilder("bash", "-n", script.toString())
+                .redirectErrorStream(true)
+                .start()
+        val output = process.inputStream.bufferedReader().readText()
+        val code = process.waitFor()
+        assertTrue(code == 0, "bash -n prepare-p7-package-smoke.sh failed ($code): $output")
+    }
+
+    @Test
     fun prepareTrayScreencaptureScriptRestoresBaselinePng() {
         val composeRoot = locateNextComposeRoot()
         val dataRoot = Files.createTempDirectory("mootool-evidence-tray-")

@@ -24,7 +24,7 @@ data class ToolGroupDefinition(
 
 object ToolRegistry {
     val tools: List<ToolDefinition> = listOf(
-        tool(ToolId.Mootool, ToolGroupId.Home, "app.nav.home", "⌂", listOf("home", "about", "首页", "主页", "ホーム")),
+        tool(ToolId.Mootool, ToolGroupId.Home, "app.nav.home", "⌂", listOf("home", "about", "contributor", "sponsor", "首页", "主页", "贡献者", "ホーム")),
         tool(ToolId.QuickNote, ToolGroupId.Text, "app.nav.quickNote", "✎", listOf("note", "memo", "markdown", "随手记", "笔记"), ToolStatus.Available),
         tool(ToolId.TextDiff, ToolGroupId.Text, "app.nav.textDiff", "⇄", listOf("diff", "compare", "whitespace", "history", "对比"), ToolStatus.Available),
         tool(ToolId.Reformat, ToolGroupId.Text, "app.nav.reformat", "✦", listOf("format", "java", "xml", "html", "nginx", "prettier", "history", "格式化"), ToolStatus.Available),
@@ -86,6 +86,13 @@ object ToolRegistry {
     ): ToolDefinition {
         val history = id != ToolId.Mootool && id != ToolId.Hardware && id != ToolId.MessageBoard && id != ToolId.Variables && id != ToolId.Translation
         val favorites = id == ToolId.Regex || id == ToolId.Cron || id == ToolId.ColorBoard
-        return ToolDefinition(id, group, titleKey, keywords, glyph, status, history, favorites)
+        val navKeywords = buildList {
+            addAll(keywords)
+            if (id.detachable) {
+                add("detach")
+                add("分离")
+            }
+        }
+        return ToolDefinition(id, group, titleKey, navKeywords, glyph, status, history, favorites)
     }
 }

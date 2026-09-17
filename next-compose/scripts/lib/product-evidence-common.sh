@@ -51,6 +51,14 @@ mootool_evidence_print_git_merge_product_hint() {
   echo "# 登记 PNG: docs/evidence/2026-09-17-vault-conflict-product-window/results.md §B"
 }
 
+mootool_evidence_print_p7_smoke_hint() {
+  local compose_root
+  compose_root="$(mootool_evidence_compose_root)"
+  echo "# P7 package smoke (offline gate + optional MOOTOOL_P7_BUILD_DIST=1 on current OS):"
+  echo "# cd ${compose_root} && ./scripts/prepare-p7-package-smoke.sh"
+  echo "# Record in docs/acceptance.md; tri-platform install/sign/notarize still manual."
+}
+
 mootool_evidence_print_tray_tcc_hint() {
   local compose_root
   compose_root="$(mootool_evidence_compose_root)"

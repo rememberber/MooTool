@@ -1,6 +1,7 @@
 package com.rememberber.mootool.next.compose.storage
 
 import com.rememberber.mootool.next.compose.app.AppDirectories
+import com.rememberber.mootool.next.compose.domain.FavoritePresentation
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -25,17 +26,13 @@ class CronFavoriteStore(
     fun list(query: String = "", group: String = ""): List<CronFavorite> {
         if (!file.exists()) return emptyList()
         val all = runCatching { json.decodeFromString<List<CronFavorite>>(file.readText()) }.getOrDefault(emptyList())
-        val needle = query.trim()
-        val folder = group.trim()
         return all.filter { item ->
-            (folder.isEmpty() || item.group.equals(folder, ignoreCase = true)) &&
-                (needle.isEmpty() || item.name.contains(needle, ignoreCase = true) ||
-                    item.expression.contains(needle, ignoreCase = true) || item.group.contains(needle, ignoreCase = true))
+            FavoritePresentation.matchesQuery(query, group, item.name, item.expression, item.group)
         }
     }
 
     fun add(name: String, expression: String, group: String = ""): CronFavorite {
-        val trimmedName = name.trim().ifBlank { expression.take(32) }
+        val trimmedName = FavoritePresentation.defaultName(name, expression)
         val favorite = CronFavorite(
             id = UUID.randomUUID().toString(),
             name = trimmedName,

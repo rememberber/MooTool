@@ -54,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
+import com.rememberber.mootool.next.compose.domain.FavoritePresentation
 import com.rememberber.mootool.next.compose.domain.ColorEngine
 import com.rememberber.mootool.next.compose.domain.ColorHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.ColorHistoryRestore
@@ -535,8 +536,7 @@ private fun ColorFavoritesDialog(
 ) {
     var favoriteQuery by remember { mutableStateOf("") }
     val visible = items.filter {
-        val needle = favoriteQuery.trim()
-        needle.isEmpty() || it.name.contains(needle, ignoreCase = true) || it.value.contains(needle, ignoreCase = true)
+        FavoritePresentation.matchesQuery(favoriteQuery, groupFilter = "", it.name, it.value, group = "")
     }
     MooOverlay(onDismiss = { session.favoritesOpen = false; onChanged() }) {
         Column(

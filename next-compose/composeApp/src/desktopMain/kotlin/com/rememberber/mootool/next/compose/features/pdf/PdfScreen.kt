@@ -37,7 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
-import com.rememberber.mootool.next.compose.storage.VaultPathConfig
+import com.rememberber.mootool.next.compose.domain.ToolsExportWiringPresentation
 import com.rememberber.mootool.next.compose.domain.PdfEngine
 import com.rememberber.mootool.next.compose.domain.PdfImportPresentation
 import com.rememberber.mootool.next.compose.domain.PdfHistoryMetadata
@@ -648,13 +648,8 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
     }
 }
 
-private fun defaultMergeName(container: AppContainer): String {
-    val export = VaultPathConfig.effectiveCustomRoot(container.settings.value.tools.exportDirectory)
-    val directory = export.takeIf { it.isNotBlank() }?.let { File(it) }?.takeIf { it.isDirectory }
-        ?: File(System.getProperty("user.home"), "Desktop").takeIf { it.isDirectory }
-        ?: File(System.getProperty("user.home"))
-    return File(directory, "merge.pdf").absolutePath
-}
+private fun defaultMergeName(container: AppContainer): String =
+    ToolsExportWiringPresentation.defaultMergePdfPath(container.settings.value.tools.exportDirectory)
 
 private fun choosePdfs(title: String): List<File> {
     val dialog = FileDialog(null as Frame?, title, FileDialog.LOAD)

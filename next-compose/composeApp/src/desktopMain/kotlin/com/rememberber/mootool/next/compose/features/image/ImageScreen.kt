@@ -54,7 +54,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
-import com.rememberber.mootool.next.compose.storage.VaultPathConfig
+import com.rememberber.mootool.next.compose.domain.ToolsExportWiringPresentation
 import com.rememberber.mootool.next.compose.domain.ScreenCaptureFailureMessages
 import com.rememberber.mootool.next.compose.domain.CompressImageOptions
 import com.rememberber.mootool.next.compose.domain.ImageEngine
@@ -1006,7 +1006,7 @@ private fun importPickedFiles(
 }
 
 private fun exportSelected(container: AppContainer, session: ImageSession, names: List<String>) {
-    val directory = chooseDirectory(container.t("image.export")) ?: return
+    val directory = chooseDirectory(container, container.t("image.export")) ?: return
     runCatching {
         container.imageLibrary.export(names, directory.toPath())
         session.notice = container.t("image.exported", mapOf("directory" to directory.absolutePath))
@@ -1036,16 +1036,18 @@ private fun copyCurrent(container: AppContainer, session: ImageSession, current:
 }
 
 private fun chooseSvgTargets(container: AppContainer, names: List<String>): List<Path>? {
-    val export = VaultPathConfig.effectiveCustomRoot(container.settings.value.tools.exportDirectory)
-    val desktop = File(System.getProperty("user.home"), "Desktop").takeIf { it.isDirectory }
-        ?: File(System.getProperty("user.home"))
-    val fallback = export.takeIf { it.isNotBlank() }?.let { File(it) }?.takeIf { it.isDirectory } ?: desktop
+    val exportDir = ToolsExportWiringPresentation.defaultExportDirectory(container.settings.value.tools.exportDirectory)
     return if (names.size == 1) {
-        val base = names[0].substringBeforeLast('.')
-        val chosen = chooseSave(container.t("image.svgTitle"), File(fallback, "$base.svg").absolutePath) ?: return null
+        val chosen = chooseSave(
+            container.t("image.svgTitle"),
+            ToolsExportWiringPresentation.defaultSvgPath(
+                container.settings.value.tools.exportDirectory,
+                names[0],
+            ),
+        ) ?: return null
         listOf(if (chosen.extension.equals("svg", true)) chosen.toPath() else File(chosen.path + ".svg").toPath())
     } else {
-        val directory = chooseDirectory(container.t("image.svgTitle")) ?: return null
+        val directory = chooseDirectory(container, container.t("image.svgTitle")) ?: return null
         val reserved = mutableSetOf<String>()
         names.map { name ->
             val stem = name.substringBeforeLast('.')
@@ -1084,10 +1086,12 @@ private fun chooseSave(title: String, defaultPath: String): File? {
     return File(directory, file)
 }
 
-private fun chooseDirectory(title: String): File? {
+private fun chooseDirectory(container: AppContainer, title: String): File? {
     val chooser = JFileChooser()
     chooser.dialogTitle = title
     chooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+    val initial = ToolsExportWiringPresentation.defaultExportDirectory(container.settings.value.tools.exportDirectory)
+    if (initial.isDirectory) chooser.currentDirectory = initial
     return if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) chooser.selectedFile else null
 }
 
