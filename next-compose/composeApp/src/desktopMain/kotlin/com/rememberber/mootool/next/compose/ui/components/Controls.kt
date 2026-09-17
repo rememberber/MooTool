@@ -1383,6 +1383,10 @@ fun Modifier.mooConfigValidateActions(): Modifier = widthIn(min = 160.dp, max = 
 @Composable
 fun Modifier.mooDiffNavCluster(): Modifier = heightIn(min = 34.dp)
 
+/** Electron `.diff-toolbar__options` 高亮/忽略空白选项行。 */
+@Composable
+fun Modifier.mooDiffToolbarOptions(): Modifier = heightIn(min = 34.dp)
+
 /** Electron 加解密非对称操作 FlowRow 区。 */
 fun Modifier.mooCryptoAsymActions(): Modifier = fillMaxWidth().padding(vertical = 12.dp)
 
@@ -1741,6 +1745,9 @@ fun Modifier.mooTranslationAutoRow(): Modifier {
 /** Electron `.diff-workspace` 工作区最小高度。 */
 @Composable
 fun Modifier.mooDiffWorkspace(): Modifier = heightIn(min = 280.dp)
+
+/** Electron `.diff-editor-grid > div` / `.diff-editor-pane` 内边距。 */
+fun Modifier.mooDiffEditorPane(): Modifier = padding(10.dp)
 
 /** Electron `.cron-builder` 构建器列。 */
 @Composable

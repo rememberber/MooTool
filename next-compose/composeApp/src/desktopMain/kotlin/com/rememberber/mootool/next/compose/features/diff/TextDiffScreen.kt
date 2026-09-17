@@ -65,7 +65,9 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooDiffEditorPane
 import com.rememberber.mootool.next.compose.ui.components.mooDiffNavCluster
+import com.rememberber.mootool.next.compose.ui.components.mooDiffToolbarOptions
 import com.rememberber.mootool.next.compose.ui.components.mooDiffWorkspace
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
@@ -180,20 +182,10 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                     refresh()
                 })
                 MooButton(container.t("diff.importLeft"), p5Toolbar = true, onClick = {
-                    readImportedText()?.let {
-                        session.left = it
-                        session.notice = container.t("json.notice.imported")
-                        container.toastSuccess(container.t("json.notice.imported"))
-                        refresh()
-                    }
+                    importSide(container, session, side = "left") { refresh() }
                 })
                 MooButton(container.t("diff.importRight"), p5Toolbar = true, onClick = {
-                    readImportedText()?.let {
-                        session.right = it
-                        session.notice = container.t("json.notice.imported")
-                        container.toastSuccess(container.t("json.notice.imported"))
-                        refresh()
-                    }
+                    importSide(container, session, side = "right") { refresh() }
                 })
             }
             Spacer(Modifier.weight(1f))
@@ -232,21 +224,11 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                         }) { Text(container.t("diff.copy")) }
                         MooMenuItem(onClick = {
                             moreOpen = false
-                            readImportedText()?.let {
-                                session.left = it
-                                session.notice = container.t("json.notice.imported")
-                                container.toastSuccess(container.t("json.notice.imported"))
-                                refresh()
-                            }
+                            importSide(container, session, side = "left") { refresh() }
                         }) { Text(container.t("diff.importLeft")) }
                         MooMenuItem(onClick = {
                             moreOpen = false
-                            readImportedText()?.let {
-                                session.right = it
-                                session.notice = container.t("json.notice.imported")
-                                container.toastSuccess(container.t("json.notice.imported"))
-                                refresh()
-                            }
+                            importSide(container, session, side = "right") { refresh() }
                         }) { Text(container.t("diff.importRight")) }
                         MooMenuItem(onClick = {
                             moreOpen = false
@@ -271,7 +253,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .mooDiffNavCluster()
+                .mooDiffToolbarOptions()
                 .background(colors.surfaceSubtle)
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -291,6 +273,16 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
             MooButton(container.t("diff.highlightLines"), primary = session.highlightMode == "lines", p5Toolbar = true, onClick = {
                 session.highlightMode = "lines"; session.navIndex = -1; refresh()
             })
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .mooDiffNavCluster()
+                .background(colors.surfaceSubtle)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             MooButton(container.t("diff.sideBySide"), primary = session.mode == "side", p5Toolbar = true, onClick = {
                 session.mode = "side"; refresh()
             })
@@ -417,7 +409,7 @@ private fun DiffEditorPane(
 ) {
     val colors = MooTheme.colors
     Column(
-        modifier = modifier.fillMaxHeight().padding(10.dp),
+        modifier = modifier.fillMaxHeight().mooDiffEditorPane(),
         verticalArrangement = Arrangement.spacedBy(7.dp)
     ) {
         Text(title, color = colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
@@ -550,10 +542,27 @@ private fun statusText(container: AppContainer, session: DiffSession): String {
     }
 }
 
-private fun readImportedText(): String? {
-    val dialog = FileDialog(null as Frame?, "Import text", FileDialog.LOAD)
+private fun importSide(container: AppContainer, session: DiffSession, side: String, onDone: () -> Unit) {
+    val title = if (side == "left") container.t("diff.importLeft") else container.t("diff.importRight")
+    val dialog = FileDialog(null as Frame?, title, FileDialog.LOAD)
     dialog.isVisible = true
-    val file = dialog.file ?: return null
-    val directory = dialog.directory ?: return null
-    return File(directory, file).readText()
+    val name = dialog.file ?: return
+    val directory = dialog.directory ?: return
+    val file = File(directory, name)
+    when (val outcome = TextDiffPresentation.runReadImportFile(file)) {
+        is TextDiffPresentation.ImportOutcome.Success -> {
+            if (side == "left") session.left = outcome.content else session.right = outcome.content
+            session.navIndex = -1
+            session.notice = container.t("json.notice.imported")
+            container.toastSuccess(container.t("json.notice.imported"))
+            onDone()
+        }
+        is TextDiffPresentation.ImportOutcome.Failure -> {
+            session.notice = container.t(
+                "reformat.error.read",
+                mapOf("message" to (outcome.error.message ?: file.path)),
+            )
+            onDone()
+        }
+    }
 }

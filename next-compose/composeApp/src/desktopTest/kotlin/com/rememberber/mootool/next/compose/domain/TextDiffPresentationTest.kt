@@ -29,6 +29,26 @@ class TextDiffPresentationTest {
     @Test
     fun runCompareUsesDiffEngine() {
         val result = TextDiffPresentation.runCompare("a", "b", ignoreWhitespace = false)
-        assertTrue(result.unified.contains("-") || result.segments.isNotEmpty())
+        assertTrue(result.segments.isNotEmpty())
+    }
+
+    @Test
+    fun runReadImportFileReturnsContent() {
+        val file = kotlin.io.path.createTempFile(suffix = ".txt").toFile()
+        try {
+            file.writeText("line-a\nline-b")
+            val outcome = TextDiffPresentation.runReadImportFile(file)
+            assertTrue(outcome is TextDiffPresentation.ImportOutcome.Success)
+            assertEquals("line-a\nline-b", (outcome as TextDiffPresentation.ImportOutcome.Success).content)
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
+    fun runReadImportFileMissingFileFails() {
+        val file = java.io.File("/nonexistent/mootool-diff-import-${System.nanoTime()}.txt")
+        val outcome = TextDiffPresentation.runReadImportFile(file)
+        assertTrue(outcome is TextDiffPresentation.ImportOutcome.Failure)
     }
 }

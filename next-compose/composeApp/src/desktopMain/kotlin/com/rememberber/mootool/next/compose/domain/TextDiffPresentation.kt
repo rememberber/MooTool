@@ -15,4 +15,15 @@ object TextDiffPresentation {
 
     fun runCompare(left: String, right: String, ignoreWhitespace: Boolean): DiffResult =
         DiffEngine.compare(left, right, ignoreWhitespace)
+
+    sealed interface ImportOutcome {
+        data class Success(val content: String) : ImportOutcome
+        data class Failure(val error: Throwable) : ImportOutcome
+    }
+
+    fun runReadImportFile(file: java.io.File): ImportOutcome =
+        runCatching { file.readText() }.fold(
+            onSuccess = { ImportOutcome.Success(it) },
+            onFailure = { ImportOutcome.Failure(it) },
+        )
 }

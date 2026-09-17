@@ -58,4 +58,18 @@ object HostWiringPresentation {
             onSuccess = { ApplyOutcome.Success(it) },
             onFailure = { ApplyOutcome.Failure(it) },
         )
+
+    sealed interface RestoreOutcome {
+        data class Success(val result: HostApplyResult) : RestoreOutcome
+        data class Failure(val error: Throwable) : RestoreOutcome
+    }
+
+    fun runRestoreBackup(config: HostApplyConfig, backupPath: String): RestoreOutcome =
+        runCatching {
+            val current = HostEngine.readSystem(config)
+            HostEngine.restore(config, backupPath, current.fingerprint)
+        }.fold(
+            onSuccess = { RestoreOutcome.Success(it) },
+            onFailure = { RestoreOutcome.Failure(it) },
+        )
 }

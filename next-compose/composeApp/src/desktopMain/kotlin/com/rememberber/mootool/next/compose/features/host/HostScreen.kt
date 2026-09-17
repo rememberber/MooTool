@@ -424,21 +424,23 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                             session.applying = true
                             persist()
                             scope.launch(Dispatchers.IO) {
-                                val result = runCatching {
-                                    val current = HostEngine.readSystem(config)
-                                    HostEngine.restore(config, backup, current.fingerprint)
-                                }
+                                val result = HostWiringPresentation.runRestoreBackup(config, backup)
                                 withContext(Dispatchers.Main) {
                                     session.applying = false
-                                    result.onSuccess {
-                                        session.systemPath = it.system.path
-                                        session.systemContent = it.system.content
-                                        session.systemWritable = it.system.writable
-                                        session.systemFingerprint = it.system.fingerprint
-                                        session.applyDiff = it.diff
-                                        session.notice = container.t("host.restored")
-                                        session.error = ""
-                                    }.onFailure { session.error = messageFor(container, it) }
+                                    when (result) {
+                                        is HostWiringPresentation.RestoreOutcome.Success -> {
+                                            val it = result.result
+                                            session.systemPath = it.system.path
+                                            session.systemContent = it.system.content
+                                            session.systemWritable = it.system.writable
+                                            session.systemFingerprint = it.system.fingerprint
+                                            session.applyDiff = it.diff
+                                            session.notice = container.t("host.restored")
+                                            session.error = ""
+                                        }
+                                        is HostWiringPresentation.RestoreOutcome.Failure ->
+                                            session.error = messageFor(container, result.error)
+                                    }
                                     persist()
                                 }
                             }
