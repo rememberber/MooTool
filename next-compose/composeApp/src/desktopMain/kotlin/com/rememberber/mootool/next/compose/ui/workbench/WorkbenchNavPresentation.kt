@@ -12,4 +12,7 @@ object WorkbenchNavPresentation {
 
     fun showSidebarDetachAction(collapsed: Boolean, hideTitles: Boolean, detachable: Boolean): Boolean =
         DetachPolicy.showSidebarWindowAction(collapsed, hideTitles, detachable)
+
+    fun showNavigationGroupLabel(navigationStyle: String, showSeparators: Boolean, customGroup: Boolean): Boolean =
+        LayoutPolicy.showNavigationGroupLabel(navigationStyle, showSeparators, customGroup)
 }

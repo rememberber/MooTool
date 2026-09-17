@@ -720,7 +720,12 @@ private fun SvgDialog(container: AppContainer, session: ImageSession, count: Int
             )
             Text(container.t("image.svgHint"), color = MooTheme.colors.textSecondary, fontSize = 12.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("image.svgStart"), prominent = true, onClick = { session.svgOpen = false; onConfirm() })
+                MooButton(
+                    container.t("image.svgStart"),
+                    prominent = true,
+                    enabled = ImageSvgWiringPresentation.canStartSvgBatch(count, session.busy),
+                    onClick = { session.svgOpen = false; onConfirm() },
+                )
                 MooButton(container.t("common.cancel"), onClick = { session.svgOpen = false; container.sessionManager.bump() })
             }
         }

@@ -12,6 +12,12 @@ class UaRegexTimeWiringPresentationTest {
     }
 
     @Test
+    fun uaCopyRequiresResultText() {
+        assertFalse(UaWiringPresentation.canCopyResult(""))
+        assertTrue(UaWiringPresentation.canCopyResult("{}"))
+    }
+
+    @Test
     fun regexTestGuards() {
         assertFalse(RegexWiringPresentation.canRunTest("", running = false))
         assertFalse(RegexWiringPresentation.canRunTest("a", running = true))

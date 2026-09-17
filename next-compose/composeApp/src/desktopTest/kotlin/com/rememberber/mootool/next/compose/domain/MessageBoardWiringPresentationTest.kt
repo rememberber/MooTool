@@ -17,4 +17,11 @@ class MessageBoardWiringPresentationTest {
         assertTrue(MessageBoardWiringPresentation.wakeErrorIfNeeded(displayAwake = false))
         assertFalse(MessageBoardWiringPresentation.wakeErrorIfNeeded(displayAwake = true))
     }
+
+    @Test
+    fun presentationRequiresMessageAndWake() {
+        assertFalse(MessageBoardWiringPresentation.canEnterPresentation("", displayAwake = true))
+        assertFalse(MessageBoardWiringPresentation.canEnterPresentation("hi", displayAwake = false))
+        assertTrue(MessageBoardWiringPresentation.canEnterPresentation("hi", displayAwake = true))
+    }
 }

@@ -110,6 +110,9 @@ object CommandSearchCatalog {
                 "quick-note",
                 "memo",
                 "随手记",
+                "jsonvault",
+                "vaultsearch",
+                "includecontent",
             ),
         ),
         CommandSettingsTarget(
@@ -171,6 +174,9 @@ object CommandSearchCatalog {
                 "hosts",
                 "hostfile",
                 "profile",
+                "profilesearch",
+                "hostprofile",
+                "searchcontent",
             ),
         ),
         CommandSettingsTarget(
@@ -320,6 +326,9 @@ object CommandSearchCatalog {
                 "隐藏",
                 "紧凑",
                 "经典",
+                "navitem",
+                "sidebaritem",
+                "grouplabel",
             ),
         ),
         CommandSettingsTarget(

@@ -129,7 +129,7 @@ fun Sidebar(container: AppContainer, collapsed: Boolean, onToggle: () -> Unit) {
                 NavItem(container, ToolId.Mootool, collapsed, active == ToolId.Mootool && !container.showSettings.value)
                 if (settings.layout.showRecent && settings.workspace.recentToolIds.isNotEmpty()) {
                     NavigationToolGroup(showSeparators, navigationStyle, compactNav) {
-                        if (LayoutPolicy.showNavigationGroupLabel(navigationStyle, showSeparators, customGroup = false)) {
+                        if (WorkbenchNavPresentation.showNavigationGroupLabel(navigationStyle, showSeparators, customGroup = false)) {
                             GroupLabel(container.t("app.nav.recent"), collapsed, compactNav)
                         }
                         settings.workspace.recentToolIds.mapNotNull { ToolId.fromId(it) }
@@ -143,7 +143,7 @@ fun Sidebar(container: AppContainer, collapsed: Boolean, onToggle: () -> Unit) {
                     val items = group.toolIds.mapNotNull { ToolId.fromId(it) }.filter { it.id !in hidden }
                     if (items.isEmpty()) return@forEach
                     NavigationToolGroup(showSeparators, navigationStyle, compactNav) {
-                        if (LayoutPolicy.showNavigationGroupLabel(navigationStyle, showSeparators, customGroup = true)) {
+                        if (WorkbenchNavPresentation.showNavigationGroupLabel(navigationStyle, showSeparators, customGroup = true)) {
                             GroupLabel(group.name, collapsed, compactNav)
                         }
                         items.forEach { id ->
@@ -156,7 +156,7 @@ fun Sidebar(container: AppContainer, collapsed: Boolean, onToggle: () -> Unit) {
                     showSeparators &&
                     NavigationToolVisibility.visibleNavigationToolCount(hidden) > 0
                 ) {
-                    if (LayoutPolicy.showNavigationGroupLabel(navigationStyle, showSeparators, customGroup = false)) {
+                    if (WorkbenchNavPresentation.showNavigationGroupLabel(navigationStyle, showSeparators, customGroup = false)) {
                         GroupLabel(container.t("app.group.all"), collapsed, compactNav)
                     }
                 }
@@ -169,7 +169,7 @@ fun Sidebar(container: AppContainer, collapsed: Boolean, onToggle: () -> Unit) {
                                 Modifier.fillMaxWidth().clip(RoundedCornerShape(MooTheme.dimens.radius))
                                     .background(colors.surfaceSubtle).padding(6.dp)
                             ) {
-                                if (LayoutPolicy.showNavigationGroupLabel(navigationStyle, showSeparators, customGroup = false)) {
+                                if (WorkbenchNavPresentation.showNavigationGroupLabel(navigationStyle, showSeparators, customGroup = false)) {
                                     GroupLabel(container.t(group.titleKey), collapsed, compactNav)
                                 }
                                 items.forEach { id ->
@@ -179,7 +179,7 @@ fun Sidebar(container: AppContainer, collapsed: Boolean, onToggle: () -> Unit) {
                         }
                     } else {
                         NavigationToolGroup(showSeparators, navigationStyle, compactNav) {
-                            if (LayoutPolicy.showNavigationGroupLabel(navigationStyle, showSeparators, customGroup = false)) {
+                            if (WorkbenchNavPresentation.showNavigationGroupLabel(navigationStyle, showSeparators, customGroup = false)) {
                                 GroupLabel(container.t(group.titleKey), collapsed, compactNav)
                             }
                             items.forEach { id ->

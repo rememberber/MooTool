@@ -15,4 +15,6 @@ object ImageSvgWiringPresentation {
         val parsed = raw.trim().toIntOrNull() ?: return coerceSpeckle(fallback)
         return coerceSpeckle(parsed)
     }
+
+    fun canStartSvgBatch(selectedCount: Int, busy: Boolean): Boolean = selectedCount > 0 && !busy
 }

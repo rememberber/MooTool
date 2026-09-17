@@ -11,4 +11,11 @@ class HostWiringPresentationTest {
         assertFalse(HostWiringPresentation.canOpenApplyConfirm(" ", applying = false))
         assertFalse(HostWiringPresentation.canOpenApplyConfirm("hosts", applying = true))
     }
+
+    @Test
+    fun contentSearchToggleAndFilteredEmpty() {
+        assertFalse(HostWiringPresentation.canToggleContentSearch(applying = true))
+        assertTrue(HostWiringPresentation.showFilteredEmpty(profileCount = 0, query = "prod"))
+        assertFalse(HostWiringPresentation.showFilteredEmpty(profileCount = 0, query = "  "))
+    }
 }

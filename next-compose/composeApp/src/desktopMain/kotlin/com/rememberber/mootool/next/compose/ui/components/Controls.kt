@@ -1332,7 +1332,12 @@ fun Modifier.mooNetPortScanRow(): Modifier = heightIn(min = 35.dp)
 fun Modifier.mooRuntimeOutputPane(): Modifier = clip(RoundedCornerShape(0.dp))
 
 /** Electron JSON Vault 搜索行。 */
-fun Modifier.mooJsonVaultSearch(): Modifier = fillMaxWidth()
+@Composable
+fun Modifier.mooJsonVaultSearch(): Modifier = fillMaxWidth().heightIn(min = 33.dp)
+
+/** Electron `.host-profiles` 方案列表侧栏（对齐 `.http-collection` 分隔）。 */
+@Composable
+fun Modifier.mooHostProfilesPane(): Modifier = mooHttpCollection()
 
 /** Electron JSON Vault 底栏路径/操作行。 */
 @Composable

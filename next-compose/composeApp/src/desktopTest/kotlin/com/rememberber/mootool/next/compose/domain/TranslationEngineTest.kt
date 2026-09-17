@@ -292,6 +292,88 @@ class TranslationEngineTest {
     }
 
     @Test
+    fun emptyTextReturnsOkWithoutNetwork() {
+        TranslationEngine.resetForTests()
+        val result = TranslationEngine.translate(
+            TranslationInput("empty", "", "en", "zh-CN", TranslationProvider.Google, 5_000),
+        )
+        assertTrue(result.ok)
+        assertEquals("", result.text)
+    }
+
+    @Test
+    fun malformedGooglePayloadFallsBackOrFailsOffline() {
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/google") { exchange ->
+            val bytes = "not-json".toByteArray()
+            exchange.sendResponseHeaders(200, bytes.size.toLong())
+            exchange.responseBody.write(bytes)
+            exchange.close()
+        }
+        server.createContext("/translator") { exchange ->
+            exchange.sendResponseHeaders(500, -1)
+            exchange.close()
+        }
+        server.createContext("/ttranslatev3") { exchange ->
+            exchange.sendResponseHeaders(500, -1)
+            exchange.close()
+        }
+        server.start()
+        try {
+            val origin = "http://127.0.0.1:${server.address.port}"
+            val endpoints = TranslationEndpoints("$origin/google", "$origin/translator", "$origin/ttranslatev3")
+            TranslationEngine.resetForTests()
+            val result = TranslationEngine.translate(
+                TranslationInput("bad-json", "hello", "en", "zh-CN", TranslationProvider.Google, 5_000),
+                endpointsOverride = endpoints,
+            )
+            assertFalse(result.ok)
+            assertEquals(TranslationErrorCode.NETWORK, result.errorCode)
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun bingPageMissingTokenReturnsNetwork() {
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/google") { exchange ->
+            exchange.sendResponseHeaders(500, -1)
+            exchange.close()
+        }
+        server.createContext("/translator") { exchange ->
+            val html = """<html><body>no token here</body></html>"""
+            val bytes = html.toByteArray()
+            exchange.sendResponseHeaders(200, bytes.size.toLong())
+            exchange.responseBody.write(bytes)
+            exchange.close()
+        }
+        server.createContext("/ttranslatev3") { exchange ->
+            exchange.sendResponseHeaders(500, -1)
+            exchange.close()
+        }
+        server.start()
+        try {
+            val origin = "http://127.0.0.1:${server.address.port}"
+            val endpoints = TranslationEndpoints("$origin/google", "$origin/translator", "$origin/ttranslatev3")
+            TranslationEngine.resetForTests()
+            val input = TranslationWiringPresentation.buildInput(
+                requestId = "bing-bad-page",
+                text = "wire",
+                sourceLangWire = "en",
+                targetLangWire = "zh-CN",
+                providerWire = "bing",
+                timeoutWire = 5_000,
+            )
+            val result = TranslationEngine.translate(input, endpointsOverride = endpoints)
+            assertFalse(result.ok)
+            assertEquals(TranslationErrorCode.NETWORK, result.errorCode)
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
     fun googleWiringSendsMappedSlTlAndClient() {
         var capturedSl = ""
         var capturedTl = ""

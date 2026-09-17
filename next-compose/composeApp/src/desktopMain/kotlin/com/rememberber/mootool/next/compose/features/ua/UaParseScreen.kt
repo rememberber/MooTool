@@ -216,7 +216,10 @@ fun UaParseScreen(container: AppContainer, detached: Boolean) {
                             session.notice = copyText(text, container)
                             refresh()
                         },
-                        p5Toolbar = true
+                        p5Toolbar = true,
+                        enabled = UaWiringPresentation.canCopyResult(
+                            session.result?.let { resultCodec.encodeToString(it) } ?: session.source,
+                        ),
                     )
                 }
                 Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {

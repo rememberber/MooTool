@@ -33,10 +33,14 @@ object VaultSearchIndex {
     }
 
     private fun pathMatches(entry: VaultEntry, needle: String): Boolean =
-        entry.relativePath.lowercase().contains(needle) || entry.name.lowercase().contains(needle)
+        JsonVaultSearchPresentation.pathSegmentMatches(entry.relativePath, entry.name, needle)
 
     private fun fileMatches(record: VaultIndexRecord, needle: String, includeContent: Boolean): Boolean {
-        if (pathMatches(record.entry, needle) || record.title.lowercase().contains(needle)) return true
-        return includeContent && record.content.lowercase().contains(needle)
+        if (pathMatches(record.entry, needle) ||
+            JsonVaultSearchPresentation.titleMatches(record.title, needle)
+        ) {
+            return true
+        }
+        return JsonVaultSearchPresentation.contentMatches(record.content, needle, includeContent)
     }
 }

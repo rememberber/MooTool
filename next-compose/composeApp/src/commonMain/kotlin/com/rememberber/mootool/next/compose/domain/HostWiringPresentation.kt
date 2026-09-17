@@ -9,4 +9,9 @@ object HostWiringPresentation {
 
     fun canRestoreBackup(lastBackup: String, applying: Boolean): Boolean =
         lastBackup.isNotBlank() && !applying
+
+    fun canToggleContentSearch(applying: Boolean): Boolean = !applying
+
+    fun showFilteredEmpty(profileCount: Int, query: String): Boolean =
+        profileCount == 0 && JsonVaultSearchPresentation.isFiltering(query)
 }

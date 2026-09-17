@@ -44,6 +44,7 @@ mootool_evidence_print_vault_conflict_product_hint() {
 }
 
 mootool_evidence_print_git_merge_product_hint() {
+  echo "# Compose merge hint 焦点帧（非产品主窗）: docs/evidence/2026-09-15-inspector-screencapture/windows/153-compose-git-merge-flow-hint-tab-focus.png"
   echo "# Vault Git merge 产品窗 §B（对齐 GitMergeProductFlowPresentation / conflict.json）:"
   echo "# 1) F04 JSON Vault 打开 Git 面板 → 变更列表应自动选中 conflict.json（脚本产物）"
   echo "# 2) 对 conflict.json 使用 ours/theirs → 冲突计数归零"

@@ -287,6 +287,24 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun vaultSearchKeywordOpensVaultSettings() {
+        val hits = CommandSearchCatalog.search("vaultsearch", Translator(AppLanguage.EnUS)::t)
+        assertTrue(hits.any { it.categoryId == "vault" })
+    }
+
+    @Test
+    fun hostProfileSearchKeywordOpensNetworkSettings() {
+        val hits = CommandSearchCatalog.search("profilesearch", Translator(AppLanguage.EnUS)::t)
+        assertEquals("network", hits.single().categoryId)
+    }
+
+    @Test
+    fun groupLabelKeywordOpensLayoutSettings() {
+        val hits = CommandSearchCatalog.search("grouplabel", Translator(AppLanguage.EnUS)::t)
+        assertEquals("layout", hits.single().categoryId)
+    }
+
+    @Test
     fun catalogCoversEverySettingsNavCategory() {
         val covered = CommandSearchCatalog.targets.map { it.categoryId }.toSet()
         SettingsNavCategory.entries.forEach { category ->

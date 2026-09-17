@@ -83,6 +83,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooMenuSeparator
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooHostEditBar
+import com.rememberber.mootool.next.compose.ui.components.mooHostProfilesPane
 import com.rememberber.mootool.next.compose.ui.components.mooHostProfileSearch
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
@@ -659,7 +660,7 @@ private fun ProfileList(
     val stamp = remember { DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault()) }
     val contextMenuFirstFocus = remember { FocusRequester() }
     Column(
-        Modifier.width(width.dp).fillMaxHeight().mooToolShell(colors.sidebar, flatten = true).padding(7.dp),
+        Modifier.width(width.dp).fillMaxHeight().mooHostProfilesPane().padding(7.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         MooCompactSearch(
@@ -671,7 +672,11 @@ private fun ProfileList(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Box(
                 Modifier.clip(RoundedCornerShape(4.dp)).background(if (session.includeContent) colors.accent else colors.workspace)
-                    .mooFocusClickable(shape = RoundedCornerShape(4.dp)) { session.includeContent = !session.includeContent; onChanged() }.padding(horizontal = 6.dp, vertical = 4.dp)
+                    .mooFocusClickable(shape = RoundedCornerShape(4.dp), enabled = HostWiringPresentation.canToggleContentSearch(session.applying)) {
+                        session.includeContent = !session.includeContent
+                        onChanged()
+                    }
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
             ) {
                 Text(
                     container.t("host.searchContent"),
@@ -683,7 +688,13 @@ private fun ProfileList(
             MooButton(container.t("common.new"), onClick = onNew)
         }
         if (profiles.isEmpty()) {
-            Text(container.t("host.empty"), color = colors.textSecondary, fontSize = 12.sp)
+            val emptyKey =
+                if (HostWiringPresentation.showFilteredEmpty(profiles.size, session.query)) {
+                    "json.notice.noMatches"
+                } else {
+                    "host.empty"
+                }
+            Text(container.t(emptyKey), color = colors.textSecondary, fontSize = 12.sp)
         } else {
             LazyColumn(Modifier.weight(1f)) {
                 items(profiles, key = { it.id }) { profile ->

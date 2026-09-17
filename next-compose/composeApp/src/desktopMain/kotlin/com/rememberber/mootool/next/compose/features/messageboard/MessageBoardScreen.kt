@@ -316,7 +316,12 @@ private fun StagePanel(
                 fontSize = 12.sp
             )
             if (!presenting) {
-                MooButton(container.t("messageBoard.display"), onClick = onPresent, p5Toolbar = true)
+                MooButton(
+                    container.t("messageBoard.display"),
+                    onClick = onPresent,
+                    p5Toolbar = true,
+                    enabled = MessageBoardWiringPresentation.canEnterPresentation(session.message, session.displayAwake),
+                )
             } else {
                 MooButton(container.t("messageBoard.exitHint"), onClick = onExit, p5Toolbar = true)
             }

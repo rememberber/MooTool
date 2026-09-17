@@ -5,4 +5,7 @@ object MessageBoardWiringPresentation {
     fun clippedMessage(raw: String): String = MessageBoardEngine.clip(raw)
 
     fun wakeErrorIfNeeded(displayAwake: Boolean): Boolean = !displayAwake
+
+    fun canEnterPresentation(message: String, displayAwake: Boolean): Boolean =
+        message.isNotBlank() && displayAwake
 }
