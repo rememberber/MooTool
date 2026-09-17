@@ -9,4 +9,8 @@ object CronWiringPresentation {
         val trimmed = sessionZone.trim()
         return trimmed.ifBlank { fallback }
     }
+
+    fun canParse(expression: String): Boolean = expression.isNotBlank()
+
+    fun canCopyRuns(runs: List<String>): Boolean = runs.isNotEmpty()
 }

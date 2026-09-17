@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.TimeEngine
+import com.rememberber.mootool.next.compose.domain.TimeWiringPresentation
 import com.rememberber.mootool.next.compose.domain.TimeException
 import com.rememberber.mootool.next.compose.domain.TimeHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.TimeHistoryRestore
@@ -184,7 +185,12 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
                         } else false
                     }
                 )
-                MooButton(container.t("time.copy"), onClick = { copyField(container, session, session.timestamp, refresh = { refresh() }) }, p5Toolbar = true)
+                MooButton(
+                    container.t("time.copy"),
+                    enabled = TimeWiringPresentation.canCopyField(session.timestamp),
+                    onClick = { copyField(container, session, session.timestamp, refresh = { refresh() }) },
+                    p5Toolbar = true,
+                )
                 Box {
                     MooButton(
                         if (session.unit == TimestampUnit.Second) container.t("time.unit.second") else container.t("time.unit.millisecond"),
@@ -210,11 +216,13 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
                 MooButton(
                     container.t("time.toLocal"),
                     prominent = true,
+                    enabled = TimeWiringPresentation.canConvertTimestamp(session.timestamp),
                     onClick = { convertToLocal(container, session, refresh = { refresh() }) },
                     p5Toolbar = true
                 )
                 MooButton(
                     container.t("time.toTimestamp"),
+                    enabled = TimeWiringPresentation.canConvertLocal(session.localTime),
                     onClick = { convertToTimestamp(container, session, refresh = { refresh() }) },
                     p5Toolbar = true
                 )

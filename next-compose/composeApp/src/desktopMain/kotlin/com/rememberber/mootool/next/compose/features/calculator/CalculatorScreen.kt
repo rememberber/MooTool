@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.CalculatorEngine
+import com.rememberber.mootool.next.compose.domain.CalculatorWiringPresentation
 import com.rememberber.mootool.next.compose.domain.CalculatorHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.CalculatorHistoryRestore
 import com.rememberber.mootool.next.compose.domain.CalculatorException
@@ -143,7 +144,12 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                             modifier = Modifier.weight(1f),
                             placeholder = container.t("calculator.expression")
                         )
-                        MooButton("=", prominent = true, p5Toolbar = true, onClick = {
+                        MooButton(
+                            "=",
+                            prominent = true,
+                            enabled = CalculatorWiringPresentation.canEvaluate(session.expression),
+                            p5Toolbar = true,
+                            onClick = {
                             runCalc(container, session, container.t("calculator.expression"), session.expression) {
                                 CalculatorEngine.evaluateExpression(session.expression)
                             }
@@ -371,7 +377,12 @@ private fun OperationPanel(
                 Text(secondLabel, color = MooTheme.colors.textSecondary, fontSize = 12.sp)
                 MooTextField(second, onSecond, modifier = Modifier.fillMaxWidth())
             }
-            MooButton(action, onClick = onAction, p5Toolbar = true)
+            MooButton(
+                action,
+                enabled = CalculatorWiringPresentation.canBinaryOp(first, second),
+                onClick = onAction,
+                p5Toolbar = true,
+            )
         }
     }
 }

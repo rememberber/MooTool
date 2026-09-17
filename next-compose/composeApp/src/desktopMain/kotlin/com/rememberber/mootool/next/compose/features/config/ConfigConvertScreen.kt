@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.ConfigEngine
+import com.rememberber.mootool.next.compose.domain.ConfigWiringPresentation
 import com.rememberber.mootool.next.compose.domain.ConfigHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.ConfigHistoryRestore
 import com.rememberber.mootool.next.compose.domain.ConfigException
@@ -50,6 +51,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooToolTabsRow
 import com.rememberber.mootool.next.compose.ui.components.IoThreePaneRow
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooConfigConvertPane
+import com.rememberber.mootool.next.compose.ui.components.mooConfigTabsRow
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
@@ -111,7 +113,7 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
                 }
             )
         }
-        MooToolTabsRow {
+        MooToolTabsRow(modifier = Modifier.mooConfigTabsRow()) {
             MooToolTab(container.t("config.tab.convert"), selected = session.tab == "convert", onClick = {
                 session.tab = "convert"
                 session.error = ""
@@ -169,14 +171,25 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
                     verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    MooButton(container.t("config.toYaml"), prominent = true, p5Toolbar = true, onClick = {
-                        convert(container, session, toYaml = true)
-                        refresh()
-                    })
-                    MooButton(container.t("config.toProperties"), p5Toolbar = true, onClick = {
-                        convert(container, session, toYaml = false)
-                        refresh()
-                    })
+                    MooButton(
+                        container.t("config.toYaml"),
+                        prominent = true,
+                        enabled = ConfigWiringPresentation.canToYaml(session.properties),
+                        p5Toolbar = true,
+                        onClick = {
+                            convert(container, session, toYaml = true)
+                            refresh()
+                        },
+                    )
+                    MooButton(
+                        container.t("config.toProperties"),
+                        enabled = ConfigWiringPresentation.canToProperties(session.yaml),
+                        p5Toolbar = true,
+                        onClick = {
+                            convert(container, session, toYaml = false)
+                            refresh()
+                        },
+                    )
                 }
                 },
                 right = {
@@ -244,11 +257,21 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
                     verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    MooButton(container.t("config.validate"), prominent = true, p5Toolbar = true, onClick = {
-                        validate(container, session)
-                        refresh()
-                    })
-                    MooButton(container.t("config.format"), p5Toolbar = true, onClick = {
+                    MooButton(
+                        container.t("config.validate"),
+                        prominent = true,
+                        enabled = ConfigWiringPresentation.canValidateSource(session.validateSource),
+                        p5Toolbar = true,
+                        onClick = {
+                            validate(container, session)
+                            refresh()
+                        },
+                    )
+                    MooButton(
+                        container.t("config.format"),
+                        enabled = ConfigWiringPresentation.canValidateSource(session.validateSource),
+                        p5Toolbar = true,
+                        onClick = {
                         format(container, session)
                         refresh()
                     })

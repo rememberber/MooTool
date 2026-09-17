@@ -8,4 +8,8 @@ object TextDiffPresentation {
         if (size <= 0) return -1
         return (current + step + size) % size
     }
+
+    fun canNavigateDiffs(visibleSegmentCount: Int): Boolean = visibleSegmentCount > 0
+
+    fun canManualCompare(left: String, right: String): Boolean = left.isNotEmpty() || right.isNotEmpty()
 }

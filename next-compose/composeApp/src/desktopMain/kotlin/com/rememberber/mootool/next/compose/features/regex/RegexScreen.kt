@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.CommonRegex
 import com.rememberber.mootool.next.compose.domain.RegexEngine
+import com.rememberber.mootool.next.compose.domain.RegexWiringPresentation
 import com.rememberber.mootool.next.compose.domain.RegexHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.RegexHistoryRestore
 import com.rememberber.mootool.next.compose.domain.RegexMatch
@@ -217,7 +218,7 @@ private fun TestWorkspace(
                     },
                     modifier = Modifier.weight(1f)
                 )
-                if (session.running) {
+                if (RegexWiringPresentation.showCancel(session.running)) {
                     MooButton(
                         container.t("regex.cancel"),
                         onClick = {
@@ -233,6 +234,7 @@ private fun TestWorkspace(
                     MooButton(
                         container.t("regex.tab.test"),
                         prominent = true,
+                        enabled = RegexWiringPresentation.canRunTest(session.pattern, session.running),
                         onClick = { runMatch(container, session, onChanged) },
                         p5Toolbar = true
                     )

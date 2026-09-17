@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.UaEngine
+import com.rememberber.mootool.next.compose.domain.UaWiringPresentation
 import com.rememberber.mootool.next.compose.domain.UaException
 import com.rememberber.mootool.next.compose.domain.UaHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.UaHistoryRestore
@@ -53,6 +54,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
+import com.rememberber.mootool.next.compose.ui.components.mooUaParseBar
 import com.rememberber.mootool.next.compose.ui.components.mooUaResultCell
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
@@ -139,7 +141,7 @@ fun UaParseScreen(container: AppContainer, detached: Boolean) {
                     borderless = true
                 )
                 Row(
-                    Modifier.fillMaxWidth(),
+                    Modifier.fillMaxWidth().mooUaParseBar(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -182,6 +184,7 @@ fun UaParseScreen(container: AppContainer, detached: Boolean) {
                     MooButton(
                         container.t("ua.parse"),
                         prominent = true,
+                        enabled = UaWiringPresentation.canParse(session.source),
                         onClick = {
                             parseSource(container, session)
                             refresh()

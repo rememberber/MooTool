@@ -249,6 +249,24 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun yamlQueryOpensToolsSettings() {
+        val hits = CommandSearchCatalog.search("yaml", Translator(AppLanguage.EnUS)::t)
+        assertEquals("tools", hits.single().categoryId)
+    }
+
+    @Test
+    fun quicknoteQueryOpensVaultSettings() {
+        val hits = CommandSearchCatalog.search("quicknote", Translator(AppLanguage.EnUS)::t)
+        assertTrue(hits.any { it.categoryId == "vault" })
+    }
+
+    @Test
+    fun myersQueryOpensLayoutSettings() {
+        val hits = CommandSearchCatalog.search("myers", Translator(AppLanguage.EnUS)::t)
+        assertEquals("layout", hits.single().categoryId)
+    }
+
+    @Test
     fun catalogCoversEverySettingsNavCategory() {
         val covered = CommandSearchCatalog.targets.map { it.categoryId }.toSet()
         SettingsNavCategory.entries.forEach { category ->

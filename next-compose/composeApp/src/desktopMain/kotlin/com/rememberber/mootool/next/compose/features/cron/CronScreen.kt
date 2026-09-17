@@ -190,6 +190,7 @@ fun CronScreen(container: AppContainer, detached: Boolean) {
                         MooButton(
                             container.t("cron.parse"),
                             prominent = true,
+                            enabled = CronWiringPresentation.canParse(session.expression),
                             onClick = { parseRuns(container, session, language) { refresh() } },
                             p5Toolbar = true
                         )
@@ -204,7 +205,7 @@ fun CronScreen(container: AppContainer, detached: Boolean) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(container.t("cron.nextRuns"), color = colors.textBody, fontSize = 12.sp)
                     Spacer(Modifier.weight(1f))
-                    if (session.runs.isNotEmpty()) {
+                    if (CronWiringPresentation.canCopyRuns(session.runs)) {
                         MooButton(
                             container.t("time.copy"),
                             onClick = {

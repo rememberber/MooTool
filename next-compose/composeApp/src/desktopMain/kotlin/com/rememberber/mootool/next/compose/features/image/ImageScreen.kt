@@ -59,6 +59,7 @@ import com.rememberber.mootool.next.compose.domain.ToolsExportWiringPresentation
 import com.rememberber.mootool.next.compose.domain.ScreenCaptureFailureMessages
 import com.rememberber.mootool.next.compose.domain.CompressImageOptions
 import com.rememberber.mootool.next.compose.domain.ImageEngine
+import com.rememberber.mootool.next.compose.domain.ImageWiringPresentation
 import com.rememberber.mootool.next.compose.domain.ImageHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.ImageHistoryRestore
 import com.rememberber.mootool.next.compose.domain.ImageException
@@ -209,28 +210,68 @@ fun ImageScreen(container: AppContainer, detached: Boolean) {
             MooButton(
                 container.t("image.screenshot"),
                 onClick = { startImageWork(capture(container, session, scope) { loadAssets(it) }) },
-                enabled = !session.busy,
+                enabled = ImageWiringPresentation.canImport(session.busy),
                 p5Toolbar = true
             )
             if (!overflow) {
-                MooButton(container.t("image.fromClipboard"), onClick = { importClipboard(container, session) { loadAssets(it) } }, enabled = !session.busy, p5Toolbar = true)
+                MooButton(
+                    container.t("image.fromClipboard"),
+                    onClick = { importClipboard(container, session) { loadAssets(it) } },
+                    enabled = ImageWiringPresentation.canImport(session.busy),
+                    p5Toolbar = true,
+                )
             }
-            MooButton(container.t("image.import"), onClick = { importFiles(container, session) { loadAssets(it) } }, enabled = !session.busy, p5Toolbar = true)
+            MooButton(
+                container.t("image.import"),
+                onClick = { importFiles(container, session) { loadAssets(it) } },
+                enabled = ImageWiringPresentation.canImport(session.busy),
+                p5Toolbar = true,
+            )
             if (!overflow) {
-                MooButton(container.t("image.fromBase64"), onClick = { importBase64() }, enabled = !session.busy, p5Toolbar = true)
+                MooButton(
+                    container.t("image.fromBase64"),
+                    onClick = { importBase64() },
+                    enabled = ImageWiringPresentation.canImport(session.busy),
+                    p5Toolbar = true,
+                )
                 Spacer(Modifier.width(8.dp))
-                MooButton(container.t("image.toSvg"), onClick = { session.svgOpen = true; refresh() }, enabled = processing.isNotEmpty() && !session.busy, p5Toolbar = true)
-                MooButton(container.t("image.compress"), onClick = { session.compressOpen = true; refresh() }, enabled = processing.isNotEmpty() && !session.busy, p5Toolbar = true)
-                MooButton(container.t("image.watermark"), onClick = { session.watermarkOpen = true; refresh() }, enabled = processing.isNotEmpty() && !session.busy, p5Toolbar = true)
+                MooButton(
+                    container.t("image.toSvg"),
+                    onClick = { session.svgOpen = true; refresh() },
+                    enabled = ImageWiringPresentation.canProcessSelection(processing.size, session.busy),
+                    p5Toolbar = true,
+                )
+                MooButton(
+                    container.t("image.compress"),
+                    onClick = { session.compressOpen = true; refresh() },
+                    enabled = ImageWiringPresentation.canProcessSelection(processing.size, session.busy),
+                    p5Toolbar = true,
+                )
+                MooButton(
+                    container.t("image.watermark"),
+                    onClick = { session.watermarkOpen = true; refresh() },
+                    enabled = ImageWiringPresentation.canProcessSelection(processing.size, session.busy),
+                    p5Toolbar = true,
+                )
             }
             MooButton(container.t("common.save"), onClick = {
                 session.saveOpen = true
                 session.promptValue = current?.name.orEmpty()
                 refresh()
-            }, enabled = current != null && !session.busy, p5Toolbar = true)
-            MooButton(container.t("image.copy"), onClick = { copyCurrent(container, session, current) }, enabled = current != null, p5Toolbar = true)
+            }, enabled = ImageWiringPresentation.canActOnCurrent(current != null, session.busy), p5Toolbar = true)
+            MooButton(
+                container.t("image.copy"),
+                onClick = { copyCurrent(container, session, current) },
+                enabled = ImageWiringPresentation.canCopyCurrent(current != null),
+                p5Toolbar = true,
+            )
             if (!overflow) {
-                MooButton(container.t("image.toBase64"), onClick = { exportBase64() }, enabled = current != null, p5Toolbar = true)
+                MooButton(
+                    container.t("image.toBase64"),
+                    onClick = { exportBase64() },
+                    enabled = ImageWiringPresentation.canCopyCurrent(current != null),
+                    p5Toolbar = true,
+                )
             }
             if (session.busy) {
                 MooButton(container.t("image.cancel"), onClick = { session.cancelled = true; refresh() }, p5Toolbar = true)

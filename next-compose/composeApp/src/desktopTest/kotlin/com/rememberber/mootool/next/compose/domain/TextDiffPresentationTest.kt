@@ -2,6 +2,8 @@ package com.rememberber.mootool.next.compose.domain
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class TextDiffPresentationTest {
     @Test
@@ -14,5 +16,13 @@ class TextDiffPresentationTest {
         assertEquals(0, TextDiffPresentation.nextNavIndex(-1, 1, 3))
         assertEquals(1, TextDiffPresentation.nextNavIndex(0, 1, 3))
         assertEquals(-1, TextDiffPresentation.nextNavIndex(0, 1, 0))
+    }
+
+    @Test
+    fun navigationAndCompareGuards() {
+        assertFalse(TextDiffPresentation.canNavigateDiffs(0))
+        assertTrue(TextDiffPresentation.canNavigateDiffs(2))
+        assertFalse(TextDiffPresentation.canManualCompare("", ""))
+        assertTrue(TextDiffPresentation.canManualCompare("a", ""))
     }
 }

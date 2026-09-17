@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.FavoritePresentation
 import com.rememberber.mootool.next.compose.domain.ColorEngine
+import com.rememberber.mootool.next.compose.domain.ColorWiringPresentation
 import com.rememberber.mootool.next.compose.domain.ColorHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.ColorHistoryRestore
 import com.rememberber.mootool.next.compose.domain.ColorFormat
@@ -78,6 +79,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooColorFormatRow
 import com.rememberber.mootool.next.compose.ui.components.mooColorHexColumn
 import com.rememberber.mootool.next.compose.ui.components.mooColorPreviewPane
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
@@ -211,7 +213,7 @@ fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
             )
         }
         Row(
-            modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle)
+            modifier = Modifier.fillMaxWidth().mooColorFormatRow().background(colors.surfaceSubtle)
                 .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -219,7 +221,7 @@ fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
         ) {
             MooButton(
                 if (session.picking) container.t("common.processing") else container.t("color.picker"),
-                enabled = !session.picking,
+                enabled = ColorWiringPresentation.canScreenPick(session.picking),
                 p5Toolbar = true,
                 onClick = {
                     screenPickJob?.cancel()
@@ -244,7 +246,12 @@ fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
                 placeholder = container.t("color.code"),
                 compact = true
             )
-            MooButton(container.t("color.apply"), onClick = { applyCode(container, session, ::refresh) }, p5Toolbar = true)
+            MooButton(
+                container.t("color.apply"),
+                enabled = ColorWiringPresentation.canApplyCode(session.code),
+                onClick = { applyCode(container, session, ::refresh) },
+                p5Toolbar = true,
+            )
             if (!overflow) {
                 MooButton(
                     container.t(CopyFeedbackPolicy.buttonKey(session.copyState, "common.action.copy")),
@@ -513,7 +520,11 @@ private fun SaveColorFavoriteDialog(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MooButton(container.t("common.cancel"), onClick = { session.saveFavoriteOpen = false; onChanged() })
-                MooButton(container.t("color.favorite"), prominent = true, enabled = session.favoriteFolderId.isNotBlank(), onClick = {
+                MooButton(
+                    container.t("color.favorite"),
+                    prominent = true,
+                    enabled = ColorWiringPresentation.canFavorite(session.favoriteFolderId),
+                    onClick = {
                     container.colorFavorites.addItem(session.favoriteFolderId, session.favoriteName, session.primaryHex)
                     session.notice = container.t("favorite.saved")
                     container.toastSuccess(container.t("favorite.saved"))

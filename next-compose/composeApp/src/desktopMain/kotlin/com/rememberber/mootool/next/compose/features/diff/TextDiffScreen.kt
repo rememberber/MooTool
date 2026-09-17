@@ -126,15 +126,29 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             MooPageTitle(container.t("diff.title"))
-            MooButton(container.t("diff.compare"), prominent = true, p5Toolbar = true, onClick = {
-                runCompare(container, session, saveHistory = true) { refresh() }
-            })
+            MooButton(
+                container.t("diff.compare"),
+                prominent = true,
+                enabled = TextDiffPresentation.canManualCompare(session.left, session.right),
+                p5Toolbar = true,
+                onClick = {
+                    runCompare(container, session, saveHistory = true) { refresh() }
+                },
+            )
             val visible = session.visibleSegments()
-            MooButton(container.t("diff.previous"), enabled = visible.isNotEmpty(), p5Toolbar = true, onClick = {
+            MooButton(
+                container.t("diff.previous"),
+                enabled = TextDiffPresentation.canNavigateDiffs(visible.size),
+                p5Toolbar = true,
+                onClick = {
                 navigate(session, visible, -1, { leftField = it }, { rightField = it })
                 refresh()
             })
-            MooButton(container.t("diff.next"), enabled = visible.isNotEmpty(), p5Toolbar = true, onClick = {
+            MooButton(
+                container.t("diff.next"),
+                enabled = TextDiffPresentation.canNavigateDiffs(visible.size),
+                p5Toolbar = true,
+                onClick = {
                 navigate(session, visible, 1, { leftField = it }, { rightField = it })
                 refresh()
             })

@@ -71,7 +71,9 @@ import com.rememberber.mootool.next.compose.features.git.GitActionButton
 import com.rememberber.mootool.next.compose.features.git.VaultGitDialog
 import com.rememberber.mootool.next.compose.features.git.gitActionMenuLabel
 import com.rememberber.mootool.next.compose.features.git.rememberVaultGitChangeCount
+import com.rememberber.mootool.next.compose.domain.QuickNoteVaultFooterPresentation
 import com.rememberber.mootool.next.compose.features.vault.QuickNoteVaultConflictOverlay
+import com.rememberber.mootool.next.compose.ui.components.mooQuickNoteVaultFooter
 import com.rememberber.mootool.next.compose.features.vault.RebBaselineVaultMonitorOnSessionReload
 import com.rememberber.mootool.next.compose.features.vault.dismissVaultScopedOverlays
 import com.rememberber.mootool.next.compose.features.vault.vaultMoveFolderOptions
@@ -908,16 +910,26 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                     )
                     }
                 }
-                val vaultFooterPath = session.vaultSelectedPath.ifBlank { session.currentFile }
-                if (vaultFooterPath.isNotBlank()) {
+                val vaultFooterPath = QuickNoteVaultFooterPresentation.effectivePath(
+                    session.vaultSelectedPath,
+                    session.currentFile,
+                )
+                if (QuickNoteVaultFooterPresentation.showFooter(vaultFooterPath)) {
                     VaultSelectionFooter(
                         path = vaultFooterPath,
-                        dirty = vaultFooterPath == session.currentFile && quickNoteDirty(session),
+                        dirty = QuickNoteVaultFooterPresentation.footerDirty(
+                            vaultFooterPath,
+                            session.currentFile,
+                            quickNoteDirty(session),
+                        ),
                     )
                 }
-                if (vaultFooterPath.isNotBlank()) {
+                if (QuickNoteVaultFooterPresentation.showFooter(vaultFooterPath)) {
                     val footerEntry = vaultItems.find { it.relativePath == vaultFooterPath }
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        modifier = Modifier.mooQuickNoteVaultFooter(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
                         MooButton(container.t("quickNote.rename"), onClick = {
                             val entry = footerEntry ?: VaultEntry(
                                 vaultFooterPath,
@@ -941,7 +953,7 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                             }
                             refresh()
                         })
-                        if (footerEntry?.directory != true) {
+                        if (QuickNoteVaultFooterPresentation.canDuplicate(footerEntry?.directory)) {
                             MooButton(container.t("quickNote.duplicate"), onClick = {
                                 val entry = footerEntry ?: VaultEntry(
                                     vaultFooterPath,

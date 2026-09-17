@@ -1343,6 +1343,26 @@ fun Modifier.mooJsonVaultFooter(): Modifier {
     }
 }
 
+/** Electron 随手记 Vault 底栏（对齐 `.quick-note-vault-footer` / JSON 底栏分隔）。 */
+@Composable
+fun Modifier.mooQuickNoteVaultFooter(): Modifier = mooJsonVaultFooter()
+
+/** Electron 调色板格式/取色工具条。 */
+@Composable
+fun Modifier.mooColorFormatRow(): Modifier = heightIn(min = 46.dp)
+
+/** Electron UA 解析顶栏操作行。 */
+@Composable
+fun Modifier.mooUaParseBar(): Modifier = heightIn(min = 46.dp)
+
+/** Electron 配置转换 Tab 行。 */
+@Composable
+fun Modifier.mooConfigTabsRow(): Modifier = heightIn(min = 40.dp)
+
+/** Electron 文本对比工具栏差异导航区。 */
+@Composable
+fun Modifier.mooDiffNavCluster(): Modifier = heightIn(min = 34.dp)
+
 /** Electron 加解密非对称操作 FlowRow 区。 */
 fun Modifier.mooCryptoAsymActions(): Modifier = fillMaxWidth().padding(vertical = 12.dp)
 
