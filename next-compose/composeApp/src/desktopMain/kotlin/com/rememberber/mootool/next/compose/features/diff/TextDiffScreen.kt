@@ -68,6 +68,7 @@ import com.rememberber.mootool.next.compose.ui.components.setPaneSize
 import com.rememberber.mootool.next.compose.ui.components.mooDiffEditorGrid
 import com.rememberber.mootool.next.compose.ui.components.mooDiffEditorPane
 import com.rememberber.mootool.next.compose.ui.components.mooDiffEditorSeam
+import com.rememberber.mootool.next.compose.ui.components.mooDiffImportCluster
 import com.rememberber.mootool.next.compose.ui.components.mooDiffNavCluster
 import com.rememberber.mootool.next.compose.ui.components.mooDiffToolbarOptions
 import com.rememberber.mootool.next.compose.ui.components.mooDiffWorkspace
@@ -183,12 +184,14 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                     }
                     refresh()
                 })
-                MooButton(container.t("diff.importLeft"), p5Toolbar = true, onClick = {
-                    importSide(container, session, side = "left") { refresh() }
-                })
-                MooButton(container.t("diff.importRight"), p5Toolbar = true, onClick = {
-                    importSide(container, session, side = "right") { refresh() }
-                })
+                Row(Modifier.mooDiffImportCluster(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    MooButton(container.t("diff.importLeft"), p5Toolbar = true, onClick = {
+                        importSide(container, session, side = "left") { refresh() }
+                    })
+                    MooButton(container.t("diff.importRight"), p5Toolbar = true, onClick = {
+                        importSide(container, session, side = "right") { refresh() }
+                    })
+                }
             }
             Spacer(Modifier.weight(1f))
             if (overflow) {

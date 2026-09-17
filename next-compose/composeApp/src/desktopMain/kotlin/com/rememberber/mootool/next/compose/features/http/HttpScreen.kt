@@ -255,18 +255,22 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                 persist()
                 return
             }
-            runCatching { target.writeBytes(bytes) }
-                .onSuccess {
+            when (val outcome = HttpResponsePresentation.runWriteResponseBytes(target, bytes)) {
+                HttpResponsePresentation.WriteExportOutcome.Success -> {
                     session.error = ""
                     val savedNotice = container.t("http.responseSaved", mapOf("path" to target.absolutePath))
                     session.notice = savedNotice
                     container.toastSuccess(savedNotice)
                 }
-                .onFailure {
+                is HttpResponsePresentation.WriteExportOutcome.Failure -> {
                     session.notice = ""
-                    session.error = it.message ?: container.t("http.saveFailed")
+                    session.error = container.t(
+                        "reformat.error.write",
+                        mapOf("message" to (outcome.error.message ?: target.path)),
+                    )
                     container.toastError(session.error)
                 }
+            }
             persist()
             return
         }
@@ -282,18 +286,22 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
             persist()
             return
         }
-        runCatching { target.writeText(payload) }
-            .onSuccess {
+        when (val outcome = HttpResponsePresentation.runWriteResponseText(target, payload)) {
+            HttpResponsePresentation.WriteExportOutcome.Success -> {
                 session.error = ""
                 val savedNotice = container.t("http.responseSaved", mapOf("path" to target.absolutePath))
                 session.notice = savedNotice
                 container.toastSuccess(savedNotice)
             }
-            .onFailure {
+            is HttpResponsePresentation.WriteExportOutcome.Failure -> {
                 session.notice = ""
-                session.error = it.message ?: container.t("http.saveFailed")
+                session.error = container.t(
+                    "reformat.error.write",
+                    mapOf("message" to (outcome.error.message ?: target.path)),
+                )
                 container.toastError(session.error)
             }
+        }
         persist()
     }
 

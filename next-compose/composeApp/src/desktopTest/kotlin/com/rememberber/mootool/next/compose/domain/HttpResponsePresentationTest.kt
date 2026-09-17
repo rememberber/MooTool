@@ -1,5 +1,6 @@
 package com.rememberber.mootool.next.compose.domain
 
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -29,6 +30,40 @@ class HttpResponsePresentationTest {
         assertTrue(HttpResponsePresentation.statusMetaSuccess(sampleResponse(ok = true, status = 200, body = "")))
         assertFalse(HttpResponsePresentation.statusMetaSuccess(sampleResponse(ok = false, status = 404, body = "")))
         assertFalse(HttpResponsePresentation.statusMetaSuccess(null))
+    }
+
+    @Test
+    fun runWriteResponseTextRoundTripAndMissingParentFails() {
+        val dir = kotlin.io.path.createTempDirectory("http-response-write-").toFile()
+        try {
+            val ok = File(dir, "body.txt")
+            assertEquals(
+                HttpResponsePresentation.WriteExportOutcome.Success,
+                HttpResponsePresentation.runWriteResponseText(ok, "payload579"),
+            )
+            assertEquals("payload579", ok.readText())
+            val bad = File(dir, "missing/nested.txt")
+            val fail = HttpResponsePresentation.runWriteResponseText(bad, "x")
+            assertTrue(fail is HttpResponsePresentation.WriteExportOutcome.Failure)
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun runWriteResponseBytesRoundTrip() {
+        val dir = kotlin.io.path.createTempDirectory("http-response-bytes-").toFile()
+        try {
+            val ok = File(dir, "bin.dat")
+            val bytes = byteArrayOf(0x57, 0x39)
+            assertEquals(
+                HttpResponsePresentation.WriteExportOutcome.Success,
+                HttpResponsePresentation.runWriteResponseBytes(ok, bytes),
+            )
+            assertTrue(bytes.contentEquals(ok.readBytes()))
+        } finally {
+            dir.deleteRecursively()
+        }
     }
 }
 

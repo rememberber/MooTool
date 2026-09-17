@@ -1387,6 +1387,9 @@ fun Modifier.mooConfigConvertActions(): Modifier = widthIn(min = 110.dp, max = 1
 /** Electron JSON 工具栏 `.io-actions` 导入/导出簇（对齐 F06 `mooConfigConvertActions` 密度）。 */
 fun Modifier.mooJsonToolbarIoCluster(): Modifier = heightIn(min = 34.dp)
 
+/** Electron 文本对比工具栏左右导入簇（对齐 F04 `mooJsonToolbarIoCluster` 34dp 行高）。 */
+fun Modifier.mooDiffImportCluster(): Modifier = heightIn(min = 34.dp)
+
 /** Electron 文本对比工具栏差异导航区。 */
 @Composable
 fun Modifier.mooDiffNavCluster(): Modifier = heightIn(min = 34.dp)
