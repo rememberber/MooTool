@@ -32,6 +32,22 @@ class HttpEngineTest {
     }
 
     @Test
+    fun curlRoundTripMatchesElectronHttpToolsAcceptAndBody() {
+        val source = HttpEngine.parseCurl(
+            """curl https://example.com -H 'Accept: application/json' --data-raw 'hello world'""",
+        )
+        assertEquals(HttpMethod.POST, source.method)
+        assertEquals("https://example.com", source.url)
+        assertEquals("hello world", source.body)
+        assertEquals("application/json", source.headers.first().value)
+        val parsed = HttpEngine.parseCurl(HttpEngine.toCurl(source))
+        assertEquals(HttpMethod.POST, parsed.method)
+        assertEquals("https://example.com", parsed.url)
+        assertEquals("hello world", parsed.body)
+        assertTrue(parsed.headers.any { it.name == "Accept" && it.value == "application/json" })
+    }
+
+    @Test
     fun frozenSemanticsKeepOriginalQueryAndDuplicateParams() {
         val params = listOf(
             HttpEngine.pair("q", "2"),

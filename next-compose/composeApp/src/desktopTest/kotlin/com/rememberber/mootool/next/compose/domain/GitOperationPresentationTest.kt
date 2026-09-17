@@ -2,7 +2,9 @@ package com.rememberber.mootool.next.compose.domain
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class GitOperationPresentationTest {
     @Test
@@ -12,5 +14,23 @@ class GitOperationPresentationTest {
         assertEquals("git.operationMerge", GitOperationPresentation.inProgressMessageKey("merge", merging = true))
         assertEquals("git.operationRebase", GitOperationPresentation.inProgressMessageKey("rebase", merging = true))
         assertEquals("git.operationInProgress", GitOperationPresentation.inProgressMessageKey("unknown", merging = true))
+    }
+
+    @Test
+    fun abortPresentationFollowsOperation() {
+        assertEquals("git.abortMergeOnly", GitOperationPresentation.abortButtonKey("merge"))
+        assertEquals("git.abortRebase", GitOperationPresentation.abortButtonKey("rebase"))
+        assertEquals("git.abortMerge", GitOperationPresentation.abortButtonKey("none"))
+        assertEquals("git.confirmAbortMerge", GitOperationPresentation.confirmAbortKey("merge"))
+        assertEquals("git.confirmAbortRebase", GitOperationPresentation.confirmAbortKey("rebase"))
+        assertEquals("git.confirmAbort", GitOperationPresentation.confirmAbortKey("unknown"))
+    }
+
+    @Test
+    fun pullEnabledRequiresCleanRemoteState() {
+        assertTrue(GitOperationPresentation.pullEnabled(remotePresent = true, merging = false, conflicts = 0))
+        assertFalse(GitOperationPresentation.pullEnabled(remotePresent = false, merging = false, conflicts = 0))
+        assertFalse(GitOperationPresentation.pullEnabled(remotePresent = true, merging = true, conflicts = 0))
+        assertFalse(GitOperationPresentation.pullEnabled(remotePresent = true, merging = false, conflicts = 1))
     }
 }

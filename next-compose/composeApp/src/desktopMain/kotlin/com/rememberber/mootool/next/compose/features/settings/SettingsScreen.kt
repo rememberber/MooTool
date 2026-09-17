@@ -46,8 +46,10 @@ import com.rememberber.mootool.next.compose.domain.NavigationToolVisibility
 import com.rememberber.mootool.next.compose.domain.ProxyPortCommitResult
 import com.rememberber.mootool.next.compose.domain.SettingsNetworkNormalize
 import com.rememberber.mootool.next.compose.domain.SettingsToolsTranslationNormalize
+import com.rememberber.mootool.next.compose.domain.SettingsVaultNumericNormalize
 import com.rememberber.mootool.next.compose.domain.SettingsVaultGitNormalize
 import com.rememberber.mootool.next.compose.domain.TimeoutCommitResult
+import com.rememberber.mootool.next.compose.domain.VaultNumericCommitResult
 import com.rememberber.mootool.next.compose.app.UpdateUiState
 import com.rememberber.mootool.next.compose.model.AppLanguage
 import com.rememberber.mootool.next.compose.model.CloseBehavior
@@ -681,25 +683,61 @@ fun SettingsScreen(container: AppContainer) {
                         container.updateSettings { it.copy(vault = it.vault.copy(autoCommit = !it.vault.autoCommit)) }
                     }
                     SettingRow(container.t("settings.autoCommitIdleSeconds")) {
-                        SettingTextField(settings.vault.autoCommitIdleSeconds.toString(), {
-                            it.toIntOrNull()?.let { value ->
-                                container.updateSettings { current -> current.copy(vault = current.vault.copy(autoCommitIdleSeconds = value.coerceIn(5, 3600))) }
-                            }
-                        })
+                        SettingCommitTextField(
+                            settings.vault.autoCommitIdleSeconds.toString(),
+                            onCommit = { draft ->
+                                when (val outcome = SettingsVaultNumericNormalize.commitAutoCommitIdleSeconds(draft)) {
+                                    is VaultNumericCommitResult.Accepted -> {
+                                        container.updateSettings { current ->
+                                            current.copy(vault = current.vault.copy(autoCommitIdleSeconds = outcome.value))
+                                        }
+                                        true
+                                    }
+                                    VaultNumericCommitResult.Rejected -> {
+                                        container.toastError(container.t("settings.vault.numericInvalid"))
+                                        false
+                                    }
+                                }
+                            },
+                        )
                     }
                     SettingRow(container.t("settings.autoCommitInactiveSeconds")) {
-                        SettingTextField(settings.vault.autoCommitInactiveSeconds.toString(), {
-                            it.toIntOrNull()?.let { value ->
-                                container.updateSettings { current -> current.copy(vault = current.vault.copy(autoCommitInactiveSeconds = value.coerceIn(5, 3600))) }
-                            }
-                        })
+                        SettingCommitTextField(
+                            settings.vault.autoCommitInactiveSeconds.toString(),
+                            onCommit = { draft ->
+                                when (val outcome = SettingsVaultNumericNormalize.commitAutoCommitInactiveSeconds(draft)) {
+                                    is VaultNumericCommitResult.Accepted -> {
+                                        container.updateSettings { current ->
+                                            current.copy(vault = current.vault.copy(autoCommitInactiveSeconds = outcome.value))
+                                        }
+                                        true
+                                    }
+                                    VaultNumericCommitResult.Rejected -> {
+                                        container.toastError(container.t("settings.vault.numericInvalid"))
+                                        false
+                                    }
+                                }
+                            },
+                        )
                     }
                     SettingRow(container.t("settings.autoPullMinutes")) {
-                        SettingTextField(settings.vault.autoPullMinutes.toString(), {
-                            it.toIntOrNull()?.let { value ->
-                                container.updateSettings { current -> current.copy(vault = current.vault.copy(autoPullMinutes = value.coerceIn(0, 1440))) }
-                            }
-                        })
+                        SettingCommitTextField(
+                            settings.vault.autoPullMinutes.toString(),
+                            onCommit = { draft ->
+                                when (val outcome = SettingsVaultNumericNormalize.commitAutoPullMinutes(draft)) {
+                                    is VaultNumericCommitResult.Accepted -> {
+                                        container.updateSettings { current ->
+                                            current.copy(vault = current.vault.copy(autoPullMinutes = outcome.value))
+                                        }
+                                        true
+                                    }
+                                    VaultNumericCommitResult.Rejected -> {
+                                        container.toastError(container.t("settings.vault.numericInvalid"))
+                                        false
+                                    }
+                                }
+                            },
+                        )
                     }
                     Toggle(container, container.t("settings.vault.hideIgnored"), settings.vault.hideGitignoredFiles) {
                         container.updateSettings { it.copy(vault = it.vault.copy(hideGitignoredFiles = !it.vault.hideGitignoredFiles)) }

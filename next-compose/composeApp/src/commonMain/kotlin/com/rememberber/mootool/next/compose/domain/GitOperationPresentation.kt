@@ -10,4 +10,21 @@ object GitOperationPresentation {
             else -> "git.operationInProgress"
         }
     }
+
+    fun abortButtonKey(operation: String): String =
+        when (operation) {
+            "rebase" -> "git.abortRebase"
+            "merge" -> "git.abortMergeOnly"
+            else -> "git.abortMerge"
+        }
+
+    fun confirmAbortKey(operation: String): String =
+        when (operation) {
+            "rebase" -> "git.confirmAbortRebase"
+            "merge" -> "git.confirmAbortMerge"
+            else -> "git.confirmAbort"
+        }
+
+    fun pullEnabled(remotePresent: Boolean, merging: Boolean, conflicts: Int): Boolean =
+        remotePresent && !merging && conflicts == 0
 }

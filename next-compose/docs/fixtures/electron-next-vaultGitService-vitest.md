@@ -18,6 +18,7 @@
 | pull-during-merge | 同上 | merge 中禁止 pull | `GitEngineTest.pullBlockedWhileMergeInProgress`（[DIFF-447](../diff/447-git-pull-merge-order-conflict-dialog-click.md)）；`GitPullGuardTest.mergeInProgressRejectedBeforeMissingRemoteMessage`（[DIFF-448](../diff/448-vault-conflict-reload-savecopy-git-pull-guard.md)） |
 | continue-unresolved-conflicts | 同上 | 冲突未解决禁止 continue | `GitContinueGuardTest.continueRejectedWhileConflictsRemain`（merge，[DIFF-493](../diff/493-vault-deleted-savecopy-git-continue-guard.md)）；`GitRebaseGuardTest.continueRejectedWhileRebaseConflictsRemain`（rebase，[DIFF-494](../diff/494-git-rebase-pull-commit-guard.md)） |
 | pull-during-rebase | 同上 | rebase 中禁止 pull | `GitRebaseGuardTest.pullBlockedWhileRebaseInProgress`（[DIFF-494](../diff/494-git-rebase-pull-commit-guard.md)） |
+| git-ui-abort-copy | Vault Git 面板 | merge/rebase 中止/确认文案、pull 冲突期禁用 | `GitOperationPresentationTest`（[DIFF-520](../diff/520-vault-numeric-git-http-curl.md)） |
 | commit-during-rebase-conflicts | 同上 | rebase 冲突未清禁止 commit | `GitRebaseGuardTest.commitBlockedWhileRebaseConflictsRemain`（[DIFF-494](../diff/494-git-rebase-pull-commit-guard.md)） |
 | abort-rebase-unresolved | 同上 | rebase 冲突态 `rebase --abort` | `GitRebaseGuardTest.abortEndsRebaseWithUnresolvedConflicts`（[DIFF-494](../diff/494-git-rebase-pull-commit-guard.md)） |
 | concurrent-commits | 同上 | 双 `VaultGitService` 并行 commit | `GitEngineTest.serializesConcurrentCommitsForSameVaultRoot`（两线程两 message，仅一条 `concurrent.txt` 提交，对齐 Electron `serializes Git actions…separate service instances`） |

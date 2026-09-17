@@ -233,10 +233,10 @@ fun VaultGitDialog(
                 Modifier.width(480.dp).mooDialogSurface().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(container.t("git.confirmAbort"), color = colors.textPrimary, fontSize = 13.sp)
+                Text(container.t(GitOperationPresentation.confirmAbortKey(status.operation)), color = colors.textPrimary, fontSize = 13.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     MooButton(
-                        container.t("git.abortMerge"),
+                        container.t(GitOperationPresentation.abortButtonKey(status.operation)),
                         prominent = true,
                         danger = true,
                         p5Toolbar = true,
@@ -324,7 +324,11 @@ fun VaultGitDialog(
                         MooButton(
                             container.t("git.pull"),
                             p5Toolbar = true,
-                            enabled = !busy && status.remote.isNotBlank() && !status.merging,
+                            enabled = !busy && GitOperationPresentation.pullEnabled(
+                                remotePresent = status.remote.isNotBlank(),
+                                merging = status.merging,
+                                conflicts = status.conflicts,
+                            ),
                             onClick = { runAction(workingTree = GitVaultFlushAction.Pull) { GitEngine.pull(root, token = token()) } }
                         )
                         MooButton(
@@ -336,7 +340,7 @@ fun VaultGitDialog(
                     }
                     if (status.merging || status.conflicts > 0) {
                         MooButton(
-                            container.t("git.abortMerge"),
+                            container.t(GitOperationPresentation.abortButtonKey(status.operation)),
                             danger = true,
                             p5Toolbar = true,
                             enabled = !busy,
