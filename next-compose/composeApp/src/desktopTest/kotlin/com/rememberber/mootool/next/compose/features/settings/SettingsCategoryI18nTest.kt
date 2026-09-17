@@ -17,4 +17,13 @@ class SettingsCategoryI18nTest {
         assertEquals("Layout & Habits", en.t(SettingsNavCategory.Layout.categoryLabelKey()))
         assertEquals("About & Updates", en.t(SettingsNavCategory.About.categoryLabelKey()))
     }
+
+    @Test
+    fun categoryLabelsMatchElectronJa() {
+        val ja = Translator(AppLanguage.JaJP)
+        assertEquals("一般", ja.t(SettingsNavCategory.General.categoryLabelKey()))
+        assertEquals("レイアウトと操作", ja.t(SettingsNavCategory.Layout.categoryLabelKey()))
+        assertEquals("情報と更新", ja.t(SettingsNavCategory.About.categoryLabelKey()))
+        assertEquals("AI 連携", ja.t(SettingsNavCategory.Ai.categoryLabelKey()))
+    }
 }

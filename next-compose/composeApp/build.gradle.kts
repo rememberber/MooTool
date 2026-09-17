@@ -17,6 +17,14 @@ val nativePackageVersion: String = if (appVersion.startsWith("0.")) {
     appVersion
 }
 
+/** Locked for P7 `verifyNativePackageMetadata` (also referenced in nativeDistributions). */
+val p7PackageName = "MooTool Next Compose"
+val p7LinuxPackageName = "mootool-next-compose"
+val p7MacBundleId = "com.rememberber.mootool.next.compose"
+val p7MacMinimumOs = "12.0"
+val p7WindowsUpgradeUuid = "D6574BAD-FF7C-4038-8D17-B9C7988787BA"
+val p7TargetFormats = listOf(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Rpm)
+
 val osName = System.getProperty("os.name").orEmpty().lowercase()
 val osArch = System.getProperty("os.arch").orEmpty().lowercase()
 val desktopNative = when {
@@ -116,8 +124,8 @@ compose.desktop {
     application {
         mainClass = "com.rememberber.mootool.next.compose.MainKt"
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Rpm)
-            packageName = "MooTool Next Compose"
+            targetFormats(*p7TargetFormats.toTypedArray())
+            packageName = p7PackageName
             packageVersion = nativePackageVersion
             description = "MooTool Next Compose developer toolbox"
             vendor = "RememBerBer"
@@ -136,10 +144,10 @@ compose.desktop {
             )
             appResourcesRootDir.set(rootProject.layout.projectDirectory.dir("resources"))
             macOS {
-                bundleID = "com.rememberber.mootool.next.compose"
+                bundleID = p7MacBundleId
                 dockName = "MooTool Next Compose"
                 appCategory = "public.app-category.developer-tools"
-                minimumSystemVersion = "12.0"
+                minimumSystemVersion = p7MacMinimumOs
                 infoPlist {
                     extraKeysRawXml = """
                         <key>NSHighResolutionCapable</key>
@@ -157,7 +165,7 @@ compose.desktop {
             }
             windows {
                 menuGroup = "MooTool Next Compose"
-                upgradeUuid = "D6574BAD-FF7C-4038-8D17-B9C7988787BA"
+                upgradeUuid = p7WindowsUpgradeUuid
                 shortcut = true
                 dirChooser = true
                 perUserInstall = true
@@ -166,7 +174,7 @@ compose.desktop {
             }
             linux {
                 shortcut = true
-                packageName = "mootool-next-compose"
+                packageName = p7LinuxPackageName
                 debMaintainer = "rememberber@users.noreply.github.com"
                 menuGroup = "Development"
                 appCategory = "Development"
@@ -193,6 +201,27 @@ tasks.register("printTooling") {
         println("os.name=${System.getProperty("os.name")}")
         println("os.arch=${System.getProperty("os.arch")}")
         println("protobuf=$protocVersion")
+    }
+}
+
+tasks.register("verifyNativePackageMetadata") {
+    group = "verification"
+    description = "Locks P7 jpackage/nativeDistribution identity without building installers"
+    doLast {
+        require(p7TargetFormats.map { it.name }.containsAll(listOf("Dmg", "Msi", "Deb", "Rpm"))) {
+            "Expected DMG/MSI/DEB/RPM target formats"
+        }
+        require(p7PackageName == "MooTool Next Compose") { "Unexpected packageName constant" }
+        require(p7LinuxPackageName == "mootool-next-compose") { "Unexpected Linux packageName" }
+        require(p7MacBundleId == "com.rememberber.mootool.next.compose") { "Unexpected bundleID" }
+        require(p7MacMinimumOs == "12.0") { "Unexpected macOS minimumSystemVersion" }
+        require(p7WindowsUpgradeUuid == "D6574BAD-FF7C-4038-8D17-B9C7988787BA") { "Unexpected upgradeUuid" }
+        if (appVersion.startsWith("0.")) {
+            require(nativePackageVersion == "1${appVersion.removePrefix("0")}") {
+                "nativePackageVersion must map 0.x SemVer for jpackage"
+            }
+        }
+        println("verifyNativePackageMetadata=OK appVersion=$appVersion nativePackageVersion=$nativePackageVersion")
     }
 }
 

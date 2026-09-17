@@ -910,6 +910,14 @@ class GitEngineTest {
         assertEquals("folder/note.md", GitEngine.normalizeGitPath("folder/note.md"))
     }
 
+    @Test
+    fun settingsVaultGitSanitizeAcceptsSameRemotesAsNormalizeGitRemote() {
+        val url = "https://example.com/org/repo.git"
+        assertEquals(url, SettingsVaultGitNormalize.sanitizeGitRemote(" $url "))
+        assertEquals(url, GitEngine.normalizeGitRemote(url))
+        assertEquals("", SettingsVaultGitNormalize.sanitizeGitRemote("ftp://bad.example/r.git"))
+    }
+
     private fun assumeGit() {
         Assume.assumeTrue("git CLI not installed", GitEngine.detect(isolateConfig = true).available)
     }

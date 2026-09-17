@@ -69,6 +69,7 @@ class ThemeContrastTest {
         assertTrue(!modern.restoresWorkspaceChrome())
         assertTrue(!hero.flattenWorkspaceToolPanels())
         assertTrue(modern.flattenWorkspaceToolPanels())
+        assertTrue(resolveMooColors(false, "quiet", "blue").flattenWorkspaceToolPanels())
     }
 
     @Test

@@ -12,6 +12,35 @@ import kotlin.test.assertTrue
 
 class EnvEngineTest {
     @Test
+    fun updatesEnvironmentFileLikeElectronSystemServiceFixture() {
+        val source = """
+            # keep this comment
+            export JAVA_HOME='/old jdk'
+            OTHER="value"
+            """.trimIndent() + "\n"
+        val updated = EnvEngine.updateContent(source, "JAVA_HOME", "/opt/jdk's", shellExport = true)
+        assertEquals(
+            """
+            # keep this comment
+            export JAVA_HOME='/opt/jdk'\''s'
+            OTHER="value"
+            """.trimIndent() + "\n",
+            updated,
+        )
+        assertEquals(
+            listOf(
+                EnvEntry("JAVA_HOME", "/opt/jdk's"),
+                EnvEntry("OTHER", "value"),
+            ),
+            EnvEngine.parseContent(updated),
+        )
+        assertEquals(
+            "# keep this comment\nOTHER=\"value\"\n",
+            EnvEngine.updateContent(updated, "JAVA_HOME", null, shellExport = true),
+        )
+    }
+
+    @Test
     fun parsesAndUpdatesWhileKeepingUnknownLines() {
         val original = """
             # keep me

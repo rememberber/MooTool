@@ -1142,9 +1142,10 @@ fun Modifier.mooFocusOutline(focused: Boolean, shape: RoundedCornerShape): Modif
 }
 
 @Composable
-fun Modifier.mooToolShell(fill: Color? = null, flatten: Boolean = false, endBorder: Boolean = true, p5: Boolean = false): Modifier {
+fun Modifier.mooToolShell(fill: Color? = null, flatten: Boolean? = null, endBorder: Boolean = true, p5: Boolean = false): Modifier {
     val colors = MooTheme.colors
-    val edge = flatten && !colors.restoresWorkspaceChrome() && !p5
+    val flattenPanels = flatten ?: colors.flattenWorkspaceToolPanels()
+    val edge = flattenPanels && !colors.restoresWorkspaceChrome() && !p5
     if (edge) {
         return background(fill ?: colors.workspace)
             .then(

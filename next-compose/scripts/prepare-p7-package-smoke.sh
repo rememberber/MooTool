@@ -25,6 +25,10 @@ echo "## Gradle tooling"
 ./gradlew :composeApp:printTooling --offline
 
 echo ""
+echo "## Native package metadata (no installer build)"
+./gradlew :composeApp:verifyNativePackageMetadata --offline
+
+echo ""
 echo "## Unit/desktop tests (offline)"
 ./gradlew :composeApp:desktopTest --offline
 
