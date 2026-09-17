@@ -1390,6 +1390,33 @@ fun Modifier.mooTranslationLangBar(): Modifier {
         }
 }
 
+/** Electron `encode-panes` 中间转换/选项列。 */
+@Composable
+fun Modifier.mooEncodeControlColumn(): Modifier = widthIn(min = 120.dp).padding(horizontal = 4.dp)
+
+/** Electron `.qrcode-options` 尺寸/纠错行。 */
+@Composable
+fun Modifier.mooQrOptionsRow(): Modifier = heightIn(min = 34.dp)
+
+/** Electron 系统信息双列属性行。 */
+@Composable
+fun Modifier.mooHardwareStatRow(): Modifier = heightIn(min = 33.dp)
+
+/** Electron 环境变量表头行。 */
+@Composable
+fun Modifier.mooEnvTableHead(): Modifier {
+    val colors = MooTheme.colors
+    return heightIn(min = 34.dp).background(colors.workspace)
+}
+
+/** Electron 环境变量键值行。 */
+@Composable
+fun Modifier.mooEnvVarRow(): Modifier = heightIn(min = 36.dp)
+
+/** Electron 网络工具分区标题块。 */
+@Composable
+fun Modifier.mooNetSection(): Modifier = padding(vertical = 12.dp)
+
 @Composable
 fun Modifier.mooWorkspaceBackground(): Modifier {
     val colors = MooTheme.colors

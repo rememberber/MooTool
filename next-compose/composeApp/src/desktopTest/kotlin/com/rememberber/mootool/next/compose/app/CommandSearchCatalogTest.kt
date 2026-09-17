@@ -78,6 +78,21 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun encodeAndEnvQueriesOpenExpectedSettings() {
+        val en = Translator(AppLanguage.EnUS)
+        assertEquals("tools", CommandSearchCatalog.search("unicode", en::t).single().categoryId)
+        assertEquals("data", CommandSearchCatalog.search("environment", en::t).single().categoryId)
+        assertEquals("runtime", CommandSearchCatalog.search("hardware", en::t).single().categoryId)
+        assertTrue(CommandSearchCatalog.search("validate", en::t).any { it.categoryId == "vault" })
+    }
+
+    @Test
+    fun mcpEncodeKeywordsOpenAiSettings() {
+        val hits = CommandSearchCatalog.search("json_format", Translator(AppLanguage.EnUS)::t)
+        assertEquals("ai", hits.single().categoryId)
+    }
+
+    @Test
     fun curlAndPdfQueryOpenNetworkSettings() {
         val en = Translator(AppLanguage.EnUS)
         assertEquals("network", CommandSearchCatalog.search("curl", en::t).single().categoryId)

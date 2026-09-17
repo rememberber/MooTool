@@ -138,6 +138,21 @@ class MooToolMcpToolsTest {
     }
 
     @Test
+    fun encodeUrlRoundTripViaMcp() {
+        val encoded = MooToolMcpTools.call(
+            "mootool_encode",
+            mapOf("text" to "a b", "format" to "url", "direction" to "encode", "charset" to "utf-8"),
+        )
+        assertFalse(encoded.isError)
+        val decoded = MooToolMcpTools.call(
+            "mootool_encode",
+            mapOf("text" to encoded.text, "format" to "url", "direction" to "decode", "charset" to "utf-8"),
+        )
+        assertFalse(decoded.isError)
+        assertEquals("a b", decoded.text)
+    }
+
+    @Test
     fun jsonQueryReturnsArrayMatchesForValuesPath() {
         val result = MooToolMcpTools.call(
             "mootool_json_query",

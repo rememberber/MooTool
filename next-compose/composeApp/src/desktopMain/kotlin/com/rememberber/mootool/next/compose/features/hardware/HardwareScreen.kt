@@ -38,6 +38,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooToolTab
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.components.mooHardwareStatRow
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
@@ -176,7 +177,7 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
                             Row(Modifier.fillMaxWidth()) {
                                 pair.forEach { item ->
                                     Row(
-                                        Modifier.weight(1f).heightIn(min = 33.dp).padding(end = 24.dp, top = 7.dp, bottom = 7.dp),
+                                        Modifier.weight(1f).mooHardwareStatRow().padding(end = 24.dp, top = 7.dp, bottom = 7.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {

@@ -63,6 +63,8 @@ import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
+import com.rememberber.mootool.next.compose.ui.components.mooEnvTableHead
+import com.rememberber.mootool.next.compose.ui.components.mooEnvVarRow
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
@@ -240,7 +242,7 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
             entries.isEmpty() -> Text(container.t("variables.empty"), color = colors.textSecondary, modifier = Modifier.padding(16.dp))
             else -> Column(Modifier.fillMaxSize()) {
                 Row(
-                    Modifier.fillMaxWidth().height(34.dp).background(colors.workspace).padding(horizontal = 10.dp),
+                    Modifier.fillMaxWidth().mooEnvTableHead().padding(horizontal = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -263,7 +265,7 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                 LazyColumn(Modifier.weight(1f)) {
                     items(entries, key = { it.key }) { entry ->
                         Row(
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 36.dp)
+                            modifier = Modifier.fillMaxWidth().mooEnvVarRow()
                                 .mooFocusClickable(enabled = canEdit) {
                                     openEditor(session, entry)
                                     persist()

@@ -58,6 +58,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooNetCommandRow
 import com.rememberber.mootool.next.compose.ui.components.mooNetPortScanRow
+import com.rememberber.mootool.next.compose.ui.components.mooNetSection
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
@@ -442,7 +443,7 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
 private fun Section(title: String, content: @Composable () -> Unit) {
     val colors = MooTheme.colors
     Column(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        modifier = Modifier.fillMaxWidth().mooNetSection(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(title, color = colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)

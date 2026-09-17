@@ -43,7 +43,7 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.AsymmetricAlgorithm
 import com.rememberber.mootool.next.compose.domain.BaseAlgorithm
 import com.rememberber.mootool.next.compose.domain.CryptoEngine
-import com.rememberber.mootool.next.compose.domain.ToolsSettingsLiveApply
+import com.rememberber.mootool.next.compose.domain.RandomWiringPresentation
 import com.rememberber.mootool.next.compose.domain.CryptoException
 import com.rememberber.mootool.next.compose.domain.CryptoHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.CryptoHistoryRestore
@@ -100,8 +100,7 @@ fun CryptoScreen(container: AppContainer, detached: Boolean) {
     }
 
     LaunchedEffect(settings.tools.randomStringLength) {
-        val length = ToolsSettingsLiveApply.randomStringLength(settings.tools.randomStringLength)
-            .coerceIn(CryptoEngine.MIN_RANDOM_LENGTH, CryptoEngine.MAX_RANDOM_LENGTH)
+        val length = RandomWiringPresentation.sessionRandomLength(settings.tools.randomStringLength)
         if (session.randomLength != length) {
             session.randomLength = length
             refresh()
@@ -801,7 +800,7 @@ private fun generateRandom(container: AppContainer, session: CryptoSession, kind
         container.toastSuccess(session.notice)
         val operation = kind.name.lowercase()
         saveHistory(container, "random", operation, kind.name, if (kind == RandomKind.Uuid) "" else session.randomLength.toString(), output)
-        val length = session.randomLength.coerceIn(CryptoEngine.MIN_RANDOM_LENGTH, CryptoEngine.MAX_RANDOM_LENGTH)
+        val length = RandomWiringPresentation.persistedRandomLength(session.randomLength)
         if (container.settings.value.tools.randomStringLength != length) {
             container.updateSettings { current -> current.copy(tools = current.tools.copy(randomStringLength = length)) }
         }

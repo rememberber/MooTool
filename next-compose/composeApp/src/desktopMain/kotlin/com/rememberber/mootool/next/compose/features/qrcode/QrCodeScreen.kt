@@ -43,7 +43,8 @@ import com.rememberber.mootool.next.compose.domain.QrHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.QrHistoryRestore
 import com.rememberber.mootool.next.compose.domain.QrErrorCorrection
 import com.rememberber.mootool.next.compose.domain.QrException
-import com.rememberber.mootool.next.compose.domain.ToolsSettingsLiveApply
+import com.rememberber.mootool.next.compose.domain.QrWiringPresentation
+import com.rememberber.mootool.next.compose.ui.components.mooQrOptionsRow
 import com.rememberber.mootool.next.compose.domain.QrTab
 import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.storage.VaultPathConfig
@@ -106,16 +107,14 @@ fun QrCodeScreen(container: AppContainer, detached: Boolean) {
     }
 
     LaunchedEffect(settings.tools.qrCodeSize, settings.tools.qrErrorCorrection) {
-        val size = ToolsSettingsLiveApply.qrCodeSize(settings.tools.qrCodeSize)
-        val correctionName = ToolsSettingsLiveApply.qrErrorCorrection(settings.tools.qrErrorCorrection)
-        val correction = QrErrorCorrection.entries.find { it.name == correctionName } ?: QrErrorCorrection.M
+        val defaults = QrWiringPresentation.fromSettings(settings.tools.qrCodeSize, settings.tools.qrErrorCorrection)
         var changed = false
-        if (session.size != size) {
-            session.size = size
+        if (session.size != defaults.size) {
+            session.size = defaults.size
             changed = true
         }
-        if (session.correction != correction) {
-            session.correction = correction
+        if (session.correction != defaults.correction) {
+            session.correction = defaults.correction
             changed = true
         }
         if (changed) refresh()
@@ -208,15 +207,23 @@ private fun GeneratePanel(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 singleLine = false
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.mooQrOptionsRow(),
+            ) {
                 Text(container.t("qrcode.size"), color = colors.textMuted, fontSize = 11.sp)
                 MooTextField(session.size.toString(), { value ->
-                    session.size = value.toIntOrNull() ?: session.size
+                    session.size = QrWiringPresentation.parseSizeField(value, session.size)
                     onChanged()
                 }, modifier = Modifier.width(80.dp), compact = true)
                 Text("px", color = colors.textMuted, fontSize = 11.sp)
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.mooQrOptionsRow(),
+            ) {
                 Text(container.t("qrcode.correction"), color = colors.textMuted, fontSize = 11.sp)
                 Box {
                     var correctionOpen by remember { mutableStateOf(false) }
@@ -477,7 +484,7 @@ private fun generateQr(
     session.notice = container.t("common.processing")
     onChanged()
     val content = session.content
-    val size = QrEngine.normalizeSize(session.size)
+    val size = QrWiringPresentation.generateSize(session.size)
     val correction = session.correction
     val logo = session.logoImage
     scope.launch(Dispatchers.Default) {

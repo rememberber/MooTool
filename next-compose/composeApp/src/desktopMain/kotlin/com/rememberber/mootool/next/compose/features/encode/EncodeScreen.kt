@@ -44,6 +44,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooToolTabsRow
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooEncodeControlColumn
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
@@ -157,7 +158,7 @@ fun EncodeScreen(container: AppContainer, detached: Boolean) {
                 onReset = { container.setPaneSize(ToolId.Encode.id, 0, defaultLeft, 2) }
             )
             Column(
-                modifier = Modifier.width(middleWidth.dp).widthIn(min = 120.dp).fillMaxHeight(),
+                modifier = Modifier.width(middleWidth.dp).fillMaxHeight().mooEncodeControlColumn(),
                 verticalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterVertically),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
