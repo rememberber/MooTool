@@ -66,4 +66,16 @@ class GitOperationPresentationTest {
         assertTrue(GitOperationPresentation.continueOperationEnabled(merging = true, conflicts = 0))
         assertFalse(GitOperationPresentation.continueOperationEnabled(merging = true, conflicts = 1))
     }
+
+    @Test
+    fun initDiscardAndAbortHelpersMatchElectronVaultGitDialog() {
+        assertTrue(GitOperationPresentation.initEnabled(available = true, busy = false))
+        assertFalse(GitOperationPresentation.initEnabled(available = false, busy = false))
+        assertFalse(GitOperationPresentation.initEnabled(available = true, busy = true))
+        assertTrue(GitOperationPresentation.discardEnabled(busy = false))
+        assertFalse(GitOperationPresentation.discardEnabled(busy = true))
+        assertTrue(GitOperationPresentation.showAbortAction(merging = true, conflicts = 0))
+        assertTrue(GitOperationPresentation.showAbortAction(merging = false, conflicts = 1))
+        assertFalse(GitOperationPresentation.showAbortAction(merging = false, conflicts = 0))
+    }
 }

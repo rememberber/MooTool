@@ -34,4 +34,4 @@ DIFF-536「未做」仍列 Host/UA/格式化/运行台等历史 options 散落�
 
 ## 未做
 
-六套 CSS 皮肤、产品主窗 Tab 走查、TCC 系统对话框 PNG 手工、P7 三平台安装、JSON/随手记/QR 等待提取历史模块、Vault Git UI 大改、Compose 与 Electron  substantial UI/引擎差、目标未达成。
+六套 CSS 皮肤、产品主窗 Tab 走查、TCC 系统对话框 PNG 手工、P7 三平台安装、JSON/随手记/QR 历史 metadata 提取（见 [DIFF-538](538-json-quicknote-qr-history-git-slice.md)）、Vault Git UI 大改、Compose 与 Electron  substantial UI/引擎差、目标未达成。

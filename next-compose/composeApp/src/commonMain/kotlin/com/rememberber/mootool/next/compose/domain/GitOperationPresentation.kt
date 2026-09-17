@@ -48,4 +48,11 @@ object GitOperationPresentation {
     /** 对齐 Electron configure-remote：`repository && (draftRemote || statusRemote)`。 */
     fun configureRemoteEnabled(repository: Boolean, draftRemoteTrimmed: String, statusRemote: String): Boolean =
         repository && (draftRemoteTrimmed.isNotEmpty() || statusRemote.isNotBlank())
+
+    fun initEnabled(available: Boolean, busy: Boolean): Boolean = !busy && available
+
+    fun discardEnabled(busy: Boolean): Boolean = !busy
+
+    /** 对齐 Electron `VaultGitDialog`：merge/rebase 或存在未解决冲突时显示 abort。 */
+    fun showAbortAction(merging: Boolean, conflicts: Int): Boolean = merging || conflicts > 0
 }

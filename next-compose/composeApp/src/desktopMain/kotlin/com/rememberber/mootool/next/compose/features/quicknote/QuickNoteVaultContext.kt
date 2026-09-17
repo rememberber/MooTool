@@ -5,6 +5,7 @@ import com.rememberber.mootool.next.compose.domain.DocumentFormatEngine
 import com.rememberber.mootool.next.compose.domain.NoteAttachmentEngine
 import com.rememberber.mootool.next.compose.domain.NoteFrontmatter
 import com.rememberber.mootool.next.compose.domain.NoteMetadata
+import com.rememberber.mootool.next.compose.domain.QuickNoteHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.VaultGitCheckpointMessages
 import com.rememberber.mootool.next.compose.domain.VaultChangeKind
 import com.rememberber.mootool.next.compose.domain.VaultConflictEngine
@@ -137,7 +138,14 @@ internal fun quickNoteSaveCurrent(
             if (showToast) {
                 session.notice = container.t("quickNote.saved")
                 container.toastSuccess(container.t("quickNote.saved"))
-                container.history.save(ToolId.QuickNote.id, document.relativePath, document.relativePath, document.content.take(8_000), "")
+                container.history.save(
+                    ToolId.QuickNote.id,
+                    document.relativePath,
+                    document.relativePath,
+                    document.content.take(8_000),
+                    "",
+                    QuickNoteHistoryMetadata.encode(document.relativePath),
+                )
             }
             container.recordVaultActivity(VaultGitCheckpointMessages.UPDATE_QUICK_NOTE)
             previous?.let { old ->

@@ -62,6 +62,8 @@ import com.rememberber.mootool.next.compose.domain.JsonStatus
 import com.rememberber.mootool.next.compose.domain.JsonTranslator
 import com.rememberber.mootool.next.compose.domain.VaultSelectionPath
 import com.rememberber.mootool.next.compose.domain.VaultConflictState
+import com.rememberber.mootool.next.compose.domain.JsonHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.JsonHistoryRestore
 import com.rememberber.mootool.next.compose.domain.VaultGitCheckpointMessages
 import com.rememberber.mootool.next.compose.domain.VaultRevisionMonitor
 import com.rememberber.mootool.next.compose.domain.noteOwnWriteJsonVaultFile
@@ -526,8 +528,10 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
                     refresh()
                     return@HistoryBrowser
                 }
-                onEdt { session.editor.setText(item.output.ifBlank { item.input }, recordUndo = true) }
-                session.clearJsonPathQueryResult()
+                JsonHistoryRestore.apply(session, item)
+                JsonHistoryRestore.editorText(item)?.let { text ->
+                    onEdt { session.editor.setText(text, recordUndo = true) }
+                }
                 session.historyOpen = false
                 refresh()
             },
@@ -1642,7 +1646,14 @@ private fun InspectorPane(
                         if (session.pathResult.isNotBlank()) {
                             session.dialogTitle = title
                             session.dialogBody = session.pathResult
-                            container.history.save(ToolId.Json.id, title, title, inspectorInput, session.pathResult)
+                            container.history.save(
+                                ToolId.Json.id,
+                                title,
+                                title,
+                                inspectorInput,
+                                session.pathResult,
+                                JsonHistoryMetadata.encodePathQuery(),
+                            )
                         } else if (session.notice.isNotBlank()) {
                             container.toastError(session.notice)
                         }
@@ -1778,7 +1789,14 @@ private fun InputDialog(
                         }
                         session.notice = title
                         container.toastSuccess(title)
-                        container.history.save(ToolId.Json.id, title, title, input, output)
+                        container.history.save(
+                            ToolId.Json.id,
+                            title,
+                            title,
+                            input,
+                            output,
+                            JsonHistoryMetadata.encodeEditor(),
+                        )
                         closeConversion()
                     }.onFailure {
                         val message = it.message ?: container.t("json.notice.failed")
@@ -1825,7 +1843,14 @@ private fun transform(
             onEdt { session.editor.setText(output, recordUndo = true) }
             session.notice = notice
             container.toastSuccess(notice)
-            container.history.save(ToolId.Json.id, historySummary, historySummary, input, output)
+            container.history.save(
+                ToolId.Json.id,
+                historySummary,
+                historySummary,
+                input,
+                output,
+                JsonHistoryMetadata.encodeEditor(),
+            )
         }
         .onFailure { error ->
             val message = error.message ?: container.t("json.notice.failed")
@@ -1896,7 +1921,7 @@ private fun showResult(
             session.dialogTitle = title
             session.dialogBody = output
             session.notice = title
-            container.history.save(ToolId.Json.id, title, title, input, output)
+            container.history.save(ToolId.Json.id, title, title, input, output, JsonHistoryMetadata.encodeEditor())
         }
         .onFailure { error ->
             if (fillPathResult) session.pathResult = ""

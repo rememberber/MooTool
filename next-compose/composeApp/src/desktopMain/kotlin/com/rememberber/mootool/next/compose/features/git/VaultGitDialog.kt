@@ -310,7 +310,7 @@ fun VaultGitDialog(
                             container.t("git.init"),
                             prominent = true,
                             p5Toolbar = true,
-                            enabled = !busy && status.available,
+                            enabled = !busy && GitOperationPresentation.initEnabled(status.available, busy),
                             onClick = { runAction { GitEngine.init(root, identity()) } }
                         )
                     }
@@ -341,7 +341,7 @@ fun VaultGitDialog(
                             onClick = { runAction(workingTree = GitVaultFlushAction.Push) { GitEngine.push(root, token = token()) } }
                         )
                     }
-                    if (status.merging || status.conflicts > 0) {
+                    if (GitOperationPresentation.showAbortAction(status.merging, status.conflicts)) {
                         MooButton(
                             container.t(GitOperationPresentation.abortButtonKey(status.operation)),
                             danger = true,
@@ -484,7 +484,7 @@ fun VaultGitDialog(
                                             container.t("git.discard"),
                                             danger = true,
                                             p5Toolbar = true,
-                                            enabled = !busy,
+                                            enabled = !busy && GitOperationPresentation.discardEnabled(busy),
                                             onClick = { confirmDiscardPath = selectedChange.path }
                                         )
                                         if (selectedChange.conflict) {

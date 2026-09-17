@@ -60,6 +60,7 @@ import com.rememberber.mootool.next.compose.domain.NoteMetadata
 import com.rememberber.mootool.next.compose.domain.QuickReplaceAction
 import com.rememberber.mootool.next.compose.domain.QuickReplaceEngine
 import com.rememberber.mootool.next.compose.domain.VaultConflictState
+import com.rememberber.mootool.next.compose.domain.QuickNoteHistoryRestore
 import com.rememberber.mootool.next.compose.domain.VaultGitCheckpointMessages
 import com.rememberber.mootool.next.compose.domain.VaultRevisionMonitor
 import com.rememberber.mootool.next.compose.domain.noteOwnWriteQuickNoteFile
@@ -1334,7 +1335,8 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                     refresh()
                     return@HistoryBrowser
                 }
-                quickNoteOnEdt { session.editor.setText(item.input, recordUndo = true) }
+                QuickNoteHistoryRestore.apply(session, item)
+                quickNoteOnEdt { session.editor.setText(QuickNoteHistoryRestore.editorText(item), recordUndo = true) }
                 session.historyOpen = false
                 refresh()
             },

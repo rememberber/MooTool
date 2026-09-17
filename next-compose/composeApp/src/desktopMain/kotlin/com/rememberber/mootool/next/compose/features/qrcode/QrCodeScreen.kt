@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.QrEngine
+import com.rememberber.mootool.next.compose.domain.QrHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.QrHistoryRestore
 import com.rememberber.mootool.next.compose.domain.QrErrorCorrection
 import com.rememberber.mootool.next.compose.domain.QrException
 import com.rememberber.mootool.next.compose.domain.ToolsSettingsLiveApply
@@ -70,9 +72,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.jetbrains.skia.Image
 import java.awt.FileDialog
 import java.awt.Frame
@@ -83,14 +82,11 @@ import java.awt.datatransfer.Transferable
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.util.Base64
 import javax.imageio.ImageIO
 
-@Serializable
-private data class QrHistoryMeta(
-    val operation: String,
-    val size: Int = QrEngine.DEFAULT_SIZE,
-    val correction: String = "M"
-)
+private fun pngToDataUrl(bytes: ByteArray): String =
+    "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes)
 
 @Composable
 fun QrCodeScreen(container: AppContainer, detached: Boolean) {
@@ -470,8 +466,6 @@ private fun tabTitleKey(tab: QrTab): String = when (tab) {
     QrTab.History -> "qrcode.tab.history"
 }
 
-private val historyCodec = Json { ignoreUnknownKeys = true }
-
 private fun generateQr(
     container: AppContainer,
     session: QrSession,
@@ -499,14 +493,13 @@ private fun generateQr(
                 container.updateSettings { current ->
                     current.copy(tools = current.tools.copy(qrCodeSize = size, qrErrorCorrection = correction.name))
                 }
-                val meta = QrHistoryMeta("generate", size, correction.name)
                 container.history.save(
                     ToolId.QrCode.id,
                     container.t("qrcode.history.generate"),
                     container.t("qrcode.history.generate"),
                     content,
-                    "${size}x${size} PNG",
-                    historyCodec.encodeToString(meta)
+                    pngToDataUrl(bytes),
+                    QrHistoryMetadata.encodeGenerate(size, correction),
                 )
             }.onFailure { error ->
                 session.notice = ""
@@ -538,14 +531,13 @@ private fun recognizeQr(
                 session.notice = container.t("qrcode.recognized")
                 container.toastSuccess(container.t("qrcode.recognized"))
                 session.error = ""
-                val meta = QrHistoryMeta("recognize")
                 container.history.save(
                     ToolId.QrCode.id,
                     container.t("qrcode.history.recognize"),
                     container.t("qrcode.history.recognize"),
                     name,
                     text,
-                    historyCodec.encodeToString(meta)
+                    QrHistoryMetadata.encodeRecognize(),
                 )
             }.onFailure { error ->
                 session.notice = ""
@@ -557,19 +549,7 @@ private fun recognizeQr(
 }
 
 private fun applyHistory(session: QrSession, item: HistoryRecord) {
-    val meta = runCatching { historyCodec.decodeFromString<QrHistoryMeta>(item.options) }.getOrNull()
-    if (meta?.operation == "recognize") {
-        session.tab = QrTab.Recognize
-        session.recognitionName = item.input
-        session.recognitionResult = item.output
-    } else {
-        session.tab = QrTab.Generate
-        session.content = item.input
-        session.size = meta?.size ?: session.size
-        session.correction = QrErrorCorrection.entries.find { it.name == meta?.correction } ?: session.correction
-        session.pngBytes = null
-    }
-    session.error = ""
+    QrHistoryRestore.apply(session, item)
 }
 
 private fun messageFor(container: AppContainer, error: Throwable): String {
