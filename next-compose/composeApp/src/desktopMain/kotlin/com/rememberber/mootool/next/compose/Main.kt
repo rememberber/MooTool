@@ -70,6 +70,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.MooToastHost
 import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.editor.ImeShortcutGate
+import com.rememberber.mootool.next.compose.ui.theme.AppMooTheme
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LocalAwtWindow
 import com.rememberber.mootool.next.compose.ui.workbench.WindowBoundsPolicy
@@ -199,15 +200,7 @@ fun main(args: Array<String>) {
         onDispose { tray.remove() }
     }
 
-    MooTheme(
-        preference = container.themePreference(),
-        systemDark = systemDark,
-        interfaceStyle = settings.appearance.interfaceStyle,
-        accentColor = settings.appearance.accentColor,
-        unifiedBackground = settings.appearance.unifiedBackground,
-        fontFamily = settings.appearance.fontFamily,
-        compactNavigation = settings.layout.compactNavigation,
-    ) {
+    AppMooTheme(container, systemDark) {
         if (visible) {
             Window(
                 onCloseRequest = ::handleClose,
@@ -455,7 +448,7 @@ private fun ApplicationScope.DetachedToolWindow(
             window.toFront()
             window.requestFocus()
         }
-        Themed(container, systemDark) {
+        AppMooTheme(container, systemDark) {
             var focused by remember { mutableStateOf(window.isActive) }
             DisposableEffect(window) {
                 val listener = object : java.awt.event.WindowFocusListener {
@@ -475,17 +468,3 @@ private fun ApplicationScope.DetachedToolWindow(
     }
 }
 
-@Composable
-private fun Themed(container: AppContainer, systemDark: Boolean, content: @Composable () -> Unit) {
-    val settings by container.settings.collectAsState()
-    MooTheme(
-        preference = container.themePreference(),
-        systemDark = systemDark,
-        interfaceStyle = settings.appearance.interfaceStyle,
-        accentColor = settings.appearance.accentColor,
-        unifiedBackground = settings.appearance.unifiedBackground,
-        fontFamily = settings.appearance.fontFamily,
-        compactNavigation = settings.layout.compactNavigation,
-        content = content
-    )
-}
