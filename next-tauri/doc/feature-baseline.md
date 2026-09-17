@@ -5,7 +5,7 @@
 > - 产品范围：25 个正式工具 + 工作台能力
 > - 计数来源：`src/app/toolCatalog.ts`
 
-本清单属于 MooTool Next Tauri 产品，不从 Electron 注册表动态读取。Electron 只用于体验参照；Tauri 的功能状态、实现顺序和发布验收独立维护。
+本清单属于 MooTool Next Tauri 产品，不从 Electron 注册表动态读取。Electron 只用于体验参照；Tauri 的功能状态、实现顺序和发布验收独立维护。与 Electron 的体验差异与批准边界见 [`electron-parity.md`](./electron-parity.md)。
 
 ## 正式工具
 

@@ -1,39 +1,81 @@
-import { Check, Database, FileDown, FolderArchive, FolderInput, Languages, MonitorCog, RotateCcw, Save, SlidersHorizontal, Terminal, Wrench, X } from 'lucide-react'
+import {
+  Check,
+  Command,
+  Database,
+  FileDown,
+  FolderArchive,
+  FolderGit2,
+  FolderInput,
+  Globe2,
+  Info,
+  Languages,
+  MonitorCog,
+  PanelLeft,
+  RefreshCw,
+  RotateCcw,
+  Save,
+  SlidersHorizontal,
+  Terminal,
+  Wrench,
+  X
+} from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import brandLogo from '../../assets/brand/mootool-logo.png'
 import { useI18n } from '../../app/i18n'
 import { productToolCatalog } from '../../app/toolCatalog'
 import { backupApi } from '../../platform/api/backupApi'
 import { credentialApi, type ProxyCredentialStatus } from '../../platform/api/credentialApi'
 import { diagnosticsApi } from '../../platform/api/diagnosticsApi'
+import { runtimeApi } from '../../platform/api/runtimeApi'
+import type { CodeRuntimeStatus } from '../../platform/contracts/runtime'
 import type {
   AccentColor,
   AppLanguage,
   AppSettings,
   CloseBehavior,
   InterfaceDensity,
+  NavigationStyle,
   ProxyMode,
   ThemePreference
 } from '../../platform/contracts/settings'
+import { translationLanguageCodes, translationLanguageLabel } from '../../platform/contracts/translationLanguages'
 import { errorMessage } from '../../shared/errors'
 import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
+import { ResizableColumns } from '../../shared/ResizableColumns'
 import { useSettings } from './SettingsProvider'
 import { UpdateCard } from './UpdateCard'
 import { ProductImportCard } from './ProductImportCard'
 
-type SettingsCategory = 'general' | 'appearance' | 'editor' | 'runtime' | 'tools' | 'data'
+type SettingsCategory =
+  | 'general'
+  | 'appearance'
+  | 'layout'
+  | 'editor'
+  | 'network'
+  | 'data'
+  | 'vault'
+  | 'runtime'
+  | 'tools'
+  | 'shortcuts'
+  | 'about'
 
 const settingsCategories = [
   { id: 'general', label: 'settings.general', icon: Languages },
   { id: 'appearance', label: 'settings.appearance', icon: MonitorCog },
+  { id: 'layout', label: 'settings.layout', icon: PanelLeft },
   { id: 'editor', label: 'settings.editor', icon: SlidersHorizontal },
-  { id: 'runtime', label: 'settings.runtime', icon: Terminal },
+  { id: 'network', label: 'settings.network', icon: Globe2 },
+  { id: 'data', label: 'settings.data', icon: Database },
+  { id: 'vault', label: 'settings.vault', icon: FolderGit2 },
+  { id: 'runtime', label: 'settings.runtimeOnly', icon: Terminal },
   { id: 'tools', label: 'settings.tools', icon: Wrench },
-  { id: 'data', label: 'settings.data', icon: Database }
+  { id: 'shortcuts', label: 'settings.shortcuts', icon: Command },
+  { id: 'about', label: 'settings.about', icon: Info }
 ] as const
 
 export function SettingsSurface() {
   const { settings, save, reset, error: providerError } = useSettings()
-  const { t, toolTitle } = useI18n()
+  const { t, toolTitle, locale } = useI18n()
   const dialog = useDesktopDialog()
   const [draft, setDraft] = useState(settings)
   const [status, setStatus] = useState('')
@@ -42,6 +84,9 @@ export function SettingsSurface() {
   const [proxyPassword, setProxyPassword] = useState('')
   const [proxyPasswordDirty, setProxyPasswordDirty] = useState(false)
   const [proxyCredential, setProxyCredential] = useState<ProxyCredentialStatus>()
+  const [runtimeStatuses, setRuntimeStatuses] = useState<CodeRuntimeStatus[]>([])
+  const [runtimeDetecting, setRuntimeDetecting] = useState(false)
+  const [aboutVersion, setAboutVersion] = useState('')
   const allowCloseRef = useRef(false)
 
   useEffect(() => setDraft(settings), [settings])
@@ -50,6 +95,17 @@ export function SettingsSurface() {
       setStatus(`${t('settings.proxyCredentialError')}: ${errorMessage(cause)}`)
     })
   }, [t])
+  useEffect(() => {
+    void runtimeApi.getInfo().then((info) => setAboutVersion(info.version)).catch(() => undefined)
+  }, [])
+  useEffect(() => {
+    if (activeCategory !== 'runtime') return
+    setRuntimeDetecting(true)
+    void runtimeApi.detectRuntimes()
+      .then(setRuntimeStatuses)
+      .catch((cause) => setStatus(`${t('settings.runtimeDetectFailed')}: ${errorMessage(cause)}`))
+      .finally(() => setRuntimeDetecting(false))
+  }, [activeCategory, t])
   const dirty = useMemo(
     () => JSON.stringify({ ...draft, revision: 0 }) !== JSON.stringify({ ...settings, revision: 0 }),
     [draft, settings]
@@ -181,7 +237,7 @@ export function SettingsSurface() {
         </button>
       </header>
 
-      <div className="settings-body">
+      <ResizableColumns id="settings-page" className="settings-body" initialPrimary={220} minPrimary={180} minSecondary={420}>
         <nav className="settings-category-nav" aria-label={t('settings.title')}>
           {settingsCategories.map((category) => {
             const Icon = category.icon
@@ -257,7 +313,7 @@ export function SettingsSurface() {
           </SettingRow>
           <SettingRow label={t('settings.accent')}>
             <div className="accent-options">
-              {(['blue', 'indigo', 'teal', 'orange'] as AccentColor[]).map((accent) => (
+              {(['blue', 'yellow', 'coral', 'green', 'red', 'purple', 'indigo', 'teal', 'orange'] as AccentColor[]).map((accent) => (
                 <button
                   key={accent}
                   className={`accent-swatch accent-swatch--${accent}`}
@@ -271,6 +327,29 @@ export function SettingsSurface() {
               ))}
             </div>
           </SettingRow>
+          <SettingRow label={t('settings.interfaceFont')}>
+            <select value={draft.appearance.fontFamily} onChange={(event) => setDraft(updateAppearance(draft, { fontFamily: event.target.value as 'system' | 'mono' }))}>
+              <option value="system">{t('settings.interfaceFontSystem')}</option>
+              <option value="mono">{t('settings.interfaceFontMono')}</option>
+            </select>
+          </SettingRow>
+          <SettingRow label={t('settings.uiScale')}>
+            <Segmented value={String(draft.appearance.uiScale)} options={[["90", "90%"], ["100", "100%"], ["110", "110%"]]} onChange={(value) => setDraft(updateAppearance(draft, { uiScale: Number(value) as 90 | 100 | 110 }))} />
+          </SettingRow>
+        </SettingsSection>
+
+        <SettingsSection active={activeCategory === 'layout'} icon={<PanelLeft />} title={t('settings.layout')}>
+          <SettingRow label={t('settings.navigationStyle')}>
+            <Segmented
+              value={draft.layout.navigationStyle}
+              options={[
+                ['classic', t('settings.navigationClassic')],
+                ['card', t('settings.navigationCard')],
+                ['grouped', t('settings.navigationGrouped')]
+              ]}
+              onChange={(value) => setDraft(updateLayout(draft, { navigationStyle: value as NavigationStyle }))}
+            />
+          </SettingRow>
           <SettingRow label={t('settings.density')}>
             <Segmented
               value={draft.layout.density}
@@ -281,27 +360,20 @@ export function SettingsSurface() {
               onChange={(density) => setDraft(updateLayout(draft, { density: density as InterfaceDensity }))}
             />
           </SettingRow>
+          <SettingRow label={t('settings.compactNavigation')}>
+            <input type="checkbox" checked={draft.layout.compactNavigation} onChange={(event) => setDraft(updateLayout(draft, { compactNavigation: event.target.checked }))} />
+          </SettingRow>
+          <SettingRow label={t('settings.showSeparators')}>
+            <input type="checkbox" checked={draft.layout.showSeparators} onChange={(event) => setDraft(updateLayout(draft, { showSeparators: event.target.checked }))} />
+          </SettingRow>
           <SettingRow label={t('settings.sidebarCompact')}>
-            <input
-              type="checkbox"
-              checked={draft.layout.sidebarCompact}
-              onChange={(event) => setDraft(updateLayout(draft, { sidebarCompact: event.target.checked }))}
-            />
+            <input type="checkbox" checked={draft.layout.sidebarCompact} onChange={(event) => setDraft(updateLayout(draft, { sidebarCompact: event.target.checked }))} />
           </SettingRow>
           <SettingRow label={t('settings.showRecent')}>
             <input type="checkbox" checked={draft.layout.showRecent} onChange={(event) => setDraft(updateLayout(draft, { showRecent: event.target.checked }))} />
           </SettingRow>
           <SettingRow label={t('settings.showGroupTitles')}>
             <input type="checkbox" checked={draft.layout.showGroupTitles} onChange={(event) => setDraft(updateLayout(draft, { showGroupTitles: event.target.checked }))} />
-          </SettingRow>
-          <SettingRow label={t('settings.interfaceFont')}>
-            <select value={draft.appearance.fontFamily} onChange={(event) => setDraft(updateAppearance(draft, { fontFamily: event.target.value as 'system' | 'mono' }))}>
-              <option value="system">{t('settings.interfaceFontSystem')}</option>
-              <option value="mono">{t('settings.interfaceFontMono')}</option>
-            </select>
-          </SettingRow>
-          <SettingRow label={t('settings.uiScale')}>
-            <Segmented value={String(draft.appearance.uiScale)} options={[["90", "90%"], ["100", "100%"], ["110", "110%"]]} onChange={(value) => setDraft(updateAppearance(draft, { uiScale: Number(value) as 90 | 100 | 110 }))} />
           </SettingRow>
           <div className="settings-complex-row">
             <span>{t('settings.visibleTools')}</span>
@@ -354,50 +426,9 @@ export function SettingsSurface() {
           </SettingRow>
         </SettingsSection>
 
-        <SettingsSection active={activeCategory === 'runtime'} icon={<Terminal />} title={t('settings.runtime')}>
-          <SettingRow label={t('settings.runtimeAutoDetect')}><input type="checkbox" checked={draft.runtime.autoDetect} onChange={(event) => setDraft(updateRuntime(draft, { autoDetect: event.target.checked }))} /></SettingRow>
-          <SettingRow label={t('settings.runtimeTimeout')}><input type="number" min="1" max="300" value={draft.runtime.timeoutSeconds} onChange={(event) => setDraft(updateRuntime(draft, { timeoutSeconds: event.target.valueAsNumber }))} /></SettingRow>
-          {(['javaPath', 'groovyPath', 'pythonPath', 'nodePath'] as const).map((key) => (
-            <SettingRow key={key} label={t(`settings.${key}`)}><input value={draft.runtime[key]} placeholder={t('settings.runtimePathPlaceholder')} onChange={(event) => setDraft(updateRuntime(draft, { [key]: event.target.value }))} /></SettingRow>
-          ))}
-          <SettingRow label={t('settings.searchShortcut')}><input value={draft.shortcuts.globalSearch} onChange={(event) => setDraft({ ...draft, shortcuts: { ...draft.shortcuts, globalSearch: event.target.value } })} /></SettingRow>
-          <SettingRow label={t('settings.settingsShortcut')}><input value={draft.shortcuts.settings} onChange={(event) => setDraft({ ...draft, shortcuts: { ...draft.shortcuts, settings: event.target.value } })} /></SettingRow>
-        </SettingsSection>
-
-        <SettingsSection active={activeCategory === 'tools'} icon={<Wrench />} title={t('settings.tools')}>
-          <SettingRow label={t('settings.qrCodeSize')}><input type="number" min="120" max="2000" value={draft.tools.qrCodeSize} onChange={(event) => setDraft(updateTools(draft, { qrCodeSize: event.target.valueAsNumber }))} /></SettingRow>
-          <SettingRow label={t('settings.qrErrorCorrection')}><select value={draft.tools.qrErrorCorrection} onChange={(event) => setDraft(updateTools(draft, { qrErrorCorrection: event.target.value as AppSettings['tools']['qrErrorCorrection'] }))}>{(['L', 'M', 'Q', 'H'] as const).map((level) => <option key={level}>{level}</option>)}</select></SettingRow>
-          <SettingRow label={t('settings.randomStringLength')}><input type="number" min="1" max="4096" value={draft.tools.randomStringLength} onChange={(event) => setDraft(updateTools(draft, { randomStringLength: event.target.valueAsNumber }))} /></SettingRow>
-          <SettingRow label={t('settings.translationProvider')}><select value={draft.tools.translationProvider} onChange={(event) => setDraft(updateTools(draft, { translationProvider: event.target.value as AppSettings['tools']['translationProvider'] }))}><option value="google">Google</option><option value="bing">Bing</option></select></SettingRow>
-          <SettingRow label={t('settings.translationSourceLang')}><input value={draft.tools.translationSourceLang} onChange={(event) => setDraft(updateTools(draft, { translationSourceLang: event.target.value }))} /></SettingRow>
-          <SettingRow label={t('settings.translationTargetLang')}><input value={draft.tools.translationTargetLang} onChange={(event) => setDraft(updateTools(draft, { translationTargetLang: event.target.value }))} /></SettingRow>
-          <div className="settings-complex-row"><span>{t('settings.exportDirectory')}</span><div className="settings-directory-field"><code>{draft.tools.exportDirectory || t('settings.exportDirectoryDefault')}</code><button className="secondary-button" type="button" onClick={() => void chooseDefaultExportDirectory()}><FolderInput />{t('settings.chooseDirectory')}</button>{draft.tools.exportDirectory && <button className="secondary-button" type="button" onClick={() => setDraft(updateTools(draft, { exportDirectory: '' }))}>{t('settings.clearDirectory')}</button>}</div></div>
-        </SettingsSection>
-
-        <SettingsSection active={activeCategory === 'data'} icon={<Database />} title={t('settings.data')}>
-          <SettingRow label={t('settings.historyLimit')}>
-            <input
-              type="number"
-              min="10"
-              max="5000"
-              value={draft.data.historyLimit}
-              onChange={(event) => setDraft({
-                ...draft,
-                data: { ...draft.data, historyLimit: event.target.valueAsNumber }
-              })}
-            />
-          </SettingRow>
+        <SettingsSection active={activeCategory === 'network'} icon={<Globe2 />} title={t('settings.network')}>
           <SettingRow label={t('settings.timeout')}>
-            <input
-              type="number"
-              min="1"
-              max="300"
-              value={draft.network.timeoutSeconds}
-              onChange={(event) => setDraft({
-                ...draft,
-                network: { ...draft.network, timeoutSeconds: event.target.valueAsNumber }
-              })}
-            />
+            <input type="number" min="1" max="300" value={draft.network.timeoutSeconds} onChange={(event) => setDraft(updateNetwork(draft, { timeoutSeconds: event.target.valueAsNumber }))} />
           </SettingRow>
           <SettingRow label={t('settings.translationTimeout')}><input type="number" min="1" max="300" value={draft.network.translationTimeoutSeconds} onChange={(event) => setDraft(updateNetwork(draft, { translationTimeoutSeconds: event.target.valueAsNumber }))} /></SettingRow>
           <SettingRow label={t('settings.proxyMode')}>
@@ -421,13 +452,73 @@ export function SettingsSurface() {
             </SettingRow>
             <div className="settings-security-note"><strong>{t('settings.proxyPasswordSecurity')}</strong><span>{t('settings.proxyPasswordSecurityBody', { store: proxyCredential?.secureStore ?? t('settings.proxyPasswordStore') })}</span></div>
           </>}
+        </SettingsSection>
+
+        <SettingsSection active={activeCategory === 'runtime'} icon={<Terminal />} title={t('settings.runtimeOnly')}>
+          <div className="settings-runtime-toolbar">
+            <button className="secondary-button" type="button" disabled={runtimeDetecting} onClick={() => void runtimeApi.detectRuntimes().then(setRuntimeStatuses).catch((cause) => setStatus(`${t('settings.runtimeDetectFailed')}: ${errorMessage(cause)}`))}>
+              <RefreshCw className={runtimeDetecting ? 'spin' : undefined} />{runtimeDetecting ? t('settings.runtimeDetecting') : t('settings.runtimeDetect')}
+            </button>
+          </div>
+          <SettingRow label={t('settings.runtimeAutoDetect')}><input type="checkbox" checked={draft.runtime.autoDetect} onChange={(event) => setDraft(updateRuntime(draft, { autoDetect: event.target.checked }))} /></SettingRow>
+          <SettingRow label={t('settings.runtimeTimeout')}><input type="number" min="1" max="300" value={draft.runtime.timeoutSeconds} onChange={(event) => setDraft(updateRuntime(draft, { timeoutSeconds: event.target.valueAsNumber }))} /></SettingRow>
+          {(['javaPath', 'groovyPath', 'pythonPath', 'nodePath'] as const).map((key) => {
+            const runtimeId = key.replace('Path', '') as CodeRuntimeStatus['id']
+            const status = runtimeStatuses.find((item) => item.id === runtimeId)
+            return (
+              <SettingRow key={key} label={t(`settings.${key}`)}>
+                <div className="settings-runtime-path">
+                  <input value={draft.runtime[key]} placeholder={status?.command || t('settings.runtimePathPlaceholder')} onChange={(event) => setDraft(updateRuntime(draft, { [key]: event.target.value }))} />
+                  {status && <small className={status.available ? 'runtime-status runtime-status--ok' : 'runtime-status'}>{status.available ? status.version || status.command : t('settings.runtimeNotFound')}</small>}
+                </div>
+              </SettingRow>
+            )
+          })}
+        </SettingsSection>
+
+        <SettingsSection active={activeCategory === 'tools'} icon={<Wrench />} title={t('settings.tools')}>
+          <SettingRow label={t('settings.qrCodeSize')}><input type="number" min="120" max="2000" value={draft.tools.qrCodeSize} onChange={(event) => setDraft(updateTools(draft, { qrCodeSize: event.target.valueAsNumber }))} /></SettingRow>
+          <SettingRow label={t('settings.qrErrorCorrection')}><select value={draft.tools.qrErrorCorrection} onChange={(event) => setDraft(updateTools(draft, { qrErrorCorrection: event.target.value as AppSettings['tools']['qrErrorCorrection'] }))}>{(['L', 'M', 'Q', 'H'] as const).map((level) => <option key={level}>{level}</option>)}</select></SettingRow>
+          <SettingRow label={t('settings.randomStringLength')}><input type="number" min="1" max="4096" value={draft.tools.randomStringLength} onChange={(event) => setDraft(updateTools(draft, { randomStringLength: event.target.valueAsNumber }))} /></SettingRow>
+          <SettingRow label={t('settings.translationProvider')}><select value={draft.tools.translationProvider} onChange={(event) => setDraft(updateTools(draft, { translationProvider: event.target.value as AppSettings['tools']['translationProvider'] }))}><option value="google">Google</option><option value="bing">Bing</option></select></SettingRow>
+          <SettingRow label={t('settings.translationSourceLang')}>
+            <select value={draft.tools.translationSourceLang} onChange={(event) => setDraft(updateTools(draft, { translationSourceLang: event.target.value }))}>
+              {translationLanguageCodes.map((code) => <option key={code} value={code}>{translationLanguageLabel(code, locale)}</option>)}
+            </select>
+          </SettingRow>
+          <SettingRow label={t('settings.translationTargetLang')}>
+            <select value={draft.tools.translationTargetLang} onChange={(event) => setDraft(updateTools(draft, { translationTargetLang: event.target.value }))}>
+              {translationLanguageCodes.filter((code) => code !== 'auto').map((code) => <option key={code} value={code}>{translationLanguageLabel(code, locale)}</option>)}
+            </select>
+          </SettingRow>
+          <div className="settings-complex-row"><span>{t('settings.exportDirectory')}</span><div className="settings-directory-field"><code>{draft.tools.exportDirectory || t('settings.exportDirectoryDefault')}</code><button className="secondary-button" type="button" onClick={() => void chooseDefaultExportDirectory()}><FolderInput />{t('settings.chooseDirectory')}</button>{draft.tools.exportDirectory && <button className="secondary-button" type="button" onClick={() => setDraft(updateTools(draft, { exportDirectory: '' }))}>{t('settings.clearDirectory')}</button>}</div></div>
+        </SettingsSection>
+
+        <SettingsSection active={activeCategory === 'vault'} icon={<FolderGit2 />} title={t('settings.vault')}>
           <SettingRow label={t('settings.vaultAutoCommit')}>
+            <input type="checkbox" checked={draft.vault.autoCommit} onChange={(event) => setDraft({ ...draft, vault: { ...draft.vault, autoCommit: event.target.checked } })} />
+          </SettingRow>
+          <div className="settings-storage-note">
+            <strong>{t('settings.vaultGitTitle')}</strong>
+            <span>{t('settings.vaultGitBody')}</span>
+          </div>
+        </SettingsSection>
+
+        <SettingsSection active={activeCategory === 'shortcuts'} icon={<Command />} title={t('settings.shortcuts')}>
+          <SettingRow label={t('settings.searchShortcut')}><input value={draft.shortcuts.globalSearch} onChange={(event) => setDraft({ ...draft, shortcuts: { ...draft.shortcuts, globalSearch: event.target.value } })} /></SettingRow>
+          <SettingRow label={t('settings.settingsShortcut')}><input value={draft.shortcuts.settings} onChange={(event) => setDraft({ ...draft, shortcuts: { ...draft.shortcuts, settings: event.target.value } })} /></SettingRow>
+        </SettingsSection>
+
+        <SettingsSection active={activeCategory === 'data'} icon={<Database />} title={t('settings.data')}>
+          <SettingRow label={t('settings.historyLimit')}>
             <input
-              type="checkbox"
-              checked={draft.vault.autoCommit}
+              type="number"
+              min="10"
+              max="5000"
+              value={draft.data.historyLimit}
               onChange={(event) => setDraft({
                 ...draft,
-                vault: { ...draft.vault, autoCommit: event.target.checked }
+                data: { ...draft.data, historyLimit: event.target.valueAsNumber }
               })}
             />
           </SettingRow>
@@ -449,10 +540,21 @@ export function SettingsSurface() {
               <button className="secondary-button" type="button" disabled={busy} onClick={() => void handleDiagnosticsExport()}><FileDown />{t('settings.diagnosticsExport')}</button>
             </div>
           </div>
+        </SettingsSection>
+
+        <SettingsSection active={activeCategory === 'about'} icon={<Info />} title={t('settings.about')}>
+          <div className="settings-about-card">
+            <img className="brand-symbol" src={brandLogo} alt="" aria-hidden="true" draggable={false} />
+            <div>
+              <strong>MooTool Next Tauri</strong>
+              <span>{t('settings.aboutVersion', { version: aboutVersion || '…' })}</span>
+              <small>MIT License</small>
+            </div>
+          </div>
           <UpdateCard disabled={busy} />
         </SettingsSection>
         </div>
-      </div>
+      </ResizableColumns>
 
       <footer className="settings-footer">
         <div className={status || providerError ? 'settings-status settings-status--visible' : 'settings-status'}>

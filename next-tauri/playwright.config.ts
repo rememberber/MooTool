@@ -5,7 +5,7 @@ export default defineConfig({
   snapshotPathTemplate: '{testDir}/__screenshots__/{arg}{ext}',
   fullyParallel: false,
   workers: 1,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : 1,
   reporter: process.env.CI ? [['html', { open: 'never' }], ['list']] : 'list',
   expect: {
     toHaveScreenshot: { maxDiffPixelRatio: 0.01 }

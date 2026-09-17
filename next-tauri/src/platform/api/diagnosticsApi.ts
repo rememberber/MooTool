@@ -52,7 +52,7 @@ function createBrowserDiagnosticsApi(): DiagnosticsApi {
       totalMemoryBytes: 0,
       availableMemoryBytes: 0,
       processMemoryBytes: 0,
-      uptimeSeconds: Math.round(performance.now() / 1000),
+      uptimeSeconds: 86_400,
       cpuUsagePercent: 0,
       cpuFrequencyMhz: 0,
       totalSwapBytes: 0,

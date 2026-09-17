@@ -3,6 +3,7 @@ import { listen } from '@tauri-apps/api/event'
 import {
   defaultAppSettings,
   normalizeCustomGroups,
+  normalizeNavigationStyle,
   SETTINGS_SCHEMA_VERSION,
   type AppSettings,
   type SettingsApi,
@@ -49,6 +50,9 @@ function loadBrowserSettings(): AppSettings {
       layout: {
         ...defaults.layout,
         ...parsed.layout,
+        navigationStyle: normalizeNavigationStyle(parsed.layout?.navigationStyle),
+        compactNavigation: parsed.layout?.compactNavigation === true,
+        showSeparators: parsed.layout?.showSeparators === true,
         customGroups: normalizeCustomGroups(parsed.layout?.customGroups),
         paneSizes: normalizePaneSizes(parsed.layout?.paneSizes)
       },

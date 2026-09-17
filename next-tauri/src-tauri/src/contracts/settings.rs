@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
-pub const SETTINGS_SCHEMA_VERSION: u32 = 8;
+pub const SETTINGS_SCHEMA_VERSION: u32 = 9;
 
 const PRODUCT_TOOL_IDS: [&str; 25] = [
     "quick-note",
@@ -73,6 +73,11 @@ pub enum AccentColor {
     Indigo,
     Teal,
     Orange,
+    Yellow,
+    Coral,
+    Green,
+    Red,
+    Purple,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -81,6 +86,15 @@ pub enum InterfaceDensity {
     Compact,
     #[default]
     Comfortable,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum NavigationStyle {
+    Classic,
+    Card,
+    #[default]
+    Grouped,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -153,6 +167,9 @@ pub struct CustomToolGroup {
 pub struct LayoutSettings {
     pub sidebar_compact: bool,
     pub density: InterfaceDensity,
+    pub navigation_style: NavigationStyle,
+    pub compact_navigation: bool,
+    pub show_separators: bool,
     pub custom_groups: Vec<CustomToolGroup>,
     pub pane_sizes: BTreeMap<String, u16>,
     #[serde(default = "default_true")]
@@ -167,6 +184,9 @@ impl Default for LayoutSettings {
         Self {
             sidebar_compact: false,
             density: InterfaceDensity::default(),
+            navigation_style: NavigationStyle::default(),
+            compact_navigation: false,
+            show_separators: false,
             custom_groups: Vec::new(),
             pane_sizes: BTreeMap::new(),
             show_recent: true,

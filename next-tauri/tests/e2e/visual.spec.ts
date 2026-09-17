@@ -26,7 +26,7 @@ const visualScreenshotOptions = {
 const stableCss = `
   *, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }
   .utility-session, .json-workbench__session, .json-workbench__footer code,
-  .tool-surface-report-error { visibility: hidden !important; }
+  .tool-surface-report-error, .utility-status code { visibility: hidden !important; }
 `
 
 test.beforeEach(async ({ page }) => {
@@ -51,6 +51,18 @@ async function open(
   await page.goto(path)
   await page.addStyleTag({ content: stableCss })
   await page.waitForLoadState('networkidle')
+  await page.waitForFunction(({ theme, locale }) => (
+    document.documentElement.dataset.theme === theme
+    && document.documentElement.lang === locale
+  ), appearance)
+}
+
+async function waitQrcodePreview(page: Page): Promise<void> {
+  const preview = page.locator('.qrcode-preview img')
+  await expect(preview).toBeVisible()
+  // Settings hydration can resize the QR and trigger a debounced second render.
+  await page.waitForTimeout(500)
+  await expect(preview).toBeVisible()
 }
 
 test('main shell and compact navigation remain usable', async ({ page }) => {
@@ -72,6 +84,13 @@ for (const surface of productSurfaces) {
   for (const visual of visualMatrix) {
     test(`${surface} visual baseline · ${visual.key}`, async ({ page }) => {
       await open(page, `/?surface=${surface}`, visual.width, 900, visual)
+      if (surface === 'system') {
+        await expect(page.locator('.system-card strong').first()).not.toHaveText('—')
+        await expect(page.getByText(/refreshed|已刷新|更新しました/)).toBeVisible()
+      }
+      if (surface === 'qrcode') {
+        await waitQrcodePreview(page)
+      }
       await expect(page.locator('#root')).toHaveScreenshot(`${surface}-${visual.key}.png`, visualScreenshotOptions)
     })
   }

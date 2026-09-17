@@ -1,11 +1,12 @@
 import { invoke } from '@tauri-apps/api/core'
-import type { RuntimeApi, RuntimeInfo } from '../contracts/runtime'
+import type { CodeRuntimeStatus, RuntimeApi, RuntimeInfo } from '../contracts/runtime'
 
 type Invoke = <T>(command: string, args?: Record<string, unknown>) => Promise<T>
 
 export function createRuntimeApi(invokeCommand: Invoke = invoke): RuntimeApi {
   return {
-    getInfo: () => invokeCommand<RuntimeInfo>('get_runtime_info')
+    getInfo: () => invokeCommand<RuntimeInfo>('get_runtime_info'),
+    detectRuntimes: () => invokeCommand<CodeRuntimeStatus[]>('detect_code_runtimes')
   }
 }
 
@@ -20,4 +21,7 @@ const browserPreviewInfo: RuntimeInfo = {
 
 export const runtimeApi: RuntimeApi = typeof window !== 'undefined' && window.__TAURI_INTERNALS__
   ? createRuntimeApi()
-  : { getInfo: async () => browserPreviewInfo }
+  : {
+    getInfo: async () => browserPreviewInfo,
+    detectRuntimes: async () => []
+  }

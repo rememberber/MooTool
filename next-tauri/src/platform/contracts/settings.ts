@@ -1,8 +1,19 @@
-export const SETTINGS_SCHEMA_VERSION = 8 as const
+export const SETTINGS_SCHEMA_VERSION = 9 as const
+
+export type NavigationStyle = 'classic' | 'card' | 'grouped'
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type ThemePreference = 'system' | 'light' | 'dark'
-export type AccentColor = 'blue' | 'indigo' | 'teal' | 'orange'
+export type AccentColor =
+  | 'blue'
+  | 'indigo'
+  | 'teal'
+  | 'orange'
+  | 'yellow'
+  | 'coral'
+  | 'green'
+  | 'red'
+  | 'purple'
 export type CloseBehavior = 'ask' | 'minimizeToTray' | 'quit'
 export type InterfaceDensity = 'compact' | 'comfortable'
 export type ProxyMode = 'system' | 'direct' | 'manual'
@@ -47,6 +58,9 @@ export interface AppSettings {
   layout: {
     sidebarCompact: boolean
     density: InterfaceDensity
+    navigationStyle: NavigationStyle
+    compactNavigation: boolean
+    showSeparators: boolean
     customGroups: CustomToolGroup[]
     paneSizes: Record<string, number>
     showRecent: boolean
@@ -138,6 +152,9 @@ export function defaultAppSettings(): AppSettings {
     layout: {
       sidebarCompact: false,
       density: 'comfortable',
+      navigationStyle: 'grouped',
+      compactNavigation: false,
+      showSeparators: false,
       customGroups: [],
       paneSizes: {},
       showRecent: true,
@@ -200,6 +217,14 @@ export function defaultAppSettings(): AppSettings {
       translationTargetLang: 'zh-CN'
     }
   }
+}
+
+const NAVIGATION_STYLES: NavigationStyle[] = ['classic', 'card', 'grouped']
+
+export function normalizeNavigationStyle(value: unknown): NavigationStyle {
+  return typeof value === 'string' && NAVIGATION_STYLES.includes(value as NavigationStyle)
+    ? value as NavigationStyle
+    : 'grouped'
 }
 
 export function normalizeCustomGroups(value: unknown): CustomToolGroup[] {

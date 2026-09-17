@@ -159,7 +159,7 @@ Windows MSI、Portable 以及 Linux RPM 可以在产品需求明确后增加，�
 | C：平台适配 | 使用 Tauri/系统提供的原生交互，允许外观差异 | 文件选择器、通知、系统菜单 |
 | D：批准降级 | 系统能力无法稳定实现时提供说明和替代流程 | Linux Wayland 全局取色 |
 
-所有 C、D 级差异必须记录在 Tauri 自己的 parity 文档中，不以 Electron 的实现状态代替 Tauri 验收。
+所有 C、D 级差异必须记录在 Tauri 自己的 parity 文档中，不以 Electron 的实现状态代替 Tauri 验收。对照清单见 [`electron-parity.md`](./electron-parity.md)；AI/MCP 边界见 [ADR-012](./adr/012-ai-integration-scope.md)。
 
 ### 3.3 首版功能基线
 

@@ -98,7 +98,7 @@ export function SystemSurface() {
   }
 
   return (
-    <main className="utility-workbench system-workbench">
+    <main className="utility-workbench system-workbench" data-system-ready={snapshot ? 'true' : 'false'}>
       <header className="utility-header">
         <h1 className="visually-hidden">{t('title')}</h1>
         <div className="system-header-actions">

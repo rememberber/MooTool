@@ -33,9 +33,10 @@
     "check:boundaries": "node scripts/check-product-boundaries.mjs",
     "check:localization": "node scripts/check-localization-boundaries.mjs",
     "check:release": "node scripts/check-release-boundaries.mjs",
+    "check:parity": "node scripts/check-electron-parity.mjs",
     "rust:fmt": "cargo fmt --manifest-path src-tauri/Cargo.toml -- --check",
     "rust:clippy": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
-    "check": "npm run check:boundaries && npm run check:localization && npm run check:release && npm run typecheck && npm run test && npm run web:build && npm run rust:fmt && npm run rust:clippy && cargo test --manifest-path src-tauri/Cargo.toml",
+    "check": "npm run check:boundaries && npm run check:localization && npm run check:release && npm run check:parity && npm run typecheck && npm run test && npm run web:build && npm run rust:fmt && npm run rust:clippy && cargo test --manifest-path src-tauri/Cargo.toml",
     "tauri": "tauri",
     "build:desktop": "tauri build --no-bundle"
   },

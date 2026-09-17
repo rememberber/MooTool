@@ -7,6 +7,9 @@ describe('settings contract', () => {
 
     expect(settings.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION)
     expect(settings.layout.customGroups).toEqual([])
+    expect(settings.layout.navigationStyle).toBe('grouped')
+    expect(settings.layout.compactNavigation).toBe(false)
+    expect(settings.layout.showSeparators).toBe(false)
   })
 
   it('normalizes custom groups to known production tools and safe unique identifiers', () => {

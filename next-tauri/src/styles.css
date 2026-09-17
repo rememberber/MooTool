@@ -89,6 +89,14 @@ svg {
   -webkit-app-region: drag;
 }
 
+.app-shell--immersive-tool .window-drag-region {
+  left: 252px;
+}
+
+.app-shell--immersive-tool.app-shell--compact .window-drag-region {
+  left: 64px;
+}
+
 .sidebar {
   position: relative;
   z-index: 10;
@@ -374,6 +382,31 @@ svg {
 .app-shell--compact .sidebar-footer {
   justify-content: center;
   padding-inline: 8px;
+}
+
+.app-shell--compact-nav .nav-group {
+  gap: 1px;
+  margin-top: 12px;
+}
+
+.app-shell--nav-separators .nav-group {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.app-shell--nav-classic .nav-group:not(.nav-group--custom):not(.nav-group--favorites) h2 {
+  display: none;
+}
+
+.app-shell--nav-card .nav-button {
+  margin-bottom: 2px;
+  border: 1px solid transparent;
+}
+
+.app-shell--nav-card .nav-button--active {
+  background: var(--surface-elevated);
+  border-color: var(--border-control);
+  box-shadow: 0 3px 10px var(--shadow-soft);
 }
 
 .app-shell--compact .footer-actions {
@@ -7565,6 +7598,51 @@ main.http-workbench {
   color: var(--muted);
 }
 
+.settings-about-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.settings-about-card .brand-symbol {
+  width: 48px;
+  height: 48px;
+}
+
+.settings-about-card strong {
+  display: block;
+  font-size: 15px;
+}
+
+.settings-about-card span,
+.settings-about-card small {
+  display: block;
+  color: var(--subtle);
+  font-size: 12px;
+}
+
+.settings-runtime-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.settings-runtime-path {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.settings-runtime-path small.runtime-status--ok {
+  color: #21835a;
+}
+
 .settings-body {
   display: grid;
   min-height: 0;
@@ -7874,6 +7952,26 @@ main.http-workbench {
 
 .accent-swatch--orange {
   background: #d96b2b;
+}
+
+.accent-swatch--yellow {
+  background: #e0b22b;
+}
+
+.accent-swatch--coral {
+  background: #de8f7d;
+}
+
+.accent-swatch--green {
+  background: #4e9275;
+}
+
+.accent-swatch--red {
+  background: #c96761;
+}
+
+.accent-swatch--purple {
+  background: #8a72b5;
 }
 
 .settings-storage-note {
@@ -8235,6 +8333,36 @@ main.http-workbench {
   --accent-soft: #fff0e7;
 }
 
+:root[data-accent="yellow"] {
+  --accent: #e0b22b;
+  --accent-strong: #b78300;
+  --accent-soft: #fff6dd;
+}
+
+:root[data-accent="coral"] {
+  --accent: #de8f7d;
+  --accent-strong: #cd6f5e;
+  --accent-soft: #fff0ec;
+}
+
+:root[data-accent="green"] {
+  --accent: #4e9275;
+  --accent-strong: #34755b;
+  --accent-soft: #e8f3ee;
+}
+
+:root[data-accent="red"] {
+  --accent: #c96761;
+  --accent-strong: #a84e49;
+  --accent-soft: #fceeed;
+}
+
+:root[data-accent="purple"] {
+  --accent: #8a72b5;
+  --accent-strong: #6f579c;
+  --accent-soft: #f1edf8;
+}
+
 :root[data-density="compact"] .nav-button {
   height: 31px;
 }
@@ -8278,6 +8406,36 @@ main.http-workbench {
   --accent: #ed965f;
   --accent-strong: #f5b083;
   --accent-soft: #4a3023;
+}
+
+:root[data-theme="dark"][data-accent="yellow"] {
+  --accent: #e8c04a;
+  --accent-strong: #f0d070;
+  --accent-soft: #3d3520;
+}
+
+:root[data-theme="dark"][data-accent="coral"] {
+  --accent: #e8a090;
+  --accent-strong: #f0b8ac;
+  --accent-soft: #422f2a;
+}
+
+:root[data-theme="dark"][data-accent="green"] {
+  --accent: #6bb896;
+  --accent-strong: #8dceb0;
+  --accent-soft: #243830;
+}
+
+:root[data-theme="dark"][data-accent="red"] {
+  --accent: #e08882;
+  --accent-strong: #eca8a3;
+  --accent-soft: #402826;
+}
+
+:root[data-theme="dark"][data-accent="purple"] {
+  --accent: #a894d4;
+  --accent-strong: #c0b2e6;
+  --accent-soft: #322e42;
 }
 
 :root[data-theme="dark"] .sidebar {

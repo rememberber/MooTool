@@ -22,7 +22,7 @@ use crate::{
             ProductImportCounts, ProductImportPreview, ProductImportRecords, ProductImportResult,
             ProductImportSource,
         },
-        settings::{AccentColor, AppLanguage, AppSettings, ThemePreference},
+        settings::{AccentColor, AppLanguage, AppSettings, NavigationStyle, ThemePreference},
         translation::TranslationProvider,
     },
     repositories::{
@@ -73,6 +73,12 @@ struct SafeSettingsPatch {
     theme: Option<ThemePreference>,
     accent_color: Option<AccentColor>,
     sidebar_compact: Option<bool>,
+    navigation_style: Option<NavigationStyle>,
+    compact_navigation: Option<bool>,
+    show_separators: Option<bool>,
+    show_recent: Option<bool>,
+    show_group_titles: Option<bool>,
+    hidden_tools: Option<Vec<String>>,
     editor_font_size: Option<u8>,
     history_limit: Option<u16>,
     vault_auto_commit: Option<bool>,
@@ -85,6 +91,12 @@ impl SafeSettingsPatch {
             && self.theme.is_none()
             && self.accent_color.is_none()
             && self.sidebar_compact.is_none()
+            && self.navigation_style.is_none()
+            && self.compact_navigation.is_none()
+            && self.show_separators.is_none()
+            && self.show_recent.is_none()
+            && self.show_group_titles.is_none()
+            && self.hidden_tools.is_none()
             && self.editor_font_size.is_none()
             && self.history_limit.is_none()
             && self.vault_auto_commit.is_none()
@@ -105,6 +117,24 @@ impl SafeSettingsPatch {
         }
         if let Some(value) = self.sidebar_compact {
             settings.layout.sidebar_compact = value;
+        }
+        if let Some(value) = self.navigation_style {
+            settings.layout.navigation_style = value;
+        }
+        if let Some(value) = self.compact_navigation {
+            settings.layout.compact_navigation = value;
+        }
+        if let Some(value) = self.show_separators {
+            settings.layout.show_separators = value;
+        }
+        if let Some(value) = self.show_recent {
+            settings.layout.show_recent = value;
+        }
+        if let Some(value) = self.show_group_titles {
+            settings.layout.show_group_titles = value;
+        }
+        if let Some(value) = self.hidden_tools.clone() {
+            settings.layout.hidden_tools = value;
         }
         if let Some(value) = self.editor_font_size {
             settings.editor.font_size = value;
@@ -1180,13 +1210,25 @@ fn parse_electron_settings(bytes: &[u8]) -> Result<SafeSettingsPatch, String> {
     let document: Value = serde_json::from_slice(bytes)
         .map_err(|error| format!("Electron settings JSON is invalid: {error}"))?;
     let settings = document.get("settings").unwrap_or(&document);
+    let hide_navigation_titles = json_bool(settings, &["layout", "hideNavigationTitles"]);
     Ok(SafeSettingsPatch {
         language: json_string(settings, &["general", "language"]).and_then(parse_language),
         auto_check_updates: json_bool(settings, &["general", "autoCheckUpdates"]),
         theme: json_string(settings, &["appearance", "theme"]).and_then(parse_theme),
         accent_color: json_string(settings, &["appearance", "accentColor"]).and_then(parse_accent),
         sidebar_compact: json_bool(settings, &["layout", "sidebarCompact"])
+            .or(hide_navigation_titles)
             .or_else(|| json_bool(settings, &["layout", "compactNavigation"])),
+        navigation_style: json_string(settings, &["layout", "navigationStyle"])
+            .and_then(parse_navigation_style),
+        compact_navigation: json_bool(settings, &["layout", "compactNavigation"]),
+        show_separators: json_bool(settings, &["layout", "showSeparators"]),
+        show_recent: json_bool(settings, &["layout", "showRecent"]),
+        show_group_titles: hide_navigation_titles
+            .map(|hidden| !hidden)
+            .or_else(|| json_bool(settings, &["layout", "showGroupTitles"])),
+        hidden_tools: json_string_array(settings, &["layout", "hiddenNavigationToolIds"])
+            .map(|values| map_electron_hidden_tools(values)),
         editor_font_size: json_u64(settings, &["editor", "fontSize"])
             .or_else(|| json_u64(settings, &["editor", "jsonFontSize"]))
             .and_then(|value| u8::try_from(value).ok())
@@ -1212,6 +1254,61 @@ fn json_bool(root: &Value, path: &[&str]) -> Option<bool> {
 
 fn json_u64(root: &Value, path: &[&str]) -> Option<u64> {
     json_value(root, path)?.as_u64()
+}
+
+fn json_string_array(root: &Value, path: &[&str]) -> Option<Vec<String>> {
+    let array = json_value(root, path)?.as_array()?;
+    Some(
+        array
+            .iter()
+            .filter_map(|value| value.as_str().map(str::to_string))
+            .collect(),
+    )
+}
+
+fn parse_navigation_style(value: &str) -> Option<NavigationStyle> {
+    match value.to_ascii_lowercase().as_str() {
+        "classic" => Some(NavigationStyle::Classic),
+        "card" => Some(NavigationStyle::Card),
+        "grouped" => Some(NavigationStyle::Grouped),
+        _ => None,
+    }
+}
+
+fn map_electron_tool_id(value: &str) -> Option<String> {
+    let mapped = match value {
+        "quickNote" => "quick-note",
+        "textDiff" => "text-diff",
+        "java" => "runtime",
+        "ymlProperties" => "config",
+        "net" => "network",
+        "uaParse" => "ua",
+        "qrCode" => "qrcode",
+        "timeConvert" => "timestamp",
+        "colorBoard" => "color",
+        "hardware" => "system",
+        "messageBoard" => "message-board",
+        "reformat" | "json" | "protobuf" | "variables" | "http" | "host" | "encode" | "crypto"
+        | "regex" | "cron" | "translation" | "calculator" | "image" | "pdf" => value,
+        "mootool" => return None,
+        _ => return None,
+    };
+    Some(mapped.into())
+}
+
+fn map_electron_hidden_tools(values: Vec<String>) -> Vec<String> {
+    let mut mapped = Vec::new();
+    let mut seen = HashSet::new();
+    for value in values {
+        let Some(tool_id) = map_electron_tool_id(&value) else {
+            continue;
+        };
+        if tool_id == "mootool" || !seen.insert(tool_id.clone()) {
+            continue;
+        }
+        mapped.push(tool_id);
+    }
+    mapped
 }
 
 fn parse_language(value: &str) -> Option<AppLanguage> {
@@ -1242,6 +1339,11 @@ fn parse_accent(value: &str) -> Option<AccentColor> {
         "indigo" => Some(AccentColor::Indigo),
         "teal" => Some(AccentColor::Teal),
         "orange" => Some(AccentColor::Orange),
+        "yellow" => Some(AccentColor::Yellow),
+        "coral" => Some(AccentColor::Coral),
+        "green" => Some(AccentColor::Green),
+        "red" => Some(AccentColor::Red),
+        "purple" => Some(AccentColor::Purple),
         _ => None,
     }
 }
@@ -1494,6 +1596,21 @@ mod tests {
         .expect("Electron settings");
         assert_eq!(electron.language, Some(AppLanguage::English));
         assert_eq!(electron.theme, Some(ThemePreference::Dark));
+
+        let layout = parse_electron_settings(
+            br#"{"settings":{"layout":{"navigationStyle":"card","compactNavigation":true,"showSeparators":true,"hideNavigationTitles":true,"showRecent":false,"hiddenNavigationToolIds":["quickNote","hardware","unknown"]}}}"#,
+        )
+        .expect("Electron layout settings");
+        assert_eq!(layout.navigation_style, Some(NavigationStyle::Card));
+        assert_eq!(layout.compact_navigation, Some(true));
+        assert_eq!(layout.show_separators, Some(true));
+        assert_eq!(layout.sidebar_compact, Some(true));
+        assert_eq!(layout.show_group_titles, Some(false));
+        assert_eq!(layout.show_recent, Some(false));
+        assert_eq!(
+            layout.hidden_tools,
+            Some(vec!["quick-note".into(), "system".into()])
+        );
     }
 
     #[test]

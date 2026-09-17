@@ -345,8 +345,17 @@ export function App() {
     })).catch((cause: unknown) => setNotice(errorMessage(cause)))
   }
 
+  const shellClassName = [
+    'app-shell',
+    sidebarCompact ? 'app-shell--compact' : '',
+    settings.layout.compactNavigation ? 'app-shell--compact-nav' : '',
+    settings.layout.showSeparators ? 'app-shell--nav-separators' : '',
+    activeTool !== 'home' ? 'app-shell--immersive-tool' : '',
+    `app-shell--nav-${settings.layout.navigationStyle}`
+  ].filter(Boolean).join(' ')
+
   return (
-    <main className={`app-shell ${sidebarCompact ? 'app-shell--compact' : ''}`}>
+    <main className={shellClassName}>
       <div className="window-drag-region" data-tauri-drag-region />
       <aside className="sidebar">
         <div className="sidebar-toolbar">
