@@ -24,4 +24,8 @@ object HttpResponsePresentation {
         current: HttpResponseResult?,
         previous: HttpResponseResult?,
     ): HttpResponseResult? = if (showPreviousLabel(sending, current, previous)) previous else current
+
+    /** 响应元信息行是否使用成功色（对齐 Electron `.http-status--ok`）。 */
+    fun statusMetaSuccess(visible: HttpResponseResult?): Boolean =
+        visible != null && visible.ok && visible.status in 200..399
 }

@@ -106,8 +106,10 @@ import com.rememberber.mootool.next.compose.ui.components.mooHttpEntryHead
 import com.rememberber.mootool.next.compose.ui.components.mooHttpEntryRow
 import com.rememberber.mootool.next.compose.ui.components.mooHttpRequestPane
 import com.rememberber.mootool.next.compose.ui.components.mooHttpPreviousResponseHead
+import com.rememberber.mootool.next.compose.ui.components.mooHttpResponseCodeEditor
 import com.rememberber.mootool.next.compose.ui.components.mooHttpResponseHead
 import com.rememberber.mootool.next.compose.ui.components.mooHttpResponsePane
+import com.rememberber.mootool.next.compose.ui.components.mooHttpStatusMeta
 import com.rememberber.mootool.next.compose.ui.components.mooHttpSavedItem
 import com.rememberber.mootool.next.compose.ui.components.mooHttpTimeoutChip
 import com.rememberber.mootool.next.compose.ui.components.mooHttpUrlBar
@@ -679,11 +681,13 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = if (showingPrevious) {
-                        Modifier.mooHttpPreviousResponseHead()
-                    } else {
-                        Modifier.mooHttpResponseHead()
-                    },
+                    modifier = (
+                        if (showingPrevious) {
+                            Modifier.mooHttpPreviousResponseHead()
+                        } else {
+                            Modifier.mooHttpResponseHead()
+                        }
+                    ).padding(horizontal = 8.dp),
                 ) {
                     Text(
                         if (showingPrevious) container.t("http.previousResponse") else container.t("http.response"),
@@ -755,7 +759,17 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                     HttpFindBar(container, session, matches, currentIndex) { persist() }
                 }
                 if (visible != null) {
-                    Text("${visible.status} · ${visible.durationMs} ms · ${visible.url}", color = colors.textSecondary, fontSize = 11.sp)
+                    val statusColor = if (HttpResponsePresentation.statusMetaSuccess(visible)) {
+                        colors.success
+                    } else {
+                        colors.danger
+                    }
+                    Text(
+                        "${visible.status} · ${visible.durationMs} ms · ${visible.url}",
+                        color = statusColor,
+                        fontSize = 10.sp,
+                        modifier = Modifier.mooHttpStatusMeta().padding(horizontal = 8.dp),
+                    )
                     if (visible.binary && session.responseTab == HttpResponseTab.Body) {
                         Text(
                             container.t("http.binaryHint", mapOf("size" to (visible.bodyBytes?.size ?: 0).toString())),
@@ -772,7 +786,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                         fontName = DocumentFormatEngine.editorFont(settings.editor.jsonFontName),
                         fontSize = EditorSettingsLiveApply.jsonEditorFontSize(settings.editor.jsonFontSize),
                         wrap = EditorSettingsLiveApply.httpEditorWrap(settings.editor.softWrap),
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().mooHttpResponseCodeEditor(),
                         shortcuts = EditorAppShortcuts(
                             onFind = { openHttpResponseFind(session) { persist() } }
                         )

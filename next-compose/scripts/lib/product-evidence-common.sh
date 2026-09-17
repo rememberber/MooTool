@@ -43,6 +43,11 @@ mootool_evidence_print_vault_conflict_product_hint() {
   echo "# 产品主窗 §A/B PNG 仍须 runDistributable + 手工截图（见 vault-conflict-product-window/results.md）"
 }
 
+mootool_evidence_print_http_response_tab_focus_hint() {
+  echo "# Compose F09 响应区标题行焦点帧（非产品主窗）: docs/evidence/2026-09-15-inspector-screencapture/windows/162-compose-http-response-head-tab-focus.png"
+  echo "# 产品主窗 HTTP 响应 Tab 走查 PNG 仍须 runDistributable + 手工截图"
+}
+
 mootool_evidence_print_git_merge_product_hint() {
   echo "# Compose merge hint 焦点帧（非产品主窗）: docs/evidence/2026-09-15-inspector-screencapture/windows/153-compose-git-merge-flow-hint-tab-focus.png"
   echo "# Vault Git merge 产品窗 §B（对齐 GitMergeProductFlowPresentation / conflict.json）:"

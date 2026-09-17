@@ -11,4 +11,16 @@ object QuickNoteVaultFooterPresentation {
         path == currentFile && documentDirty
 
     fun canDuplicate(isDirectory: Boolean?): Boolean = JsonVaultFooterPresentation.canDuplicate(isDirectory)
+
+    /** Vault Git 操作前 flush：无打开笔记或正文/metadata 均已保存时跳过写盘。 */
+    fun gitFlushSkipsWhenClean(currentFile: String, documentDirty: Boolean): Boolean =
+        JsonVaultFooterPresentation.gitFlushSkipsWhenClean(currentFile, documentDirty)
+
+    /** 无 Vault 笔记但编辑器有非示例内容时阻止 Git 操作（i18n 键 `git.flush.untitled`）。 */
+    fun gitUntitledBlockKey(currentFile: String, editorText: String, sampleText: String): String? =
+        if (currentFile.isBlank() && editorText.isNotBlank() && editorText != sampleText) {
+            "git.flush.untitled"
+        } else {
+            null
+        }
 }

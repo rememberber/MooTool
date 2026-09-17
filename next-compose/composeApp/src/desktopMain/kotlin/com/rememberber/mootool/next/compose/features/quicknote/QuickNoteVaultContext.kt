@@ -6,6 +6,7 @@ import com.rememberber.mootool.next.compose.domain.NoteAttachmentEngine
 import com.rememberber.mootool.next.compose.domain.NoteFrontmatter
 import com.rememberber.mootool.next.compose.domain.NoteMetadata
 import com.rememberber.mootool.next.compose.domain.QuickNoteHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.QuickNoteVaultFooterPresentation
 import com.rememberber.mootool.next.compose.domain.VaultGitCheckpointMessages
 import com.rememberber.mootool.next.compose.domain.VaultChangeKind
 import com.rememberber.mootool.next.compose.domain.VaultConflictEngine
@@ -266,13 +267,14 @@ internal fun quickNoteGitFlushBeforeAction(
     monitor: VaultRevisionMonitor?,
     onConflict: (VaultConflictState) -> Unit,
 ): String? {
-    if (session.currentFile.isBlank()) {
-        if (session.editor.text.isNotBlank() && session.editor.text != QuickNoteSession.SAMPLE) {
-            return container.t("git.flush.untitled")
-        }
+    QuickNoteVaultFooterPresentation.gitUntitledBlockKey(
+        session.currentFile,
+        session.editor.text,
+        QuickNoteSession.SAMPLE,
+    )?.let { return container.t(it) }
+    if (QuickNoteVaultFooterPresentation.gitFlushSkipsWhenClean(session.currentFile, quickNoteDirty(session))) {
         return null
     }
-    if (!quickNoteDirty(session)) return null
     if (!quickNoteVaultSaveIfNeeded(container, session, vault, monitor, onConflict)) {
         return session.error.ifBlank { container.t("quickNote.saveFailed") }
     }

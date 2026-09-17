@@ -23,6 +23,13 @@ class HttpResponsePresentationTest {
         assertEquals(tooLarge, HttpResponsePresentation.visibleResponse(sending = false, current = tooLarge, previous = ok))
         assertEquals(ok, HttpResponsePresentation.visibleResponse(sending = true, current = null, previous = ok))
     }
+
+    @Test
+    fun statusMetaSuccessFollowsOkAndStatus() {
+        assertTrue(HttpResponsePresentation.statusMetaSuccess(sampleResponse(ok = true, status = 200, body = "")))
+        assertFalse(HttpResponsePresentation.statusMetaSuccess(sampleResponse(ok = false, status = 404, body = "")))
+        assertFalse(HttpResponsePresentation.statusMetaSuccess(null))
+    }
 }
 
 private fun sampleResponse(

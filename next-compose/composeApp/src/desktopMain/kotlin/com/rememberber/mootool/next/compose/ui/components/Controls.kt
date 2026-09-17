@@ -1635,13 +1635,34 @@ fun Modifier.mooRegexMatchCard(): Modifier = padding(10.dp)
 @Composable
 fun Modifier.mooMessageBoardFormatRow(): Modifier = heightIn(min = 38.dp)
 
-/** F09 响应区标题行（Tab/查找/复制），对齐 Electron `.http-response-head`。 */
+/** F09 响应区标题行（Tab/查找/复制），对齐 Electron `.http-response-pane > header`。 */
 @Composable
-fun Modifier.mooHttpResponseHead(): Modifier = fillMaxWidth().heightIn(min = 34.dp)
+fun Modifier.mooHttpResponseHead(): Modifier = mooHttpResponseHeadBar()
 
 /** F09 发送失败/在途时展示「上次响应」时的标题行强调。 */
 @Composable
-fun Modifier.mooHttpPreviousResponseHead(): Modifier = mooHttpResponseHead().padding(horizontal = 2.dp)
+fun Modifier.mooHttpPreviousResponseHead(): Modifier = mooHttpResponseHeadBar().padding(horizontal = 2.dp)
+
+/** Electron `.http-response-pane > header`：toolbar 底 + 底边线。 */
+@Composable
+fun Modifier.mooHttpResponseHeadBar(): Modifier {
+    val colors = MooTheme.colors
+    return fillMaxWidth()
+        .heightIn(min = 34.dp)
+        .mooToolbarBackground()
+        .drawBehind {
+            val y = size.height - 1.dp.toPx()
+            drawLine(colors.borderSoft, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+        }
+}
+
+/** Electron `.http-response-code-editor` 内边距（11×13）。 */
+@Composable
+fun Modifier.mooHttpResponseCodeEditor(): Modifier = padding(horizontal = 13.dp, vertical = 11.dp)
+
+/** Electron `.http-status` / `.http-status--ok` 元信息行密度。 */
+@Composable
+fun Modifier.mooHttpStatusMeta(): Modifier = fillMaxWidth().heightIn(min = 18.dp)
 
 /** F20 译文侧栏（源/目标分栏 + 底栏 provider 行）。 */
 @Composable

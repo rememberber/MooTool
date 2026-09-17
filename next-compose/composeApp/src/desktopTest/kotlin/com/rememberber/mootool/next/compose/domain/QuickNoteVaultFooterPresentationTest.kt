@@ -20,4 +20,21 @@ class QuickNoteVaultFooterPresentationTest {
             QuickNoteVaultFooterPresentation.footerDirty("a.md", "b.md", documentDirty = true),
         )
     }
+
+    @Test
+    fun gitFlushSkipsWhenNoFileOrClean() {
+        assertTrue(QuickNoteVaultFooterPresentation.gitFlushSkipsWhenClean("", documentDirty = true))
+        assertTrue(QuickNoteVaultFooterPresentation.gitFlushSkipsWhenClean("a.md", documentDirty = false))
+        assertFalse(QuickNoteVaultFooterPresentation.gitFlushSkipsWhenClean("a.md", documentDirty = true))
+    }
+
+    @Test
+    fun gitUntitledBlockKey() {
+        assertEquals(
+            "git.flush.untitled",
+            QuickNoteVaultFooterPresentation.gitUntitledBlockKey("", "draft", sampleText = "sample"),
+        )
+        assertEquals(null, QuickNoteVaultFooterPresentation.gitUntitledBlockKey("", "sample", sampleText = "sample"))
+        assertEquals(null, QuickNoteVaultFooterPresentation.gitUntitledBlockKey("a.md", "draft", sampleText = "sample"))
+    }
 }
