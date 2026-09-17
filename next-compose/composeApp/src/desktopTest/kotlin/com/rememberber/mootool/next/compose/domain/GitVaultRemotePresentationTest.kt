@@ -17,4 +17,32 @@ class GitVaultRemotePresentationTest {
         assertTrue(GitVaultRemotePresentation.pullEnabled(persistedRemote = "https://x.git", merging = false))
         assertFalse(GitVaultRemotePresentation.pullEnabled(persistedRemote = "https://x.git", merging = true))
     }
+
+    @Test
+    fun saveRemoteEnabledMatchesConfigureRemoteAndBusy() {
+        assertFalse(
+            GitVaultRemotePresentation.saveRemoteEnabled(
+                busy = true,
+                repository = true,
+                draftRemoteTrimmed = "https://x.git",
+                statusRemote = "",
+            ),
+        )
+        assertTrue(
+            GitVaultRemotePresentation.saveRemoteEnabled(
+                busy = false,
+                repository = true,
+                draftRemoteTrimmed = "",
+                statusRemote = "https://x.git",
+            ),
+        )
+        assertFalse(
+            GitVaultRemotePresentation.saveRemoteEnabled(
+                busy = false,
+                repository = false,
+                draftRemoteTrimmed = "https://x.git",
+                statusRemote = "",
+            ),
+        )
+    }
 }

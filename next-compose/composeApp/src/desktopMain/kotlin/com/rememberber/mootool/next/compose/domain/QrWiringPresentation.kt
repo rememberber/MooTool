@@ -20,4 +20,13 @@ object QrWiringPresentation {
     }
 
     fun generateSize(sessionSize: Int): Int = QrEngine.normalizeSize(sessionSize)
+
+    fun canGenerate(busy: Boolean, content: String): Boolean = !busy && content.isNotBlank()
+
+    fun hasPngOutput(pngBytes: ByteArray?): Boolean = pngBytes != null
+
+    fun canRecognize(recognitionBytes: ByteArray?, busy: Boolean): Boolean =
+        recognitionBytes != null && !busy
+
+    fun canCopyRecognition(result: String): Boolean = result.isNotEmpty()
 }

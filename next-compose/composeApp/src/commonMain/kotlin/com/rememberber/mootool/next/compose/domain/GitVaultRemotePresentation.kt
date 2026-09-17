@@ -18,4 +18,17 @@ object GitVaultRemotePresentation {
 
     fun pushEnabled(persistedRemote: String, merging: Boolean): Boolean =
         GitOperationPresentation.pushEnabled(networkRemotePresent(persistedRemote), merging)
+
+    fun saveRemoteEnabled(
+        busy: Boolean,
+        repository: Boolean,
+        draftRemoteTrimmed: String,
+        statusRemote: String,
+    ): Boolean =
+        !busy &&
+            GitOperationPresentation.configureRemoteEnabled(
+                repository = repository,
+                draftRemoteTrimmed = draftRemoteTrimmed,
+                statusRemote = statusRemote,
+            )
 }

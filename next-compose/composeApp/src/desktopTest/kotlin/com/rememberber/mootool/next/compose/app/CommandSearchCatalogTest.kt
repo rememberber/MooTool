@@ -305,6 +305,18 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun saveRemoteKeywordOpensVaultSettings() {
+        val hits = CommandSearchCatalog.search("saveremote", Translator(AppLanguage.EnUS)::t)
+        assertTrue(hits.any { it.categoryId == "vault" })
+    }
+
+    @Test
+    fun coderunKeywordOpensRuntimeSettings() {
+        val hits = CommandSearchCatalog.search("coderun", Translator(AppLanguage.EnUS)::t)
+        assertEquals("runtime", hits.single().categoryId)
+    }
+
+    @Test
     fun catalogCoversEverySettingsNavCategory() {
         val covered = CommandSearchCatalog.targets.map { it.categoryId }.toSet()
         SettingsNavCategory.entries.forEach { category ->

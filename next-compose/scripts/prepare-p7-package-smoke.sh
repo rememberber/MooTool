@@ -58,3 +58,4 @@ echo "# DIFF-549: F13/F09/F14 metadata + QR/随机接线 + encode/env/hardware/n
 echo "# DIFF-550: 余下 F 工具 metadata + color/calc/host/time 等 CSS 批次 + JSON 检查器/命令盘/托盘·更新关键词仍属 offline gate。"
 echo "# DIFF-552: 工作台/首页/分离/收藏 Presentation + home/detached/favorite/settings CSS + F10/F22/F24 exportDirectory 接线仍属 offline gate。"
 echo "# DIFF-559: JSON/Host 搜索 Presentation + 导航分组 + F12/F19/F23 引擎守卫 + host/json CSS + 翻译离线边界单测 + Git merge hint 帧 153 仍属 offline gate；三平台安装/公证未验收。"
+echo "# DIFF-560: F17/F03 引擎守卫 + Vault Git saveRemote + MCP stdio encode + settings-nav CSS/帧 154 仍属 offline gate；三平台安装/公证未验收。"

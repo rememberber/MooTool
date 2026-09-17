@@ -298,6 +298,39 @@ class ToolbarFocusCaptureTest {
 
     @OptIn(ExperimentalTestApi::class)
     @Test
+    fun captureSettingsRuntimeCategoryNavIconFocusRing() = runDesktopComposeUiTest(width = 300, height = 96) {
+        val zh = Translator(AppLanguage.ZhCN)
+        val navFocus = FocusRequester()
+        setContent {
+            MooTheme(preference = ThemePreference.Light, systemDark = false, interfaceStyle = "modern") {
+                val colors = MooTheme.colors
+                SettingsNavItem(
+                    label = zh.t("settings.category.runtime"),
+                    selected = false,
+                    onClick = {},
+                    icon = ">_",
+                    modifier = Modifier
+                        .background(colors.workspace)
+                        .padding(16.dp)
+                        .focusRequester(navFocus),
+                )
+            }
+        }
+        val cwd = File(".").canonicalFile
+        val root = if (cwd.name == "composeApp") cwd.parentFile else cwd
+        val dir = File(root, "docs/evidence/2026-09-15-inspector-screencapture/windows")
+        dir.mkdirs()
+        val expected = 0x316DC0
+        runOnIdle { navFocus.requestFocus() }
+        waitForIdle()
+        val file = File(dir, "154-compose-settings-runtime-category-nav-tab-focus.png")
+        val image = onRoot().captureToImage().toAwtImage()
+        assertTrue(ImageIO.write(image, "png", file))
+        assertTrue(countRingPixels(image, expected) >= 8, "settings runtime category nav icon focus ring")
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
     fun captureSidebarLanguageChipFocusRing() = runDesktopComposeUiTest(width = 120, height = 80) {
         val chipFocus = FocusRequester()
         setContent {

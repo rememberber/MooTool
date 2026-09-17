@@ -274,7 +274,7 @@ private fun GeneratePanel(
                 if (session.busy) container.t("common.processing") else container.t("qrcode.generate"),
                 prominent = true,
                 p5Toolbar = true,
-                enabled = !session.busy && session.content.isNotBlank(),
+                enabled = QrWiringPresentation.canGenerate(session.busy, session.content),
                 onClick = {
                     generateQr(container, session, scope, onChanged)
                 }
@@ -285,7 +285,7 @@ private fun GeneratePanel(
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             PreviewBox(preview, container.t("qrcode.preview"), Modifier.weight(1f).fillMaxWidth())
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.save"), enabled = session.pngBytes != null, p5Toolbar = true, onClick = {
+                MooButton(container.t("common.save"), enabled = QrWiringPresentation.hasPngOutput(session.pngBytes), p5Toolbar = true, onClick = {
                     val bytes = session.pngBytes ?: return@MooButton
                     val exportDir = VaultPathConfig.effectiveCustomRoot(container.settings.value.tools.exportDirectory)
                     val file = chooseSave(container.t("common.save"), exportDir) ?: return@MooButton
@@ -299,7 +299,7 @@ private fun GeneratePanel(
                         .onFailure { session.error = it.message ?: container.t("qrcode.error.generic") }
                     onChanged()
                 })
-                MooButton(container.t("common.action.copy"), enabled = session.pngBytes != null, p5Toolbar = true, onClick = {
+                MooButton(container.t("common.action.copy"), enabled = QrWiringPresentation.hasPngOutput(session.pngBytes), p5Toolbar = true, onClick = {
                     val bytes = session.pngBytes
                     session.notice = if (bytes != null) copyImage(bytes, container) else container.t("qrcode.nothingToCopy")
                     onChanged()
@@ -362,7 +362,7 @@ private fun RecognizePanel(
                     if (session.busy) container.t("common.processing") else container.t("qrcode.recognize"),
                     prominent = true,
                     p5Toolbar = true,
-                    enabled = session.recognitionBytes != null && !session.busy,
+                    enabled = QrWiringPresentation.canRecognize(session.recognitionBytes, session.busy),
                     onClick = { recognizeQr(container, session, scope, onChanged) }
                 )
             }
@@ -378,7 +378,7 @@ private fun RecognizePanel(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 singleLine = false
             )
-            MooButton(container.t("common.action.copy"), enabled = session.recognitionResult.isNotEmpty(), p5Toolbar = true, onClick = {
+            MooButton(container.t("common.action.copy"), enabled = QrWiringPresentation.canCopyRecognition(session.recognitionResult), p5Toolbar = true, onClick = {
                 session.notice = copyText(session.recognitionResult, container)
                 onChanged()
             })

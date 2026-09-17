@@ -69,6 +69,7 @@ fun SettingsNavItem(
     val inset = colors.styleId == "smartisan" || colors.styleId == "miui-v5"
     Row(
         modifier = modifier
+            .mooSettingsNavItem()
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 2.dp)
             .semantics { role = Role.Tab; this.selected = selected }

@@ -439,7 +439,8 @@ fun VaultGitDialog(
                     MooButton(
                         remoteLabel,
                         p5Toolbar = true,
-                        enabled = !busy && GitOperationPresentation.configureRemoteEnabled(
+                        enabled = GitVaultRemotePresentation.saveRemoteEnabled(
+                            busy = busy,
                             repository = status.repository,
                             draftRemoteTrimmed = remoteTrimmed,
                             statusRemote = status.remote,

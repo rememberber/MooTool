@@ -211,7 +211,7 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
                 if (session.busy) container.t("reformat.processing") else container.t("reformat.format"),
                 prominent = true,
                 p5Toolbar = true,
-                enabled = !session.busy && currentInput(session).isNotBlank(),
+                enabled = ReformatWiringPresentation.canRunFormat(session.busy, currentInput(session).isNotBlank()),
                 onClick = { runFormat(container, session) { refresh() } }
             )
             if (!overflow) {

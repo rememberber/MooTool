@@ -1638,6 +1638,10 @@ fun Modifier.mooDetachedPlaceholder(): Modifier = fillMaxSize().padding(24.dp)
 @Composable
 fun Modifier.mooFavoriteRow(): Modifier = heightIn(min = 36.dp)
 
+/** Electron `.settings-nav__item` 侧栏分类行最小高度。 */
+@Composable
+fun Modifier.mooSettingsNavItem(): Modifier = defaultMinSize(minHeight = 36.dp)
+
 /** Electron 设置内容区 `settings-content__header` 顶栏。 */
 @Composable
 fun Modifier.mooSettingsNavHeader(): Modifier {
