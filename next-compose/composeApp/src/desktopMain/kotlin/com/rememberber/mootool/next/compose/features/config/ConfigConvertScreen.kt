@@ -49,6 +49,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooToolTab
 import com.rememberber.mootool.next.compose.ui.components.MooToolTabsRow
 import com.rememberber.mootool.next.compose.ui.components.IoThreePaneRow
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooConfigConvertActions
 import com.rememberber.mootool.next.compose.ui.components.mooConfigConvertPane
 import com.rememberber.mootool.next.compose.ui.components.mooConfigTabsRow
 import com.rememberber.mootool.next.compose.ui.components.mooConfigValidateActions
@@ -151,7 +152,7 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         MooButton(container.t("config.importProperties"), p5Toolbar = true, onClick = {
-                            importText(container.t("config.importProperties"))?.let {
+                            importText(container, session, container.t("config.importProperties"))?.let {
                                 session.properties = it
                                 session.notice = container.t("json.notice.imported")
                                 container.toastSuccess(container.t("json.notice.imported"))
@@ -168,7 +169,7 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
                 },
                 middle = {
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().mooConfigConvertActions(),
                     verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -210,7 +211,7 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         MooButton(container.t("config.importYaml"), p5Toolbar = true, onClick = {
-                            importText(container.t("config.importYaml"))?.let {
+                            importText(container, session, container.t("config.importYaml"))?.let {
                                 session.yaml = it
                                 session.notice = container.t("json.notice.imported")
                                 container.toastSuccess(container.t("json.notice.imported"))
@@ -443,11 +444,20 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
     }
 }
 
-private fun importText(title: String): String? {
+private fun importText(container: AppContainer, session: ConfigSession, title: String): String? {
     val file = chooseFile(save = false, title = title) ?: return null
     return when (val outcome = ConfigWiringPresentation.runReadImportFile(file)) {
         is ConfigWiringPresentation.ImportOutcome.Success -> outcome.content
-        is ConfigWiringPresentation.ImportOutcome.Failure -> null
+        is ConfigWiringPresentation.ImportOutcome.Failure -> {
+            val message = container.t(
+                "reformat.error.read",
+                mapOf("message" to (outcome.error.message ?: file.path)),
+            )
+            session.error = message
+            session.notice = message
+            container.toastError(message)
+            null
+        }
     }
 }
 

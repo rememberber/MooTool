@@ -88,6 +88,11 @@ mootool_evidence_print_env_environment_tab_focus_hint() {
   echo "# 产品窗 F08 环境变量 Tab 走查 PNG 仍须 runDistributable + 手工截图"
 }
 
+mootool_evidence_print_config_convert_tab_focus_hint() {
+  echo "# Compose F06 配置转换 Tab 行焦点帧（非产品主窗）: docs/evidence/2026-09-15-inspector-screencapture/windows/171-compose-config-convert-tab-focus.png"
+  echo "# 产品窗 F06 转换 Tab 走查 PNG 仍须 runDistributable + 手工截图"
+}
+
 mootool_evidence_print_git_merge_product_hint() {
   echo "# Compose merge hint 焦点帧（非产品主窗）: docs/evidence/2026-09-15-inspector-screencapture/windows/153-compose-git-merge-flow-hint-tab-focus.png"
   echo "# Vault Git merge 产品窗 §B（对齐 GitMergeProductFlowPresentation / conflict.json）:"

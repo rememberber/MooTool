@@ -615,17 +615,22 @@ private fun JsonToolbar(
                 onChanged()
                 return@let
             }
-            runCatching {
-                val text = file.readText(Charsets.UTF_8)
-                onEdt {
-                    session.editor.setText(text, recordUndo = true)
-                    session.clearJsonPathQueryResult()
-                    session.notice = container.t("json.notice.imported")
+            when (val outcome = JsonWiringPresentation.runReadImportFile(file)) {
+                is JsonWiringPresentation.ImportOutcome.Success -> {
+                    onEdt {
+                        session.editor.setText(outcome.content, recordUndo = true)
+                        session.clearJsonPathQueryResult()
+                        session.notice = container.t("json.notice.imported")
+                    }
+                    persistToolsExportDirectory(container, file)
+                    container.toastSuccess(container.t("json.notice.imported"))
                 }
-                persistToolsExportDirectory(container, file)
-                container.toastSuccess(container.t("json.notice.imported"))
-            }.onFailure {
-                session.notice = it.message ?: container.t("json.notice.failed")
+                is JsonWiringPresentation.ImportOutcome.Failure -> {
+                    session.notice = container.t(
+                        "reformat.error.read",
+                        mapOf("message" to (outcome.error.message ?: file.path)),
+                    )
+                }
             }
             onChanged()
         }
@@ -634,10 +639,19 @@ private fun JsonToolbar(
     fun exportFile() {
         val defaultName = session.currentFile.substringAfterLast('/').ifBlank { "export.json" }
         chooseFileWithExportDirectory(container, save = true, title = "Export JSON", defaultFileName = defaultName)?.let { file ->
-            file.writeText(session.editor.text, Charsets.UTF_8)
-            persistToolsExportDirectory(container, file)
-            session.notice = container.t("json.notice.exported")
-            container.toastSuccess(container.t("json.notice.exported"))
+            when (val outcome = JsonWiringPresentation.runWriteExportFile(file, session.editor.text)) {
+                JsonWiringPresentation.WriteExportOutcome.Success -> {
+                    persistToolsExportDirectory(container, file)
+                    session.notice = container.t("json.notice.exported")
+                    container.toastSuccess(container.t("json.notice.exported"))
+                }
+                is JsonWiringPresentation.WriteExportOutcome.Failure -> {
+                    session.notice = container.t(
+                        "reformat.error.write",
+                        mapOf("message" to (outcome.error.message ?: file.path)),
+                    )
+                }
+            }
             onChanged()
         }
     }
@@ -2039,9 +2053,14 @@ private fun handleJsonEditorFileDrop(
                 }
                 else -> {
                     jsonVaultRequireFlushDirty(container, session, monitor, onConflict)
-                    val text = file.readText(Charsets.UTF_8)
-                    onEdt { session.editor.setText(text, recordUndo = true) }
-                    session.clearJsonPathQueryResult()
+                    when (val outcome = JsonWiringPresentation.runReadImportFile(file)) {
+                        is JsonWiringPresentation.ImportOutcome.Success -> {
+                            onEdt { session.editor.setText(outcome.content, recordUndo = true) }
+                            session.clearJsonPathQueryResult()
+                        }
+                        is JsonWiringPresentation.ImportOutcome.Failure ->
+                            throw outcome.error
+                    }
                 }
             }
             session.notice = container.t("json.notice.imported")

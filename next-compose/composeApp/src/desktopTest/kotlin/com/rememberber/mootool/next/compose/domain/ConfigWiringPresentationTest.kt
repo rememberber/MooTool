@@ -51,4 +51,12 @@ class ConfigWiringPresentationTest {
             dir.deleteRecursively()
         }
     }
+
+    @Test
+    fun runReadImportFileMissingFileFails() {
+        val file = File.createTempFile("config-missing-", ".properties")
+        file.delete()
+        val outcome = ConfigWiringPresentation.runReadImportFile(file)
+        assertTrue(outcome is ConfigWiringPresentation.ImportOutcome.Failure)
+    }
 }
