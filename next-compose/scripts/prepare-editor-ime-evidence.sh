@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# 为 F01/F04 系统 IME 与列编辑产品主窗手工验收准备隔离数据（不修改默认 Application Support）。
+# 为 F01/F04 系统 IME 与列编辑产品主窗手工验收准备隔离数据。
 set -euo pipefail
 
-ROOT="${MOOTOOL_COMPOSE_DATA_DIR:-}"
-if [[ -z "${ROOT}" ]]; then
-  ROOT="$(mktemp -d /tmp/mootool-compose-ime-evidence-XXXX)"
-fi
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/product-evidence-common.sh
+source "${SCRIPT_DIR}/lib/product-evidence-common.sh"
 
+ROOT="$(mootool_evidence_resolve_data_dir)"
 JSON_VAULT="${ROOT}/data/vaults/json"
 QN_VAULT="${ROOT}/data/vaults/quick-note"
 mkdir -p "${JSON_VAULT}" "${QN_VAULT}"
@@ -24,9 +24,15 @@ syntax: text/markdown
 EOF
 
 export MOOTOOL_COMPOSE_DATA_DIR="${ROOT}"
+mootool_evidence_assert_file "${JSON_VAULT}/ime-sample.json" "ime-sample.json"
+mootool_evidence_assert_file "${QN_VAULT}/ime-sample.md" "ime-sample.md"
 
-echo "export MOOTOOL_COMPOSE_DATA_DIR=${ROOT}"
-echo "# 1) ./gradlew :composeApp:runDistributable"
-echo "# 2) JSON: 打开 ime-sample.json；随手记: 打开 ime-sample.md"
-echo "# 3) 系统输入法（拼音等）预编辑→提交；列选+IME 见 docs/evidence/2026-09-16-editor-manual-acceptance/results.md"
-echo "# 4) 截图登记: NNN-json-ime-product.png / NNN-quicknote-ime-product.png"
+cat <<EOF
+# Editor IME product walkthrough (manual screenshots only)
+export MOOTOOL_COMPOSE_DATA_DIR="${ROOT}"
+# JSON: ${JSON_VAULT}/ime-sample.json
+# 随手记: ${QN_VAULT}/ime-sample.md
+$(mootool_evidence_print_run_distributable_hint)
+# 登记: docs/evidence/2026-09-16-editor-manual-acceptance/results.md
+# 截图: NNN-json-ime-product.png / NNN-quicknote-ime-product.png
+EOF

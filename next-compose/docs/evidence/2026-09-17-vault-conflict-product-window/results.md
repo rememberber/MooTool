@@ -28,8 +28,9 @@
 ```bash
 cd /path/to/next-compose
 export MOOTOOL_COMPOSE_DATA_DIR="$(mktemp -d /tmp/mootool-compose-evidence-XXXX)"
-./scripts/prepare-vault-conflict-evidence.sh
-./gradlew :composeApp:runDistributable
+./scripts/prepare-vault-conflict-evidence.sh   # 末尾自检 sample.json；勿 eval 整段输出
+./gradlew :composeApp:runDistributable --offline
+# 无 GUI 时先跑: ./scripts/verify-product-evidence-prep.sh
 ```
 
 Vault 根为 `$MOOTOOL_COMPOSE_DATA_DIR/data/vaults/json/`（脚本会写入 `sample.json`）。
@@ -46,11 +47,12 @@ Vault 根为 `$MOOTOOL_COMPOSE_DATA_DIR/data/vaults/json/`（脚本会写入 `sa
 0. 推荐与 §A 共用隔离目录（勿 `eval` 整段脚本输出，注释行会导致 shell 报错）：
 
 ```bash
-export MOOTOOL_COMPOSE_DATA_DIR="$(mktemp -d /tmp/mootool-compose-evidence-XXXX)"
-./scripts/prepare-vault-conflict-evidence.sh    # 可选：外部冲突样本
-./scripts/prepare-git-merge-conflict-evidence.sh
-./gradlew :composeApp:runDistributable
+export MOOTOOL_COMPOSE_DATA_DIR="$(mktemp -d /tmp/mootool-compose-git-evidence-XXXX)"
+./scripts/prepare-git-merge-conflict-evidence.sh   # 会重建 Vault 内 .git；末尾断言 MERGE_HEAD + conflict.json 未合并
+./gradlew :composeApp:runDistributable --offline
 ```
+
+（§A 外部冲突与 §B merge 冲突请用**不同**隔离目录；勿在同一目录先后跑两个 prepare 脚本。）
 
 脚本会在 `$MOOTOOL_COMPOSE_DATA_DIR/data/vaults/json` 内留下 **merge 中** 的 `conflict.json`（逻辑同 `GitEngineTest.pullLeavesMergeConflictWhenHistoriesDiverge`）。
 
@@ -61,4 +63,5 @@ export MOOTOOL_COMPOSE_DATA_DIR="$(mktemp -d /tmp/mootool-compose-evidence-XXXX)
 
 ## 执行记录
 
-- 本机 2026-09-17：**未执行**上述产品窗步骤；`acceptance.md` 仍标记冲突 UI 待验收。
+- 本机 2026-09-17（DIFF-513）：已跑 `./scripts/verify-product-evidence-prep.sh` 与 `ProductEvidencePrepScriptTest`（隔离目录下三套 prepare 脚本退出码 0，merge 仓库 `conflict.json` 为 `U` 状态）；**未执行** `runDistributable` 与产品窗 PNG（需人工 GUI + 系统输入法）。
+- 产品窗截图仍 **未执行**；`acceptance.md` 仍标记 F04/F01 冲突 UI 待验收。

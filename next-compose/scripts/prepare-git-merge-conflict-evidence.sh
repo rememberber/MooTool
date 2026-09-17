@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# 在隔离 JSON Vault 内制造 Git merge 冲突（产品主窗 Git 面板验收，见 vault-conflict-product-window/results.md §B）。
+# 在隔离 JSON Vault 内制造 Git merge 冲突（产品主窗 Git 面板验收）。
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/product-evidence-common.sh
+source "${SCRIPT_DIR}/lib/product-evidence-common.sh"
 
 if ! command -v git >/dev/null 2>&1; then
   echo "git 未安装，无法准备 merge 冲突仓库" >&2
   exit 1
 fi
 
-ROOT="${MOOTOOL_COMPOSE_DATA_DIR:-}"
-if [[ -z "${ROOT}" ]]; then
-  ROOT="$(mktemp -d /tmp/mootool-compose-git-evidence-XXXX)"
-fi
-
+ROOT="$(mootool_evidence_resolve_data_dir)"
 VAULT_JSON="${ROOT}/data/vaults/json"
 BARE="${ROOT}/_evidence_git_remote.git"
 WORKDIR="${ROOT}/_evidence_git_upstream_clone"
@@ -58,9 +58,16 @@ git pull origin "${BRANCH}" --no-rebase 2>/dev/null
 set -e
 popd >/dev/null
 
-echo "export MOOTOOL_COMPOSE_DATA_DIR=${ROOT}"
-echo "# JSON Vault（含 merge 冲突）: ${VAULT_JSON}"
-echo "# 1) ./gradlew :composeApp:runDistributable"
-echo "# 2) JSON 工具 → 打开 Vault Git 面板，选中 conflict.json"
-echo "# 3) 使用本地/远端版本 resolve 后「继续合并」"
-echo "# 4) 截图: NNN-json-vault-git-merge-conflict-product.png"
+mootool_evidence_assert_file "${VAULT_JSON}/conflict.json" "conflict.json"
+mootool_evidence_assert_git_merge_conflict "${VAULT_JSON}"
+
+cat <<EOF
+# Vault Git merge conflict product walkthrough (manual screenshots only)
+export MOOTOOL_COMPOSE_DATA_DIR="${ROOT}"
+# JSON Vault（含 merge 冲突）: ${VAULT_JSON}
+# 预期: git -C "${VAULT_JSON}" diff --name-only --diff-filter=U → conflict.json
+$(mootool_evidence_print_run_distributable_hint)
+# JSON → Vault Git 面板 → conflict.json → resolve → 继续合并
+# 截图: NNN-json-vault-git-merge-conflict-product.png
+# 登记: docs/evidence/2026-09-17-vault-conflict-product-window/results.md §B
+EOF

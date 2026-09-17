@@ -17,8 +17,9 @@
 ```bash
 cd /path/to/next-compose
 export MOOTOOL_COMPOSE_DATA_DIR="$(mktemp -d /tmp/mootool-compose-ime-evidence-XXXX)"
-./scripts/prepare-editor-ime-evidence.sh
-./gradlew :composeApp:runDistributable
+./scripts/prepare-editor-ime-evidence.sh   # 写入 ime-sample.json / ime-sample.md 并自检
+./gradlew :composeApp:runDistributable --offline
+# 无 GUI: ./scripts/verify-product-evidence-prep.sh（见 DIFF-513）
 ```
 
 1. **macOS 系统输入法**（如拼音）：在 JSON / 随手记 `EditorHost` 聚焦，输入中文预编辑，确认预编辑不写入磁盘、提交后写入正确、快捷键在预编辑时让路（见 DIFF-064）。
@@ -27,4 +28,5 @@ export MOOTOOL_COMPOSE_DATA_DIR="$(mktemp -d /tmp/mootool-compose-ime-evidence-X
 
 ## 执行记录
 
+- 本机 2026-09-17（DIFF-513）：`prepare-editor-ime-evidence.sh` 经 `verify-product-evidence-prep.sh` / `ProductEvidencePrepScriptTest` 校验通过；**未执行**系统 IME 产品窗截图与列选+IME 手工项。
 - 本机 2026-09-16：**未执行**上述手工项；`acceptance.md` 中 F04/F01/P0 仍标记列编辑/IME 待验收。

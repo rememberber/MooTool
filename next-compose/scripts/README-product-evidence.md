@@ -9,8 +9,10 @@
 | `prepare-vault-conflict-evidence.sh` | JSON Vault 外部磁盘冲突（§A） | 读取或创建 `MOOTOOL_COMPOSE_DATA_DIR` |
 | `prepare-git-merge-conflict-evidence.sh` | JSON Vault Git merge 冲突（§B） | 同上；会重建 Vault 内 `.git` |
 | `prepare-editor-ime-evidence.sh` | F01/F04 系统 IME 样本文件 | 同上 |
+| `verify-product-evidence-prep.sh` | 非交互校验上述三套脚本（无 GUI） | 无 |
+| `lib/product-evidence-common.sh` | 共享目录解析与 merge 冲突断言 | — |
 
-推荐用法（**不要** `eval "$(./script)"`，输出含 `#` 注释）：
+推荐用法（输出均为 `#` 注释 + `export MOOTOOL_COMPOSE_DATA_DIR=…` 单行，**不要** `eval "$(./script)"`）：
 
 ```bash
 export MOOTOOL_COMPOSE_DATA_DIR="$(mktemp -d /tmp/mootool-compose-evidence-XXXX)"
@@ -23,5 +25,7 @@ export MOOTOOL_COMPOSE_DATA_DIR="$(mktemp -d /tmp/mootool-compose-evidence-XXXX)
 cd /path/to/next-compose
 ./gradlew :composeApp:runDistributable
 ```
+
+CI/本机无 GUI：`./scripts/verify-product-evidence-prep.sh` 或 `ProductEvidencePrepScriptTest`（见 [DIFF-513](../docs/diff/513-product-evidence-prep-verify.md)）。
 
 登记：`docs/evidence/2026-09-17-vault-conflict-product-window/results.md`、`docs/evidence/2026-09-16-editor-manual-acceptance/results.md`。
