@@ -109,4 +109,14 @@ object LayoutPolicy {
 
     /** `:root[data-interface-style='modern'] .icon-button { box-shadow: 0 1px 2px var(--shadow-soft) }`. */
     fun iconButtonSoftShadow(interfaceStyle: String): Boolean = interfaceStyle == "modern"
+
+    /**
+     * Electron `.icon-ghost` defaults to **8px**; modern/hero style blocks override to match
+     * `--desktop-control-radius` (same as [iconButtonCornerRadiusDp] for those styles).
+     */
+    fun iconGhostCornerRadiusDp(interfaceStyle: String): Float = when (interfaceStyle) {
+        "modern" -> iconButtonCornerRadiusDp("modern")
+        "hero" -> 12f
+        else -> 8f
+    }
 }

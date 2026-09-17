@@ -97,6 +97,15 @@ class LayoutPolicyTest {
     }
 
     @Test
+    fun iconGhostCornerRadiusMatchesElectronIconGhostNotIconButtonOnQuiet() {
+        assertEquals(9f, LayoutPolicy.iconGhostCornerRadiusDp("modern"))
+        assertEquals(12f, LayoutPolicy.iconGhostCornerRadiusDp("hero"))
+        assertEquals(8f, LayoutPolicy.iconGhostCornerRadiusDp("quiet"))
+        assertEquals(8f, LayoutPolicy.iconGhostCornerRadiusDp("claude"))
+        assertEquals(6f, LayoutPolicy.iconButtonCornerRadiusDp("quiet"))
+    }
+
+    @Test
     fun classicNavigationHidesBuiltinGroupLabels() {
         assertFalse(LayoutPolicy.showNavigationGroupLabel("classic", showSeparators = true, customGroup = false))
         assertTrue(LayoutPolicy.showNavigationGroupLabel("classic", showSeparators = true, customGroup = true))

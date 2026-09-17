@@ -510,7 +510,8 @@ fun MooGhostButton(
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val hovered by interaction.collectIsHoveredAsState()
-    val shape = RoundedCornerShape(6.dp)
+    val cornerDp = LayoutPolicy.iconGhostCornerRadiusDp(colors.styleId)
+    val shape = RoundedCornerShape(cornerDp.dp)
     val fill = if (hovered) colors.hoveredControlFill() else Color.Transparent
     Row(
         modifier = modifier
