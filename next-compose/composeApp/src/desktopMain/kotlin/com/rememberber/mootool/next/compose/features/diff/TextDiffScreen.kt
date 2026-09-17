@@ -65,7 +65,9 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
+import com.rememberber.mootool.next.compose.ui.components.mooDiffEditorGrid
 import com.rememberber.mootool.next.compose.ui.components.mooDiffEditorPane
+import com.rememberber.mootool.next.compose.ui.components.mooDiffEditorSeam
 import com.rememberber.mootool.next.compose.ui.components.mooDiffNavCluster
 import com.rememberber.mootool.next.compose.ui.components.mooDiffToolbarOptions
 import com.rememberber.mootool.next.compose.ui.components.mooDiffWorkspace
@@ -290,7 +292,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                 session.mode = "unified"; refresh()
             })
         }
-        Row(Modifier.weight(1f).fillMaxWidth().mooDiffWorkspace()) {
+        Row(Modifier.weight(1f).mooDiffWorkspace().mooDiffEditorGrid()) {
             if (session.mode == "side") {
                 DiffEditorPane(
                     title = container.t("diff.left"),
@@ -348,7 +350,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                     scrollState = leftScroll,
                     modifier = Modifier.weight(1f)
                 )
-                Box(Modifier.width(1.dp).fillMaxHeight().background(colors.borderSoft))
+                Box(Modifier.mooDiffEditorSeam().background(colors.borderSoft))
                 DiffEditorPane(
                     title = container.t("diff.right"),
                     value = rightField,
@@ -366,7 +368,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                     scrollState = rightScroll,
                     modifier = Modifier.weight(1f)
                 )
-                Box(Modifier.width(1.dp).fillMaxHeight().background(colors.borderSoft))
+                Box(Modifier.mooDiffEditorSeam().background(colors.borderSoft))
                 UnifiedPane(container.t("diff.unifiedPanel"), session, Modifier.weight(1f))
             }
         }

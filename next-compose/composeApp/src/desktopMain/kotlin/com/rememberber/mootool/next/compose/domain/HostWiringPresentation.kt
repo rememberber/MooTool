@@ -1,5 +1,8 @@
 package com.rememberber.mootool.next.compose.domain
 
+import java.io.File
+import java.nio.charset.StandardCharsets
+
 /** F10 Host：应用/备份恢复 busy 守卫与引擎路径（可单测）。 */
 object HostWiringPresentation {
     fun canConfirmApply(applying: Boolean): Boolean = !applying
@@ -71,5 +74,29 @@ object HostWiringPresentation {
         }.fold(
             onSuccess = { RestoreOutcome.Success(it) },
             onFailure = { RestoreOutcome.Failure(it) },
+        )
+
+    sealed interface ImportProfileOutcome {
+        data class Success(val content: String) : ImportProfileOutcome
+        data class Failure(val error: Throwable) : ImportProfileOutcome
+    }
+
+    fun inferImportProfileName(file: File, untitledKey: String): String =
+        file.nameWithoutExtension.ifBlank { untitledKey }
+
+    fun runReadImportProfile(file: File): ImportProfileOutcome =
+        runCatching {
+            ImportProfileOutcome.Success(file.readText(StandardCharsets.UTF_8))
+        }.getOrElse { ImportProfileOutcome.Failure(it) }
+
+    sealed interface ExportProfileOutcome {
+        data object Success : ExportProfileOutcome
+        data class Failure(val error: Throwable) : ExportProfileOutcome
+    }
+
+    fun runWriteExportProfile(file: File, content: String): ExportProfileOutcome =
+        runCatching { file.writeText(content, StandardCharsets.UTF_8) }.fold(
+            onSuccess = { ExportProfileOutcome.Success },
+            onFailure = { ExportProfileOutcome.Failure(it) },
         )
 }

@@ -295,12 +295,25 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                 onImport = {
                     if (session.dirty && session.name.isNotBlank() && !saveCurrent(showNotice = false)) return@ProfileList
                     val file = pickHostFile(container, false) ?: return@ProfileList
-                    session.selectedId = ""
-                    session.name = file.nameWithoutExtension.ifBlank { container.t("host.untitled") }
-                    session.content = file.readText()
-                    session.savedName = ""
-                    session.savedContent = ""
-                    persist()
+                    when (val outcome = HostWiringPresentation.runReadImportProfile(file)) {
+                        is HostWiringPresentation.ImportProfileOutcome.Success -> {
+                            session.selectedId = ""
+                            session.name = HostWiringPresentation.inferImportProfileName(
+                                file,
+                                container.t("host.untitled"),
+                            )
+                            session.content = outcome.content
+                            session.savedName = ""
+                            session.savedContent = ""
+                            session.error = ""
+                            persist()
+                        }
+                        is HostWiringPresentation.ImportProfileOutcome.Failure ->
+                            session.error = container.t(
+                                "reformat.error.read",
+                                mapOf("message" to (outcome.error.message ?: "")),
+                            )
+                    }
                 },
                 onExport = {
                     val file = pickHostFile(
@@ -308,10 +321,18 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                         true,
                         ToolsExportWiringPresentation.defaultHostExportFileName(session.name),
                     ) ?: return@ProfileList
-                    file.writeText(session.content)
-                    session.notice = container.t("host.exported")
-                    container.toastSuccess(container.t("host.exported"))
-                    persist()
+                    when (val outcome = HostWiringPresentation.runWriteExportProfile(file, session.content)) {
+                        HostWiringPresentation.ExportProfileOutcome.Success -> {
+                            session.notice = container.t("host.exported")
+                            container.toastSuccess(container.t("host.exported"))
+                            persist()
+                        }
+                        is HostWiringPresentation.ExportProfileOutcome.Failure ->
+                            session.error = container.t(
+                                "reformat.error.write",
+                                mapOf("message" to (outcome.error.message ?: "")),
+                            )
+                    }
                 },
                 onDelete = { if (session.selectedId.isNotBlank()) { session.deleteConfirm = true; persist() } },
                 onChanged = { persist(); reloadProfiles() },

@@ -78,6 +78,11 @@ mootool_evidence_print_text_diff_highlight_options_tab_focus_hint() {
   echo "# 产品窗 F02 文本对比 Tab 走查 PNG 仍须 runDistributable + 手工截图"
 }
 
+mootool_evidence_print_text_diff_editor_grid_tab_focus_hint() {
+  echo "# Compose F02 .diff-editor-grid 并排编辑区焦点帧（非产品主窗）: docs/evidence/2026-09-15-inspector-screencapture/windows/169-compose-text-diff-editor-grid-tab-focus.png"
+  echo "# 产品窗 F02 文本对比 Tab 走查 PNG 仍须 runDistributable + 手工截图"
+}
+
 mootool_evidence_print_git_merge_product_hint() {
   echo "# Compose merge hint 焦点帧（非产品主窗）: docs/evidence/2026-09-15-inspector-screencapture/windows/153-compose-git-merge-flow-hint-tab-focus.png"
   echo "# Vault Git merge 产品窗 §B（对齐 GitMergeProductFlowPresentation / conflict.json）:"

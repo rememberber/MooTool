@@ -17,12 +17,14 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -1745,6 +1747,12 @@ fun Modifier.mooTranslationAutoRow(): Modifier {
 /** Electron `.diff-workspace` 工作区最小高度。 */
 @Composable
 fun Modifier.mooDiffWorkspace(): Modifier = heightIn(min = 280.dp)
+
+/** Electron `.diff-editor-grid` 并排/统一编辑区容器。 */
+fun Modifier.mooDiffEditorGrid(): Modifier = fillMaxWidth().heightIn(min = 280.dp)
+
+/** Electron `.diff-editor-grid` 中缝（需配合 `background(borderSoft)`）。 */
+fun Modifier.mooDiffEditorSeam(): Modifier = width(1.dp).fillMaxHeight()
 
 /** Electron `.diff-editor-grid > div` / `.diff-editor-pane` 内边距。 */
 fun Modifier.mooDiffEditorPane(): Modifier = padding(10.dp)
