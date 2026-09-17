@@ -91,4 +91,45 @@ class CodeEditorSurfaceFormatEngineTest {
             DocumentFormatEngine.format("# Hello\n\n-   one", "text/markdown", "MySQL", 2),
         )
     }
+
+    @Test
+    fun preservesStringLiteralsWhenFormattingJavascript() {
+        assertEquals(
+            "const msg = \"a=b\";",
+            CodeEditorSurfaceFormatEngine.formatJavascript("const msg=\"a=b\""),
+        )
+    }
+
+    @Test
+    fun formatsArrowFunctionAndMultilineBlockWithoutBrokenSemicolons() {
+        val input = "function foo(){\nconst x=1\n}"
+        assertEquals(
+            "function foo() {\nconst x = 1;\n}",
+            CodeEditorSurfaceFormatEngine.formatJavascript(input),
+        )
+    }
+
+    @Test
+    fun formatsImportExportSurfaceSpacing() {
+        assertEquals(
+            "import { readFile } from \"fs\";",
+            CodeEditorSurfaceFormatEngine.formatJavascript("import{readFile}from \"fs\""),
+        )
+    }
+
+    @Test
+    fun formatsTypescriptInterfaceLine() {
+        assertEquals(
+            "interface Item { id: number }",
+            CodeEditorSurfaceFormatEngine.formatTypescript("interface Item{id:number}"),
+        )
+    }
+
+    @Test
+    fun documentFormatEngineRoutesTypescriptMultiline() {
+        assertEquals(
+            "const fn = (a) => a + 1;",
+            DocumentFormatEngine.format("const fn=(a)=>a+1", "text/typescript", "MySQL", 2),
+        )
+    }
 }

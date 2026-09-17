@@ -51,7 +51,7 @@ object CommandSearchCatalog {
             categoryId = "editor",
             labelKey = "settings.category.editor",
             navIcon = "{ }",
-            keywords = listOf("editor", "font", "wrap", "json", "note", "sql", "dialect", "编辑器", "字体", "换行", "方言"),
+            keywords = listOf("editor", "font", "wrap", "json", "note", "sql", "dialect", "javascript", "typescript", "format", "编辑器", "字体", "换行", "方言", "格式化"),
         ),
         CommandSettingsTarget(
             categoryId = "network",

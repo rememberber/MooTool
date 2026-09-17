@@ -60,6 +60,12 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun javascriptFormatQueryOpensEditorSettings() {
+        val hits = CommandSearchCatalog.search("javascript", Translator(AppLanguage.EnUS)::t)
+        assertEquals("editor", hits.single().categoryId)
+    }
+
+    @Test
     fun exportDirectoryQueryOpensToolsDefaults() {
         val hits = CommandSearchCatalog.search("export", Translator(AppLanguage.EnUS)::t)
         assertEquals("tools", hits.single().categoryId)

@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,6 +43,7 @@ import com.rememberber.mootool.next.compose.domain.GitDiffSelection
 import com.rememberber.mootool.next.compose.domain.GitEditorFlushPolicy
 import com.rememberber.mootool.next.compose.domain.GitVaultFlushAction
 import com.rememberber.mootool.next.compose.domain.GitEngine
+import com.rememberber.mootool.next.compose.domain.GitMergeConflictPresentation
 import com.rememberber.mootool.next.compose.domain.GitOperationPresentation
 import com.rememberber.mootool.next.compose.domain.GitRemoteCommitResult
 import com.rememberber.mootool.next.compose.domain.SettingsVaultGitNormalize
@@ -314,6 +316,17 @@ fun VaultGitDialog(
                                     fontSize = 11.sp,
                                 )
                             }
+                            GitMergeConflictPresentation.unresolvedHintKey(
+                                status.merging,
+                                status.conflicts,
+                                status.operation,
+                            )?.let { hintKey ->
+                                Text(
+                                    container.t(hintKey),
+                                    color = colors.danger,
+                                    fontSize = 11.sp,
+                                )
+                            }
                         }
                     }
                     }
@@ -495,8 +508,13 @@ fun VaultGitDialog(
                                                     overflow = TextOverflow.Ellipsis,
                                                     modifier = Modifier.weight(1f)
                                                 )
-                                                if (change.conflict) {
-                                                    Text(container.t("git.conflict"), color = colors.danger, fontSize = 10.sp)
+                                                if (GitMergeConflictPresentation.showConflictBadge(change.conflict)) {
+                                                    Text(
+                                                        container.t("git.conflict"),
+                                                        color = colors.danger,
+                                                        fontSize = 10.sp,
+                                                        fontStyle = FontStyle.Italic,
+                                                    )
                                                 }
                                             }
                                         }
