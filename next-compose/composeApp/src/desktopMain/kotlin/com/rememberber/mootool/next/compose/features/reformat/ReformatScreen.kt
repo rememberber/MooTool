@@ -45,7 +45,8 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.ReformatEngine
 import com.rememberber.mootool.next.compose.domain.ReformatException
 import com.rememberber.mootool.next.compose.domain.ReformatType
-import com.rememberber.mootool.next.compose.model.HistoryRecord
+import com.rememberber.mootool.next.compose.domain.ReformatHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.ReformatHistoryRestore
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.ReformatSession
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
@@ -332,7 +333,7 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
             toolId = ToolId.Reformat.id,
             title = container.t("common.action.history"),
             onRestore = { item ->
-                applyHistory(session, item)
+                ReformatHistoryRestore.apply(session, item)
                 session.historyOpen = false
                 refresh()
             },
@@ -403,7 +404,7 @@ private fun runFormat(container: AppContainer, session: ReformatSession, onChang
                     summary,
                     input,
                     output,
-                    "${type.name.lowercase()}|$tab|$indent|$fileName"
+                    ReformatHistoryMetadata.encode(type, tab, indent, fileName),
                 )
             }.onFailure { error ->
                 session.notice = ""
@@ -481,21 +482,3 @@ private fun chooseFile(save: Boolean, title: String, defaultName: String = ""): 
 }
 
 
-private fun applyHistory(session: ReformatSession, item: HistoryRecord) {
-    val parts = item.options.split('|')
-    val historyType = parts.getOrNull(0).orEmpty()
-    val historyTab = parts.getOrNull(1).orEmpty()
-    val historyIndent = parts.getOrNull(2)?.toIntOrNull() ?: 4
-    ReformatType.entries.firstOrNull { it.name.equals(historyType, ignoreCase = true) }?.let { session.type = it }
-    session.indent = historyIndent.coerceIn(2, 6)
-    if (historyTab == "file") {
-        session.tab = "file"
-        session.fileSource = item.input
-        session.fileResult = item.output
-        session.fileName = parts.getOrNull(3).orEmpty()
-    } else {
-        session.tab = "text"
-        session.text = item.output.ifEmpty { item.input }
-    }
-    session.error = ""
-}

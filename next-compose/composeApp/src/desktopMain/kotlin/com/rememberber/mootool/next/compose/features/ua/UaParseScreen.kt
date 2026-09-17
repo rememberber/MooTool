@@ -39,8 +39,9 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.UaEngine
 import com.rememberber.mootool.next.compose.domain.UaException
+import com.rememberber.mootool.next.compose.domain.UaHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.UaHistoryRestore
 import com.rememberber.mootool.next.compose.domain.UaResult
-import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.UaSession
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
@@ -254,8 +255,7 @@ fun UaParseScreen(container: AppContainer, detached: Boolean) {
             toolId = ToolId.UaParse.id,
             title = container.t("common.action.history"),
             onRestore = { item ->
-                session.source = item.input
-                session.result = runCatching { resultCodec.decodeFromString<UaResult>(item.output) }.getOrNull()
+                UaHistoryRestore.apply(session, item)
                 session.historyOpen = false
                 refresh()
             },
@@ -273,7 +273,14 @@ private fun parseSource(container: AppContainer, session: UaSession) {
             session.error = ""
             session.notice = container.t("ua.parse")
             container.toastSuccess(session.notice)
-            container.history.save(ToolId.UaParse.id, container.t("ua.title"), container.t("ua.title"), session.source, resultCodec.encodeToString(result))
+            container.history.save(
+                ToolId.UaParse.id,
+                container.t("ua.title"),
+                container.t("ua.title"),
+                session.source,
+                resultCodec.encodeToString(result),
+                UaHistoryMetadata.encode(),
+            )
         }
         .onFailure { error ->
             session.notice = ""

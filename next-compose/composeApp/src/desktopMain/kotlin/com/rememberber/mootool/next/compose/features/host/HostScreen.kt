@@ -69,7 +69,8 @@ import com.rememberber.mootool.next.compose.domain.HostApplyConfig
 import com.rememberber.mootool.next.compose.domain.HostEngine
 import com.rememberber.mootool.next.compose.domain.HostErrorCode
 import com.rememberber.mootool.next.compose.domain.HostException
-import com.rememberber.mootool.next.compose.model.HistoryRecord
+import com.rememberber.mootool.next.compose.domain.HostHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.HostHistoryRestore
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.HostSession
 import com.rememberber.mootool.next.compose.storage.HostProfile
@@ -539,11 +540,11 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                                     session.error = ""
                                     container.history.save(
                                         ToolId.Host.id,
-                                        "apply",
+                                        HostHistoryMetadata.OPERATION_APPLY,
                                         session.name.ifBlank { it.system.path },
                                         session.content.take(4_000),
                                         it.system.path,
-                                        it.backupPath.orEmpty()
+                                        HostHistoryMetadata.encodeApplyBackup(it.backupPath.orEmpty()),
                                     )
                                 }.onFailure { session.error = messageFor(container, it) }
                                 persist()
@@ -620,7 +621,7 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
         toolId = ToolId.Host.id,
         title = container.t("common.action.history"),
         onRestore = { item ->
-            session.content = item.input
+            HostHistoryRestore.apply(session, item)
             session.historyOpen = false
             persist()
         },

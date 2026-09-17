@@ -45,6 +45,8 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.features.settings.SettingsNavCategory
 import com.rememberber.mootool.next.compose.domain.CodeRunEngine
+import com.rememberber.mootool.next.compose.domain.CodeRunHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.CodeRunHistoryRestore
 import com.rememberber.mootool.next.compose.domain.EditorSettingsLiveApply
 import com.rememberber.mootool.next.compose.domain.CodeRunErrorCode
 import com.rememberber.mootool.next.compose.domain.CodeRunInput
@@ -58,7 +60,6 @@ import com.rememberber.mootool.next.compose.editor.EditorFindOnlyBar
 import com.rememberber.mootool.next.compose.editor.EditorHost
 import com.rememberber.mootool.next.compose.editor.EditorFindShortcutPolicy
 import com.rememberber.mootool.next.compose.editor.openFindBarSeedingSelection
-import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.CodeRunSession
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
@@ -199,7 +200,8 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                     CodeRunEngine.displayName(runtime),
                     "${CodeRunEngine.displayName(runtime)} · ${result.exitCode ?: "-"}",
                     input.code.take(8_000),
-                    listOf(result.stdout, result.stderr).filter { it.isNotBlank() }.joinToString("\n").take(8_000)
+                    listOf(result.stdout, result.stderr).filter { it.isNotBlank() }.joinToString("\n").take(8_000),
+                    CodeRunHistoryMetadata.encode(runtime, session.arguments(runtime), session.workingDirectory(runtime)),
                 )
                 if (session.error.isNotEmpty()) {
                     container.toastError(session.error)
@@ -470,7 +472,7 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
             toolId = ToolId.Java.id,
             title = container.t("runtime.history"),
             onRestore = { item ->
-                session.editor(runtime).setText(item.input, recordUndo = false)
+                CodeRunHistoryRestore.apply(session, item)
                 session.historyOpen = false
                 persist()
             },
