@@ -24,4 +24,21 @@ class EditorFontSettingsTest {
         assertEquals("PingFang SC", normalized.jsonFontName)
         assertEquals("ui-monospace", normalized.quickNoteFontName)
     }
+
+    @Test
+    fun normalizeSqlDialect_matchesElectronPresetsAndLegacyMysql() {
+        assertEquals("MySQL", EditorFontSettings.normalizeSqlDialect("mysql", "Standard SQL"))
+        assertEquals("PostgreSQL", EditorFontSettings.normalizeSqlDialect(" postgresql ", "Standard SQL"))
+        assertEquals("Standard SQL", EditorFontSettings.normalizeSqlDialect("unknown-dialect", "Standard SQL"))
+        assertEquals("Standard SQL", EditorFontSettings.normalizeSqlDialect("", "Standard SQL"))
+    }
+
+    @Test
+    fun normalizeEditorSettings_coercesUnknownSqlDialect() {
+        val normalized = EditorFontSettings.normalizeEditorSettings(
+            AppSettings.Default.editor.copy(sqlDialect = "legacy"),
+            AppSettings.Default.editor,
+        )
+        assertEquals("Standard SQL", normalized.sqlDialect)
+    }
 }

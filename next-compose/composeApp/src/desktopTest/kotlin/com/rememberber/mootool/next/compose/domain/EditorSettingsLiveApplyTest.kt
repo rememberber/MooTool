@@ -34,4 +34,10 @@ class EditorSettingsLiveApplyTest {
         assertTrue(EditorSettingsLiveApply.newQuickNoteLineWrap(settingsSoftWrap = true))
         assertFalse(EditorSettingsLiveApply.newQuickNoteLineWrap(settingsSoftWrap = false))
     }
+
+    @Test
+    fun jsonEditorFontSizePassesThroughClampedSettingsValue() {
+        assertEquals(14, EditorSettingsLiveApply.jsonEditorFontSize(14))
+        assertEquals(11, EditorSettingsLiveApply.jsonEditorFontSize(11))
+    }
 }

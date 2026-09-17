@@ -392,7 +392,7 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
                     buffer = session.editor,
                     dark = MooTheme.dark,
                     fontName = com.rememberber.mootool.next.compose.domain.DocumentFormatEngine.editorFont(settings.editor.jsonFontName),
-                    fontSize = settings.editor.jsonFontSize,
+                    fontSize = EditorSettingsLiveApply.jsonEditorFontSize(settings.editor.jsonFontSize),
                     wrap = session.wrap,
                     columnEditing = true,
                     columnDragWithoutAlt = session.columnLatch,

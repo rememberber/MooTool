@@ -122,7 +122,10 @@ object ElectronNextSettingsImport {
                 )
             ),
             editor = current.editor.copy(
-                sqlDialect = patch.editor.sqlDialect,
+                sqlDialect = EditorFontSettings.normalizeSqlDialect(
+                    patch.editor.sqlDialect,
+                    current.editor.sqlDialect,
+                ),
                 jsonFontName = EditorFontSettings.normalizeFontName(
                     patch.editor.jsonFontName,
                     AppSettings.Default.editor.jsonFontName,

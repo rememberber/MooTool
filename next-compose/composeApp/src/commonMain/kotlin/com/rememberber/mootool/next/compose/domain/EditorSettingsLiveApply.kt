@@ -22,4 +22,7 @@ object EditorSettingsLiveApply {
 
     /** Electron `RuntimeTool.tsx` hardcodes `wrap={false}`. */
     fun runtimeEditorWrap(): Boolean = false
+
+    /** JSON / HTTP / CodeRun `EditorHost` font size follows global settings on each recomposition. */
+    fun jsonEditorFontSize(settingsJsonFontSize: Int): Int = settingsJsonFontSize
 }

@@ -412,7 +412,7 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                             buffer = sourceEditor,
                             dark = MooTheme.dark,
                             fontName = com.rememberber.mootool.next.compose.domain.DocumentFormatEngine.editorFont(settings.editor.jsonFontName),
-                            fontSize = settings.editor.jsonFontSize,
+                            fontSize = EditorSettingsLiveApply.jsonEditorFontSize(settings.editor.jsonFontSize),
                             wrap = EditorSettingsLiveApply.runtimeEditorWrap(),
                             modifier = Modifier.weight(1f).fillMaxWidth(),
                             shortcuts = EditorAppShortcuts(

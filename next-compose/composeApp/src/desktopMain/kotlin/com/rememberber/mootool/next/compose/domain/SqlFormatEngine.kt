@@ -1,18 +1,7 @@
 package com.rememberber.mootool.next.compose.domain
 
 object SqlFormatEngine {
-    val dialects: List<String> = listOf(
-        "Standard SQL",
-        "MySQL",
-        "MariaDB",
-        "PostgreSQL",
-        "Oracle PL/SQL",
-        "SQL Server Transact-SQL",
-        "IBM DB2",
-        "Couchbase N1QL",
-        "Amazon Redshift",
-        "Spark"
-    )
+    val dialects: List<String> = EditorFontSettings.sqlDialectPresets
 
     private val keywords = setOf(
         "SELECT", "FROM", "WHERE", "GROUP", "BY", "ORDER", "HAVING", "LIMIT", "OFFSET",

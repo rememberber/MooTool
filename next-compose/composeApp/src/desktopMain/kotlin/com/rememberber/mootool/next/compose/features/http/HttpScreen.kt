@@ -561,7 +561,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                             buffer = session.bodyEditor,
                             dark = MooTheme.dark,
                             fontName = DocumentFormatEngine.editorFont(settings.editor.jsonFontName),
-                            fontSize = settings.editor.jsonFontSize,
+                            fontSize = EditorSettingsLiveApply.jsonEditorFontSize(settings.editor.jsonFontSize),
                             wrap = EditorSettingsLiveApply.httpEditorWrap(settings.editor.softWrap),
                             modifier = Modifier.weight(1f).fillMaxWidth().mooEditorFrame(flatten = true),
                             shortcuts = EditorAppShortcuts(
@@ -712,7 +712,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                         buffer = session.responseEditor,
                         dark = MooTheme.dark,
                         fontName = DocumentFormatEngine.editorFont(settings.editor.jsonFontName),
-                        fontSize = 11,
+                        fontSize = EditorSettingsLiveApply.jsonEditorFontSize(settings.editor.jsonFontSize),
                         wrap = EditorSettingsLiveApply.httpEditorWrap(settings.editor.softWrap),
                         modifier = Modifier.fillMaxSize(),
                         shortcuts = EditorAppShortcuts(

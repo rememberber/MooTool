@@ -54,6 +54,12 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun sqlDialectQueryOpensEditorSettings() {
+        val hits = CommandSearchCatalog.search("sql", Translator(AppLanguage.EnUS)::t)
+        assertEquals("editor", hits.single().categoryId)
+    }
+
+    @Test
     fun exportDirectoryQueryOpensToolsDefaults() {
         val hits = CommandSearchCatalog.search("export", Translator(AppLanguage.EnUS)::t)
         assertEquals("tools", hits.single().categoryId)
