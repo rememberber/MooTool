@@ -55,6 +55,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.ColorEngine
+import com.rememberber.mootool.next.compose.domain.ColorHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.ColorHistoryRestore
 import com.rememberber.mootool.next.compose.domain.ColorFormat
 import com.rememberber.mootool.next.compose.domain.ColorOperation
 import com.rememberber.mootool.next.compose.domain.ColorThemeId
@@ -303,7 +305,16 @@ fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
             toolId = ToolId.ColorBoard.id,
             title = container.t("common.action.history"),
             onRestore = { item ->
-                restoreHistory(container, session, item) { refresh() }
+                when (ColorHistoryRestore.apply(session, item)) {
+                    ColorHistoryRestore.Result.Ok -> {
+                        session.historyOpen = false
+                        refresh()
+                    }
+                    ColorHistoryRestore.Result.InvalidColor -> {
+                        session.error = container.t("color.error.invalid")
+                        refresh()
+                    }
+                }
             },
             onDismiss = { session.historyOpen = false; refresh() }
         )
@@ -711,7 +722,7 @@ private fun selectColor(
         operation,
         before,
         session.primaryHex,
-        session.format.name
+        ColorHistoryMetadata.encode(session.format, "pick")
     )
     onChanged()
 }
@@ -729,7 +740,14 @@ private fun runOperation(
     session.error = ""
     val label = container.t(operationKey(operation))
     session.notice = label
-    container.history.save(ToolId.ColorBoard.id, label, label, before, session.primaryHex, operation.name)
+    container.history.save(
+        ToolId.ColorBoard.id,
+        label,
+        label,
+        before,
+        session.primaryHex,
+        ColorHistoryMetadata.encode(session.format, operation.name),
+    )
     onChanged()
 }
 
@@ -747,20 +765,9 @@ private fun swapColors(container: AppContainer, session: ColorSession, onChanged
         session.notice,
         before,
         "${session.primaryHex} / ${session.secondaryHex}",
-        "swap"
+        ColorHistoryMetadata.encode(session.format, "swap"),
     )
     onChanged()
-}
-
-private fun restoreHistory(container: AppContainer, session: ColorSession, item: HistoryRecord, onChanged: () -> Unit) {
-    val hex = ColorEngine.extractHex(item.output.ifBlank { item.input })
-    if (hex == null) {
-        session.error = container.t("color.error.invalid")
-        onChanged()
-        return
-    }
-    session.historyOpen = false
-    selectHex(container, session, hex, false, item.summary, onChanged)
 }
 
 private fun addFolder(container: AppContainer, session: ColorSession, onChanged: () -> Unit) {

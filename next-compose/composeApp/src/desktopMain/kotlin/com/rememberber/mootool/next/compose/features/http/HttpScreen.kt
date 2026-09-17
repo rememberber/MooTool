@@ -64,6 +64,8 @@ import com.rememberber.mootool.next.compose.domain.FindMatch
 import com.rememberber.mootool.next.compose.domain.FindReplace
 import com.rememberber.mootool.next.compose.domain.HttpCookie
 import com.rememberber.mootool.next.compose.domain.HttpEngine
+import com.rememberber.mootool.next.compose.domain.HttpHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.HttpHistoryRestore
 import com.rememberber.mootool.next.compose.domain.HttpErrorCode
 import com.rememberber.mootool.next.compose.domain.HttpMethod
 import com.rememberber.mootool.next.compose.domain.HttpPair
@@ -311,7 +313,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                     "${draft.method.name} ${draft.url}".trim(),
                     com.rememberber.mootool.next.compose.storage.HistoryPrivacy.httpUrl(draft.url),
                     result.body.take(8_000),
-                    result.status.toString()
+                    HttpHistoryMetadata.encodeStatus(result.status)
                 )
                 persist()
             }
@@ -741,8 +743,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
         toolId = ToolId.Http.id,
         title = container.t("http.history"),
         onRestore = { item ->
-            session.url = item.input
-            HttpMethod.entries.find { it.name == item.operation }?.let { session.method = it }
+            HttpHistoryRestore.apply(session, item)
             session.historyOpen = false
             persist()
         },

@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.storage.VaultPathConfig
 import com.rememberber.mootool.next.compose.domain.PdfEngine
+import com.rememberber.mootool.next.compose.domain.PdfHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.PdfHistoryRestore
 import com.rememberber.mootool.next.compose.domain.PdfException
 import com.rememberber.mootool.next.compose.domain.PdfSplitRule
 import com.rememberber.mootool.next.compose.domain.PdfTab
@@ -208,7 +210,7 @@ fun PdfScreen(container: AppContainer, detached: Boolean) {
             toolId = ToolId.Pdf.id,
             title = container.t("common.action.history"),
             onRestore = { item ->
-                session.lastOutputs = item.output.lines().map { it.trim() }.filter { it.isNotEmpty() }
+                PdfHistoryRestore.apply(session, item)
                 session.historyOpen = false
                 refresh()
             },
@@ -542,7 +544,14 @@ private fun runSplit(
                 session.notice = container.t("pdf.splitComplete", mapOf("count" to value.pageCount.toString()))
                 container.toastSuccess(session.notice)
                 session.error = ""
-                container.history.save(ToolId.Pdf.id, session.notice, session.notice, selected.joinToString { it.name }, value.outputs.joinToString("\n"), "split")
+                container.history.save(
+                    ToolId.Pdf.id,
+                    session.notice,
+                    session.notice,
+                    selected.joinToString { it.name },
+                    value.outputs.joinToString("\n"),
+                    PdfHistoryMetadata.OP_SPLIT,
+                )
             }.onFailure { error ->
                 selected.forEach { it.status = if ((error as? PdfException)?.code == "cancelled") PdfTaskStatus.Ready else PdfTaskStatus.Error }
                 session.lastOutputs = emptyList()
@@ -584,7 +593,14 @@ private fun runMerge(
                 session.notice = container.t("pdf.mergeComplete", mapOf("count" to value.pageCount.toString()))
                 container.toastSuccess(session.notice)
                 session.error = ""
-                container.history.save(ToolId.Pdf.id, session.notice, session.notice, selected.joinToString { it.name }, value.outputs.joinToString("\n"), "merge")
+                container.history.save(
+                    ToolId.Pdf.id,
+                    session.notice,
+                    session.notice,
+                    selected.joinToString { it.name },
+                    value.outputs.joinToString("\n"),
+                    PdfHistoryMetadata.OP_MERGE,
+                )
             }.onFailure { error ->
                 selected.forEach { it.status = if ((error as? PdfException)?.code == "cancelled") PdfTaskStatus.Ready else PdfTaskStatus.Error }
                 if ((error as? PdfException)?.code == "cancelled") runCatching { output.delete() }

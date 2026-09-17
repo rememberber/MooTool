@@ -3,6 +3,8 @@
 | caseId | sourceProduct | sourceFile | Compose 验证 |
 | --- | --- | --- | --- |
 | json-format-spaces-zero | MooTool Next Electron | `server.test.ts` | `JsonEngineTest.formatAdvancedSpacesZeroMinifiesLikeElectronMcp`（[DIFF-459](../diff/459-ai-mcp-test-connection-json-spaces-zero.md)） |
+| mcp-json-format-sort | 同上 | `negotiates MCP…` `sortKeys`/`spaces:0` | `MooToolMcpToolsTest.mirrorsElectronMcpToolHappyPaths`（[DIFF-536](../diff/536-f22-f24-history-mcp-slice.md)） |
+| mcp-timestamp-13-digit-local | 同上 | `timeTools.test.ts` 13 位 + second | `MooToolMcpToolsTest.timestampToLocalDetectsThirteenDigitMillisForMcp`（MCP 层；F18 UI 见 DIFF-001） |
 | mcp-tools-happy-path | 同上 | `handles UTF-8…` | `MooToolMcpToolsTest.mirrorsElectronMcpToolHappyPaths`（[DIFF-460](../diff/460-mootool-mcp-tools-server-test-parity.md)） |
 | mcp-tools-validation | 同上 | `validates types, limits…` | `MooToolMcpToolsTest.mirrorsElectronMcpToolValidationFailures`（含 `hash` 非字符串/未知字段，[DIFF-470](../diff/470-mootool-mcp-strict-object-args.md)） |
 | mcp-json-query-array | 同上 | `$.values[*]` | `MooToolMcpToolsTest.jsonQueryReturnsArrayMatchesForValuesPath` |

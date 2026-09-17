@@ -58,6 +58,8 @@ import com.rememberber.mootool.next.compose.storage.VaultPathConfig
 import com.rememberber.mootool.next.compose.domain.ScreenCaptureFailureMessages
 import com.rememberber.mootool.next.compose.domain.CompressImageOptions
 import com.rememberber.mootool.next.compose.domain.ImageEngine
+import com.rememberber.mootool.next.compose.domain.ImageHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.ImageHistoryRestore
 import com.rememberber.mootool.next.compose.domain.ImageException
 import com.rememberber.mootool.next.compose.domain.ImageOutputFormat
 import com.rememberber.mootool.next.compose.domain.ImageOutputMode
@@ -537,13 +539,9 @@ fun ImageScreen(container: AppContainer, detached: Boolean) {
             toolId = ToolId.Image.id,
             title = container.t("common.action.history"),
             onRestore = { item ->
-                val outputs = item.output.lines().map { it.trim() }.filter { it.isNotEmpty() }
-                session.lastOutputs = outputs
-                val preferred = (outputs + item.input.split(',', '，', '\n').map { it.trim() }.filter { it.isNotEmpty() })
-                    .firstOrNull { name -> assets.any { it.name == name } }
-                if (preferred != null) {
-                    loadAssets(preferred)
-                }
+                val plan = ImageHistoryRestore.plan(item, assets.map { it.name }.toSet())
+                session.lastOutputs = plan.lastOutputs
+                plan.preferredAsset?.let { loadAssets(it) }
                 session.historyOpen = false
                 refresh()
             },
@@ -823,7 +821,14 @@ private fun processImages(
             session.busy = false
             session.notice = container.t("image.processComplete", mapOf("count" to names.size.toString()))
             container.toastSuccess(session.notice)
-            container.history.save(ToolId.Image.id, session.notice, session.notice, names.joinToString(), preferred.orEmpty(), "process")
+            container.history.save(
+                ToolId.Image.id,
+                session.notice,
+                session.notice,
+                names.joinToString(),
+                preferred.orEmpty(),
+                ImageHistoryMetadata.OP_PROCESS,
+            )
             withContext(Dispatchers.Swing) { onLoaded(preferred) }
         }.onFailure { error ->
             if (error is CancellationException) {
@@ -874,7 +879,14 @@ private fun vectorize(
             session.lastOutputs = written.map { it.toAbsolutePath().toString() }
             session.notice = container.t("image.svgComplete", mapOf("count" to written.size.toString(), "path" to written.first().parent.toString()))
             container.toastSuccess(session.notice)
-            container.history.save(ToolId.Image.id, session.notice, session.notice, names.joinToString(), session.lastOutputs.joinToString("\n"), "svg")
+            container.history.save(
+                ToolId.Image.id,
+                session.notice,
+                session.notice,
+                names.joinToString(),
+                session.lastOutputs.joinToString("\n"),
+                ImageHistoryMetadata.OP_SVG,
+            )
             withContext(Dispatchers.Swing) { onDone(); container.sessionManager.persistImage(); container.sessionManager.bump() }
         }.onFailure { error ->
             if (targets.size > 1) written.forEach { runCatching { java.nio.file.Files.deleteIfExists(it) } }

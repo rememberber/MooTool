@@ -10,6 +10,13 @@ import kotlin.test.assertTrue
 class MooToolMcpToolsTest {
     @Test
     fun mirrorsElectronMcpToolHappyPaths() {
+        val formatted = MooToolMcpTools.call(
+            "mootool_json_format",
+            mapOf("text" to """{"b":2,"a":1}""", "sortKeys" to true, "spaces" to 0),
+        )
+        assertFalse(formatted.isError)
+        assertEquals("""{"a":1,"b":2}""", formatted.text)
+
         val encode = MooToolMcpTools.call(
             "mootool_encode",
             mapOf("text" to "Moo 中文🐮", "format" to "base64", "direction" to "encode"),
@@ -100,6 +107,21 @@ class MooToolMcpToolsTest {
                 mapOf("text" to "a", "path" to "/etc/hosts"),
             ).isError,
         )
+    }
+
+    @Test
+    fun timestampToLocalDetectsThirteenDigitMillisForMcp() {
+        val result = MooToolMcpTools.call(
+            "mootool_timestamp",
+            mapOf(
+                "text" to "1704067200000",
+                "direction" to "to-local",
+                "unit" to "second",
+                "zone" to "UTC",
+            ),
+        )
+        assertFalse(result.isError)
+        assertEquals("2024-01-01 00:00:00", result.text)
     }
 
     @Test

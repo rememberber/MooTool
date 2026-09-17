@@ -117,10 +117,17 @@ object MooToolMcpTools {
         }
         val zone = optionalStringArg(args, "zone", "UTC").take(100)
         return if (direction == "to-local") {
-            TimeEngine.timestampToLocal(input, unit, zone).localTime
+            mcpTimestampToLocal(input, unit, zone)
         } else {
             TimeEngine.localToTimestamp(input, unit, zone)
         }
+    }
+
+    /** MCP 对齐 Electron `timeTools.timestampToLocal`：13+ 位数字按毫秒解释（F18 UI 仍显式单位，见 DIFF-001）。 */
+    private fun mcpTimestampToLocal(input: String, unit: TimestampUnit, zone: String): String {
+        val normalized = input.trim()
+        val detectedUnit = if (normalized.replace("-", "").length >= 13) TimestampUnit.Millisecond else unit
+        return TimeEngine.timestampToLocal(input, detectedUnit, zone).localTime
     }
 
     private fun diff(args: Map<String, Any?>): String {

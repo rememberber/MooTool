@@ -34,9 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.ConfigEngine
+import com.rememberber.mootool.next.compose.domain.ConfigHistoryRestore
 import com.rememberber.mootool.next.compose.domain.ConfigException
 import com.rememberber.mootool.next.compose.model.AppSettings
-import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.ConfigSession
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
@@ -303,7 +303,7 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
             toolId = ToolId.YmlProperties.id,
             title = container.t("common.action.history"),
             onRestore = { item ->
-                applyHistory(session, item)
+                ConfigHistoryRestore.apply(session, item)
                 session.historyOpen = false
                 refresh()
             },
@@ -417,27 +417,4 @@ private fun chooseFile(save: Boolean, title: String, defaultName: String = ""): 
     val file = dialog.file ?: return null
     val directory = dialog.directory ?: return null
     return File(directory, file)
-}
-
-
-private fun applyHistory(session: ConfigSession, item: HistoryRecord) {
-    when (item.options) {
-        "toProperties" -> {
-            session.tab = "convert"
-            session.yaml = item.input
-            session.properties = item.output
-        }
-        "validate", "format" -> {
-            session.tab = "validate"
-            session.validateSource = item.input
-            session.validation = item.output
-            session.valid = item.options == "format" || item.output.isNotEmpty()
-        }
-        else -> {
-            session.tab = "convert"
-            session.properties = item.input
-            session.yaml = item.output
-        }
-    }
-    session.error = ""
 }

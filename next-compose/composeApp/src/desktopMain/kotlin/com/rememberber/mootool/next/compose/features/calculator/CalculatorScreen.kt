@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.CalculatorEngine
+import com.rememberber.mootool.next.compose.domain.CalculatorHistoryRestore
 import com.rememberber.mootool.next.compose.domain.CalculatorException
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
@@ -316,8 +317,7 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
             toolId = ToolId.Calculator.id,
             title = container.t("calculator.history"),
             onRestore = { item ->
-                session.expression = item.input
-                session.result = item.output.ifBlank { session.result }
+                CalculatorHistoryRestore.apply(session, item)
                 session.historyOpen = false
                 refresh()
             },
