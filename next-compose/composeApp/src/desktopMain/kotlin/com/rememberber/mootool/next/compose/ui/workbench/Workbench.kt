@@ -507,6 +507,31 @@ internal fun commandPaletteTabFocusTransition(
     }
 }
 
+/** 从搜索框出发连续 Tab 的焦点链（用于键盘走查单测，不含循环回搜索框）。 */
+internal fun commandPaletteTabForwardWalkthrough(resultCount: Int): List<CommandPaletteFocusTarget> {
+    val steps = mutableListOf<CommandPaletteFocusTarget>()
+    var current = CommandPaletteFocusTarget.Search
+    while (true) {
+        val next = commandPaletteTabFocusTransition(shift = false, from = current, resultCount = resultCount) ?: break
+        steps += next
+        current = next
+    }
+    return steps
+}
+
+/** 从结果行 Shift+Tab 回到搜索框的链。 */
+internal fun commandPaletteTabBackwardWalkthrough(resultCount: Int): List<CommandPaletteFocusTarget> {
+    if (resultCount <= 0) return emptyList()
+    val steps = mutableListOf<CommandPaletteFocusTarget>()
+    var current = CommandPaletteFocusTarget.Result
+    while (true) {
+        val next = commandPaletteTabFocusTransition(shift = true, from = current, resultCount = resultCount) ?: break
+        steps += next
+        current = next
+    }
+    return steps
+}
+
 internal fun nextCommandIndex(selected: Int, size: Int, down: Boolean = true, stay: Boolean = false): Int {
     if (size <= 0) return 0
     if (stay) return selected.coerceIn(0, size - 1)

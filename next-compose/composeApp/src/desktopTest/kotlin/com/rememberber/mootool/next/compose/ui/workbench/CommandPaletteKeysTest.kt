@@ -77,11 +77,35 @@ class CommandPaletteKeysTest {
     }
 
     @Test
+    fun tabFocusWalkthrough_searchCloseResultRoundTrip() {
+        assertEquals(
+            listOf(
+                CommandPaletteFocusTarget.Close,
+                CommandPaletteFocusTarget.Result,
+            ),
+            commandPaletteTabForwardWalkthrough(resultCount = 5),
+        )
+        assertEquals(
+            listOf(
+                CommandPaletteFocusTarget.Close,
+                CommandPaletteFocusTarget.Search,
+            ),
+            commandPaletteTabBackwardWalkthrough(resultCount = 5),
+        )
+        assertEquals(
+            listOf(CommandPaletteFocusTarget.Close),
+            commandPaletteTabForwardWalkthrough(resultCount = 0),
+        )
+        assertEquals(emptyList(), commandPaletteTabBackwardWalkthrough(resultCount = 0))
+    }
+
+    @Test
     fun searchCopyFollowsElectronKeys() {
         val zh = Translator(AppLanguage.ZhCN)
         assertEquals("搜索工具", zh.t("app.search.title"))
         assertEquals("搜索功能…", zh.t("app.search.placeholder"))
         assertEquals("关闭搜索", zh.t("app.search.close"))
+        assertEquals("回车确认 · Esc 或右键取消", zh.t("image.captureOverlayKeys"))
         val en = Translator(AppLanguage.EnUS)
         assertEquals("Search tools", en.t("app.search.title"))
         val ja = Translator(AppLanguage.JaJP)

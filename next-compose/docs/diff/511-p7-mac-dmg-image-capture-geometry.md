@@ -24,4 +24,4 @@ DIFF-510「未做」仍列：`MOOTOOL_P7_BUILD_DIST=1` 本机执行、P7 三平�
 
 ## 未做
 
-六套 CSS 逐选择器皮肤、产品窗全工具 Tab 走查、P7 三平台真实安装/公证/升级卸载、F23 选区手柄 UI 接线（引擎与单测先行）、Win/Linux 分发包构建。
+六套 CSS 逐选择器皮肤、产品窗全工具 Tab 走查、P7 三平台真实安装/公证/升级卸载、F23 选区手柄 UI 接线见 [DIFF-512](512-f23-capture-ui-command-tab-walkthrough.md)、Win/Linux 分发包构建。

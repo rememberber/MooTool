@@ -9,7 +9,6 @@ import java.awt.Graphics2D
 import java.awt.GraphicsEnvironment
 import java.awt.KeyEventDispatcher
 import java.awt.KeyboardFocusManager
-import java.awt.Point
 import java.awt.Rectangle
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
@@ -32,58 +31,73 @@ object ScreenRegionPicker {
 
     fun show(
         capture: ScreenCapture,
-        hint: String,
+        translate: (String) -> String,
         onPicked: (BufferedImage) -> Unit,
-        onCancel: () -> Unit
+        onCancel: () -> Unit,
     ) {
         if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater { show(capture, hint, onPicked, onCancel) }
+            SwingUtilities.invokeLater { show(capture, translate, onPicked, onCancel) }
             return
         }
         val overlays = mutableListOf<RegionOverlayWindow>()
         var closed = false
-        var start: Point? = null
-        var current: Point? = null
-        lateinit var dispatcher: KeyEventDispatcher
+        var selection: ImageCropRect? = null
+        var drag: ActiveCaptureDrag? = null
+        var preview: ImageCropRect? = null
+        var keyDispatcher: KeyEventDispatcher? = null
+
+        fun currentRect(): ImageCropRect? = preview ?: selection
 
         fun closeAnd(action: () -> Unit) {
             if (closed) return
             closed = true
             dismissActivePicker = null
-            KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(dispatcher)
+            keyDispatcher?.let {
+                KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(it)
+            }
             overlays.forEach { it.dispose() }
             action()
         }
 
-        dismissActivePicker = { closeAnd(onCancel) }
-
-        fun rect(): ImageCropRect? {
-            val from = start ?: return null
-            val to = current ?: return null
-            val imageStartX = from.x - capture.originX
-            val imageStartY = from.y - capture.originY
-            val imageEndX = to.x - capture.originX
-            val imageEndY = to.y - capture.originY
-            val selected = ImageEngine.captureRectFromPoints(
-                imageStartX,
-                imageStartY,
-                imageEndX,
-                imageEndY,
-                capture.image.width,
-                capture.image.height
-            )
-            return if (selected.width >= 2 && selected.height >= 2) selected else null
+        fun acceptSelection(rect: ImageCropRect) {
+            val cropped = ImageEngine.crop(capture.image, rect)
+            closeAnd { onPicked(cropped) }
         }
 
-        dispatcher = KeyEventDispatcher { event ->
-            if (!closed && event.id == KeyEvent.KEY_PRESSED && event.keyCode == KeyEvent.VK_ESCAPE) {
-                closeAnd(onCancel)
-                true
-            } else {
-                false
+        fun repaintAll() {
+            overlays.forEach { it.repaint() }
+        }
+
+        fun finishDrag(finalRect: ImageCropRect?) {
+            drag = null
+            preview = null
+            if (finalRect != null && ScreenCaptureInteraction.isValidSelection(finalRect)) {
+                selection = finalRect
+            }
+            repaintAll()
+        }
+
+        keyDispatcher = KeyEventDispatcher { event ->
+            if (closed || event.id != KeyEvent.KEY_PRESSED) return@KeyEventDispatcher false
+            when (event.keyCode) {
+                KeyEvent.VK_ESCAPE -> {
+                    closeAnd(onCancel)
+                    true
+                }
+                KeyEvent.VK_ENTER -> {
+                    val rect = selection
+                    if (rect != null && ScreenCaptureInteraction.isValidSelection(rect)) {
+                        acceptSelection(rect)
+                        true
+                    } else {
+                        false
+                    }
+                }
+                else -> false
             }
         }
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(dispatcher)
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(keyDispatcher)
+        dismissActivePicker = { closeAnd(onCancel) }
 
         val mouse = object : MouseAdapter() {
             override fun mousePressed(event: MouseEvent) {
@@ -92,36 +106,97 @@ object ScreenRegionPicker {
                     closeAnd(onCancel)
                     return
                 }
-                if (event.button == MouseEvent.BUTTON1) {
-                    start = Point(event.xOnScreen, event.yOnScreen)
-                    current = start
-                    overlays.forEach { it.repaint() }
+                if (event.button != MouseEvent.BUTTON1) return
+                val target = ScreenCaptureInteraction.hitTest(event.xOnScreen, event.yOnScreen, selection, capture)
+                when (target) {
+                    CapturePointerTarget.Confirm -> {
+                        selection?.let { acceptSelection(it) }
+                    }
+                    CapturePointerTarget.Cancel -> closeAnd(onCancel)
+                    else -> {
+                        val (ix, iy) = ScreenCaptureInteraction.toImagePoint(event.xOnScreen, event.yOnScreen, capture)
+                        val started = ScreenCaptureInteraction.beginDrag(
+                            target,
+                            ix,
+                            iy,
+                            selection,
+                            capture.image.width,
+                            capture.image.height,
+                        )
+                        if (started != null) {
+                            drag = started
+                            preview = ScreenCaptureInteraction.rectDuringDrag(
+                                started,
+                                ix,
+                                iy,
+                                capture.image.width,
+                                capture.image.height,
+                            )
+                            if (started.mode == CaptureDragMode.Create) {
+                                selection = null
+                            }
+                            repaintAll()
+                        }
+                    }
                 }
             }
 
             override fun mouseReleased(event: MouseEvent) {
                 if (closed || event.button != MouseEvent.BUTTON1) return
-                current = Point(event.xOnScreen, event.yOnScreen)
-                val selected = rect()
-                if (selected == null) {
-                    closeAnd(onCancel)
-                } else {
-                    val cropped = ImageEngine.crop(capture.image, selected)
-                    closeAnd { onPicked(cropped) }
-                }
+                val activeDrag = drag ?: return
+                val (ix, iy) = ScreenCaptureInteraction.toImagePoint(event.xOnScreen, event.yOnScreen, capture)
+                val rect = ScreenCaptureInteraction.rectDuringDrag(
+                    activeDrag,
+                    ix,
+                    iy,
+                    capture.image.width,
+                    capture.image.height,
+                )
+                finishDrag(rect)
             }
         }
         val motion = object : MouseMotionAdapter() {
             override fun mouseDragged(event: MouseEvent) {
-                if (closed || start == null) return
-                current = Point(event.xOnScreen, event.yOnScreen)
-                overlays.forEach { it.repaint() }
+                val activeDrag = drag ?: return
+                if (closed) return
+                val (ix, iy) = ScreenCaptureInteraction.toImagePoint(event.xOnScreen, event.yOnScreen, capture)
+                preview = ScreenCaptureInteraction.rectDuringDrag(
+                    activeDrag,
+                    ix,
+                    iy,
+                    capture.image.width,
+                    capture.image.height,
+                )
+                repaintAll()
+            }
+
+            override fun mouseMoved(event: MouseEvent) {
+                if (closed) return
+                val target = ScreenCaptureInteraction.hitTest(event.xOnScreen, event.yOnScreen, selection, capture)
+                val cursor = when (target) {
+                    is CapturePointerTarget.Resize -> when (target.handle) {
+                        CaptureResizeHandle.Nw, CaptureResizeHandle.Se ->
+                            Cursor.getPredefinedCursor(Cursor.NW_RESIZE_CURSOR)
+                        CaptureResizeHandle.Ne, CaptureResizeHandle.Sw ->
+                            Cursor.getPredefinedCursor(Cursor.NE_RESIZE_CURSOR)
+                    }
+                    CapturePointerTarget.Move -> Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR)
+                    CapturePointerTarget.Confirm, CapturePointerTarget.Cancel ->
+                        Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                    CapturePointerTarget.Create -> Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR)
+                }
+                overlays.forEach { it.cursor = cursor }
             }
         }
 
         GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.forEach { device ->
             val bounds = device.defaultConfiguration.bounds
-            val overlay = RegionOverlayWindow(capture, bounds, hint) { start to current }
+            val overlay = RegionOverlayWindow(
+                capture,
+                bounds,
+                translate,
+                { currentRect() },
+            )
             overlay.addMouseListener(mouse)
             overlay.addMouseMotionListener(motion)
             overlay.isVisible = true
@@ -134,8 +209,8 @@ object ScreenRegionPicker {
 private class RegionOverlayWindow(
     private val capture: ScreenCapture,
     bounds: Rectangle,
-    private val hint: String,
-    private val selection: () -> Pair<Point?, Point?>
+    private val translate: (String) -> String,
+    private val selection: () -> ImageCropRect?,
 ) : JWindow() {
     private val sourceX = bounds.x - capture.originX
     private val sourceY = bounds.y - capture.originY
@@ -159,29 +234,79 @@ private class RegionOverlayWindow(
             sourceY,
             sourceX + width,
             sourceY + height,
-            null
+            null,
         )
-        graphics.color = Color(0, 0, 0, 110)
-        graphics.fillRect(0, 0, width, height)
-        val (start, current) = selection()
-        if (start != null && current != null) {
-            val left = minOf(start.x, current.x) - bounds.x
-            val top = minOf(start.y, current.y) - bounds.y
-            val right = maxOf(start.x, current.x) - bounds.x
-            val bottom = maxOf(start.y, current.y) - bounds.y
-            val sx1 = (minOf(start.x, current.x) - capture.originX).coerceIn(0, capture.image.width)
-            val sy1 = (minOf(start.y, current.y) - capture.originY).coerceIn(0, capture.image.height)
-            val sx2 = (maxOf(start.x, current.x) - capture.originX).coerceIn(0, capture.image.width)
-            val sy2 = (maxOf(start.y, current.y) - capture.originY).coerceIn(0, capture.image.height)
-            if (sx2 > sx1 && sy2 > sy1) {
-                graphics.drawImage(capture.image, left, top, right, bottom, sx1, sy1, sx2, sy2, null)
-            }
-            graphics.color = Color.WHITE
-            graphics.stroke = BasicStroke(2f)
-            graphics.drawRect(left, top, (right - left).coerceAtLeast(1), (bottom - top).coerceAtLeast(1))
+        val rect = selection()
+        if (rect == null) {
+            graphics.color = Color(0, 0, 0, 110)
+            graphics.fillRect(0, 0, width, height)
+        } else {
+            graphics.color = Color(0, 0, 0, 110)
+            graphics.fillRect(0, 0, width, height)
+            drawSelection(graphics, rect)
+        }
+        drawHint(graphics, rect != null)
+    }
+
+    private fun drawSelection(graphics: Graphics2D, rect: ImageCropRect) {
+        val left = rect.x + capture.originX - x
+        val top = rect.y + capture.originY - y
+        val right = left + rect.width
+        val bottom = top + rect.height
+        val sx1 = rect.x.coerceIn(0, capture.image.width)
+        val sy1 = rect.y.coerceIn(0, capture.image.height)
+        val sx2 = (rect.x + rect.width).coerceIn(0, capture.image.width)
+        val sy2 = (rect.y + rect.height).coerceIn(0, capture.image.height)
+        if (sx2 > sx1 && sy2 > sy1) {
+            graphics.drawImage(capture.image, left, top, right, bottom, sx1, sy1, sx2, sy2, null)
         }
         graphics.color = Color.WHITE
+        graphics.stroke = BasicStroke(2f)
+        graphics.drawRect(left, top, (right - left).coerceAtLeast(1), (bottom - top).coerceAtLeast(1))
+        val handles = listOf(
+            left to top,
+            right to top,
+            right to bottom,
+            left to bottom,
+        )
+        graphics.color = Color.WHITE
+        for ((hx, hy) in handles) {
+            graphics.fillRect(hx - 4, hy - 4, 8, 8)
+            graphics.color = Color(0x31, 0x6D, 0xC0)
+            graphics.drawRect(hx - 4, hy - 4, 8, 8)
+            graphics.color = Color.WHITE
+        }
+        graphics.font = Font(Font.SANS_SERIF, Font.PLAIN, 12)
+        graphics.drawString("${rect.width} × ${rect.height}", left + 6, top + 16)
+        val (cancel, confirm) = ScreenCaptureInteraction.commandButtonBounds(rect, capture)
+        drawCommandButton(graphics, cancel, "×", x, y)
+        drawCommandButton(graphics, confirm, "✓", x, y)
+    }
+
+    private fun drawCommandButton(graphics: Graphics2D, screenRect: Rectangle, label: String, windowX: Int, windowY: Int) {
+        val bx = screenRect.x - windowX
+        val by = screenRect.y - windowY
+        if (bx + screenRect.width < 0 || by + screenRect.height < 0 || bx > width || by > height) return
+        graphics.color = Color(0, 0, 0, 160)
+        graphics.fillRoundRect(bx, by, screenRect.width, screenRect.height, 6, 6)
+        graphics.color = Color.WHITE
+        graphics.font = Font(Font.SANS_SERIF, Font.BOLD, 16)
+        val metrics = graphics.fontMetrics
+        val tx = bx + (screenRect.width - metrics.stringWidth(label)) / 2
+        val ty = by + (screenRect.height + metrics.ascent - metrics.descent) / 2
+        graphics.drawString(label, tx, ty)
+    }
+
+    private fun drawHint(graphics: Graphics2D, hasSelection: Boolean) {
+        graphics.color = Color.WHITE
         graphics.font = Font(Font.SANS_SERIF, Font.PLAIN, 14)
-        graphics.drawString(hint, 24, 32)
+        val primary = if (hasSelection) {
+            translate("image.captureOverlayHint")
+        } else {
+            translate("image.captureHint")
+        }
+        graphics.drawString(primary, 24, 32)
+        graphics.font = Font(Font.SANS_SERIF, Font.PLAIN, 12)
+        graphics.drawString(translate("image.captureOverlayKeys"), 24, 52)
     }
 }

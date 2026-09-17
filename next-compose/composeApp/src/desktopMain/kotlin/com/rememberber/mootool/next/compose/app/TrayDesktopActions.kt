@@ -68,7 +68,7 @@ object TrayDesktopActions {
                 capture.onSuccess { image ->
                     ScreenRegionPicker.show(
                         image,
-                        container.t("image.captureHint"),
+                        container::t,
                         onPicked = { region ->
                             runCatching {
                                 val saved = container.imageLibrary.save(ImageEngine.timestampName("Screenshot"), region, false)

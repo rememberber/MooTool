@@ -919,7 +919,7 @@ private fun capture(
             capture.onSuccess { image ->
                 ScreenRegionPicker.show(
                     image,
-                    container.t("image.captureHint"),
+                    container::t,
                     onPicked = { region ->
                         session.busy = false
                         runCatching {
