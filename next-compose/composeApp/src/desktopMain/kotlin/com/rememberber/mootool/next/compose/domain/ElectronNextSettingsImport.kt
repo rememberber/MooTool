@@ -1,10 +1,8 @@
 package com.rememberber.mootool.next.compose.domain
 
 import com.rememberber.mootool.next.compose.domain.NavigationToolVisibility
-import com.rememberber.mootool.next.compose.model.AppLanguage
 import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.model.ToolSettings
-import com.rememberber.mootool.next.compose.model.CloseBehavior
 import com.rememberber.mootool.next.compose.model.CustomToolGroup
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.CodeRunSessionSnapshot
@@ -90,11 +88,11 @@ object ElectronNextSettingsImport {
         val patch = sanitize(imported, retainSecrets)
         return current.copy(
             general = current.general.copy(
-                language = normalizeLanguage(patch.general.language),
+                language = SettingsGeneralNormalize.normalizeLanguage(patch.general.language),
                 autoCheckUpdates = patch.general.autoCheckUpdates,
                 autoDownloadUpdates = patch.general.autoDownloadUpdates,
                 startMaximized = patch.general.startMaximized,
-                closeBehavior = normalizeCloseBehavior(patch.general.closeBehavior),
+                closeBehavior = SettingsGeneralNormalize.normalizeCloseBehavior(patch.general.closeBehavior),
                 trayEnabled = patch.general.trayEnabled,
                 legacyMigrationHintDismissed = patch.general.legacyMigrationHintDismissed,
             ),
@@ -230,13 +228,6 @@ object ElectronNextSettingsImport {
         }
         return merged
     }
-
-    private fun normalizeLanguage(value: String): String =
-        AppLanguage.entries.firstOrNull { it.code.equals(value, ignoreCase = true) }?.code ?: AppLanguage.ZhCN.code
-
-    private fun normalizeCloseBehavior(value: String): String =
-        CloseBehavior.entries.firstOrNull { it.name.equals(value, ignoreCase = true) }?.name?.lowercase()
-            ?: CloseBehavior.Ask.name.lowercase()
 
     private fun parseCodeRunPatch(runtime: JsonObject): CodeRunSessionSnapshot {
         val drafts = runtime["drafts"]?.jsonObject

@@ -12,20 +12,22 @@ object SettingsLayoutNormalize {
     private val customGroupIdPattern = Regex("^[a-z0-9_-]{1,80}$", RegexOption.IGNORE_CASE)
     private val accentColorPresetIds = setOf("yellow", "coral", "blue", "green", "red", "purple")
 
-    fun apply(settings: AppSettings, defaults: AppSettings = AppSettings.Default): AppSettings =
-        settings.copy(
-            appearance = settings.appearance.copy(
-                interfaceStyle = normalizeInterfaceStyle(settings.appearance.interfaceStyle, defaults.appearance.interfaceStyle),
-                theme = normalizeTheme(settings.appearance.theme, defaults.appearance.theme),
-                accentColor = normalizeAccentColor(settings.appearance.accentColor, defaults.appearance.accentColor),
-                fontFamily = normalizeUiFontFamily(settings.appearance.fontFamily, defaults.appearance.fontFamily),
+    fun apply(settings: AppSettings, defaults: AppSettings = AppSettings.Default): AppSettings {
+        val base = SettingsGeneralNormalize.apply(settings, defaults)
+        return base.copy(
+            appearance = base.appearance.copy(
+                interfaceStyle = normalizeInterfaceStyle(base.appearance.interfaceStyle, defaults.appearance.interfaceStyle),
+                theme = normalizeTheme(base.appearance.theme, defaults.appearance.theme),
+                accentColor = normalizeAccentColor(base.appearance.accentColor, defaults.appearance.accentColor),
+                fontFamily = normalizeUiFontFamily(base.appearance.fontFamily, defaults.appearance.fontFamily),
             ),
-            layout = settings.layout.copy(
-                navigationStyle = normalizeNavigationStyle(settings.layout.navigationStyle, defaults.layout.navigationStyle),
-                customGroups = normalizeCustomGroups(settings.layout.customGroups),
-                paneSizes = sanitizePaneSizes(settings.layout.paneSizes),
+            layout = base.layout.copy(
+                navigationStyle = normalizeNavigationStyle(base.layout.navigationStyle, defaults.layout.navigationStyle),
+                customGroups = normalizeCustomGroups(base.layout.customGroups),
+                paneSizes = sanitizePaneSizes(base.layout.paneSizes),
             ),
         )
+    }
 
     fun normalizeInterfaceStyle(value: String, fallback: String = InterfaceStyle.Modern.name.lowercase()): String {
         val normalized = value.trim().lowercase()

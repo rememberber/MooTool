@@ -186,6 +186,25 @@ class SettingsVaultPathSanitizeTest {
     }
 
     @Test
+    fun loadNormalizesUnknownGeneralLanguageAndCloseBehavior() {
+        val root = kotlin.io.path.createTempDirectory("mootool-settings-general-")
+        val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }
+        val repository = SettingsRepository(directories)
+        repository.save(
+            AppSettings.Default.copy(
+                general = AppSettings.Default.general.copy(
+                    language = "  bogus  ",
+                    closeBehavior = "exit",
+                ),
+            ),
+        )
+        val loaded = SettingsRepository(directories).load()
+        assertEquals("zh-CN", loaded.general.language)
+        assertEquals("ask", loaded.general.closeBehavior)
+        root.toFile().deleteRecursively()
+    }
+
+    @Test
     fun loadNormalizesUnknownInterfaceStyleAndCustomGroups() {
         val root = kotlin.io.path.createTempDirectory("mootool-settings-layout-")
         val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }
