@@ -475,8 +475,13 @@ private fun exportText(container: AppContainer, session: ConfigSession, content:
             container.toastSuccess(container.t("json.notice.exported"))
         }
         is ConfigWiringPresentation.WriteExportOutcome.Failure -> {
-            val error = outcome.error
-            session.error = container.t("config.error.write", mapOf("message" to (error.message ?: file.path)))
+            val message = container.t(
+                "reformat.error.write",
+                mapOf("message" to (outcome.error.message ?: file.path)),
+            )
+            session.error = message
+            session.notice = message
+            container.toastError(message)
         }
     }
 }

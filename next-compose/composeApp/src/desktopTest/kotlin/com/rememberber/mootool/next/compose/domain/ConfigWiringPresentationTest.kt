@@ -59,4 +59,12 @@ class ConfigWiringPresentationTest {
         val outcome = ConfigWiringPresentation.runReadImportFile(file)
         assertTrue(outcome is ConfigWiringPresentation.ImportOutcome.Failure)
     }
+
+    @Test
+    fun runWriteExportFileMissingParentFails() {
+        val dir = File.createTempFile("config-write-", ".dir").apply { delete() }
+        val target = File(dir, "nested/out.properties")
+        val outcome = ConfigWiringPresentation.runWriteExportFile(target, "a=b")
+        assertTrue(outcome is ConfigWiringPresentation.WriteExportOutcome.Failure)
+    }
 }

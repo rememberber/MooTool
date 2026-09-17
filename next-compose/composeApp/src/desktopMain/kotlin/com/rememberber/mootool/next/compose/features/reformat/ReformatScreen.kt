@@ -441,10 +441,13 @@ private fun loadSourceFile(container: AppContainer, session: ReformatSession, fi
             container.toastSuccess(container.t("json.notice.imported"))
         }
         is ReformatWiringPresentation.ReadSourceOutcome.Failure -> {
-            session.error = container.t(
+            val message = container.t(
                 "reformat.error.read",
                 mapOf("message" to (outcome.error.message ?: file.path)),
             )
+            session.error = message
+            session.notice = message
+            container.toastError(message)
         }
     }
 }
@@ -469,10 +472,13 @@ private fun saveResult(container: AppContainer, session: ReformatSession) {
             container.toastSuccess(container.t("reformat.saved"))
         }
         is ReformatWiringPresentation.WriteResultOutcome.Failure -> {
-            session.error = container.t(
+            val message = container.t(
                 "reformat.error.write",
                 mapOf("message" to (outcome.error.message ?: file.path)),
             )
+            session.error = message
+            session.notice = message
+            container.toastError(message)
         }
     }
 }

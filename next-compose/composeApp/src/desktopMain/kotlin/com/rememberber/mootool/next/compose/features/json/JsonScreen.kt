@@ -109,6 +109,7 @@ import com.rememberber.mootool.next.compose.ui.components.mooJsonVaultFooter
 import com.rememberber.mootool.next.compose.ui.components.mooJsonVaultFooterActions
 import com.rememberber.mootool.next.compose.ui.components.mooJsonInspectorPathActions
 import com.rememberber.mootool.next.compose.ui.components.mooJsonInspectorSectionResult
+import com.rememberber.mootool.next.compose.ui.components.mooJsonToolbarIoCluster
 import com.rememberber.mootool.next.compose.ui.components.mooJsonVaultSearch
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
@@ -626,10 +627,12 @@ private fun JsonToolbar(
                     container.toastSuccess(container.t("json.notice.imported"))
                 }
                 is JsonWiringPresentation.ImportOutcome.Failure -> {
-                    session.notice = container.t(
+                    val message = container.t(
                         "reformat.error.read",
                         mapOf("message" to (outcome.error.message ?: file.path)),
                     )
+                    session.notice = message
+                    container.toastError(message)
                 }
             }
             onChanged()
@@ -646,10 +649,12 @@ private fun JsonToolbar(
                     container.toastSuccess(container.t("json.notice.exported"))
                 }
                 is JsonWiringPresentation.WriteExportOutcome.Failure -> {
-                    session.notice = container.t(
+                    val message = container.t(
                         "reformat.error.write",
                         mapOf("message" to (outcome.error.message ?: file.path)),
                     )
+                    session.notice = message
+                    container.toastError(message)
                 }
             }
             onChanged()
@@ -727,8 +732,10 @@ private fun JsonToolbar(
             }
         })
         if (!overflow) {
-            MooButton(container.t("json.action.import"), onClick = { importFile() })
-            MooButton(container.t("json.action.export"), onClick = { exportFile() })
+            Row(Modifier.mooJsonToolbarIoCluster(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                MooButton(container.t("json.action.import"), onClick = { importFile() })
+                MooButton(container.t("json.action.export"), onClick = { exportFile() })
+            }
             MooButton(container.t("json.action.history"), onClick = { openHistory() })
             GitActionButton(container.t("git.action"), gitChangeCount, onClick = onGit)
         }

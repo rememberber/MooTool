@@ -98,6 +98,11 @@ mootool_evidence_print_host_apply_button_tab_focus_hint() {
   echo "# 产品窗 F10 Host 应用行 Tab 走查 PNG 仍须 runDistributable + 手工截图"
 }
 
+mootool_evidence_print_json_toolbar_import_tab_focus_hint() {
+  echo "# Compose F04 JSON 工具栏导入钮焦点帧（非产品主窗）: docs/evidence/2026-09-15-inspector-screencapture/windows/173-compose-json-toolbar-import-tab-focus.png"
+  echo "# 产品窗 F04 JSON「复制」/导入 Tab 走查 PNG 仍须 runDistributable + 手工截图"
+}
+
 mootool_evidence_print_git_merge_product_hint() {
   echo "# Compose merge hint 焦点帧（非产品主窗）: docs/evidence/2026-09-15-inspector-screencapture/windows/153-compose-git-merge-flow-hint-tab-focus.png"
   echo "# Vault Git merge 产品窗 §B（对齐 GitMergeProductFlowPresentation / conflict.json）:"

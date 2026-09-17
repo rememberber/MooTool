@@ -1384,6 +1384,9 @@ fun Modifier.mooConfigValidateActions(): Modifier = widthIn(min = 160.dp, max = 
 /** Electron 配置转换 `.io-actions` 中栏（110–160px 竖排转换钮）。 */
 fun Modifier.mooConfigConvertActions(): Modifier = widthIn(min = 110.dp, max = 160.dp)
 
+/** Electron JSON 工具栏 `.io-actions` 导入/导出簇（对齐 F06 `mooConfigConvertActions` 密度）。 */
+fun Modifier.mooJsonToolbarIoCluster(): Modifier = heightIn(min = 34.dp)
+
 /** Electron 文本对比工具栏差异导航区。 */
 @Composable
 fun Modifier.mooDiffNavCluster(): Modifier = heightIn(min = 34.dp)
