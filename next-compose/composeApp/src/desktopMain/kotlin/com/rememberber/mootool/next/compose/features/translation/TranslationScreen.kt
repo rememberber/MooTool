@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.toHttpProxyConfig
 import com.rememberber.mootool.next.compose.domain.TranslationEngine
+import com.rememberber.mootool.next.compose.domain.TranslationHistoryRestore
 import com.rememberber.mootool.next.compose.domain.TranslationErrorCode
 import com.rememberber.mootool.next.compose.domain.TranslationInput
 import com.rememberber.mootool.next.compose.domain.TranslationProvider
@@ -387,14 +388,14 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
                 items = historyItems,
                 onReload = { reloadHistory(); persist() },
                 onApply = { item ->
-                    session.sequence += 1
                     cancelActive()
-                    session.restoredSource = item.sourceText
-                    session.source = item.sourceText
-                    session.target = item.targetText
+                    TranslationHistoryRestore.applyToSession(session, item)
                     session.tab = TranslationTab.Translate
                     container.updateSettings { current ->
-                        current.copy(tools = current.tools.copy(translationSourceLang = item.sourceLang, translationTargetLang = item.targetLang))
+                        TranslationHistoryRestore.patchSettingsProvider(
+                            TranslationHistoryRestore.patchSettingsLanguages(current, item),
+                            item,
+                        )
                     }
                     persist()
                 }

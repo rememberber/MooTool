@@ -103,6 +103,19 @@ class MooToolMcpToolsTest {
     }
 
     @Test
+    fun timestampRejectsLocalTimeThatFailsRoundTrip() {
+        val result = MooToolMcpTools.call(
+            "mootool_timestamp",
+            mapOf(
+                "text" to "2024-03-10 24:00:00",
+                "direction" to "to-timestamp",
+                "zone" to "UTC",
+            ),
+        )
+        assertTrue(result.isError)
+    }
+
+    @Test
     fun jsonQueryReturnsArrayMatchesForValuesPath() {
         val result = MooToolMcpTools.call(
             "mootool_json_query",

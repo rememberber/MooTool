@@ -48,11 +48,11 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.NetCommandHandle
 import com.rememberber.mootool.next.compose.domain.NetConvertException
 import com.rememberber.mootool.next.compose.domain.NetEngine
+import com.rememberber.mootool.next.compose.domain.NetHistoryMetadata
+import com.rememberber.mootool.next.compose.domain.NetHistoryRestore
 import com.rememberber.mootool.next.compose.domain.NetworkAction
 import com.rememberber.mootool.next.compose.domain.NetworkErrorCode
-import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
-import com.rememberber.mootool.next.compose.sessions.NetSession
 import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
@@ -157,13 +157,20 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                 session.notice = label
                 if (session.error.isNotEmpty()) container.toastError(session.error) else container.toastSuccess(label)
                 val historyOutput = session.output.take(8_000)
+                val wire = NetHistoryMetadata.actionWireId(action)
+                val summary = "${label} ${target.orEmpty()} ${ports.orEmpty()}".trim()
+                val historyOptions = if (action == NetworkAction.PortScan) {
+                    NetHistoryMetadata.encodePortSpec(ports)
+                } else {
+                    ""
+                }
                 container.history.save(
                     ToolId.Net.id,
-                    label,
-                    "${label} ${target.orEmpty()} ${ports.orEmpty()}".trim(),
+                    wire,
+                    summary,
                     target.orEmpty(),
                     historyOutput,
-                    label
+                    historyOptions,
                 )
                 persist()
             }
@@ -280,7 +287,13 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                                 .onSuccess { value ->
                                     session.longValue = value
                                     session.error = ""
-                                    container.history.save(ToolId.Net.id, "ipv4-to-long", value, session.ipv4, value)
+                                    container.history.save(
+                                        ToolId.Net.id,
+                                        NetHistoryMetadata.OP_IPV4_TO_LONG,
+                                        value,
+                                        session.ipv4,
+                                        value,
+                                    )
                                     persist()
                                 }
                                 .onFailure {
@@ -293,7 +306,13 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                                 .onSuccess { value ->
                                     session.ipv4 = value
                                     session.error = ""
-                                    container.history.save(ToolId.Net.id, "long-to-ipv4", value, session.longValue, value)
+                                    container.history.save(
+                                        ToolId.Net.id,
+                                        NetHistoryMetadata.OP_LONG_TO_IPV4,
+                                        value,
+                                        session.longValue,
+                                        value,
+                                    )
                                     persist()
                                 }
                                 .onFailure {
@@ -406,7 +425,7 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
         toolId = ToolId.Net.id,
         title = container.t("common.action.history"),
         onRestore = { item ->
-            restoreNetHistory(session, item)
+            NetHistoryRestore.apply(session, item)
             session.historyOpen = false
             persist()
         },
@@ -459,29 +478,6 @@ private fun LabeledField(label: String, value: String, onChange: (String) -> Uni
     Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
         Text(label, color = MooTheme.colors.textMuted, fontSize = 9.sp)
         MooTextField(value, onChange, modifier = Modifier.fillMaxWidth(), dense = true)
-    }
-}
-
-private fun restoreNetHistory(session: NetSession, item: HistoryRecord) {
-    session.output = item.output
-    when (item.operation) {
-        "ipv4-to-long" -> {
-            session.ipv4 = item.input
-            session.longValue = item.output
-        }
-        "long-to-ipv4" -> {
-            session.longValue = item.input
-            session.ipv4 = item.output
-        }
-        else -> if (item.input.isNotBlank()) {
-            when (item.options) {
-                NetworkAction.Ping.name -> session.pingTarget = item.input
-                NetworkAction.PingRange.name -> session.ipRange = item.input
-                NetworkAction.PortScan.name -> session.portScanTarget = item.input
-                NetworkAction.Resolve.name -> session.hostTarget = item.input
-                NetworkAction.Whois.name -> session.whoisTarget = item.input
-            }
-        }
     }
 }
 
