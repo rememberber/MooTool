@@ -32,6 +32,19 @@ mootool_evidence_print_http_public_smoke_hint() {
   echo "# Optional F09 httpbin/localhost only (default CI skips): MOOTOOL_HTTP_PUBLIC_SMOKE=1 MOOTOOL_HTTP_SMOKE_URL=\"https://httpbin.org/get\" cd ${compose_root} && ./gradlew :composeApp:desktopTest --tests com.rememberber.mootool.next.compose.domain.HttpEngineTest.optionalHttpBinPublicGetSmoke --offline"
 }
 
+mootool_evidence_print_http_multipart_smoke_hint() {
+  local compose_root
+  compose_root="$(mootool_evidence_compose_root)"
+  echo "# Optional F09 multipart POST (httpbin/localhost only, default CI skips): MOOTOOL_HTTP_MULTIPART_SMOKE=1 cd ${compose_root} && ./gradlew :composeApp:desktopTest --tests com.rememberber.mootool.next.compose.domain.HttpEngineTest.optionalHttpBinMultipartPostSmoke --offline"
+}
+
+mootool_evidence_print_tray_tcc_hint() {
+  local compose_root
+  compose_root="$(mootool_evidence_compose_root)"
+  echo "# Tray / F22 / F23 screen-capture TCC (manual PNG): deny Screen Recording then tray pick-color + color board picker; baseline frame: docs/evidence/2026-09-17-tray-tcc-screencapture/reference/57-color-baseline.png"
+  echo "# cd ${compose_root} && ./scripts/prepare-tray-screencapture-evidence.sh"
+}
+
 mootool_evidence_assert_file() {
   local path="$1"
   local label="$2"

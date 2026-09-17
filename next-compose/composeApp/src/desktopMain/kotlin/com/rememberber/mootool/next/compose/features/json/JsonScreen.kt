@@ -55,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
+import com.rememberber.mootool.next.compose.domain.EditorSettingsLiveApply
 import com.rememberber.mootool.next.compose.domain.FindReplace
 import com.rememberber.mootool.next.compose.domain.JsonEngine
 import com.rememberber.mootool.next.compose.domain.JsonStatus
@@ -163,6 +164,13 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
         container.sessionManager.persistJson()
     }
     val jsonVaultAutoPullTick by container.jsonVaultAutoPullTick.collectAsState()
+    LaunchedEffect(settings.editor.softWrap) {
+        val next = EditorSettingsLiveApply.jsonSoftWrapFromSettings(session.wrap, settings.editor.softWrap)
+        if (next != session.wrap) {
+            session.wrap = next
+            refresh()
+        }
+    }
     LaunchedEffect(jsonVaultAutoPullTick, settings.vault.hideGitignoredFiles) {
         if (jsonVaultAutoPullTick == 0L) return@LaunchedEffect
         snapshot = withContext(Dispatchers.IO) {

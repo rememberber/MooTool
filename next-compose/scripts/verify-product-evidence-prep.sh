@@ -34,7 +34,16 @@ test -f "${IME_ROOT}/data/vaults/json/ime-sample.json"
 test -f "${IME_ROOT}/data/vaults/quick-note/ime-sample.md"
 echo "ok ime-sample files"
 
+echo "== verify tray screencapture prep =="
+TRAY_ROOT="$(mktemp -d /tmp/mootool-compose-tray-evidence-XXXX)"
+export MOOTOOL_COMPOSE_DATA_DIR="${TRAY_ROOT}"
+./scripts/prepare-tray-screencapture-evidence.sh >/dev/null
+test -f "${ROOT}/docs/evidence/2026-09-17-tray-tcc-screencapture/reference/57-color-baseline.png"
+echo "ok tray baseline png"
+
 echo "all product evidence prep checks passed"
 # shellcheck source=lib/product-evidence-common.sh
 source "${ROOT}/scripts/lib/product-evidence-common.sh"
 mootool_evidence_print_http_public_smoke_hint
+mootool_evidence_print_http_multipart_smoke_hint
+mootool_evidence_print_tray_tcc_hint

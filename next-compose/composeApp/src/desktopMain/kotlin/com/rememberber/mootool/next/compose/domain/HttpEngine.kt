@@ -31,6 +31,14 @@ enum class HttpRequestTab { Params, Headers, Cookies, Body }
 
 enum class HttpResponseTab { Body, Headers, Cookies }
 
+/** Text or file field for programmatic `multipart/form-data` (Electron/Compose HTTP tools have no file-upload Tab). */
+data class HttpMultipartPart(
+    val name: String,
+    val value: String = "",
+    val filename: String? = null,
+    val contentType: String? = null,
+)
+
 @Serializable
 data class HttpPair(
     val id: String = UUID.randomUUID().toString(),
@@ -100,6 +108,7 @@ class HttpException(val code: HttpErrorCode, message: String) : Exception(messag
 object HttpEngine {
     const val MAX_RESPONSE_BYTES = 10 * 1024 * 1024
     const val DEFAULT_PUBLIC_SMOKE_URL = "https://httpbin.org/get?source=mootool-next-compose"
+    const val DEFAULT_PUBLIC_MULTIPART_SMOKE_URL = "https://httpbin.org/post?source=mootool-next-compose"
     private val publicSmokeHosts = setOf("httpbin.org", "localhost", "127.0.0.1")
     val BODY_TYPES = listOf(
         "application/json",
@@ -153,6 +162,42 @@ object HttpEngine {
 
     fun enabledCookies(items: List<HttpCookie>): List<HttpCookie> =
         items.filter { it.enabled && it.name.isNotBlank() }
+
+    fun buildMultipartFormData(parts: List<HttpMultipartPart>, boundary: String): String {
+        require(boundary.isNotBlank()) { "boundary is required" }
+        require(parts.isNotEmpty()) { "At least one multipart part is required" }
+        val sanitized = boundary.trim()
+        return buildString {
+            for (part in parts) {
+                val name = part.name.trim()
+                require(name.isNotEmpty()) { "multipart part name is required" }
+                append("--").append(sanitized).append("\r\n")
+                val disposition = buildString {
+                    append("Content-Disposition: form-data; name=\"")
+                    append(name.replace("\"", "\\\""))
+                    append('"')
+                    val filename = part.filename?.trim().orEmpty()
+                    if (filename.isNotEmpty()) {
+                        append("; filename=\"")
+                        append(filename.replace("\"", "\\\""))
+                        append('"')
+                    }
+                }
+                append(disposition).append("\r\n")
+                val contentType = part.contentType?.trim().orEmpty()
+                if (contentType.isNotEmpty()) {
+                    append("Content-Type: ").append(contentType).append("\r\n")
+                }
+                append("\r\n")
+                append(part.value)
+                append("\r\n")
+            }
+            append("--").append(sanitized).append("--\r\n")
+        }
+    }
+
+    fun multipartContentType(boundary: String): String =
+        "multipart/form-data; boundary=${boundary.trim()}"
 
     fun prepare(draft: HttpRequestDraft): HttpPreparedRequest {
         if (draft.url.isBlank()) throw HttpException(HttpErrorCode.INVALID_REQUEST, "URL is required")
@@ -347,6 +392,13 @@ object HttpEngine {
         val configured = System.getenv("MOOTOOL_HTTP_SMOKE_URL")?.trim().orEmpty()
         val candidate = configured.ifBlank { DEFAULT_PUBLIC_SMOKE_URL }
         check(isPublicSmokeUrlAllowed(candidate)) { "Public smoke URL not allowlisted: $candidate" }
+        return candidate
+    }
+
+    fun resolvePublicMultipartSmokeUrl(): String {
+        val configured = System.getenv("MOOTOOL_HTTP_MULTIPART_SMOKE_URL")?.trim().orEmpty()
+        val candidate = configured.ifBlank { DEFAULT_PUBLIC_MULTIPART_SMOKE_URL }
+        check(isPublicSmokeUrlAllowed(candidate)) { "Public multipart smoke URL not allowlisted: $candidate" }
         return candidate
     }
 

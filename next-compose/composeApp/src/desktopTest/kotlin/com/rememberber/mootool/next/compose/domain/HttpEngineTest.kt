@@ -431,6 +431,37 @@ class HttpEngineTest {
     }
 
     @Test
+    fun buildMultipartFormDataIncludesTextAndFileParts() {
+        val boundary = "MooBoundary528"
+        val body = HttpEngine.buildMultipartFormData(
+            listOf(
+                HttpMultipartPart(name = "note", value = "hello"),
+                HttpMultipartPart(
+                    name = "upload",
+                    value = "file-bytes",
+                    filename = "sample.txt",
+                    contentType = "text/plain",
+                ),
+            ),
+            boundary,
+        )
+        assertTrue(body.contains("name=\"note\""))
+        assertTrue(body.contains("filename=\"sample.txt\""))
+        assertTrue(body.contains("Content-Type: text/plain"))
+        assertTrue(body.endsWith("--$boundary--\r\n"))
+        val draft = HttpEngine.emptyDraft().copy(
+            method = HttpMethod.POST,
+            url = "http://127.0.0.1/post",
+            headers = listOf(
+                HttpEngine.pair("Content-Type", HttpEngine.multipartContentType(boundary)),
+            ),
+            body = body,
+        )
+        val prepared = HttpEngine.prepare(draft)
+        assertEquals(body, String(requireNotNull(prepared.body), Charsets.UTF_8))
+    }
+
+    @Test
     fun publicSmokeAllowlistPermitsHttpBinAndLocalhostOnly() {
         assertTrue(HttpEngine.isPublicSmokeUrlAllowed("https://httpbin.org/get"))
         assertTrue(HttpEngine.isPublicSmokeUrlAllowed("http://127.0.0.1:8080/echo"))
@@ -458,6 +489,39 @@ class HttpEngineTest {
         )
         assertTrue(result.ok, "status=${result.status} error=${result.errorCode}")
         assertTrue(result.body.contains("httpbin.org") || result.body.contains("mootool-next-compose"))
+    }
+
+    @Test
+    fun optionalHttpBinMultipartPostSmoke() {
+        Assume.assumeTrue(
+            "Set MOOTOOL_HTTP_MULTIPART_SMOKE=1 to run httpbin multipart POST",
+            System.getenv("MOOTOOL_HTTP_MULTIPART_SMOKE") == "1",
+        )
+        val boundary = "MooToolMultipartSmoke"
+        val body = HttpEngine.buildMultipartFormData(
+            listOf(
+                HttpMultipartPart(name = "source", value = "mootool-next-compose"),
+                HttpMultipartPart(name = "field", value = "528"),
+            ),
+            boundary,
+        )
+        val url = HttpEngine.resolvePublicMultipartSmokeUrl()
+        val result = HttpEngine.send(
+            HttpEngine.emptyDraft().copy(
+                method = HttpMethod.POST,
+                url = url,
+                headers = listOf(HttpEngine.pair("Content-Type", HttpEngine.multipartContentType(boundary))),
+                body = body,
+            ),
+            requestId = "multipart-smoke",
+            timeoutMs = 20_000,
+        )
+        Assume.assumeTrue(
+            "Network unavailable; record as 未测 in acceptance",
+            result.ok || result.errorCode != HttpErrorCode.NETWORK,
+        )
+        assertTrue(result.ok, "status=${result.status} error=${result.errorCode}")
+        assertTrue(result.body.contains("form") || result.body.contains("528"))
     }
 
     @Test

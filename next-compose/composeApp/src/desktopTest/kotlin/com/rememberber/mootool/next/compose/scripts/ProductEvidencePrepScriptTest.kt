@@ -58,6 +58,22 @@ class ProductEvidencePrepScriptTest {
         }
     }
 
+    @Test
+    fun prepareTrayScreencaptureScriptRestoresBaselinePng() {
+        val composeRoot = locateNextComposeRoot()
+        val dataRoot = Files.createTempDirectory("mootool-evidence-tray-")
+        try {
+            runPrepScript(composeRoot, "prepare-tray-screencapture-evidence.sh", dataRoot)
+            val baseline =
+                composeRoot.resolve(
+                    "docs/evidence/2026-09-17-tray-tcc-screencapture/reference/57-color-baseline.png",
+                )
+            assertTrue(baseline.isRegularFile(), "missing baseline at $baseline")
+        } finally {
+            dataRoot.toFile().deleteRecursively()
+        }
+    }
+
     private fun runPrepScript(composeRoot: Path, scriptName: String, dataRoot: Path) {
         val script = composeRoot.resolve("scripts/$scriptName")
         assertTrue(script.isRegularFile(), "missing script $script")
