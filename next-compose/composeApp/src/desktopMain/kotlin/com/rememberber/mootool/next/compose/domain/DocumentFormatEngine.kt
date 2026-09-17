@@ -13,7 +13,16 @@ object DocumentFormatEngine {
             "text/html", "html" -> ReformatEngine.format(content, ReformatType.Html, tab)
             "text/yaml", "yaml", "yml" -> ConfigEngine.formatYaml(content)
             "text/sql", "sql" -> SqlFormatEngine.format(content, sqlDialect, tab)
-            else -> trimLines(content, tab)
+            "text/python", "python", "py" -> CodeEditorSurfaceFormatEngine.formatPython(content, tab)
+            "application/javascript", "text/javascript", "js", "javascript" ->
+                CodeEditorSurfaceFormatEngine.formatJavascript(content)
+            "text/typescript", "typescript", "ts" ->
+                CodeEditorSurfaceFormatEngine.formatTypescript(content)
+            "text/markdown", "markdown", "md" ->
+                CodeEditorSurfaceFormatEngine.trimTrailingWhitespace(content)
+            "text/plain", "plain" ->
+                CodeEditorSurfaceFormatEngine.trimTrailingWhitespace(content)
+            else -> CodeEditorSurfaceFormatEngine.trimTrailingWhitespace(content)
         }
     }
 
@@ -43,8 +52,4 @@ object DocumentFormatEngine {
 
     private fun normalize(syntax: String): String = syntax.trim().lowercase()
 
-    private fun trimLines(content: String, indent: Int): String {
-        val pad = " ".repeat(indent)
-        return content.replace("\t", pad).split(Regex("\\r?\\n")).joinToString("\n") { it.trimEnd() }.trimEnd()
-    }
 }

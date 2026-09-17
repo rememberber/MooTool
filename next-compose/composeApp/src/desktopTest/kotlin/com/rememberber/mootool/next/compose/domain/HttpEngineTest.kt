@@ -556,6 +556,14 @@ class HttpEngineTest {
     fun formatBodyLeavesBlankUntouched() {
         assertEquals("", HttpEngine.formatBody("   ", "application/json"))
     }
+
+    @Test
+    fun formatBodyFormatsJavascriptLikeElectron() {
+        assertEquals(
+            "const value = { ready: true };",
+            HttpEngine.formatBody("const value={ready:true}", "text/javascript"),
+        )
+    }
 }
 
 private fun sampleResponse(

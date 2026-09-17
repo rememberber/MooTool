@@ -32,4 +32,13 @@ class GitDiffPresentationTest {
         assertTrue(GitDiffPresentation.showSideBySide(GitDiffPreview.Text))
         assertFalse(GitDiffPresentation.showSideBySide(GitDiffPreview.Binary))
     }
+
+    @Test
+    fun rstaSyntaxFromGitDiffPath() {
+        val diff = GitFileDiff(path = "src/App.ts", before = "", after = "")
+        assertEquals(
+            org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_TYPESCRIPT,
+            GitDiffPresentation.rstaSyntaxForFile(diff),
+        )
+    }
 }

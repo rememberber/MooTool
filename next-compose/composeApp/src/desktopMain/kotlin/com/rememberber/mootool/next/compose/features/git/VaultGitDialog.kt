@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,7 +47,8 @@ import com.rememberber.mootool.next.compose.domain.GitRemoteCommitResult
 import com.rememberber.mootool.next.compose.domain.SettingsVaultGitNormalize
 import com.rememberber.mootool.next.compose.domain.GitFileDiff
 import com.rememberber.mootool.next.compose.domain.GitStatus
-import com.rememberber.mootool.next.compose.features.diff.annotateSide
+import com.rememberber.mootool.next.compose.domain.DocumentFormatEngine
+import com.rememberber.mootool.next.compose.domain.EditorSettingsLiveApply
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.icons.GitPanelIcon
@@ -62,7 +62,6 @@ import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
-import com.rememberber.mootool.next.compose.ui.components.rememberPairedScrollStates
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import java.nio.file.Path
 import kotlinx.coroutines.Dispatchers
@@ -680,7 +679,7 @@ private fun GitFileDiffPane(
     modifier: Modifier
 ) {
     val colors = MooTheme.colors
-    val (leftScroll, rightScroll) = rememberPairedScrollStates()
+    val settings by container.settings.collectAsState()
     val fileDiff = GitDiffSelection.selected(files, selectedPath)
     var fileMenuOpen by remember { mutableStateOf(false) }
     Column(
@@ -725,28 +724,15 @@ private fun GitFileDiffPane(
             val comparison = remember(fileDiff.before, fileDiff.after) {
                 DiffEngine.compare(fileDiff.before, fileDiff.after, ignoreWhitespace = false)
             }
-            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Column(Modifier.weight(1f).fillMaxHeight()) {
-                    Text(container.t("git.diffBefore"), color = colors.textSecondary, fontSize = 11.sp)
-                    Text(
-                        annotateSide(fileDiff.before, comparison.segments, "left", "both", colors.success, colors.danger, colors.accent),
-                        color = colors.textPrimary,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(leftScroll)
-                    )
-                }
-                Column(Modifier.weight(1f).fillMaxHeight()) {
-                    Text(container.t("git.diffAfter"), color = colors.textSecondary, fontSize = 11.sp)
-                    Text(
-                        annotateSide(fileDiff.after, comparison.segments, "right", "both", colors.success, colors.danger, colors.accent),
-                        color = colors.textPrimary,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rightScroll)
-                    )
-                }
-            }
+            GitDiffSideBySideEditors(
+                container = container,
+                fileDiff = fileDiff,
+                comparison = comparison,
+                dark = MooTheme.dark,
+                fontName = DocumentFormatEngine.editorFont(settings.editor.jsonFontName),
+                fontSize = EditorSettingsLiveApply.jsonEditorFontSize(settings.editor.jsonFontSize),
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+            )
         }
     }
 }

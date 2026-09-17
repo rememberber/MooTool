@@ -16,4 +16,23 @@ object GitDiffPresentation {
         GitDiffPreview.TooLarge -> "git.diffTooLarge"
         GitDiffPreview.Text -> null
     }
+
+    /** RSTA 语法键（Vault Git diff 只读 [EditorHost]）。 */
+    fun rstaSyntaxForFile(diff: GitFileDiff): String {
+        val language = languageForFile(diff)
+        val mime = when (language) {
+            TextCodeEditorLanguage.Json -> "application/json"
+            TextCodeEditorLanguage.Markdown -> "text/markdown"
+            TextCodeEditorLanguage.Java -> "text/java"
+            TextCodeEditorLanguage.Javascript -> "text/javascript"
+            TextCodeEditorLanguage.Typescript -> "text/typescript"
+            TextCodeEditorLanguage.Python -> "text/python"
+            TextCodeEditorLanguage.Xml -> "text/xml"
+            TextCodeEditorLanguage.Html -> "text/html"
+            TextCodeEditorLanguage.Yaml -> "text/yaml"
+            TextCodeEditorLanguage.Sql -> "text/sql"
+            TextCodeEditorLanguage.Text -> "text/plain"
+        }
+        return DocumentFormatEngine.rstaSyntax(mime)
+    }
 }

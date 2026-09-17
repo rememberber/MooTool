@@ -1,6 +1,7 @@
 package com.rememberber.mootool.next.compose.features.vault
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.VaultConflictState
 import com.rememberber.mootool.next.compose.domain.VaultRevisionMonitor
@@ -14,6 +15,9 @@ fun JsonVaultConflictOverlay(
     session: JsonSession,
     monitor: VaultRevisionMonitor?,
     onRefresh: () -> Unit,
+    reloadButtonModifier: Modifier = Modifier,
+    saveCopyButtonModifier: Modifier = Modifier,
+    keepButtonModifier: Modifier = Modifier,
 ) {
     session.vaultConflict?.let { pending ->
         VaultConflictDialog(
@@ -31,6 +35,9 @@ fun JsonVaultConflictOverlay(
                 applyJsonVaultConflictKeep(session)
                 onRefresh()
             },
+            reloadButtonModifier = reloadButtonModifier,
+            saveCopyButtonModifier = saveCopyButtonModifier,
+            keepButtonModifier = keepButtonModifier,
         )
     }
 }
