@@ -11,7 +11,7 @@
 | sort-duplicate-keys | 同上 | 同上 | `JsonEngineTest.sortsKeysAndDetectsDuplicates` |
 | xml-roundtrip | 同上 | 同上 | `JsonEngineTest.mirrorsElectronJsonToolsVitestBasics` / `convertsJsonAndXml` |
 | path-query-enumerate | 同上 | 同上 | `mirrorsElectronJsonToolsVitestBasics` / `queriesAndEnumeratesPaths` |
-| list-paths-enumerate | 同上 | `listJsonPaths` | `JsonEngineTest.listPathsMatchesElectronJsonToolsEnumerate`（[DIFF-516](../diff/516-command-settings-json-host-git.md)） |
+| list-paths-enumerate | 同上 | `listJsonPaths` | `JsonEngineTest.listPathsMatchesElectronJsonToolsEnumerate`（path/label/preview，[DIFF-516](../diff/516-command-settings-json-host-git.md)、[DIFF-517](../diff/517-settings-catalog-git-push-host-json.md)） |
 | swap-java-bean | 同上 | 同上 | `swapsKeysAndConvertsJavaBean` |
 | empty-jsonpath | 同上 | `queryJsonPath` | `JsonEngineTest.queryPathEmptyPathMatchesElectronError` |
 

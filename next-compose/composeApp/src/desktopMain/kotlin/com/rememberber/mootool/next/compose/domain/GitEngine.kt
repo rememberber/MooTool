@@ -255,6 +255,9 @@ object GitEngine {
         if (current.merging) {
             return@locked GitActionResult(false, "Finish or abort the current merge/rebase before pushing")
         }
+        if (current.conflicts > 0) {
+            return@locked GitActionResult(false, "Resolve all conflicts before pushing")
+        }
         requireRemote(root, isolateConfig) { run(listOf("push", "-u", "origin", "HEAD"), root, isolateConfig, token, REMOTE_TIMEOUT_MS) }
     }
 

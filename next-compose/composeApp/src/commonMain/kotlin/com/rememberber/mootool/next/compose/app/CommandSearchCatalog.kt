@@ -13,16 +13,40 @@ data class CommandSettingsTarget(
 object CommandSearchCatalog {
     val targets: List<CommandSettingsTarget> = listOf(
         CommandSettingsTarget(
+            categoryId = "general",
+            labelKey = "settings.category.general",
+            navIcon = "⚙",
+            keywords = listOf("general", "language", "close", "tray", "常规", "语言", "关闭", "托盘"),
+        ),
+        CommandSettingsTarget(
             categoryId = "ai",
             labelKey = "settings.category.ai",
             navIcon = "⚡",
-            keywords = listOf("ai", "mcp", "cursor", "codex", "claude", "skill", "接入", "連携"),
+            keywords = listOf("ai", "mcp", "cursor", "codex", "claude", "skill", "integration", "接入", "連携"),
         ),
         CommandSettingsTarget(
             categoryId = "vault",
             labelKey = "settings.category.vault",
             navIcon = "⌁",
-            keywords = listOf("vault", "git", "文档库", "library", "remote", "token"),
+            keywords = listOf(
+                "vault",
+                "git",
+                "文档库",
+                "library",
+                "remote",
+                "token",
+                "username",
+                "askpass",
+                "credential",
+                "checkpoint",
+                "autopull",
+            ),
+        ),
+        CommandSettingsTarget(
+            categoryId = "editor",
+            labelKey = "settings.category.editor",
+            navIcon = "{ }",
+            keywords = listOf("editor", "font", "wrap", "json", "note", "编辑器", "字体", "换行"),
         ),
         CommandSettingsTarget(
             categoryId = "network",
@@ -35,6 +59,12 @@ object CommandSearchCatalog {
             labelKey = "settings.category.runtime",
             navIcon = ">_",
             keywords = listOf("runtime", "java", "python", "node", "groovy", "运行环境"),
+        ),
+        CommandSettingsTarget(
+            categoryId = "tools",
+            labelKey = "settings.category.tools",
+            navIcon = "☰",
+            keywords = listOf("tools", "export", "qrcode", "default", "工具", "导出", "默认值"),
         ),
         CommandSettingsTarget(
             categoryId = "data",

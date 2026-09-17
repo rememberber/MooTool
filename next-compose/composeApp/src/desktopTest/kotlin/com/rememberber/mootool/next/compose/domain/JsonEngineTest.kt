@@ -243,5 +243,8 @@ class JsonEngineTest {
         val paths = JsonEngine.listPaths(input, t).map { it.path }
         assertTrue(paths.contains("$.store.books[0].title"))
         assertTrue(paths.contains("$.store.books[1].title"))
+        val firstTitle = JsonEngine.listPaths(input, t).first { it.path == "$.store.books[0].title" }
+        assertEquals("title", firstTitle.label)
+        assertEquals("\"One\"", firstTitle.preview)
     }
 }

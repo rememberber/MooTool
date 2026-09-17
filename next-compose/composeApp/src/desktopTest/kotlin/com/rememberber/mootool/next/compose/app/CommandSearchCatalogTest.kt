@@ -1,5 +1,6 @@
 package com.rememberber.mootool.next.compose.app
 
+import com.rememberber.mootool.next.compose.features.settings.SettingsNavCategory
 import com.rememberber.mootool.next.compose.i18n.Translator
 import com.rememberber.mootool.next.compose.model.AppLanguage
 import kotlin.test.Test
@@ -38,5 +39,37 @@ class CommandSearchCatalogTest {
     fun proxyQueryOpensNetworkSettings() {
         val hits = CommandSearchCatalog.search("proxy", Translator(AppLanguage.EnUS)::t)
         assertEquals("network", hits.single().categoryId)
+    }
+
+    @Test
+    fun languageQueryOpensGeneralSettings() {
+        val hits = CommandSearchCatalog.search("language", Translator(AppLanguage.EnUS)::t)
+        assertEquals("general", hits.single().categoryId)
+    }
+
+    @Test
+    fun editorFontQueryOpensEditorSettings() {
+        val hits = CommandSearchCatalog.search("font", Translator(AppLanguage.EnUS)::t)
+        assertTrue(hits.any { it.categoryId == "editor" })
+    }
+
+    @Test
+    fun exportDirectoryQueryOpensToolsDefaults() {
+        val hits = CommandSearchCatalog.search("export", Translator(AppLanguage.EnUS)::t)
+        assertEquals("tools", hits.single().categoryId)
+    }
+
+    @Test
+    fun integrationQueryOpensAiSettings() {
+        val hits = CommandSearchCatalog.search("integration", Translator(AppLanguage.EnUS)::t)
+        assertEquals("ai", hits.single().categoryId)
+    }
+
+    @Test
+    fun catalogCoversEverySettingsNavCategory() {
+        val covered = CommandSearchCatalog.targets.map { it.categoryId }.toSet()
+        SettingsNavCategory.entries.forEach { category ->
+            assertTrue(category.storageId() in covered, "missing command search for ${category.storageId()}")
+        }
     }
 }
