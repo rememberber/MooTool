@@ -16,6 +16,7 @@ DIFF-496 补齐侧栏紧凑导航与分组分隔线后，仍缺：`navigationSty
 - `LayoutPolicyTest.classicNavigationHidesBuiltinGroupLabels`
 - `SettingsNavCategoryTest.arrowStepMovesWithinCategories`
 - `./gradlew :composeApp:desktopTest --offline`（JDK 21）
+- **2026-09-17**：`./scripts/check-core.sh` 全绿（约 7.5 min，commit `06fafbfe`）
 
 ## 未做
 
