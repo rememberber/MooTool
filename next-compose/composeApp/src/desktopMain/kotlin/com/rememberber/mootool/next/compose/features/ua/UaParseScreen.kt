@@ -274,8 +274,9 @@ fun UaParseScreen(container: AppContainer, detached: Boolean) {
 private val resultCodec = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
 private fun parseSource(container: AppContainer, session: UaSession) {
-    runCatching { UaEngine.parse(session.source) }
-        .onSuccess { result ->
+    when (val outcome = UaWiringPresentation.runParse(session.source)) {
+        is UaWiringPresentation.ParseOutcome.Success -> {
+            val result = outcome.result
             session.result = result
             session.error = ""
             session.notice = container.t("ua.parse")
@@ -289,11 +290,13 @@ private fun parseSource(container: AppContainer, session: UaSession) {
                 UaHistoryMetadata.encode(),
             )
         }
-        .onFailure { error ->
+        is UaWiringPresentation.ParseOutcome.Failure -> {
+            val error = outcome.error
             session.notice = ""
             session.error = if ((error as? UaException)?.code == "empty") container.t("ua.empty") else (error.message ?: container.t("ua.empty"))
             container.toastError(session.error)
         }
+    }
 }
 
 private fun resultRows(container: AppContainer, result: UaResult?): List<Pair<String, String>> {

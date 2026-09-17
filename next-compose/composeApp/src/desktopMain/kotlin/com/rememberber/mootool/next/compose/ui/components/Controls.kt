@@ -1470,6 +1470,22 @@ fun Modifier.mooJsonInspectorDuplicatePath(): Modifier = heightIn(min = 20.dp)
 @Composable
 fun Modifier.mooVaultConflictHintRow(): Modifier = heightIn(min = 16.dp)
 
+/** Electron 运行台检测状态行。 */
+@Composable
+fun Modifier.mooRuntimeDetectBar(): Modifier = heightIn(min = 28.dp)
+
+/** Electron Host 应用主按钮。 */
+@Composable
+fun Modifier.mooHostApplyButton(): Modifier = heightIn(min = 34.dp)
+
+/** Electron 二维码生成主按钮。 */
+@Composable
+fun Modifier.mooQrGenerateButton(): Modifier = heightIn(min = 34.dp)
+
+/** Vault Git merge ours/theirs 解析行。 */
+@Composable
+fun Modifier.mooGitMergeResolveRow(): Modifier = heightIn(min = 34.dp)
+
 /** Electron `.qrcode-options` 尺寸/纠错行。 */
 @Composable
 fun Modifier.mooQrOptionsRow(): Modifier = heightIn(min = 34.dp)

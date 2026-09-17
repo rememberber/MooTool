@@ -29,4 +29,22 @@ object QrWiringPresentation {
         recognitionBytes != null && !busy
 
     fun canCopyRecognition(result: String): Boolean = result.isNotEmpty()
+
+    sealed interface GenerateOutcome {
+        data class Success(val png: ByteArray, val size: Int) : GenerateOutcome
+        data class Failure(val error: Throwable) : GenerateOutcome
+    }
+
+    fun runGeneratePng(
+        content: String,
+        sessionSize: Int,
+        correction: QrErrorCorrection,
+        logo: java.awt.image.BufferedImage?,
+    ): GenerateOutcome {
+        val size = generateSize(sessionSize)
+        return runCatching { QrEngine.generatePng(content, size, correction, logo) }.fold(
+            onSuccess = { GenerateOutcome.Success(it, size) },
+            onFailure = { GenerateOutcome.Failure(it) },
+        )
+    }
 }

@@ -13,4 +13,15 @@ object ImageWiringPresentation {
     fun canExportBase64(text: String): Boolean = text.isNotBlank()
 
     fun canStartWatermark(text: String): Boolean = text.isNotBlank()
+
+    sealed interface DecodeOutcome {
+        data class Success(val image: java.awt.image.BufferedImage) : DecodeOutcome
+        data class Failure(val error: Throwable) : DecodeOutcome
+    }
+
+    fun runDecodeDataUrl(text: String): DecodeOutcome =
+        runCatching { ImageEngine.decodeDataUrl(text) }.fold(
+            onSuccess = { DecodeOutcome.Success(it) },
+            onFailure = { DecodeOutcome.Failure(it) },
+        )
 }

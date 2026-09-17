@@ -563,10 +563,12 @@ private fun runSplit(
     onChanged()
     val tasks = selected.map { PdfEngine.SplitTask(it.path, it.pageRange, it.rule, it.customRule) }
     scope.launch(Dispatchers.Default) {
-        val result = runCatching { PdfEngine.split(tasks) { session.cancelled } }
+        val result = PdfWiringPresentation.runSplit(tasks) { session.cancelled }
         withContext(Dispatchers.Swing) {
             session.busy = false
-            result.onSuccess { value ->
+            when (result) {
+                is PdfWiringPresentation.JobOutcome.Success -> {
+                val value = result.value
                 selected.forEach { it.status = PdfTaskStatus.Done }
                 session.lastOutputs = value.outputs
                 session.notice = container.t("pdf.splitComplete", mapOf("count" to value.pageCount.toString()))
@@ -580,11 +582,14 @@ private fun runSplit(
                     value.outputs.joinToString("\n"),
                     PdfHistoryMetadata.OP_SPLIT,
                 )
-            }.onFailure { error ->
+                }
+                is PdfWiringPresentation.JobOutcome.Failure -> {
+                val error = result.error
                 selected.forEach { it.status = if ((error as? PdfException)?.code == "cancelled") PdfTaskStatus.Ready else PdfTaskStatus.Error }
                 session.lastOutputs = emptyList()
                 session.notice = ""
                 session.error = messageFor(container, error)
+                }
             }
             onChanged()
         }
@@ -612,10 +617,12 @@ private fun runMerge(
     onChanged()
     val sources = selected.map { PdfEngine.MergeSource(it.path, it.pages) }
     scope.launch(Dispatchers.Default) {
-        val result = runCatching { PdfEngine.merge(sources, output.toPath()) { session.cancelled } }
+        val result = PdfWiringPresentation.runMerge(sources, output.toPath()) { session.cancelled }
         withContext(Dispatchers.Swing) {
             session.busy = false
-            result.onSuccess { value ->
+            when (result) {
+                is PdfWiringPresentation.JobOutcome.Success -> {
+                val value = result.value
                 selected.forEach { it.status = PdfTaskStatus.Done }
                 session.lastOutputs = value.outputs
                 session.notice = container.t("pdf.mergeComplete", mapOf("count" to value.pageCount.toString()))
@@ -629,11 +636,14 @@ private fun runMerge(
                     value.outputs.joinToString("\n"),
                     PdfHistoryMetadata.OP_MERGE,
                 )
-            }.onFailure { error ->
+                }
+                is PdfWiringPresentation.JobOutcome.Failure -> {
+                val error = result.error
                 selected.forEach { it.status = if ((error as? PdfException)?.code == "cancelled") PdfTaskStatus.Ready else PdfTaskStatus.Error }
                 if ((error as? PdfException)?.code == "cancelled") runCatching { output.delete() }
                 session.notice = ""
                 session.error = messageFor(container, error)
+                }
             }
             onChanged()
         }

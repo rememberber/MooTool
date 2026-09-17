@@ -224,9 +224,17 @@ private fun JsonTab(
                     p5Toolbar = true,
                     enabled = ProtobufWiringPresentation.canJsonToBinary(session.proto, session.messageName, session.json),
                     onClick = {
-                    runOp(container, session, container.t("protobuf.history.jsonToBinary"), session.json, "json|jsonToBinary|${session.messageName}|${session.format.name}") {
-                        ProtobufEngine.jsonToProtobuf(session.proto, session.messageName, session.json, session.format).also { session.binary = it }
-                    }
+                    runOp(
+                        container,
+                        session,
+                        container.t("protobuf.history.jsonToBinary"),
+                        session.json,
+                        "json|jsonToBinary|${session.messageName}|${session.format.name}",
+                        operation = {
+                            ProtobufWiringPresentation.runJsonToBinary(session.proto, session.messageName, session.json, session.format)
+                        },
+                        applyOutput = { session.binary = it },
+                    )
                     onChanged()
                 })
                 MooButton(
@@ -234,9 +242,17 @@ private fun JsonTab(
                     p5Toolbar = true,
                     enabled = ProtobufWiringPresentation.canBinaryToJson(session.proto, session.messageName, session.binary),
                     onClick = {
-                    runOp(container, session, container.t("protobuf.history.binaryToJson"), session.binary, "json|binaryToJson|${session.messageName}|${session.format.name}") {
-                        ProtobufEngine.protobufToJson(session.proto, session.messageName, session.binary, session.format).also { session.json = it }
-                    }
+                    runOp(
+                        container,
+                        session,
+                        container.t("protobuf.history.binaryToJson"),
+                        session.binary,
+                        "json|binaryToJson|${session.messageName}|${session.format.name}",
+                        operation = {
+                            ProtobufWiringPresentation.runBinaryToJson(session.proto, session.messageName, session.binary, session.format)
+                        },
+                        applyOutput = { session.json = it },
+                    )
                     onChanged()
                 })
             }
@@ -285,9 +301,15 @@ private fun WireTab(
                     p5Toolbar = true,
                     enabled = ProtobufWiringPresentation.canDecodeWire(session.wireInput),
                     onClick = {
-                    runOp(container, session, container.t("protobuf.history.wire"), session.wireInput, "wire|decode|${session.wireFormat.name}") {
-                        ProtobufEngine.decodeWire(session.wireInput, session.wireFormat).also { session.wireOutput = it }
-                    }
+                    runOp(
+                        container,
+                        session,
+                        container.t("protobuf.history.wire"),
+                        session.wireInput,
+                        "wire|decode|${session.wireFormat.name}",
+                        operation = { ProtobufWiringPresentation.runDecodeWire(session.wireInput, session.wireFormat) },
+                        applyOutput = { session.wireOutput = it },
+                    )
                     onChanged()
                 })
             }
@@ -336,9 +358,17 @@ private fun ConvertTab(
                     p5Toolbar = true,
                     enabled = ProtobufWiringPresentation.canConvertHex(session.hex),
                     onClick = {
-                    runOp(container, session, container.t("protobuf.history.hexToBase64"), session.hex, "convert|hexToBase64") {
-                        ProtobufEngine.convertBinary(session.hex, ProtobufBinaryFormat.Hex, ProtobufBinaryFormat.Base64).also { session.base64 = it }
-                    }
+                    runOp(
+                        container,
+                        session,
+                        container.t("protobuf.history.hexToBase64"),
+                        session.hex,
+                        "convert|hexToBase64",
+                        operation = {
+                            ProtobufWiringPresentation.runConvertBinary(session.hex, ProtobufBinaryFormat.Hex, ProtobufBinaryFormat.Base64)
+                        },
+                        applyOutput = { session.base64 = it },
+                    )
                     onChanged()
                 })
                 MooButton(
@@ -346,9 +376,17 @@ private fun ConvertTab(
                     p5Toolbar = true,
                     enabled = ProtobufWiringPresentation.canConvertBase64(session.base64),
                     onClick = {
-                    runOp(container, session, container.t("protobuf.history.base64ToHex"), session.base64, "convert|base64ToHex") {
-                        ProtobufEngine.convertBinary(session.base64, ProtobufBinaryFormat.Base64, ProtobufBinaryFormat.Hex).also { session.hex = it }
-                    }
+                    runOp(
+                        container,
+                        session,
+                        container.t("protobuf.history.base64ToHex"),
+                        session.base64,
+                        "convert|base64ToHex",
+                        operation = {
+                            ProtobufWiringPresentation.runConvertBinary(session.base64, ProtobufBinaryFormat.Base64, ProtobufBinaryFormat.Hex)
+                        },
+                        applyOutput = { session.hex = it },
+                    )
                     onChanged()
                 })
             }
@@ -368,10 +406,12 @@ private fun runOp(
     summary: String,
     input: String,
     options: String,
-    block: () -> String
+    operation: () -> ProtobufWiringPresentation.OperationOutcome,
+    applyOutput: (String) -> Unit,
 ) {
-    runCatching { block() }
-        .onSuccess { output ->
+    when (val outcome = operation()) {
+        is ProtobufWiringPresentation.OperationOutcome.Success -> {
+            applyOutput(outcome.output)
             session.error = ""
             session.notice = summary
             container.toastSuccess(summary)
@@ -380,16 +420,17 @@ private fun runOp(
                 summary,
                 summary,
                 input,
-                output,
+                outcome.output,
                 ProtobufHistoryMetadata.encodeLegacyPipe(options),
             )
         }
-        .onFailure { error ->
+        is ProtobufWiringPresentation.OperationOutcome.Failure -> {
             session.notice = ""
-            val message = messageFor(container, error)
+            val message = messageFor(container, outcome.error)
             session.error = message
             container.toastError(message)
         }
+    }
 }
 
 private fun messageFor(container: AppContainer, error: Throwable): String {

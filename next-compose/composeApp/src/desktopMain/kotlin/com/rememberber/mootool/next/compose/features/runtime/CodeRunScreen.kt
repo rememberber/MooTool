@@ -3,6 +3,7 @@ package com.rememberber.mootool.next.compose.features.runtime
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -70,6 +71,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooToolTab
 import com.rememberber.mootool.next.compose.ui.components.mooToolTabsBackground
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooEditorFrame
+import com.rememberber.mootool.next.compose.ui.components.mooRuntimeDetectBar
 import com.rememberber.mootool.next.compose.ui.components.mooRuntimeOutputPane
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
@@ -135,7 +137,7 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
         session.detecting = true
         persist()
         scope.launch(Dispatchers.IO) {
-            val next = CodeRunEngine.detect(paths())
+            val next = CodeRunWiringPresentation.runDetect(paths())
             withContext(Dispatchers.Main) {
                 statuses = next
                 session.detecting = false
@@ -155,12 +157,13 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
             persist()
             return
         }
-        val arguments = try {
-            CodeRunEngine.parseArguments(session.arguments(runtime))
-        } catch (error: Exception) {
-            session.error = error.message ?: container.t("runtime.error.INVALID_REQUEST")
-            persist()
-            return
+        val arguments = when (val parsed = CodeRunWiringPresentation.parseRunArguments(session.arguments(runtime))) {
+            is CodeRunWiringPresentation.ArgumentsOutcome.Success -> parsed.arguments
+            is CodeRunWiringPresentation.ArgumentsOutcome.Failure -> {
+                session.error = parsed.error.message ?: container.t("runtime.error.INVALID_REQUEST")
+                persist()
+                return
+            }
         }
         val requestId = "run-${UUID.randomUUID()}"
         session.requestId = requestId
@@ -179,8 +182,8 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
             workingDirectory = session.workingDirectory(runtime)
         )
         scope.launch(Dispatchers.IO) {
-            val result = CodeRunEngine.run(input, paths(), container.directories.cacheRoot.resolve("runtime")) { event ->
-                if (event.requestId != requestId) return@run
+            val result = CodeRunWiringPresentation.runCode(input, paths(), container.directories.cacheRoot.resolve("runtime")) { event ->
+                if (event.requestId != requestId) return@runCode
                 scope.launch(Dispatchers.Main) {
                     if (session.requestId != requestId) return@launch
                     if (event.stream == "stdout") session.stdout += event.text else session.stderr += event.text
@@ -288,10 +291,12 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
             if (revision < 0) Spacer(Modifier.width(0.dp))
             Spacer(Modifier.weight(1f))
             val available = CodeRunWiringPresentation.availableCount(statuses)
-            MooStatusPill(
-                if (session.detecting) container.t("common.processing") else container.t("runtime.detected", mapOf("count" to available.toString())),
-                kind = if (available > 0) MooStatusKind.Valid else MooStatusKind.Error
-            )
+            Box(Modifier.mooRuntimeDetectBar()) {
+                MooStatusPill(
+                    if (session.detecting) container.t("common.processing") else container.t("runtime.detected", mapOf("count" to available.toString())),
+                    kind = if (available > 0) MooStatusKind.Valid else MooStatusKind.Error,
+                )
+            }
             if (session.error.isNotEmpty()) Text(session.error, color = colors.danger, fontSize = 12.sp)
             OverflowActionCluster(
                 overflow = overflow,

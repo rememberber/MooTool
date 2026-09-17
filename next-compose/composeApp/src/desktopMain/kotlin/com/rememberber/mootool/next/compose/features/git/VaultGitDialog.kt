@@ -67,6 +67,7 @@ import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
 import com.rememberber.mootool.next.compose.ui.components.mooGitMergeFlowHint
+import com.rememberber.mootool.next.compose.ui.components.mooGitMergeResolveRow
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import java.nio.file.Path
@@ -564,7 +565,19 @@ fun VaultGitDialog(
                                 }
                                 val selectedChange = status.changes.find { it.path == selected }
                                 if (selectedChange != null && status.repository) {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        modifier = if (
+                                            GitMergeProductFlowPresentation.showResolveActions(
+                                                status.merging,
+                                                selectedChange.conflict,
+                                            )
+                                        ) {
+                                            Modifier.mooGitMergeResolveRow()
+                                        } else {
+                                            Modifier
+                                        },
+                                    ) {
                                         MooButton(
                                             container.t("git.discard"),
                                             danger = true,

@@ -25,6 +25,13 @@ class QrWiringPresentationTest {
     }
 
     @Test
+    fun runGeneratePngUsesEngine() {
+        val outcome = QrWiringPresentation.runGeneratePng("564", 240, QrErrorCorrection.M, logo = null)
+        assertTrue(outcome is QrWiringPresentation.GenerateOutcome.Success)
+        assertTrue((outcome as QrWiringPresentation.GenerateOutcome.Success).png.isNotEmpty())
+    }
+
+    @Test
     fun toolbarGuardsMatchScreenSemantics() {
         assertFalse(QrWiringPresentation.canGenerate(busy = true, content = "x"))
         assertTrue(QrWiringPresentation.canGenerate(busy = false, content = "x"))

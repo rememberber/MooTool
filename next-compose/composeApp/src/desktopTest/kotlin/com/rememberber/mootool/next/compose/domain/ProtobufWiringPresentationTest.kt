@@ -13,6 +13,21 @@ class ProtobufWiringPresentationTest {
     }
 
     @Test
+    fun runJsonToBinaryUsesEngine() {
+        val proto = """
+            syntax = "proto3";
+            message Person { string name = 1; int32 age = 2; }
+        """.trimIndent()
+        val outcome = ProtobufWiringPresentation.runJsonToBinary(
+            proto,
+            "Person",
+            """{"name":"Moo","age":1}""",
+            ProtobufBinaryFormat.Hex,
+        )
+        assertTrue(outcome is ProtobufWiringPresentation.OperationOutcome.Success)
+    }
+
+    @Test
     fun copyPayloadPrefersConvertBase64() {
         assertEquals(
             "YQ==",

@@ -33,4 +33,28 @@ object PdfWiringPresentation {
             onSuccess = { InspectOutcome.Success(it) },
             onFailure = { InspectOutcome.Failure(it) },
         )
+
+    sealed interface JobOutcome {
+        data class Success(val value: PdfOperationResult) : JobOutcome
+        data class Failure(val error: Throwable) : JobOutcome
+    }
+
+    fun runSplit(
+        tasks: List<PdfEngine.SplitTask>,
+        cancelled: () -> Boolean,
+    ): JobOutcome =
+        runCatching { PdfEngine.split(tasks, cancelled) }.fold(
+            onSuccess = { JobOutcome.Success(it) },
+            onFailure = { JobOutcome.Failure(it) },
+        )
+
+    fun runMerge(
+        sources: List<PdfEngine.MergeSource>,
+        output: Path,
+        cancelled: () -> Boolean,
+    ): JobOutcome =
+        runCatching { PdfEngine.merge(sources, output, cancelled) }.fold(
+            onSuccess = { JobOutcome.Success(it) },
+            onFailure = { JobOutcome.Failure(it) },
+        )
 }

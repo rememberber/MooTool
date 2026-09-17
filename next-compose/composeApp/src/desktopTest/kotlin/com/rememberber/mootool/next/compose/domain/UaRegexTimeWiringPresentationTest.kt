@@ -25,6 +25,19 @@ class UaRegexTimeWiringPresentationTest {
     }
 
     @Test
+    fun runMatchUsesRegexEngine() {
+        val outcome = RegexWiringPresentation.runMatch("moo", "mootool", RegexOptions())
+        assertTrue(outcome is RegexWiringPresentation.MatchOutcome.Success)
+        assertTrue((outcome as RegexWiringPresentation.MatchOutcome.Success).matches.isNotEmpty())
+    }
+
+    @Test
+    fun runParseUsesUaEngine() {
+        val outcome = UaWiringPresentation.runParse(UaEngine.presets.first().second)
+        assertTrue(outcome is UaWiringPresentation.ParseOutcome.Success)
+    }
+
+    @Test
     fun timeConvertGuards() {
         assertFalse(TimeWiringPresentation.canConvertTimestamp(""))
         assertTrue(TimeWiringPresentation.canConvertLocal("2026-01-01"))

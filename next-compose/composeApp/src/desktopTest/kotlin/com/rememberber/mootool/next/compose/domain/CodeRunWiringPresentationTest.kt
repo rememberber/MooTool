@@ -28,4 +28,11 @@ class CodeRunWiringPresentationTest {
         assertTrue(CodeRunWiringPresentation.showConfigureBanner(statuses[1]))
         assertTrue(CodeRunWiringPresentation.canRun(null))
     }
+
+    @Test
+    fun parseRunArgumentsUsesEngine() {
+        val parsed = CodeRunWiringPresentation.parseRunArguments("""--name "Moo"""")
+        assertTrue(parsed is CodeRunWiringPresentation.ArgumentsOutcome.Success)
+        assertEquals(listOf("--name", "Moo"), (parsed as CodeRunWiringPresentation.ArgumentsOutcome.Success).arguments)
+    }
 }

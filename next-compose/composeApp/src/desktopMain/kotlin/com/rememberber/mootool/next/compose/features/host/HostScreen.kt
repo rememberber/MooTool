@@ -82,6 +82,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenu
 import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooMenuSeparator
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooHostApplyButton
 import com.rememberber.mootool.next.compose.ui.components.mooHostEditBar
 import com.rememberber.mootool.next.compose.ui.components.mooHostProfilesPane
 import com.rememberber.mootool.next.compose.ui.components.mooHostProfileSearch
@@ -349,16 +350,21 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                         actions = listOf(
                             OverflowAction(container.t("host.current")) {
                                 scope.launch(Dispatchers.IO) {
-                                    val result = runCatching { HostEngine.readSystem(config) }
+                                    val result = HostWiringPresentation.runReadSystem(config)
                                     withContext(Dispatchers.Main) {
-                                        result.onSuccess {
-                                            session.systemPath = it.path
-                                            session.systemContent = it.content
-                                            session.systemWritable = it.writable
-                                            session.systemFingerprint = it.fingerprint
-                                            session.systemOpen = true
-                                            session.error = ""
-                                        }.onFailure { session.error = messageFor(container, it) }
+                                        when (result) {
+                                            is HostWiringPresentation.SystemReadOutcome.Success -> {
+                                                val it = result.system
+                                                session.systemPath = it.path
+                                                session.systemContent = it.content
+                                                session.systemWritable = it.writable
+                                                session.systemFingerprint = it.fingerprint
+                                                session.systemOpen = true
+                                                session.error = ""
+                                            }
+                                            is HostWiringPresentation.SystemReadOutcome.Failure ->
+                                                session.error = messageFor(container, result.error)
+                                        }
                                         persist()
                                     }
                                 }
@@ -383,23 +389,25 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                         prominent = true,
                         enabled = HostWiringPresentation.canOpenApplyConfirm(session.content, session.applying),
                         p5Toolbar = true,
+                        modifier = Modifier.mooHostApplyButton(),
                         onClick = {
                             scope.launch(Dispatchers.IO) {
-                                val preview = runCatching {
-                                    val current = HostEngine.readSystem(config)
-                                    val diff = HostEngine.previewDiff(current.content, session.content, current.path)
-                                    Triple(current, HostEngine.validate(session.content), diff)
-                                }
+                                val preview = HostWiringPresentation.runBuildApplyPreview(config, session.content)
                                 withContext(Dispatchers.Main) {
-                                    preview.onSuccess { (current, _, diff) ->
-                                        session.systemPath = current.path
-                                        session.systemContent = current.content
-                                        session.systemWritable = current.writable
-                                        session.systemFingerprint = current.fingerprint
-                                        session.applyDiff = diff
-                                        session.applyConfirm = true
-                                        session.error = ""
-                                    }.onFailure { session.error = messageFor(container, it) }
+                                    when (preview) {
+                                        is HostWiringPresentation.ApplyPreviewOutcome.Success -> {
+                                            val current = preview.preview.system
+                                            session.systemPath = current.path
+                                            session.systemContent = current.content
+                                            session.systemWritable = current.writable
+                                            session.systemFingerprint = current.fingerprint
+                                            session.applyDiff = preview.preview.diff
+                                            session.applyConfirm = true
+                                            session.error = ""
+                                        }
+                                        is HostWiringPresentation.ApplyPreviewOutcome.Failure ->
+                                            session.error = messageFor(container, preview.error)
+                                    }
                                     persist()
                                 }
                             }
@@ -534,13 +542,13 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                         session.applying = true
                         persist()
                         scope.launch(Dispatchers.IO) {
-                            val result = runCatching {
-                                HostEngine.apply(config, session.content, session.systemFingerprint)
-                            }
+                            val result = HostWiringPresentation.runApply(config, session.content, session.systemFingerprint)
                             withContext(Dispatchers.Main) {
                                 session.applying = false
                                 session.applyConfirm = false
-                                result.onSuccess {
+                                when (result) {
+                                    is HostWiringPresentation.ApplyOutcome.Success -> {
+                                        val it = result.result
                                     session.systemPath = it.system.path
                                     session.systemContent = it.system.content
                                     session.systemWritable = it.system.writable
@@ -559,7 +567,10 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                                         it.system.path,
                                         HostHistoryMetadata.encodeApplyBackup(it.backupPath.orEmpty()),
                                     )
-                                }.onFailure { session.error = messageFor(container, it) }
+                                    }
+                                    is HostWiringPresentation.ApplyOutcome.Failure ->
+                                        session.error = messageFor(container, result.error)
+                                }
                                 persist()
                             }
                         }

@@ -44,6 +44,7 @@ import com.rememberber.mootool.next.compose.domain.QrHistoryRestore
 import com.rememberber.mootool.next.compose.domain.QrErrorCorrection
 import com.rememberber.mootool.next.compose.domain.QrException
 import com.rememberber.mootool.next.compose.domain.QrWiringPresentation
+import com.rememberber.mootool.next.compose.ui.components.mooQrGenerateButton
 import com.rememberber.mootool.next.compose.ui.components.mooQrOptionsRow
 import com.rememberber.mootool.next.compose.domain.QrTab
 import com.rememberber.mootool.next.compose.model.AppSettings
@@ -275,6 +276,7 @@ private fun GeneratePanel(
                 prominent = true,
                 p5Toolbar = true,
                 enabled = QrWiringPresentation.canGenerate(session.busy, session.content),
+                modifier = Modifier.mooQrGenerateButton(),
                 onClick = {
                     generateQr(container, session, scope, onChanged)
                 }
@@ -488,11 +490,13 @@ private fun generateQr(
     val correction = session.correction
     val logo = session.logoImage
     scope.launch(Dispatchers.Default) {
-        val result = runCatching { QrEngine.generatePng(content, size, correction, logo) }
+        val result = QrWiringPresentation.runGeneratePng(content, session.size, correction, logo)
         withContext(Dispatchers.Swing) {
             session.busy = false
-            result.onSuccess { bytes ->
-                session.size = size
+            when (result) {
+                is QrWiringPresentation.GenerateOutcome.Success -> {
+                val bytes = result.png
+                session.size = result.size
                 session.pngBytes = bytes
                 session.notice = container.t("qrcode.generated")
                 container.toastSuccess(container.t("qrcode.generated"))
@@ -506,11 +510,13 @@ private fun generateQr(
                     container.t("qrcode.history.generate"),
                     content,
                     pngToDataUrl(bytes),
-                    QrHistoryMetadata.encodeGenerate(size, correction),
+                    QrHistoryMetadata.encodeGenerate(result.size, correction),
                 )
-            }.onFailure { error ->
+                }
+                is QrWiringPresentation.GenerateOutcome.Failure -> {
                 session.notice = ""
-                session.error = messageFor(container, error)
+                session.error = messageFor(container, result.error)
+                }
             }
             onChanged()
         }

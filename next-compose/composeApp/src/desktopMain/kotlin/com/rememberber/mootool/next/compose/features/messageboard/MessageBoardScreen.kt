@@ -350,7 +350,7 @@ private fun FittedMessage(
     BoxWithConstraints(modifier) {
         val maxW = constraints.maxWidth
         val maxH = constraints.maxHeight
-        val fontPx = MessageBoardEngine.fitFontSize(maxW, maxH, sizePercent) { candidate ->
+        val fontPx = MessageBoardWiringPresentation.runFitFontSize(maxW, maxH, sizePercent) { candidate ->
             val result = measurer.measure(
                 text = AnnotatedString(text),
                 style = TextStyle(fontSize = with(density) { candidate.toSp() }, color = color, fontWeight = FontWeight.SemiBold),

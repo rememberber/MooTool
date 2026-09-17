@@ -125,9 +125,13 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.onPreviewKeyEvent { event ->
                             if (!event.blockedByIme() && event.type == KeyEventType.KeyDown && event.key == Key.Enter) {
-                                runCalc(container, session, container.t("calculator.expression"), session.expression) {
-                                    CalculatorEngine.evaluateExpression(session.expression)
-                                }
+                                runCalc(
+                                    container,
+                                    session,
+                                    container.t("calculator.expression"),
+                                    session.expression,
+                                    operation = { CalculatorWiringPresentation.runEvaluate(session.expression) },
+                                )
                                 refresh()
                                 true
                             } else false
@@ -150,9 +154,13 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                             enabled = CalculatorWiringPresentation.canEvaluate(session.expression),
                             p5Toolbar = true,
                             onClick = {
-                            runCalc(container, session, container.t("calculator.expression"), session.expression) {
-                                CalculatorEngine.evaluateExpression(session.expression)
-                            }
+                            runCalc(
+                                container,
+                                session,
+                                container.t("calculator.expression"),
+                                session.expression,
+                                operation = { CalculatorWiringPresentation.runEvaluate(session.expression) },
+                            )
                             refresh()
                         })
                     }
@@ -161,30 +169,50 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                     LabeledField(container.t("calculator.hex"), session.hex) { session.hex = it; refresh() }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         MooButton("HEX → DEC", p5Toolbar = true, onClick = {
-                            runCalc(container, session, "HEX → DEC", session.hex) {
-                                CalculatorEngine.convertBase(session.hex, 16, 10).also { session.decimal = it }
-                            }
+                            runCalc(
+                                container,
+                                session,
+                                "HEX → DEC",
+                                session.hex,
+                                operation = { CalculatorWiringPresentation.runConvertBase(session.hex, 16, 10) },
+                                applyOutput = { session.decimal = it },
+                            )
                             refresh()
                         })
                         MooButton("DEC → HEX", p5Toolbar = true, onClick = {
-                            runCalc(container, session, "DEC → HEX", session.decimal) {
-                                CalculatorEngine.convertBase(session.decimal, 10, 16).also { session.hex = it }
-                            }
+                            runCalc(
+                                container,
+                                session,
+                                "DEC → HEX",
+                                session.decimal,
+                                operation = { CalculatorWiringPresentation.runConvertBase(session.decimal, 10, 16) },
+                                applyOutput = { session.hex = it },
+                            )
                             refresh()
                         })
                     }
                     LabeledField(container.t("calculator.decimal"), session.decimal) { session.decimal = it; refresh() }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         MooButton("DEC → BIN", p5Toolbar = true, onClick = {
-                            runCalc(container, session, "DEC → BIN", session.decimal) {
-                                CalculatorEngine.convertBase(session.decimal, 10, 2).also { session.binary = it }
-                            }
+                            runCalc(
+                                container,
+                                session,
+                                "DEC → BIN",
+                                session.decimal,
+                                operation = { CalculatorWiringPresentation.runConvertBase(session.decimal, 10, 2) },
+                                applyOutput = { session.binary = it },
+                            )
                             refresh()
                         })
                         MooButton("BIN → DEC", p5Toolbar = true, onClick = {
-                            runCalc(container, session, "BIN → DEC", session.binary) {
-                                CalculatorEngine.convertBase(session.binary, 2, 10).also { session.decimal = it }
-                            }
+                            runCalc(
+                                container,
+                                session,
+                                "BIN → DEC",
+                                session.binary,
+                                operation = { CalculatorWiringPresentation.runConvertBase(session.binary, 2, 10) },
+                                applyOutput = { session.decimal = it },
+                            )
                             refresh()
                         })
                     }
@@ -200,9 +228,13 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                     onSecond = { session.gcdSecond = it; refresh() },
                     action = container.t("calculator.calculateGcd"),
                     onAction = {
-                        runCalc(container, session, container.t("calculator.gcd"), "${session.gcdFirst}, ${session.gcdSecond}") {
-                            CalculatorEngine.gcd(session.gcdFirst, session.gcdSecond)
-                        }
+                        runCalc(
+                            container,
+                            session,
+                            container.t("calculator.gcd"),
+                            "${session.gcdFirst}, ${session.gcdSecond}",
+                            operation = { CalculatorWiringPresentation.runGcd(session.gcdFirst, session.gcdSecond) },
+                        )
                         refresh()
                     }
                 )
@@ -216,9 +248,13 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                     onSecond = { session.lcmSecond = it; refresh() },
                     action = container.t("calculator.calculateLcm"),
                     onAction = {
-                        runCalc(container, session, container.t("calculator.lcm"), "${session.lcmFirst}, ${session.lcmSecond}") {
-                            CalculatorEngine.lcm(session.lcmFirst, session.lcmSecond)
-                        }
+                        runCalc(
+                            container,
+                            session,
+                            container.t("calculator.lcm"),
+                            "${session.lcmFirst}, ${session.lcmSecond}",
+                            operation = { CalculatorWiringPresentation.runLcm(session.lcmFirst, session.lcmSecond) },
+                        )
                         refresh()
                     }
                 )
@@ -232,9 +268,13 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                     onSecond = { session.permutationM = it; refresh() },
                     action = "A(n,m)",
                     onAction = {
-                        runCalc(container, session, container.t("calculator.permutation"), "${session.permutationN}, ${session.permutationM}") {
-                            CalculatorEngine.permutation(session.permutationN, session.permutationM)
-                        }
+                        runCalc(
+                            container,
+                            session,
+                            container.t("calculator.permutation"),
+                            "${session.permutationN}, ${session.permutationM}",
+                            operation = { CalculatorWiringPresentation.runPermutation(session.permutationN, session.permutationM) },
+                        )
                         refresh()
                     }
                 )
@@ -248,9 +288,13 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                     onSecond = { session.combinationM = it; refresh() },
                     action = "C(n,m)",
                     onAction = {
-                        runCalc(container, session, container.t("calculator.combination"), "${session.combinationN}, ${session.combinationM}") {
-                            CalculatorEngine.combination(session.combinationN, session.combinationM)
-                        }
+                        runCalc(
+                            container,
+                            session,
+                            container.t("calculator.combination"),
+                            "${session.combinationN}, ${session.combinationM}",
+                            operation = { CalculatorWiringPresentation.runCombination(session.combinationN, session.combinationM) },
+                        )
                         refresh()
                     }
                 )
@@ -388,29 +432,37 @@ private fun OperationPanel(
 }
 
 
-private fun runCalc(container: AppContainer, session: CalculatorSession, summary: String, input: String, block: () -> String) {
-    runCatching(block)
-        .onSuccess { output ->
-            session.result = output
+private fun runCalc(
+    container: AppContainer,
+    session: CalculatorSession,
+    summary: String,
+    input: String,
+    operation: () -> CalculatorWiringPresentation.TextOutcome,
+    applyOutput: (String) -> Unit = { session.result = it },
+) {
+    when (val outcome = operation()) {
+        is CalculatorWiringPresentation.TextOutcome.Success -> {
+            applyOutput(outcome.value)
             session.error = ""
             session.notice = summary
             container.toastSuccess(summary)
-            session.log = listOf("$summary: $input = $output") + session.log.take(11)
+            session.log = listOf("$summary: $input = ${outcome.value}") + session.log.take(11)
             container.history.save(
                 ToolId.Calculator.id,
                 summary,
                 summary,
                 input,
-                output,
+                outcome.value,
                 CalculatorHistoryMetadata.encode(),
             )
         }
-        .onFailure { error ->
+        is CalculatorWiringPresentation.TextOutcome.Failure -> {
             session.notice = ""
-            val message = messageFor(container, error)
+            val message = messageFor(container, outcome.error)
             session.error = message
             container.toastError(message)
         }
+    }
 }
 
 private fun messageFor(container: AppContainer, error: Throwable): String {

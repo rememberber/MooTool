@@ -35,6 +35,9 @@ class AiIntegrationMcpListToolsTest {
                 val tools = client.listTools().tools
                 assertEquals(12, tools.size)
                 assertEquals(McpToolCatalog.registrations().map { it.name }.toSet(), tools.map { it.name }.toSet())
+                VaultMcpTools.toolNames.forEach { name ->
+                    assertTrue(tools.any { it.name() == name }, "listTools missing vault tool $name")
+                }
                 tools.forEach { tool ->
                     assertTrue(tool.description().length > tool.name().length)
                     assertEquals("object", tool.inputSchema().type())

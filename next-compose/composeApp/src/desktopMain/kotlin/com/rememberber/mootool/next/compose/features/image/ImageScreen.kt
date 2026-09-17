@@ -613,14 +613,20 @@ private fun Base64Dialog(container: AppContainer, session: ImageSession, onLoade
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (!export) {
                     MooButton(container.t("image.import"), prominent = true, onClick = {
-                        runCatching {
-                            val image = ImageEngine.decodeDataUrl(session.base64Text)
-                            val saved = container.imageLibrary.save(ImageEngine.timestampName("Base64"), image, false)
-                            session.base64Mode = null
-                            onLoaded(saved.name)
-                        }.onFailure {
-                            session.error = messageFor(container, it)
-                            container.sessionManager.bump()
+                        when (val decoded = ImageWiringPresentation.runDecodeDataUrl(session.base64Text)) {
+                            is ImageWiringPresentation.DecodeOutcome.Success -> {
+                                val saved = container.imageLibrary.save(
+                                    ImageEngine.timestampName("Base64"),
+                                    decoded.image,
+                                    false,
+                                )
+                                session.base64Mode = null
+                                onLoaded(saved.name)
+                            }
+                            is ImageWiringPresentation.DecodeOutcome.Failure -> {
+                                session.error = messageFor(container, decoded.error)
+                                container.sessionManager.bump()
+                            }
                         }
                     }, enabled = session.base64Text.isNotBlank())
                 }

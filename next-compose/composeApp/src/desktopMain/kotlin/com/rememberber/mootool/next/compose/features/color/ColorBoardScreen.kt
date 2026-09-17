@@ -232,7 +232,7 @@ fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
             ColorFormat.entries.forEach { format ->
                 MooButton(formatLabel(format), primary = session.format == format, p5Toolbar = true, onClick = {
                     session.format = format
-                    session.code = ColorEngine.formatColor(session.primary, format)
+                    session.code = ColorWiringPresentation.runFormatColor(session.primary, format)
                     refresh()
                 })
             }
@@ -364,7 +364,7 @@ private fun CurrentPanel(
             Column {
                 Text(container.t("color.current"), color = ColorEngine.parseColor(text).toCompose(), fontSize = 11.sp)
                 Text(session.primaryHex, color = ColorEngine.parseColor(text).toCompose(), fontSize = 22.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical = 4.dp))
-                Text(ColorEngine.formatColor(session.primary, ColorFormat.RGB), color = ColorEngine.parseColor(text).toCompose(), fontSize = 11.sp)
+                Text(ColorWiringPresentation.runFormatColor(session.primary, ColorFormat.RGB), color = ColorEngine.parseColor(text).toCompose(), fontSize = 11.sp)
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
