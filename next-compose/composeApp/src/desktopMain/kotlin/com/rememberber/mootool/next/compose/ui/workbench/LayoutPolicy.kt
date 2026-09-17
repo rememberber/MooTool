@@ -60,4 +60,20 @@ object LayoutPolicy {
 
     /** DIFF-496 follow-up: tool `p5Toolbar` buttons shrink when layout compact navigation is on. */
     fun p5ToolbarDense(compactNavigation: Boolean): Boolean = compactNavigation
+
+    /**
+     * Electron `.tool-page .toolbar-button` uses `--tool-control-height` (34px) and modern `font-size: 13px` /
+     * `font-weight: 500`. Compact navigation keeps DIFF-497 dense 26px / 11sp.
+     */
+    fun p5ToolbarButtonHeightDp(dense: Boolean, controlHeightDp: Float): Float =
+        if (dense) 26f else controlHeightDp
+
+    fun p5ToolbarFontSp(dense: Boolean, interfaceStyle: String): Float = when {
+        dense -> 11f
+        interfaceStyle == "modern" || interfaceStyle == "quiet" -> 13f
+        else -> 12f
+    }
+
+    fun p5ToolbarFontWeightMedium(dense: Boolean, interfaceStyle: String): Boolean =
+        dense || interfaceStyle == "modern" || interfaceStyle == "quiet"
 }

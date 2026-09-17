@@ -55,6 +55,19 @@ class LayoutPolicyTest {
     }
 
     @Test
+    fun modernP5ToolbarContentDensityMatchesElectronToolPage() {
+        assertEquals(34f, LayoutPolicy.p5ToolbarButtonHeightDp(dense = false, controlHeightDp = 34f))
+        assertEquals(30f, LayoutPolicy.p5ToolbarButtonHeightDp(dense = false, controlHeightDp = 30f))
+        assertEquals(26f, LayoutPolicy.p5ToolbarButtonHeightDp(dense = true, controlHeightDp = 34f))
+        assertEquals(13f, LayoutPolicy.p5ToolbarFontSp(dense = false, interfaceStyle = "modern"))
+        assertEquals(13f, LayoutPolicy.p5ToolbarFontSp(dense = false, interfaceStyle = "quiet"))
+        assertEquals(12f, LayoutPolicy.p5ToolbarFontSp(dense = false, interfaceStyle = "hero"))
+        assertEquals(11f, LayoutPolicy.p5ToolbarFontSp(dense = true, interfaceStyle = "modern"))
+        assertTrue(LayoutPolicy.p5ToolbarFontWeightMedium(dense = false, interfaceStyle = "modern"))
+        assertFalse(LayoutPolicy.p5ToolbarFontWeightMedium(dense = false, interfaceStyle = "hero"))
+    }
+
+    @Test
     fun classicNavigationHidesBuiltinGroupLabels() {
         assertFalse(LayoutPolicy.showNavigationGroupLabel("classic", showSeparators = true, customGroup = false))
         assertTrue(LayoutPolicy.showNavigationGroupLabel("classic", showSeparators = true, customGroup = true))

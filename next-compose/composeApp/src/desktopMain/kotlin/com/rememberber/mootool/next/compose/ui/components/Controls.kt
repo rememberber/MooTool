@@ -97,9 +97,13 @@ fun MooButton(
     }
     val p5Dense = p5Toolbar && LayoutPolicy.p5ToolbarDense(LocalCompactNavigation.current)
     val shape = if (p5Toolbar) RoundedCornerShape(6.dp) else RoundedCornerShape(radius)
+    val p5HeightDp = LayoutPolicy.p5ToolbarButtonHeightDp(
+        dense = dense || p5Dense,
+        controlHeightDp = MooTheme.dimens.controlHeight.value,
+    )
     val compactHeight = when {
-        dense || p5Dense -> 26.dp
-        p5Toolbar -> 30.dp
+        dense || p5Dense -> p5HeightDp.dp
+        p5Toolbar -> p5HeightDp.dp
         else -> MooTheme.dimens.controlHeight
     }
     val compactPaddingH = when {
@@ -112,8 +116,21 @@ fun MooButton(
         p5Toolbar -> 4.dp
         else -> 6.dp
     }
-    val compactFontSize = if (dense || p5Dense) 11.sp else 12.sp
-    val compactFontWeight = if (dense || p5Dense) FontWeight.Medium else FontWeight.SemiBold
+    val p5FontSp = if (p5Toolbar) {
+        LayoutPolicy.p5ToolbarFontSp(dense || p5Dense, colors.styleId)
+    } else {
+        null
+    }
+    val compactFontSize = when {
+        p5FontSp != null -> p5FontSp.sp
+        dense -> 11.sp
+        else -> 12.sp
+    }
+    val compactFontWeight = when {
+        p5Toolbar && LayoutPolicy.p5ToolbarFontWeightMedium(dense || p5Dense, colors.styleId) -> FontWeight.Medium
+        dense || p5Dense -> FontWeight.Medium
+        else -> FontWeight.SemiBold
+    }
     val dangerFill = colors.danger.copy(alpha = if (hovered || pressed) 0.22f else 0.14f).compositeOver(colors.workspace)
     val tactile = colors.styleId == "smartisan" || colors.styleId == "miui-v5"
     val fill = when {
@@ -140,6 +157,7 @@ fun MooButton(
         else -> colors.borderControl
     }
     val elevation = when {
+        p5Toolbar && primary && (colors.styleId == "modern" || colors.styleId == "quiet") -> 1.dp
         pressed || primary || danger || colors.styleId == "smartisan" || colors.styleId == "miui-v5" -> 0.dp
         else -> 1.dp
     }
