@@ -56,6 +56,7 @@ import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnD
 import com.rememberber.mootool.next.compose.ui.workbench.applyUserEditClearingStatusNotice
 import com.rememberber.mootool.next.compose.domain.EncodeHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.EncodeHistoryRestore
+import com.rememberber.mootool.next.compose.domain.EncodeWiringPresentation
 
 @Composable
 fun EncodeScreen(container: AppContainer, detached: Boolean) {
@@ -162,14 +163,25 @@ fun EncodeScreen(container: AppContainer, detached: Boolean) {
                 verticalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterVertically),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                MooButton(labels.forward, prominent = true, p5Toolbar = true, onClick = {
-                    convert(container, session, forward = true)
-                    refresh()
-                })
-                MooButton(labels.reverse, p5Toolbar = true, onClick = {
-                    convert(container, session, forward = false)
-                    refresh()
-                })
+                MooButton(
+                    labels.forward,
+                    prominent = true,
+                    p5Toolbar = true,
+                    enabled = EncodeWiringPresentation.canConvert(session.left()),
+                    onClick = {
+                        convert(container, session, forward = true)
+                        refresh()
+                    },
+                )
+                MooButton(
+                    labels.reverse,
+                    p5Toolbar = true,
+                    enabled = EncodeWiringPresentation.canConvert(session.right()),
+                    onClick = {
+                        convert(container, session, forward = false)
+                        refresh()
+                    },
+                )
                 if (session.tab == EncodeTab.Url) {
                     Text(container.t("encode.charset"), color = colors.textSecondary, fontSize = 12.sp)
                     Box {

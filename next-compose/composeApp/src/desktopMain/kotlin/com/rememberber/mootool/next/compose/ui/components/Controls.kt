@@ -1334,6 +1334,18 @@ fun Modifier.mooRuntimeOutputPane(): Modifier = clip(RoundedCornerShape(0.dp))
 /** Electron JSON Vault 搜索行。 */
 fun Modifier.mooJsonVaultSearch(): Modifier = fillMaxWidth()
 
+/** Electron JSON Vault 底栏路径/操作行。 */
+@Composable
+fun Modifier.mooJsonVaultFooter(): Modifier {
+    val colors = MooTheme.colors
+    return heightIn(min = 36.dp).drawBehind {
+        drawLine(colors.borderSoft, Offset(0f, 0.5f), Offset(size.width, 0.5f), 1.dp.toPx())
+    }
+}
+
+/** Electron 加解密非对称操作 FlowRow 区。 */
+fun Modifier.mooCryptoAsymActions(): Modifier = fillMaxWidth().padding(vertical = 12.dp)
+
 /** Electron 网络工具输出区等宽区。 */
 fun Modifier.mooNetOutputMonospace(): Modifier = padding(horizontal = 16.dp, vertical = 14.dp)
 

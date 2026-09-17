@@ -237,6 +237,18 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun cryptoKeywordOpensToolsDefaults() {
+        val hits = CommandSearchCatalog.search("aes", Translator(AppLanguage.EnUS)::t)
+        assertEquals("tools", hits.single().categoryId)
+    }
+
+    @Test
+    fun autocheckKeywordOpensAboutSettings() {
+        val hits = CommandSearchCatalog.search("autocheck", Translator(AppLanguage.EnUS)::t)
+        assertEquals("about", hits.single().categoryId)
+    }
+
+    @Test
     fun catalogCoversEverySettingsNavCategory() {
         val covered = CommandSearchCatalog.targets.map { it.categoryId }.toSet()
         SettingsNavCategory.entries.forEach { category ->

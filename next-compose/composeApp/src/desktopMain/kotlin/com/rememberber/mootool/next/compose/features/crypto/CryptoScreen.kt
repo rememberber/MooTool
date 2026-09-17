@@ -43,6 +43,7 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.AsymmetricAlgorithm
 import com.rememberber.mootool.next.compose.domain.BaseAlgorithm
 import com.rememberber.mootool.next.compose.domain.CryptoEngine
+import com.rememberber.mootool.next.compose.domain.CryptoWiringPresentation
 import com.rememberber.mootool.next.compose.domain.RandomWiringPresentation
 import com.rememberber.mootool.next.compose.domain.CryptoException
 import com.rememberber.mootool.next.compose.domain.CryptoHistoryMetadata
@@ -67,6 +68,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooToolTabsRow
 import com.rememberber.mootool.next.compose.ui.components.IoThreePaneRow
 import com.rememberber.mootool.next.compose.ui.components.IoTwoPaneRow
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooCryptoAsymActions
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
@@ -193,6 +195,7 @@ private fun SymmetricPanel(
     onChanged: () -> Unit
 ) {
     val colors = MooTheme.colors
+    val keyLength = CryptoEngine.symmetricKeyUtf8Length(session.symAlgorithm, session.symKey)
     Column(modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(container.t("crypto.algorithm"), color = colors.textSecondary, fontSize = 12.sp)
@@ -213,7 +216,6 @@ private fun SymmetricPanel(
                 modifier = Modifier.width(220.dp)
             )
             Text(container.t("crypto.keyHint"), color = colors.textMuted, fontSize = 10.sp)
-            val keyLength = CryptoEngine.symmetricKeyUtf8Length(session.symAlgorithm, session.symKey)
             Text(
                 container.t(
                     "crypto.keyBytes",
@@ -239,14 +241,23 @@ private fun SymmetricPanel(
                     verticalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    MooButton(container.t("crypto.encrypt"), prominent = true, p5Toolbar = true, onClick = {
+                    MooButton(
+                        container.t("crypto.encrypt"),
+                        prominent = true,
+                        p5Toolbar = true,
+                        enabled = CryptoWiringPresentation.canSymmetricCrypt(keyLength.valid),
+                        onClick = {
                         runCrypto(container, session, "symmetric", "encrypt", session.symAlgorithm.name, session.symPlain) {
                             session.symCipher = CryptoEngine.symmetricEncrypt(session.symAlgorithm, session.symPlain, session.symKey)
                             session.symCipher
                         }
                         onChanged()
                     })
-                    MooButton(container.t("crypto.decrypt"), p5Toolbar = true, onClick = {
+                    MooButton(
+                        container.t("crypto.decrypt"),
+                        p5Toolbar = true,
+                        enabled = CryptoWiringPresentation.canSymmetricCrypt(keyLength.valid),
+                        onClick = {
                         runCrypto(container, session, "symmetric", "decrypt", session.symAlgorithm.name, session.symCipher) {
                             session.symPlain = CryptoEngine.symmetricDecrypt(session.symAlgorithm, session.symCipher, session.symKey)
                             session.symPlain
@@ -291,7 +302,7 @@ private fun AsymmetricPanel(
                 if (session.asymBusy) container.t("common.processing") else container.t("crypto.generateKeyPair"),
                 prominent = true,
                 p5Toolbar = true,
-                enabled = !session.asymBusy,
+                enabled = CryptoWiringPresentation.canGenerateKeyPair(session.asymBusy),
                 onClick = {
                     session.asymBusy = true
                     session.error = ""
@@ -319,7 +330,7 @@ private fun AsymmetricPanel(
             MooButton(
                 container.t("crypto.restorePublicKey"),
                 p5Toolbar = true,
-                enabled = session.privateKey.isNotBlank() && !session.asymBusy,
+                enabled = CryptoWiringPresentation.canRestorePublicKey(session.privateKey, session.asymBusy),
                 onClick = {
                     session.error = ""
                     runCatching {
@@ -401,7 +412,7 @@ private fun AsymmetricPanel(
             LabeledField(session, container.t("crypto.cipherOrSignature"), session.asymCipher, { session.asymCipher = it; onChanged() }, Modifier.weight(1f).height(160.dp))
         }
         FlowRow(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            modifier = Modifier.mooCryptoAsymActions(),
             horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterHorizontally),
             verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
@@ -419,7 +430,11 @@ private fun AsymmetricPanel(
                 }
                 onChanged()
             })
-            MooButton(container.t("crypto.privateEncrypt"), enabled = session.asymAlgorithm == AsymmetricAlgorithm.RSA, p5Toolbar = true, onClick = {
+            MooButton(
+                container.t("crypto.privateEncrypt"),
+                enabled = CryptoWiringPresentation.rsaPrivateReverseEnabled(session.asymAlgorithm),
+                p5Toolbar = true,
+                onClick = {
                 runCrypto(container, session, "asymmetric", "privateEncrypt", "RSA", session.asymPlain) {
                     if (session.asymAlgorithm != AsymmetricAlgorithm.RSA) throw CryptoException("rsa-only", container.t("crypto.rsaOnly"))
                     session.asymCipher = CryptoEngine.privateEncrypt(session.asymPlain, session.privateKey)
@@ -427,7 +442,11 @@ private fun AsymmetricPanel(
                 }
                 onChanged()
             })
-            MooButton(container.t("crypto.publicDecrypt"), enabled = session.asymAlgorithm == AsymmetricAlgorithm.RSA, p5Toolbar = true, onClick = {
+            MooButton(
+                container.t("crypto.publicDecrypt"),
+                enabled = CryptoWiringPresentation.rsaPrivateReverseEnabled(session.asymAlgorithm),
+                p5Toolbar = true,
+                onClick = {
                 runCrypto(container, session, "asymmetric", "publicDecrypt", "RSA", session.asymCipher) {
                     if (session.asymAlgorithm != AsymmetricAlgorithm.RSA) throw CryptoException("rsa-only", container.t("crypto.rsaOnly"))
                     session.asymPlain = CryptoEngine.publicDecrypt(session.asymCipher, session.publicKey)

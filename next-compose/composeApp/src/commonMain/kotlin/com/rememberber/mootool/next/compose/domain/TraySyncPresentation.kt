@@ -10,5 +10,14 @@ object TraySyncPresentation {
         language: String,
         hostProfileMenuRevision: Int,
         generalRevision: Long,
-    ): Int = listOf(trayEnabled, language, hostProfileMenuRevision, generalRevision).hashCode()
+        autoCheckUpdates: Boolean = false,
+        autoDownloadUpdates: Boolean = false,
+    ): Int = listOf(
+        trayEnabled,
+        language,
+        hostProfileMenuRevision,
+        generalRevision,
+        autoCheckUpdates,
+        autoDownloadUpdates,
+    ).hashCode()
 }

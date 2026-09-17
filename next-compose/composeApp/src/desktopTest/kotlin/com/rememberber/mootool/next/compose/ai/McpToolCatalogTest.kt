@@ -2,6 +2,7 @@ package com.rememberber.mootool.next.compose.ai
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class McpToolCatalogTest {
@@ -22,5 +23,7 @@ class McpToolCatalogTest {
         }
         assertEquals(4, registrations.count { it.idempotentHint })
         assertEquals(8, registrations.count { !it.idempotentHint })
+        val wire = registrations.single { it.name == "mootool_protobuf_wire" }
+        assertFalse(wire.idempotentHint)
     }
 }

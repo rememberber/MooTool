@@ -62,6 +62,7 @@ import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.domain.BoardAlignment
 import com.rememberber.mootool.next.compose.domain.BoardTheme
 import com.rememberber.mootool.next.compose.domain.MessageBoardEngine
+import com.rememberber.mootool.next.compose.domain.MessageBoardWiringPresentation
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.MessageBoardSession
 import com.rememberber.mootool.next.compose.ui.components.MooButton
@@ -113,7 +114,11 @@ fun MessageBoardScreen(container: AppContainer, detached: Boolean) {
     fun enterPresentation() {
         session.presenting = true
         session.displayAwake = container.displayWake.acquire(WAKE_TOKEN)
-        session.error = if (session.displayAwake) "" else container.t("messageBoard.wakeUnavailable")
+        session.error = if (MessageBoardWiringPresentation.wakeErrorIfNeeded(session.displayAwake)) {
+            container.t("messageBoard.wakeUnavailable")
+        } else {
+            ""
+        }
         refresh()
     }
 
@@ -203,7 +208,7 @@ private fun ControlPanel(
             session.message,
             { value ->
                 session.onUserInput {
-                    session.message = MessageBoardEngine.clip(value)
+                    session.message = MessageBoardWiringPresentation.clippedMessage(value)
                     session.error = ""
                     onChanged()
                 }

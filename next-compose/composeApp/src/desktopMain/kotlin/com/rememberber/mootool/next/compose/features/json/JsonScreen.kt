@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.EditorColumnEditPresentation
+import com.rememberber.mootool.next.compose.domain.JsonVaultFooterPresentation
 import com.rememberber.mootool.next.compose.domain.EditorSettingsLiveApply
 import com.rememberber.mootool.next.compose.domain.FindReplace
 import com.rememberber.mootool.next.compose.domain.JsonEngine
@@ -103,6 +104,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooCard
 import com.rememberber.mootool.next.compose.ui.components.mooEditorFrame
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
+import com.rememberber.mootool.next.compose.ui.components.mooJsonVaultFooter
 import com.rememberber.mootool.next.compose.ui.components.mooJsonVaultSearch
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
@@ -578,15 +580,20 @@ private fun JsonToolbar(
         onChanged()
     }
 
+    fun syncColumnNotice() {
+        session.notice = EditorColumnEditPresentation.columnNoticeKey(session.columnLatch, session.wrap)
+            ?.let(container::t).orEmpty()
+    }
+
     fun toggleWrap() {
         session.wrap = !session.wrap
+        if (session.columnLatch) syncColumnNotice()
         onChanged()
     }
 
     fun toggleColumn() {
         session.columnLatch = !session.columnLatch
-        session.notice = EditorColumnEditPresentation.columnNoticeKey(session.columnLatch, wrap = false)
-            ?.let(container::t).orEmpty()
+        syncColumnNotice()
         onChanged()
     }
 
@@ -1110,16 +1117,24 @@ private fun VaultPane(
             )
             }
         }
-        val vaultFooterPath = session.vaultSelectedPath.ifBlank { session.currentFile }
-        if (vaultFooterPath.isNotBlank()) {
+        val vaultFooterPath = JsonVaultFooterPresentation.effectivePath(session.vaultSelectedPath, session.currentFile)
+        if (JsonVaultFooterPresentation.showFooter(vaultFooterPath)) {
             VaultSelectionFooter(
                 path = vaultFooterPath,
-                dirty = vaultFooterPath == session.currentFile && session.editor.text != session.savedText,
+                dirty = JsonVaultFooterPresentation.footerDirty(
+                    vaultFooterPath,
+                    session.currentFile,
+                    session.editor.text,
+                    session.savedText,
+                ),
             )
         }
-        if (vaultFooterPath.isNotBlank()) {
+        if (JsonVaultFooterPresentation.showFooter(vaultFooterPath)) {
             val footerEntry = items.find { it.relativePath == vaultFooterPath }
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.mooJsonVaultFooter(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 MooButton(container.t("json.vault.rename"), onClick = {
                     val entry = footerEntry ?: VaultEntry(
                         vaultFooterPath,
@@ -1136,7 +1151,7 @@ private fun VaultPane(
                     session.dialogInput = jsonVaultRenameDefault(entry)
                     onChanged()
                 })
-                if (footerEntry?.directory != true) {
+                if (JsonVaultFooterPresentation.canDuplicate(footerEntry?.directory)) {
                     MooButton(container.t("json.vault.duplicate"), onClick = {
                         val entry = footerEntry ?: VaultEntry(
                             vaultFooterPath,

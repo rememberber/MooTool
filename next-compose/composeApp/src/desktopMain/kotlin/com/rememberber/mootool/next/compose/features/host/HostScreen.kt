@@ -71,6 +71,7 @@ import com.rememberber.mootool.next.compose.domain.HostErrorCode
 import com.rememberber.mootool.next.compose.domain.HostException
 import com.rememberber.mootool.next.compose.domain.HostHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.HostHistoryRestore
+import com.rememberber.mootool.next.compose.domain.HostWiringPresentation
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.HostSession
 import com.rememberber.mootool.next.compose.storage.HostProfile
@@ -379,7 +380,7 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                     MooButton(
                         if (session.applying) container.t("host.applying") else container.t("host.apply"),
                         prominent = true,
-                        enabled = session.content.isNotBlank() && !session.applying,
+                        enabled = HostWiringPresentation.canOpenApplyConfirm(session.content, session.applying),
                         p5Toolbar = true,
                         onClick = {
                             scope.launch(Dispatchers.IO) {
@@ -405,7 +406,7 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                     )
                     MooButton(
                         container.t("host.restore"),
-                        enabled = session.lastBackup.isNotBlank() && !session.applying,
+                        enabled = HostWiringPresentation.canRestoreBackup(session.lastBackup, session.applying),
                         p5Toolbar = true,
                         onClick = {
                             val backup = session.lastBackup
@@ -524,7 +525,11 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                     Text(session.applyDiff, color = colors.textPrimary, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MooButton(container.t("host.apply"), prominent = true, enabled = !session.applying, onClick = {
+                    MooButton(
+                        container.t("host.apply"),
+                        prominent = true,
+                        enabled = HostWiringPresentation.canConfirmApply(session.applying),
+                        onClick = {
                         session.applying = true
                         persist()
                         scope.launch(Dispatchers.IO) {

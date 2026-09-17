@@ -40,4 +40,11 @@ class UpdateAboutPresentationTest {
             ),
         )
     }
+
+    @Test
+    fun checkAndProgressGuards() {
+        assertFalse(UpdateAboutPresentation.canCheckForUpdates(busy = true))
+        assertTrue(UpdateAboutPresentation.showDownloadProgress("downloading", hasProgress = true))
+        assertFalse(UpdateAboutPresentation.showDownloadProgress("idle", hasProgress = true))
+    }
 }

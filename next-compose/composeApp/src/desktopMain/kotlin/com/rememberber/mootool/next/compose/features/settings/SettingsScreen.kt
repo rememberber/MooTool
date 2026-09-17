@@ -574,7 +574,7 @@ fun SettingsScreen(container: AppContainer) {
                         Text(result!!.releaseNotes, color = colors.textSecondary, fontSize = 12.sp)
                     }
                     val progress = update.progress
-                    if (progress != null && (update.status == "downloading" || update.status == "ready")) {
+                    if (progress != null && UpdateAboutPresentation.showDownloadProgress(update.status, hasProgress = true)) {
                         Text(
                             container.t(
                                 "settings.update.progress",
@@ -591,7 +591,7 @@ fun SettingsScreen(container: AppContainer) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         MooButton(
                             container.t("settings.update.check"),
-                            enabled = !update.busy,
+                            enabled = UpdateAboutPresentation.canCheckForUpdates(update.busy),
                             onClick = { container.updates.check(autoDownload = settings.general.autoDownloadUpdates) }
                         )
                         if (UpdateAboutPresentation.showDownloadAction(

@@ -20,5 +20,14 @@ class TraySyncPresentationTest {
         val hostChanged = TraySyncPresentation.menuRevision(true, "zh-CN", 2, 1L)
         assertNotEquals(base, languageChanged)
         assertNotEquals(base, hostChanged)
+        val autoCheckChanged = TraySyncPresentation.menuRevision(
+            true,
+            "zh-CN",
+            0,
+            1L,
+            autoCheckUpdates = true,
+            autoDownloadUpdates = false,
+        )
+        assertNotEquals(base, autoCheckChanged)
     }
 }

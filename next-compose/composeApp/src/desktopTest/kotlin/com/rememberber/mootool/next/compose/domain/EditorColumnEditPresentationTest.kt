@@ -8,6 +8,7 @@ class EditorColumnEditPresentationTest {
     @Test
     fun columnNoticeKeyWrapWhenLatchAndWrap() {
         assertEquals("quickNote.columnEdit.wrap", EditorColumnEditPresentation.columnNoticeKey(columnLatch = true, wrap = true))
+        assertEquals("quickNote.columnEdit.hint", EditorColumnEditPresentation.columnNoticeKey(columnLatch = true, wrap = false))
         assertEquals(null, EditorColumnEditPresentation.columnNoticeKey(columnLatch = false, wrap = true))
     }
 

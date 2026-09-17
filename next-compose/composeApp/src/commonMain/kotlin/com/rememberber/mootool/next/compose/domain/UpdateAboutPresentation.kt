@@ -28,4 +28,9 @@ object UpdateAboutPresentation {
         if (latestVersion.isNullOrBlank()) return false
         return checkStatus?.lowercase() != "unpublished"
     }
+
+    fun canCheckForUpdates(busy: Boolean): Boolean = !busy
+
+    fun showDownloadProgress(status: String, hasProgress: Boolean): Boolean =
+        hasProgress && (status == "downloading" || status == "ready")
 }

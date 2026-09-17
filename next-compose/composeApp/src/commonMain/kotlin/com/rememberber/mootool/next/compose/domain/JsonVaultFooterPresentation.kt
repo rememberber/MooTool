@@ -1,0 +1,14 @@
+package com.rememberber.mootool.next.compose.domain
+
+/** F04 JSON Vault 底栏路径与操作守卫（树选中 vs 当前打开文件）。 */
+object JsonVaultFooterPresentation {
+    fun effectivePath(vaultSelectedPath: String, currentFile: String): String =
+        vaultSelectedPath.ifBlank { currentFile }
+
+    fun showFooter(path: String): Boolean = path.isNotBlank()
+
+    fun footerDirty(path: String, currentFile: String, editorText: String, savedText: String): Boolean =
+        path == currentFile && editorText != savedText
+
+    fun canDuplicate(isDirectory: Boolean?): Boolean = isDirectory == false
+}

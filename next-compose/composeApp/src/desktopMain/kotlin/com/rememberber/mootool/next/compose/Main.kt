@@ -201,6 +201,8 @@ fun main(args: Array<String>) {
         language = settings.general.language,
         hostProfileMenuRevision = hostProfileMenuRevision,
         generalRevision = revision,
+        autoCheckUpdates = settings.general.autoCheckUpdates,
+        autoDownloadUpdates = settings.general.autoDownloadUpdates,
     )
     LaunchedEffect(trayMenuRevision) {
         tray.sync(settings.general.trayEnabled, trayModel())
