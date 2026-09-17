@@ -183,7 +183,13 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                                 container.toastSuccess(container.t("variables.exported"))
                             }
                             is EnvWiringPresentation.ExportOutcome.Failure -> {
-                                session.error = outcome.error.message ?: container.t("variables.error.generic")
+                                val message = container.t(
+                                    "reformat.error.write",
+                                    mapOf("message" to (outcome.error.message ?: file.path)),
+                                )
+                                session.error = message
+                                session.notice = message
+                                container.toastError(message)
                             }
                         }
                         persist()

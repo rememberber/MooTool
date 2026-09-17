@@ -308,11 +308,14 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                             session.error = ""
                             persist()
                         }
-                        is HostWiringPresentation.ImportProfileOutcome.Failure ->
-                            session.error = container.t(
+                        is HostWiringPresentation.ImportProfileOutcome.Failure -> {
+                            val message = container.t(
                                 "reformat.error.read",
-                                mapOf("message" to (outcome.error.message ?: "")),
+                                mapOf("message" to (outcome.error.message ?: file.path)),
                             )
+                            session.error = message
+                            container.toastError(message)
+                        }
                     }
                 },
                 onExport = {
@@ -327,11 +330,14 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                             container.toastSuccess(container.t("host.exported"))
                             persist()
                         }
-                        is HostWiringPresentation.ExportProfileOutcome.Failure ->
-                            session.error = container.t(
+                        is HostWiringPresentation.ExportProfileOutcome.Failure -> {
+                            val message = container.t(
                                 "reformat.error.write",
-                                mapOf("message" to (outcome.error.message ?: "")),
+                                mapOf("message" to (outcome.error.message ?: file.path)),
                             )
+                            session.error = message
+                            container.toastError(message)
+                        }
                     }
                 },
                 onDelete = { if (session.selectedId.isNotBlank()) { session.deleteConfirm = true; persist() } },

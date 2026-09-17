@@ -560,10 +560,12 @@ private fun importSide(container: AppContainer, session: DiffSession, side: Stri
             onDone()
         }
         is TextDiffPresentation.ImportOutcome.Failure -> {
-            session.notice = container.t(
+            val message = container.t(
                 "reformat.error.read",
                 mapOf("message" to (outcome.error.message ?: file.path)),
             )
+            session.notice = message
+            container.toastError(message)
             onDone()
         }
     }
