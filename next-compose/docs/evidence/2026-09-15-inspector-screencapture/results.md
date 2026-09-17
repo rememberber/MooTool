@@ -116,6 +116,7 @@
 | `163-compose-http-saved-item-tab-focus.png` | Compose 场景 HTTP 集合 `.http-saved-item` 行焦点环（`HttpSavedItemCaptureTest`，[DIFF-568](../../diff/568-http-host-translation-mcp-css-slice.md)，非产品窗） |
 | `164-compose-host-profile-item-tab-focus.png` | Compose 场景 Host `.host-profile` 方案行焦点环（`HostProfileItemCaptureTest`，[DIFF-569](../../diff/569-time-host-mcp-css-slice.md)，与 `133` 搜索框互补，非产品窗） |
 | `165-compose-config-validate-tab-focus.png` | Compose 场景 F06 YAML 校验 Tab「校验」按钮焦点环（`ConfigValidateCaptureTest`，[DIFF-570](../../diff/570-config-mcp-css-slice.md)，非产品窗） |
+| `166-compose-json-inspector-copy-path-tab-focus.png` | Compose 场景 F04 JSON 检查器 JSONPath「复制」按钮焦点环（`JsonInspectorCopyPathCaptureTest`，[DIFF-571](../../diff/571-json-mcp-css-slice.md)，非产品窗） |
 | `133-compose-host-profile-search-tab-focus.png` | Compose 场景 Host 方案列表 `MooCompactSearch`（220dp，[DIFF-429](../../diff/429-electron-jsontools-fixture-host-search-focus.md)） |
 | `134-compose-settings-appearance-nav-tab-focus.png` | Compose 场景设置「外观」导航项焦点环（[DIFF-431](../../diff/431-settings-nav-focusable-tab-evidence.md)，与 `85` 互补） |
 | `135-compose-settings-language-select-tab-focus.png` | Compose 场景设置语言 `MooSelect` 触发钮焦点环（同上） |

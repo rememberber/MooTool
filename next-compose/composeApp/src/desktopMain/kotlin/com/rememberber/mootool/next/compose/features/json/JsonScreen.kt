@@ -60,6 +60,7 @@ import com.rememberber.mootool.next.compose.domain.JsonVaultFooterPresentation
 import com.rememberber.mootool.next.compose.domain.EditorSettingsLiveApply
 import com.rememberber.mootool.next.compose.domain.FindReplace
 import com.rememberber.mootool.next.compose.domain.JsonEngine
+import com.rememberber.mootool.next.compose.domain.JsonWiringPresentation
 import com.rememberber.mootool.next.compose.domain.JsonStatus
 import com.rememberber.mootool.next.compose.domain.JsonTranslator
 import com.rememberber.mootool.next.compose.domain.VaultSelectionPath
@@ -106,6 +107,8 @@ import com.rememberber.mootool.next.compose.ui.components.mooEditorFrame
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.components.mooJsonVaultFooter
 import com.rememberber.mootool.next.compose.ui.components.mooJsonVaultFooterActions
+import com.rememberber.mootool.next.compose.ui.components.mooJsonInspectorPathActions
+import com.rememberber.mootool.next.compose.ui.components.mooJsonInspectorSectionResult
 import com.rememberber.mootool.next.compose.ui.components.mooJsonVaultSearch
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
@@ -201,7 +204,7 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
         JsonTranslator { key, params -> container.t(key, params) }
     }
     val status = remember(session.editor.revision, tick, settings.general.language) {
-        JsonEngine.validate(session.editor.text, translator)
+        JsonWiringPresentation.runValidate(session.editor.text, translator)
     }
     val gitChangeCount = rememberVaultGitChangeCount(container.jsonVault.root(), tick + gitCountRev)
     var monitor by remember { mutableStateOf<VaultRevisionMonitor?>(null) }
@@ -282,8 +285,12 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
                     translator,
                     container.t("json.notice.formatted"),
                     historySummary = container.t("json.action.format"),
-                ) {
-                    JsonEngine.format(it, translator, JsonToolbarFormatPolicy.QUICK_FORMAT_SPACES)
+                ) { input ->
+                    JsonWiringPresentation.runQuickFormat(
+                        input,
+                        translator,
+                        JsonToolbarFormatPolicy.QUICK_FORMAT_SPACES,
+                    )
                 }
                 refresh()
                 true
@@ -417,8 +424,12 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
                                 translator,
                                 container.t("json.notice.formatted"),
                                 historySummary = container.t("json.action.format"),
-                            ) {
-                                JsonEngine.format(it, translator, JsonToolbarFormatPolicy.QUICK_FORMAT_SPACES)
+                            ) { input ->
+                                JsonWiringPresentation.runQuickFormat(
+                                    input,
+                                    translator,
+                                    JsonToolbarFormatPolicy.QUICK_FORMAT_SPACES,
+                                )
                             }
                             refresh()
                         },
@@ -648,8 +659,12 @@ private fun JsonToolbar(
                 translator,
                 container.t("json.notice.formatted"),
                 historySummary = container.t("json.action.format"),
-            ) {
-                JsonEngine.format(it, translator, JsonToolbarFormatPolicy.QUICK_FORMAT_SPACES)
+            ) { input ->
+                JsonWiringPresentation.runQuickFormat(
+                    input,
+                    translator,
+                    JsonToolbarFormatPolicy.QUICK_FORMAT_SPACES,
+                )
             }
             onChanged()
         })
@@ -660,9 +675,7 @@ private fun JsonToolbar(
                 translator,
                 container.t("json.notice.compressed"),
                 historySummary = container.t("json.action.compress"),
-            ) {
-                JsonEngine.compress(it, translator)
-            }
+            ) { input -> JsonWiringPresentation.runCompress(input, translator) }
             onChanged()
         })
         FontSelect(
@@ -1416,8 +1429,8 @@ private fun InspectorPane(
                     p5Toolbar = true,
                     modifier = Modifier.padding(top = 6.dp),
                     onClick = {
-                        showResult(container, session, translator, container.t("json.action.inferSchema")) {
-                            JsonEngine.inferJsonSchema(it, translator)
+                        showResult(container, session, translator, container.t("json.action.inferSchema")) { input ->
+                            JsonWiringPresentation.runTransform(input) { JsonEngine.inferJsonSchema(it, translator) }
                         }
                         onChanged()
                     },
@@ -1461,8 +1474,8 @@ private fun InspectorPane(
                     translator,
                     container.t("json.notice.formatted"),
                     historySummary = container.t("json.format.apply"),
-                ) {
-                    JsonEngine.formatAdvanced(it, translator, session.formatOptions)
+                ) { input ->
+                    JsonWiringPresentation.runFormatAdvanced(input, translator, session.formatOptions)
                 }
                 onChanged()
             },
@@ -1474,7 +1487,9 @@ private fun InspectorPane(
         InspectorActionGrid(
             listOf(
                 container.t("json.action.jsonToXml") to {
-                    showResult(container, session, translator, container.t("json.action.jsonToXml")) { JsonEngine.jsonToXml(it, translator) }
+                    showResult(container, session, translator, container.t("json.action.jsonToXml")) { input ->
+                        JsonWiringPresentation.runTransform(input) { JsonEngine.jsonToXml(it, translator) }
+                    }
                     onChanged()
                 },
                 container.t("json.action.xmlToJson") to {
@@ -1488,13 +1503,17 @@ private fun InspectorPane(
                     onChanged()
                 },
                 container.t("json.action.jsonToBean") to {
-                    showResult(container, session, translator, container.t("json.action.jsonToBean")) {
-                        JsonEngine.jsonToJavaBean(it, translator, session.className.ifBlank { "Root" })
+                    showResult(container, session, translator, container.t("json.action.jsonToBean")) { input ->
+                        JsonWiringPresentation.runTransform(input) {
+                            JsonEngine.jsonToJavaBean(it, translator, session.className.ifBlank { "Root" })
+                        }
                     }
                     onChanged()
                 },
                 container.t("json.action.swap") to {
-                    transform(container, session, translator, container.t("json.action.swap")) { JsonEngine.swapKeysAndValues(it, translator) }
+                    transform(container, session, translator, container.t("json.action.swap")) { input ->
+                        JsonWiringPresentation.runTransform(input) { JsonEngine.swapKeysAndValues(it, translator) }
+                    }
                     onChanged()
                 },
                 container.t("json.action.escape") to {
@@ -1504,7 +1523,7 @@ private fun InspectorPane(
                         translator,
                         container.t("json.notice.escaped"),
                         historySummary = container.t("json.action.escape"),
-                    ) { JsonEngine.escapeJsonString(it) }
+                    ) { input -> JsonWiringPresentation.runTransform(input) { JsonEngine.escapeJsonString(it) } }
                     onChanged()
                 },
                 container.t("json.action.unescape") to {
@@ -1514,15 +1533,21 @@ private fun InspectorPane(
                         translator,
                         container.t("json.notice.unescaped"),
                         historySummary = container.t("json.action.unescape"),
-                    ) { JsonEngine.unescapeJsonString(it, translator) }
+                    ) { input ->
+                        JsonWiringPresentation.runTransform(input) { JsonEngine.unescapeJsonString(it, translator) }
+                    }
                     onChanged()
                 },
                 container.t("json.action.escapeText") to {
-                    transform(container, session, translator, container.t("json.action.escapeText")) { JsonEngine.escapeJavaString(it) }
+                    transform(container, session, translator, container.t("json.action.escapeText")) { input ->
+                        JsonWiringPresentation.runTransform(input) { JsonEngine.escapeJavaString(it) }
+                    }
                     onChanged()
                 },
                 container.t("json.action.unescapeText") to {
-                    transform(container, session, translator, container.t("json.action.unescapeText")) { JsonEngine.unescapeJsonText(it) }
+                    transform(container, session, translator, container.t("json.action.unescapeText")) { input ->
+                        JsonWiringPresentation.runTransform(input) { JsonEngine.unescapeJsonText(it) }
+                    }
                     onChanged()
                 }
             )
@@ -1559,7 +1584,11 @@ private fun InspectorPane(
                 }
             }
         }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+        Row(
+            Modifier.fillMaxWidth().mooJsonInspectorPathActions(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
         MooTextField(
             session.jsonPath,
             { session.applyInspectorJsonPathInput(it, pathAppliedNotice); onChanged() },
@@ -1600,7 +1629,7 @@ private fun InspectorPane(
             )
         }
         }
-        MooCard(Modifier.fillMaxWidth()) {
+        MooCard(Modifier.fillMaxWidth().mooJsonInspectorSectionResult()) {
         Text(container.t("json.panel.result"), color = colors.textPrimary, fontSize = 12.sp)
         val resultDisplay = jsonInspectorResultDisplay(
             pathResult = session.pathResult,
@@ -1829,9 +1858,7 @@ private fun queryJsonPathInspector(
         translator,
         container.t("json.panel.jsonPath"),
         fillPathResult = true,
-    ) {
-        JsonEngine.queryPath(it, session.jsonPath, translator)
-    }
+    ) { input -> JsonWiringPresentation.runQueryPath(input, session.jsonPath, translator) }
     onChanged()
 }
 
@@ -1841,11 +1868,12 @@ private fun transform(
     translator: JsonTranslator,
     notice: String,
     historySummary: String = notice,
-    block: (String) -> String,
+    runner: (String) -> JsonWiringPresentation.TransformOutcome,
 ) {
     val input = session.editor.text
-    runCatching { block(input) }
-        .onSuccess { output ->
+    when (val outcome = runner(input)) {
+        is JsonWiringPresentation.TransformOutcome.Success -> {
+            val output = outcome.output
             session.clearJsonPathQueryResult()
             onEdt { session.editor.setText(output, recordUndo = true) }
             session.notice = notice
@@ -1859,11 +1887,12 @@ private fun transform(
                 JsonHistoryMetadata.encodeEditor(),
             )
         }
-        .onFailure { error ->
-            val message = error.message ?: container.t("json.notice.failed")
+        is JsonWiringPresentation.TransformOutcome.Failure -> {
+            val message = outcome.error.message ?: container.t("json.notice.failed")
             session.notice = message
             container.toastError(message)
         }
+    }
 }
 
 private fun handleJsonVaultContext(
@@ -1919,23 +1948,25 @@ private fun showResult(
     translator: JsonTranslator,
     title: String,
     fillPathResult: Boolean = false,
-    block: (String) -> String,
+    runner: (String) -> JsonWiringPresentation.TransformOutcome,
 ) {
     val input = session.editor.text
-    runCatching { block(input) }
-        .onSuccess { output ->
+    when (val outcome = runner(input)) {
+        is JsonWiringPresentation.TransformOutcome.Success -> {
+            val output = outcome.output
             session.pathResult = if (fillPathResult) output else ""
             session.dialogTitle = title
             session.dialogBody = output
             session.notice = title
             container.history.save(ToolId.Json.id, title, title, input, output, JsonHistoryMetadata.encodeEditor())
         }
-        .onFailure { error ->
+        is JsonWiringPresentation.TransformOutcome.Failure -> {
             if (fillPathResult) session.pathResult = ""
-            val message = error.message ?: container.t("json.notice.failed")
+            val message = outcome.error.message ?: container.t("json.notice.failed")
             session.notice = message
             container.toastError(message)
         }
+    }
 }
 
 private fun jumpFind(container: AppContainer, session: JsonSession, forward: Boolean) {

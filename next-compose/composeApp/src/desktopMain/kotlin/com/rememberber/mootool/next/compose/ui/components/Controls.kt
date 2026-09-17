@@ -1524,6 +1524,14 @@ fun Modifier.mooNetSection(): Modifier = padding(vertical = 12.dp)
 @Composable
 fun Modifier.mooJsonInspectorStructureRow(): Modifier = heightIn(min = 22.dp)
 
+/** Electron `.inspector-section--result` 结果区最小高度。 */
+@Composable
+fun Modifier.mooJsonInspectorSectionResult(): Modifier = heightIn(min = 72.dp)
+
+/** Electron JSON 检查器 JSONPath 输入 +「复制」行（`.inspector-action` gap 7dp）。 */
+@Composable
+fun Modifier.mooJsonInspectorPathActions(): Modifier = fillMaxWidth()
+
 /** Vault Git merge 产品走查提示行。 */
 @Composable
 fun Modifier.mooGitMergeFlowHint(): Modifier = padding(top = 4.dp)
