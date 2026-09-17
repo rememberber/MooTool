@@ -16,6 +16,7 @@
 | commit-during-merge | 同上 | merge 中禁止 commit | `GitEngineTest.rejectsCommitWhileMergeInProgress`（[DIFF-446](../diff/446-git-commit-guard-focus-vault-actions-reload.md)） |
 | commit-message-300 | 同上 | 说明截断 300 | `GitEngineTest.truncatesCommitMessageToThreeHundredCharacters` |
 | pull-during-merge | 同上 | merge 中禁止 pull | `GitEngineTest.pullBlockedWhileMergeInProgress`（[DIFF-447](../diff/447-git-pull-merge-order-conflict-dialog-click.md)）；`GitPullGuardTest.mergeInProgressRejectedBeforeMissingRemoteMessage`（[DIFF-448](../diff/448-vault-conflict-reload-savecopy-git-pull-guard.md)） |
+| continue-unresolved-conflicts | 同上 | 冲突未解决禁止 continue | `GitContinueGuardTest.continueRejectedWhileConflictsRemain`（[DIFF-493](../diff/493-vault-deleted-savecopy-git-continue-guard.md)） |
 | concurrent-commits | 同上 | 双 `VaultGitService` 并行 commit | `GitEngineTest.serializesConcurrentCommitsForSameVaultRoot`（两线程两 message，仅一条 `concurrent.txt` 提交，对齐 Electron `serializes Git actions…separate service instances`） |
 | push-non-ff | Electron 行为 | 远程领先时 `push` 失败 | `GitEngineTest.pushFailsWhenRemoteIsAheadWithoutPull`（[DIFF-469](../diff/469-vault-mcp-zod-args-git-push-reject.md)） |
 | fetch-prune-behind | 同上 | `fetch` action | `GitEngineTest.fetchUpdatesBehindWithoutPullingWorkingTree` / `fetchFailsWhenRemoteIsNotConfigured`（[DIFF-474](../diff/474-git-fetch-prune-behind-parity.md)） |

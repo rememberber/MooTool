@@ -15,6 +15,7 @@ import javax.swing.SwingUtilities
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** 对齐 [QuickNoteScreen] `onSaveCopy`：旁路副本 + 编辑器回到磁盘正文。 */
@@ -96,5 +97,46 @@ class QuickNoteVaultConflictSaveCopyFlowTest {
         assertTrue(pending.deleted)
         assertEquals(path, pending.relativePath)
         productRoot.toFile().deleteRecursively()
+    }
+
+    @Test
+    fun saveCopyWhenExternallyDeletedOpensCopyAsCurrentFile() {
+        val productRoot = createTempDirectory("mootool-qn-conflict-savecopy-deleted-")
+        val directories = AppPaths.resolve(productRoot.toString()).also { it.ensureCreated() }
+        val settings = SettingsRepository(directories).also { it.load() }
+        val database = AppDatabase(directories)
+        val container = AppContainer(
+            directories = directories,
+            settingsRepository = settings,
+            database = database,
+            history = HistoryRepository(database),
+            migrationRows = LegacyMigrationRowRepository(database),
+            sessions = SessionStore(database),
+        )
+        val vault = container.noteVault()
+        val path = "gone.md"
+        val editorBody = "edited locally\n"
+        val fixedTime = 1_700_000_004_000L
+        val session = QuickNoteSession().apply {
+            currentFile = path
+            savedText = "body\n"
+            SwingUtilities.invokeAndWait {
+                editor.setText(editorBody, recordUndo = false)
+            }
+        }
+        val pending = VaultConflictState(path, editorBody, diskText = null, deleted = true)
+        try {
+            SwingUtilities.invokeAndWait {
+                assertTrue(applyQuickNoteVaultConflictSaveCopy(container, session, vault, pending, null, fixedTime))
+            }
+            SwingUtilities.invokeAndWait { }
+            val copy = "gone.local-$fixedTime.md"
+            assertEquals(copy, session.currentFile)
+            assertEquals(editorBody, session.savedText)
+            assertEquals(editorBody, NoteFrontmatter.parse(vault.read(copy), "copy").content)
+            assertNull(session.vaultConflict)
+        } finally {
+            productRoot.toFile().deleteRecursively()
+        }
     }
 }

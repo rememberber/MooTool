@@ -14,6 +14,7 @@ import javax.swing.SwingUtilities
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** 对齐 [JsonScreen] `onSaveCopy`：旁路副本 + 编辑器回到磁盘版本。 */
@@ -92,5 +93,45 @@ class JsonVaultConflictSaveCopyFlowTest {
         assertTrue(pending.deleted)
         assertEquals(path, pending.relativePath)
         productRoot.toFile().deleteRecursively()
+    }
+
+    @Test
+    fun saveCopyWhenExternallyDeletedOpensCopyAsCurrentFile() {
+        val productRoot = createTempDirectory("mootool-json-conflict-savecopy-deleted-")
+        val directories = AppPaths.resolve(productRoot.toString()).also { it.ensureCreated() }
+        val settings = SettingsRepository(directories).also { it.load() }
+        val database = AppDatabase(directories)
+        val container = AppContainer(
+            directories = directories,
+            settingsRepository = settings,
+            database = database,
+            history = HistoryRepository(database),
+            migrationRows = LegacyMigrationRowRepository(database),
+            sessions = SessionStore(database),
+        )
+        val path = "gone.json"
+        val editorText = """{"v":1,"local":true}"""
+        val fixedTime = 1_700_000_003_000L
+        val session = JsonSession().apply {
+            currentFile = path
+            savedText = """{"v":1}"""
+            SwingUtilities.invokeAndWait {
+                editor.setText(editorText, recordUndo = false)
+            }
+        }
+        val pending = VaultConflictState(path, editorText, diskText = null, deleted = true)
+        try {
+            SwingUtilities.invokeAndWait {
+                assertTrue(applyJsonVaultConflictSaveCopy(container, session, pending, null, fixedTime))
+            }
+            SwingUtilities.invokeAndWait { }
+            val copy = "gone.local-$fixedTime.json"
+            assertEquals(copy, session.currentFile)
+            assertEquals(editorText, session.savedText)
+            assertEquals(editorText, container.jsonVault.read(copy))
+            assertNull(session.vaultConflict)
+        } finally {
+            productRoot.toFile().deleteRecursively()
+        }
     }
 }
