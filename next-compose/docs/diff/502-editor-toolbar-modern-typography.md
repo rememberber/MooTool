@@ -20,4 +20,4 @@ parity-gap **P1 外观 / 工具页内容区**；延续 DIFF-501，避免设置�
 
 ## 未做
 
-modern 7dp 圆角仅 `.toolbar-button`（非 p5 仍用风格 `radius`）、六套 CSS 逐选择器皮肤、产品窗全工具走查、设置未实现分类、Git/Vault 新切片、P7 三平台安装验收、hero/claude 内容区 shell 走查。
+modern 7dp 圆角见 [DIFF-503](503-modern-toolbar-button-7dp-radius.md)；六套 CSS 逐选择器皮肤、产品窗全工具走查、设置未实现分类、Git/Vault 新切片、P7 三平台安装验收、hero/claude 内容区 shell 走查。

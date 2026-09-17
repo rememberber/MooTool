@@ -86,4 +86,11 @@ object LayoutPolicy {
 
     fun nonP5ToolbarFontWeightMedium(dense: Boolean, interfaceStyle: String): Boolean =
         !dense && (interfaceStyle == "modern" || interfaceStyle == "quiet")
+
+    /**
+     * Electron `:root[data-interface-style='modern'] .toolbar-button { border-radius: 7px }` overrides
+     * the default `--desktop-control-radius` (9px) for labeled editor/toolbar buttons only.
+     */
+    fun nonP5ToolbarCornerRadiusDp(dense: Boolean, interfaceStyle: String): Float? =
+        if (!dense && interfaceStyle == "modern") 7f else null
 }

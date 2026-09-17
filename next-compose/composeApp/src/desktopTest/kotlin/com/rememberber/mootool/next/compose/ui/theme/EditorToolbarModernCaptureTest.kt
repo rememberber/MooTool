@@ -19,7 +19,7 @@ import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-/** modern `.editor-toolbar` 非 p5 按钮应走 13sp/Medium（DIFF-502）。 */
+/** modern `.editor-toolbar` 非 p5 按钮：13sp/Medium（DIFF-502）、7dp 圆角（DIFF-503）。 */
 class EditorToolbarModernCaptureTest {
     @OptIn(ExperimentalTestApi::class)
     @Test

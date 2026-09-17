@@ -79,6 +79,14 @@ class LayoutPolicyTest {
     }
 
     @Test
+    fun modernNonP5ToolbarCornerRadiusMatchesElectronToolbarButton() {
+        assertEquals(7f, LayoutPolicy.nonP5ToolbarCornerRadiusDp(dense = false, interfaceStyle = "modern"))
+        assertNull(LayoutPolicy.nonP5ToolbarCornerRadiusDp(dense = false, interfaceStyle = "quiet"))
+        assertNull(LayoutPolicy.nonP5ToolbarCornerRadiusDp(dense = false, interfaceStyle = "hero"))
+        assertNull(LayoutPolicy.nonP5ToolbarCornerRadiusDp(dense = true, interfaceStyle = "modern"))
+    }
+
+    @Test
     fun classicNavigationHidesBuiltinGroupLabels() {
         assertFalse(LayoutPolicy.showNavigationGroupLabel("classic", showSeparators = true, customGroup = false))
         assertTrue(LayoutPolicy.showNavigationGroupLabel("classic", showSeparators = true, customGroup = true))

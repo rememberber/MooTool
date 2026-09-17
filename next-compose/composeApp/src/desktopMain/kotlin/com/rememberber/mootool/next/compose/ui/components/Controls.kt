@@ -96,7 +96,16 @@ fun MooButton(
         else -> colors.textBody
     }
     val p5Dense = p5Toolbar && LayoutPolicy.p5ToolbarDense(LocalCompactNavigation.current)
-    val shape = if (p5Toolbar) RoundedCornerShape(6.dp) else RoundedCornerShape(radius)
+    val nonP5CornerDp = if (!p5Toolbar) {
+        LayoutPolicy.nonP5ToolbarCornerRadiusDp(dense, colors.styleId)
+    } else {
+        null
+    }
+    val shape = when {
+        p5Toolbar -> RoundedCornerShape(6.dp)
+        nonP5CornerDp != null -> RoundedCornerShape(nonP5CornerDp.dp)
+        else -> RoundedCornerShape(radius)
+    }
     val p5HeightDp = LayoutPolicy.p5ToolbarButtonHeightDp(
         dense = dense || p5Dense,
         controlHeightDp = MooTheme.dimens.controlHeight.value,
