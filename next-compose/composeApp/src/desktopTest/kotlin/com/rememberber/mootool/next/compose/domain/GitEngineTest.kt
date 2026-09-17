@@ -314,6 +314,42 @@ class GitEngineTest {
         }
     }
 
+    /** 对照 Electron `VaultGitService` `fetch`（`git fetch --prune origin`）清理已删远程分支的 tracking ref。 */
+    @Test
+    fun fetchPruneRemovesStaleRemoteTrackingBranch() {
+        assumeGit()
+        val bare = Files.createTempDirectory("mootool-compose-git-fetch-prune-bare-")
+        val upstream = Files.createTempDirectory("mootool-compose-git-fetch-prune-up-")
+        val client = Files.createTempDirectory("mootool-compose-git-fetch-prune-client-")
+        try {
+            git(bare, "init", "--bare", "-b", "main")
+            val url = bare.toAbsolutePath().toUri().toString()
+            git(upstream, "clone", url, ".")
+            upstream.resolve("base.txt").writeText("base\n")
+            git(upstream, "add", "--all")
+            git(upstream, "commit", "-m", "Base")
+            assertTrue(GitEngine.push(upstream, isolateConfig = true).success)
+            git(upstream, "checkout", "-b", "feature")
+            upstream.resolve("feature.txt").writeText("feature\n")
+            git(upstream, "add", "--all")
+            git(upstream, "commit", "-m", "Feature")
+            assertTrue(GitEngine.push(upstream, isolateConfig = true).success)
+            git(client, "clone", url, ".")
+            assertTrue(GitEngine.fetch(client, isolateConfig = true).success)
+            val beforeDelete = git(client, "branch", "-r")
+            assertTrue(beforeDelete.contains("origin/feature"), beforeDelete)
+            git(upstream, "checkout", "main")
+            git(upstream, "push", "origin", "--delete", "feature")
+            assertTrue(GitEngine.fetch(client, isolateConfig = true).success)
+            val afterPrune = git(client, "branch", "-r")
+            assertFalse(afterPrune.contains("origin/feature"), afterPrune)
+        } finally {
+            bare.toFile().deleteRecursively()
+            upstream.toFile().deleteRecursively()
+            client.toFile().deleteRecursively()
+        }
+    }
+
     @Test
     fun fetchFailsWhenRemoteIsNotConfigured() {
         assumeGit()
