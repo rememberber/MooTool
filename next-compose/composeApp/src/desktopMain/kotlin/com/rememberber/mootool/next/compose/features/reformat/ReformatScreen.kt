@@ -77,8 +77,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.withContext
-import java.awt.FileDialog
-import java.awt.Frame
+import com.rememberber.mootool.next.compose.ui.chooseFileWithExportDirectory
+import com.rememberber.mootool.next.compose.ui.persistToolsExportDirectory
 import java.io.File
 import java.nio.charset.StandardCharsets
 
@@ -428,7 +428,7 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
 }
 
 private fun chooseSourceFile(container: AppContainer, session: ReformatSession) {
-    val file = chooseFile(save = false, title = container.t("reformat.chooseFile")) ?: return
+    val file = chooseFileWithExportDirectory(container, save = false, title = container.t("reformat.chooseFile")) ?: return
     loadSourceFile(container, session, file)
 }
 
@@ -460,25 +460,22 @@ private fun saveResult(container: AppContainer, session: ReformatSession) {
         ReformatType.Html -> "html"
     }
     val base = session.fileName.replace(Regex("\\.[^.]+$"), "").ifEmpty { "formatted" }
-    val file = chooseFile(save = true, title = container.t("reformat.save"), defaultName = "$base.$extension") ?: return
+    val file = chooseFileWithExportDirectory(
+        container,
+        save = true,
+        title = container.t("reformat.save"),
+        defaultFileName = "$base.$extension",
+    ) ?: return
     runCatching { file.writeText(content, StandardCharsets.UTF_8) }
         .onSuccess {
             session.error = ""
             session.notice = container.t("reformat.saved")
+            persistToolsExportDirectory(container, file)
             container.toastSuccess(container.t("reformat.saved"))
         }
         .onFailure { error ->
             session.error = container.t("reformat.error.write", mapOf("message" to (error.message ?: file.path)))
         }
-}
-
-private fun chooseFile(save: Boolean, title: String, defaultName: String = ""): File? {
-    val dialog = FileDialog(null as Frame?, title, if (save) FileDialog.SAVE else FileDialog.LOAD)
-    if (defaultName.isNotEmpty()) dialog.file = defaultName
-    dialog.isVisible = true
-    val file = dialog.file ?: return null
-    val directory = dialog.directory ?: return null
-    return File(directory, file)
 }
 
 

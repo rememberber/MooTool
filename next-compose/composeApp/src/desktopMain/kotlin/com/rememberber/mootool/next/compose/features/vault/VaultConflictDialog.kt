@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.border
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.DiffEngine
+import com.rememberber.mootool.next.compose.domain.VaultConflictPresentation
 import com.rememberber.mootool.next.compose.domain.VaultConflictState
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
@@ -41,14 +42,19 @@ fun VaultConflictDialog(
     keepButtonModifier: Modifier = Modifier,
 ) {
     val colors = MooTheme.colors
-    val preview = if (conflict.deleted) {
-        container.t("vault.conflict.deleted")
+    val unified = if (conflict.deleted) {
+        ""
     } else {
         DiffEngine.compare(conflict.editorText, conflict.diskText.orEmpty(), ignoreWhitespace = false)
             .unified
             .take(4_000)
-            .ifBlank { container.t("vault.conflict.noDiff") }
     }
+    val preview = VaultConflictPresentation.previewText(
+        deleted = conflict.deleted,
+        deletedMessage = container.t("vault.conflict.deleted"),
+        noDiffMessage = container.t("vault.conflict.noDiff"),
+        unifiedDiff = unified,
+    )
     MooOverlay(onDismiss = onKeep) {
         Column(
             Modifier.width(640.dp).height(420.dp).mooDialogSurface().padding(16.dp),
@@ -56,7 +62,7 @@ fun VaultConflictDialog(
         ) {
             MooPageTitle(container.t("vault.conflict.title"))
             Text(conflict.relativePath, color = colors.warning, fontSize = 12.sp)
-            Text(container.t("vault.conflict.hint"), color = colors.textSecondary, fontSize = 12.sp)
+            Text(container.t(VaultConflictPresentation.hintMessageKey(conflict.deleted)), color = colors.textSecondary, fontSize = 12.sp)
             Text(
                 preview,
                 color = colors.textPrimary,
@@ -65,7 +71,7 @@ fun VaultConflictDialog(
                 modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
             )
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (!conflict.deleted) {
+                if (VaultConflictPresentation.showReloadAction(conflict.deleted)) {
                     MooButton(
                         container.t("vault.conflict.reload"),
                         prominent = true,

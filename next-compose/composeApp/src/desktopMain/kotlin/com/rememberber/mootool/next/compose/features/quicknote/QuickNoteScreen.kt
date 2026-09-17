@@ -70,10 +70,7 @@ import com.rememberber.mootool.next.compose.features.git.GitActionButton
 import com.rememberber.mootool.next.compose.features.git.VaultGitDialog
 import com.rememberber.mootool.next.compose.features.git.gitActionMenuLabel
 import com.rememberber.mootool.next.compose.features.git.rememberVaultGitChangeCount
-import com.rememberber.mootool.next.compose.features.vault.applyQuickNoteVaultConflictKeep
-import com.rememberber.mootool.next.compose.features.vault.applyQuickNoteVaultConflictReload
-import com.rememberber.mootool.next.compose.features.vault.applyQuickNoteVaultConflictSaveCopy
-import com.rememberber.mootool.next.compose.features.vault.VaultConflictDialog
+import com.rememberber.mootool.next.compose.features.vault.QuickNoteVaultConflictOverlay
 import com.rememberber.mootool.next.compose.features.vault.RebBaselineVaultMonitorOnSessionReload
 import com.rememberber.mootool.next.compose.features.vault.dismissVaultScopedOverlays
 import com.rememberber.mootool.next.compose.features.vault.vaultMoveFolderOptions
@@ -1307,24 +1304,7 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
             },
         )
     }
-    session.vaultConflict?.let { pending ->
-        VaultConflictDialog(
-            container = container,
-            conflict = pending,
-            onReload = {
-                applyQuickNoteVaultConflictReload(container, session, vault, pending)
-                refresh()
-            },
-            onSaveCopy = {
-                applyQuickNoteVaultConflictSaveCopy(container, session, vault, pending, monitor)
-                refresh()
-            },
-            onKeep = {
-                applyQuickNoteVaultConflictKeep(session)
-                refresh()
-            }
-        )
-    }
+    QuickNoteVaultConflictOverlay(container, session, vault, monitor, onRefresh = { refresh() })
     if (session.historyOpen) {
         HistoryBrowser(
             container = container,

@@ -49,6 +49,9 @@ import com.rememberber.mootool.next.compose.domain.GitFileDiff
 import com.rememberber.mootool.next.compose.domain.GitStatus
 import com.rememberber.mootool.next.compose.features.diff.annotateSide
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
+import com.rememberber.mootool.next.compose.ui.icons.GitPanelIcon
+import com.rememberber.mootool.next.compose.ui.icons.GitPanelIconKind
 import com.rememberber.mootool.next.compose.ui.components.MooMenu
 import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
@@ -262,11 +265,22 @@ fun VaultGitDialog(
         ) {
             MooPageTitle(title)
             Row(
-                Modifier.fillMaxWidth(),
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(6.dp))
+                    .mooToolbarBackground()
+                    .border(1.dp, colors.borderSoft, RoundedCornerShape(6.dp))
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    GitPanelIcon(GitPanelIconKind.Branch, colors.textStrong, size = 15.dp)
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     when {
                         !status.repository -> Text(container.t("git.noRepo"), color = colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                         else -> {
@@ -302,13 +316,15 @@ fun VaultGitDialog(
                             }
                         }
                     }
+                    }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     MooButton(
                         container.t("git.refresh"),
                         p5Toolbar = true,
                         enabled = GitOperationPresentation.refreshEnabled(busy),
                         onClick = { load() },
+                        leading = { GitPanelIcon(GitPanelIconKind.Refresh, colors.textBody) },
                     )
                     if (!status.repository) {
                         MooButton(
@@ -316,7 +332,8 @@ fun VaultGitDialog(
                             prominent = true,
                             p5Toolbar = true,
                             enabled = !busy && GitOperationPresentation.initEnabled(status.available, busy),
-                            onClick = { runAction { GitEngine.init(root, identity()) } }
+                            onClick = { runAction { GitEngine.init(root, identity()) } },
+                            leading = { GitPanelIcon(GitPanelIconKind.Branch, colors.textStrong) },
                         )
                     }
                     if (status.repository) {
@@ -324,7 +341,8 @@ fun VaultGitDialog(
                             container.t("git.fetch"),
                             p5Toolbar = true,
                             enabled = !busy && GitOperationPresentation.fetchEnabled(status.remote.isNotBlank()),
-                            onClick = { runAction { GitEngine.fetch(root, token = token()) } }
+                            onClick = { runAction { GitEngine.fetch(root, token = token()) } },
+                            leading = { GitPanelIcon(GitPanelIconKind.CloudDownload, colors.textBody) },
                         )
                         MooButton(
                             container.t("git.pull"),
@@ -333,7 +351,7 @@ fun VaultGitDialog(
                                 remotePresent = status.remote.isNotBlank(),
                                 merging = status.merging,
                             ),
-                            onClick = { runAction(workingTree = GitVaultFlushAction.Pull) { GitEngine.pull(root, token = token()) } }
+                            onClick = { runAction(workingTree = GitVaultFlushAction.Pull) { GitEngine.pull(root, token = token()) } },
                         )
                         MooButton(
                             container.t("git.push"),
@@ -342,7 +360,8 @@ fun VaultGitDialog(
                                 remotePresent = status.remote.isNotBlank(),
                                 merging = status.merging,
                             ),
-                            onClick = { runAction(workingTree = GitVaultFlushAction.Push) { GitEngine.push(root, token = token()) } }
+                            onClick = { runAction(workingTree = GitVaultFlushAction.Push) { GitEngine.push(root, token = token()) } },
+                            leading = { GitPanelIcon(GitPanelIconKind.CloudUpload, colors.textBody) },
                         )
                     }
                     if (GitOperationPresentation.showAbortAction(status.merging, status.conflicts)) {
@@ -351,7 +370,8 @@ fun VaultGitDialog(
                             danger = true,
                             p5Toolbar = true,
                             enabled = GitOperationPresentation.abortConfirmEnabled(busy),
-                            onClick = { confirmAbort = true }
+                            onClick = { confirmAbort = true },
+                            leading = { GitPanelIcon(GitPanelIconKind.Merge, colors.danger) },
                         )
                     }
                     if (GitOperationPresentation.showContinueAction(status.merging, status.conflicts)) {
@@ -363,7 +383,8 @@ fun VaultGitDialog(
                                 runAction(workingTree = GitVaultFlushAction.ContinueOperation) {
                                     GitEngine.continueOperation(root, identity())
                                 }
-                            }
+                            },
+                            leading = { GitPanelIcon(GitPanelIconKind.Merge, colors.textBody) },
                         )
                     }
                 }
@@ -489,13 +510,15 @@ fun VaultGitDialog(
                                             danger = true,
                                             p5Toolbar = true,
                                             enabled = !busy && GitOperationPresentation.discardEnabled(busy),
-                                            onClick = { confirmDiscardPath = selectedChange.path }
+                                            onClick = { confirmDiscardPath = selectedChange.path },
+                                            leading = { GitPanelIcon(GitPanelIconKind.Undo, colors.danger) },
                                         )
                                         if (selectedChange.conflict) {
                                             MooButton(
                                                 container.t("git.ours"),
                                                 p5Toolbar = true,
                                                 enabled = GitOperationPresentation.resolveConflictEnabled(busy),
+                                                leading = { GitPanelIcon(GitPanelIconKind.ShieldCheck, colors.textBody) },
                                                 onClick = {
                                                     runAction(
                                                         workingTree = GitVaultFlushAction.ResolveConflict,
@@ -507,6 +530,7 @@ fun VaultGitDialog(
                                                 container.t("git.theirs"),
                                                 p5Toolbar = true,
                                                 enabled = GitOperationPresentation.resolveConflictEnabled(busy),
+                                                leading = { GitPanelIcon(GitPanelIconKind.ShieldCheck, colors.textBody) },
                                                 onClick = {
                                                     runAction(
                                                         workingTree = GitVaultFlushAction.ResolveConflict,
@@ -544,6 +568,7 @@ fun VaultGitDialog(
                                                 hasChanges = status.changes.isNotEmpty(),
                                                 messageTrimmed = message.trim(),
                                             ),
+                                            leading = { GitPanelIcon(GitPanelIconKind.Commit, colors.textStrong) },
                                             onClick = {
                                                 runAction(
                                                     workingTree = GitVaultFlushAction.Commit,

@@ -79,7 +79,8 @@ fun MooButton(
     danger: Boolean = false,
     dense: Boolean = false,
     p5Toolbar: Boolean = false,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    leading: (@Composable () -> Unit)? = null,
 ) {
     val colors = MooTheme.colors
     val dark = MooTheme.dark
@@ -205,8 +206,13 @@ fun MooButton(
             .defaultMinSize(minHeight = compactHeight)
             .padding(horizontal = compactPaddingH, vertical = compactPaddingV),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = if (leading != null) {
+            Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally)
+        } else {
+            Arrangement.Center
+        },
     ) {
+        leading?.invoke()
         Text(
             label,
             color = content,

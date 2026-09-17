@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runDesktopComposeUiTest
@@ -23,6 +24,7 @@ import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class VaultConflictDialogInteractionTest {
     @OptIn(ExperimentalTestApi::class)
@@ -107,6 +109,45 @@ class VaultConflictDialogInteractionTest {
         assertEquals(1, reloadCount)
         onNodeWithContentDescription(zh.t("vault.conflict.saveCopy")).performClick()
         assertEquals(1, saveCopyCount)
+        productRoot.toFile().deleteRecursively()
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun deletedConflictHidesReloadButton() = runDesktopComposeUiTest(width = 720, height = 480) {
+        val zh = Translator(AppLanguage.ZhCN)
+        val productRoot = createTempDirectory("mootool-vault-conflict-deleted-ui-")
+        val directories = AppPaths.resolve(productRoot.toString()).also { it.ensureCreated() }
+        val settings = SettingsRepository(directories).also { it.load() }
+        val database = AppDatabase(directories)
+        val container = AppContainer(
+            directories = directories,
+            settingsRepository = settings,
+            database = database,
+            history = HistoryRepository(database),
+            migrationRows = LegacyMigrationRowRepository(database),
+            sessions = SessionStore(database),
+        )
+        setContent {
+            MooTheme(preference = ThemePreference.Light, systemDark = false, interfaceStyle = "modern") {
+                val colors = MooTheme.colors
+                Box(Modifier.fillMaxSize().background(colors.workspace)) {
+                    VaultConflictDialog(
+                        container = container,
+                        conflict = VaultConflictState(
+                            relativePath = "gone.json",
+                            editorText = """{"local":1}""",
+                            diskText = null,
+                            deleted = true,
+                        ),
+                        onReload = {},
+                        onSaveCopy = {},
+                        onKeep = {},
+                    )
+                }
+            }
+        }
+        assertTrue(onAllNodesWithContentDescription(zh.t("vault.conflict.reload")).fetchSemanticsNodes().isEmpty())
         productRoot.toFile().deleteRecursively()
     }
 

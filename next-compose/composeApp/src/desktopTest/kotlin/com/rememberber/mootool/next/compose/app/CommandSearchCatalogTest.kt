@@ -96,6 +96,18 @@ class CommandSearchCatalogTest {
     }
 
     @Test
+    fun hiddenToolsQueryOpensLayoutSettings() {
+        val hits = CommandSearchCatalog.search("hidden", Translator(AppLanguage.EnUS)::t)
+        assertEquals("layout", hits.single().categoryId)
+    }
+
+    @Test
+    fun upgradeQueryOpensAboutSettings() {
+        val hits = CommandSearchCatalog.search("upgrade", Translator(AppLanguage.EnUS)::t)
+        assertEquals("about", hits.single().categoryId)
+    }
+
+    @Test
     fun catalogCoversEverySettingsNavCategory() {
         val covered = CommandSearchCatalog.targets.map { it.categoryId }.toSet()
         SettingsNavCategory.entries.forEach { category ->

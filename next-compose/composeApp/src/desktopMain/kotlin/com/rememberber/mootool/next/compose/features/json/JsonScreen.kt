@@ -73,10 +73,7 @@ import com.rememberber.mootool.next.compose.features.git.GitActionButton
 import com.rememberber.mootool.next.compose.features.git.VaultGitDialog
 import com.rememberber.mootool.next.compose.features.git.gitActionMenuLabel
 import com.rememberber.mootool.next.compose.features.git.rememberVaultGitChangeCount
-import com.rememberber.mootool.next.compose.features.vault.applyJsonVaultConflictKeep
-import com.rememberber.mootool.next.compose.features.vault.applyJsonVaultConflictReload
-import com.rememberber.mootool.next.compose.features.vault.applyJsonVaultConflictSaveCopy
-import com.rememberber.mootool.next.compose.features.vault.VaultConflictDialog
+import com.rememberber.mootool.next.compose.features.vault.JsonVaultConflictOverlay
 import com.rememberber.mootool.next.compose.features.vault.jsonVaultRenameDefault
 import com.rememberber.mootool.next.compose.features.vault.jsonVaultRenameDefaultFromFileName
 import com.rememberber.mootool.next.compose.features.vault.vaultMoveFolderOptions
@@ -500,24 +497,7 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
         },
         onDismiss = { session.vaultDeleteConfirmPath = ""; refresh() }
     )
-    session.vaultConflict?.let { pending ->
-        VaultConflictDialog(
-            container = container,
-            conflict = pending,
-            onReload = {
-                applyJsonVaultConflictReload(container, session, pending)
-                refresh()
-            },
-            onSaveCopy = {
-                applyJsonVaultConflictSaveCopy(container, session, pending, monitor)
-                refresh()
-            },
-            onKeep = {
-                applyJsonVaultConflictKeep(session)
-                refresh()
-            }
-        )
-    }
+    JsonVaultConflictOverlay(container, session, monitor, onRefresh = { refresh() })
     if (session.historyOpen) {
         HistoryBrowser(
             container = container,
