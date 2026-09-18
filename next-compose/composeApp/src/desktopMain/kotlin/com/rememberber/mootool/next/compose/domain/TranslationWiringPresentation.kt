@@ -33,6 +33,31 @@ object TranslationWiringPresentation {
             text.isNotBlank() &&
             text.length <= TranslationEngine.MAX_TEXT_UNITS
 
+    /** 对齐 `TranslationScreen` 立即翻译钮：同 [canRunTranslate]。 */
+    fun translateActionEnabled(text: String, translating: Boolean): Boolean = canRunTranslate(text, translating)
+
+    /** 对齐工具栏复制译文：`disabled={!target}`。 */
+    fun copyResultActionEnabled(target: String): Boolean = target.isNotEmpty()
+
+    /** 对齐工具栏保存单词：`disabled={!source}`。 */
+    fun saveWordFromSourceActionEnabled(source: String): Boolean = source.isNotBlank()
+
+    fun deleteWordActionEnabled(selectedWordId: String): Boolean = selectedWordId.isNotBlank()
+
+    fun deleteWordConfirmActionEnabled(selectedWordId: String): Boolean = deleteWordActionEnabled(selectedWordId)
+
+    fun applyWordActionEnabled(hasSelectedWord: Boolean): Boolean = hasSelectedWord
+
+    fun retranslateWordActionEnabled(hasSelectedWord: Boolean, sourceText: String): Boolean =
+        hasSelectedWord && sourceText.isNotBlank()
+
+    fun saveWordEntryActionEnabled(sourceText: String): Boolean = sourceText.isNotBlank()
+
+    fun clearHistoryActionEnabled(historyCount: Int): Boolean = historyCount > 0
+
+    /** 对齐清空历史确认对话框主钮：同 [clearHistoryActionEnabled]。 */
+    fun clearHistoryConfirmActionEnabled(historyCount: Int): Boolean = clearHistoryActionEnabled(historyCount)
+
     sealed interface SaveWordOutcome<T> {
         data class Success<T>(val value: T) : SaveWordOutcome<T>
         data class Failure<T>(val error: Throwable) : SaveWordOutcome<T>

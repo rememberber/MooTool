@@ -16,6 +16,15 @@ class JsonInspectorPresentationTest {
     }
 
     @Test
+    fun inferSchemaAndDuplicatePathActionEnabled() {
+        val analysis = JsonAnalysis(rootType = "object", nodes = 1, keys = 1, maxDepth = 1, bytes = 2)
+        assertFalse(JsonInspectorPresentation.inferSchemaActionEnabled(null))
+        assertTrue(JsonInspectorPresentation.inferSchemaActionEnabled(analysis))
+        assertFalse(JsonInspectorPresentation.duplicatePathClickActionEnabled(""))
+        assertTrue(JsonInspectorPresentation.duplicatePathClickActionEnabled("$.a"))
+    }
+
+    @Test
     fun showDuplicatePaths_whenCountPositive() {
         assertFalse(JsonInspectorPresentation.showDuplicatePaths(0))
         assertTrue(JsonInspectorPresentation.showDuplicatePaths(2))
@@ -26,6 +35,35 @@ class JsonInspectorPresentationTest {
     fun pathCopyEnabledRequiresNonBlankPath() {
         assertFalse(JsonInspectorPresentation.pathCopyEnabled(""))
         assertTrue(JsonInspectorPresentation.pathCopyEnabled("$.books[0]"))
+        assertFalse(JsonInspectorPresentation.pathCopyActionEnabled("  "))
+        assertTrue(JsonInspectorPresentation.pathCopyActionEnabled("$.books[0]"))
+    }
+
+    @Test
+    fun pathQueryActionEnabledRequiresNonBlankTrimmedPath() {
+        assertFalse(JsonInspectorPresentation.pathQueryActionEnabled(""))
+        assertFalse(JsonInspectorPresentation.pathQueryActionEnabled("   "))
+        assertTrue(JsonInspectorPresentation.pathQueryActionEnabled("$"))
+        assertTrue(JsonInspectorPresentation.pathQueryActionEnabled(" $.books[0] "))
+    }
+
+    @Test
+    fun formatAdvancedAndPathPickerOpenActionEnabled() {
+        val analysis = JsonAnalysis(rootType = "object", nodes = 1, keys = 1, maxDepth = 1, bytes = 2)
+        assertFalse(JsonInspectorPresentation.formatAdvancedActionEnabled(null))
+        assertTrue(JsonInspectorPresentation.formatAdvancedActionEnabled(analysis))
+        assertFalse(JsonInspectorPresentation.pathPickerOpenActionEnabled(0))
+        assertTrue(JsonInspectorPresentation.pathPickerOpenActionEnabled(1))
+    }
+
+    @Test
+    fun inspectorConvertActionEnabled() {
+        val analysis = JsonAnalysis(rootType = "object", nodes = 1, keys = 1, maxDepth = 1, bytes = 2)
+        assertFalse(JsonInspectorPresentation.jsonStructureConvertActionEnabled(null))
+        assertTrue(JsonInspectorPresentation.jsonStructureConvertActionEnabled(analysis))
+        assertFalse(JsonInspectorPresentation.editorTextConvertActionEnabled(""))
+        assertTrue(JsonInspectorPresentation.editorTextConvertActionEnabled("{}"))
+        assertTrue(JsonInspectorPresentation.conversionDialogActionEnabled())
     }
 
     @Test
@@ -74,6 +112,8 @@ class JsonInspectorPresentationTest {
         assertFalse(JsonInspectorPresentation.resultCopyEnabled(""))
         assertFalse(JsonInspectorPresentation.resultCopyEnabled("   "))
         assertTrue(JsonInspectorPresentation.resultCopyEnabled("""{"a":1}"""))
+        assertFalse(JsonInspectorPresentation.resultCopyActionEnabled(""))
+        assertTrue(JsonInspectorPresentation.resultCopyActionEnabled("""{"a":1}"""))
     }
 
     @Test

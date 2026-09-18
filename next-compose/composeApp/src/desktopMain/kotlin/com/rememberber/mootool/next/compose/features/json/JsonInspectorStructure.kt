@@ -34,7 +34,7 @@ internal fun jsonInspectorUtf8ByteLabel(bytes: Int?): String =
 
 /** Inspector「生成 JSON Schema」与 Electron 一致：仅结构解析成功时可用。 */
 internal fun jsonInspectorInferSchemaEnabled(analysis: JsonAnalysis?): Boolean =
-    JsonInspectorPresentation.inferSchemaEnabled(analysis)
+    JsonInspectorPresentation.inferSchemaActionEnabled(analysis)
 
 @Composable
 internal fun JsonInspectorStructurePanel(
@@ -100,7 +100,9 @@ internal fun JsonInspectorStructurePanel(
                         fontFamily = FontFamily.Monospace,
                         modifier = Modifier
                             .mooJsonInspectorDuplicatePath()
-                            .mooFocusClickable(enabled = JsonInspectorPresentation.duplicatePathClickEnabled(path)) {
+                            .mooFocusClickable(
+                                enabled = JsonInspectorPresentation.duplicatePathClickActionEnabled(path),
+                            ) {
                                 onDuplicatePathClick(path)
                             },
                     )

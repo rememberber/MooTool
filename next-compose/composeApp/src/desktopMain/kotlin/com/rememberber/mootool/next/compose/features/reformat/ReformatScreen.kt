@@ -104,16 +104,11 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
 
     fun copyOutput() {
         val content = currentOutput(session)
-        if (content.isEmpty()) {
-            session.notice = container.t("reformat.nothingToCopy")
-            session.copyState = CopyFeedbackPolicy.IDLE
-        } else {
-            val success = container.copyText(content)
-            session.copyState = CopyFeedbackPolicy.afterCopy(success)
-            session.copyGeneration += 1
-            session.notice = if (success) container.t("common.copied") else container.t("json.notice.copyFailed")
-            session.error = ""
-        }
+        val success = container.copyText(content)
+        session.copyState = CopyFeedbackPolicy.afterCopy(success)
+        session.copyGeneration += 1
+        session.notice = if (success) container.t("common.copied") else container.t("json.notice.copyFailed")
+        session.error = ""
         refresh()
     }
 
@@ -209,25 +204,38 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
                 if (session.busy) container.t("reformat.processing") else container.t("reformat.format"),
                 prominent = true,
                 p5Toolbar = true,
-                enabled = ReformatWiringPresentation.canRunFormat(session.busy, currentInput(session).isNotBlank()),
+                enabled = ReformatWiringPresentation.formatActionEnabled(session.busy, currentInput(session).isNotBlank()),
                 onClick = { runFormat(container, session) { refresh() } }
             )
+            val tabOutput = currentOutput(session)
             if (!overflow) {
                 MooButton(
                     container.t(CopyFeedbackPolicy.buttonKey(session.copyState, "reformat.copy")),
+                    enabled = ReformatWiringPresentation.copyResultActionEnabled(tabOutput),
                     onClick = { copyOutput() },
                     p5Toolbar = true
                 )
-                MooButton(container.t("reformat.save"), onClick = { saveOutput() }, p5Toolbar = true)
+                MooButton(
+                    container.t("reformat.save"),
+                    enabled = ReformatWiringPresentation.saveResultActionEnabled(tabOutput),
+                    onClick = { saveOutput() },
+                    p5Toolbar = true,
+                )
                 MooButton(container.t("common.action.clear"), onClick = { clearOutput() }, p5Toolbar = true)
             } else {
                 Box {
                     MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true }, p5Toolbar = true)
                     MooMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
-                        MooMenuItem(onClick = { moreOpen = false; copyOutput() }) {
+                        MooMenuItem(
+                            enabled = ReformatWiringPresentation.copyResultActionEnabled(tabOutput),
+                            onClick = { moreOpen = false; copyOutput() },
+                        ) {
                             Text(container.t(CopyFeedbackPolicy.buttonKey(session.copyState, "reformat.copy")))
                         }
-                        MooMenuItem(onClick = { moreOpen = false; saveOutput() }) {
+                        MooMenuItem(
+                            enabled = ReformatWiringPresentation.saveResultActionEnabled(tabOutput),
+                            onClick = { moreOpen = false; saveOutput() },
+                        ) {
                             Text(container.t("reformat.save"))
                         }
                         MooMenuItem(onClick = { moreOpen = false; clearOutput() }) {

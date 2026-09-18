@@ -9,6 +9,9 @@ object EnvWiringPresentation {
 
     fun exportEnabled(hasSnapshot: Boolean): Boolean = hasSnapshot
 
+    /** 对齐 `VariablesScreen` 导出菜单项：无快照时禁用。 */
+    fun exportActionEnabled(hasSnapshot: Boolean): Boolean = exportEnabled(hasSnapshot)
+
     fun addVariableEnabled(canEdit: Boolean, saving: Boolean): Boolean = canEdit && !saving
 
     fun saveEditorEnabled(trimmedKey: String, saving: Boolean): Boolean =

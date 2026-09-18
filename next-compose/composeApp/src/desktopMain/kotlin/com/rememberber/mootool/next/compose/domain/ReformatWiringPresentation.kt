@@ -7,6 +7,15 @@ import java.nio.charset.StandardCharsets
 object ReformatWiringPresentation {
     fun canRunFormat(busy: Boolean, inputNotBlank: Boolean): Boolean = !busy && inputNotBlank
 
+    /** 对齐 `ReformatScreen` 格式化钮（Electron `disabled={busy || !input.trim()}`）。 */
+    fun formatActionEnabled(busy: Boolean, inputNotBlank: Boolean): Boolean = canRunFormat(busy, inputNotBlank)
+
+    /** 对齐 `ReformatScreen` 复制结果：当前 Tab 无输出时禁用。 */
+    fun copyResultActionEnabled(output: String): Boolean = output.isNotBlank()
+
+    /** 对齐 `ReformatScreen` 另存结果：当前 Tab 无输出时禁用。 */
+    fun saveResultActionEnabled(output: String): Boolean = output.isNotBlank()
+
     sealed interface FormatRunOutcome {
         data class Success(val output: String) : FormatRunOutcome
         data class Failure(val error: Throwable) : FormatRunOutcome

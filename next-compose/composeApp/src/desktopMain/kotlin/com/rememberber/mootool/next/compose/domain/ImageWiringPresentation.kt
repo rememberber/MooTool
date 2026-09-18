@@ -6,15 +6,31 @@ import kotlin.coroutines.cancellation.CancellationException
 object ImageWiringPresentation {
     fun canImport(busy: Boolean): Boolean = !busy
 
+    fun importActionEnabled(busy: Boolean): Boolean = canImport(busy)
+
     fun canProcessSelection(selectedCount: Int, busy: Boolean): Boolean = selectedCount > 0 && !busy
+
+    fun processSelectionActionEnabled(selectedCount: Int, busy: Boolean): Boolean =
+        canProcessSelection(selectedCount, busy)
 
     fun canActOnCurrent(hasCurrent: Boolean, busy: Boolean = false): Boolean = hasCurrent && !busy
 
+    fun actOnCurrentActionEnabled(hasCurrent: Boolean, busy: Boolean): Boolean =
+        canActOnCurrent(hasCurrent, busy)
+
     fun canCopyCurrent(hasCurrent: Boolean): Boolean = hasCurrent
+
+    fun copyCurrentActionEnabled(hasCurrent: Boolean): Boolean = canCopyCurrent(hasCurrent)
 
     fun canExportBase64(text: String): Boolean = text.isNotBlank()
 
+    fun exportBase64ActionEnabled(text: String): Boolean = canExportBase64(text)
+
     fun canStartWatermark(text: String): Boolean = text.isNotBlank()
+
+    fun startWatermarkActionEnabled(text: String): Boolean = canStartWatermark(text)
+
+    fun renamePromptActionEnabled(name: String): Boolean = name.isNotBlank()
 
     sealed interface DecodeOutcome {
         data class Success(val image: java.awt.image.BufferedImage) : DecodeOutcome

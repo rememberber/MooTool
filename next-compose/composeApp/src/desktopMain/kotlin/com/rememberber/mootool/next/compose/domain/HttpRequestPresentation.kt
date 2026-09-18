@@ -12,6 +12,13 @@ object HttpRequestPresentation {
 
     fun canSend(urlTrimmed: String, sending: Boolean): Boolean = urlTrimmed.isNotBlank() && !sending
 
+    /** 对齐 `HttpScreen` 发送钮：同 [canSend]。 */
+    fun sendActionEnabled(urlTrimmed: String, sending: Boolean): Boolean = canSend(urlTrimmed, sending)
+
+    /** 对齐 `HttpScreen` 发送中「停止」：须在途且已有 requestId（与 [cancelInFlightSend] 守卫一致）。 */
+    fun stopSendActionEnabled(sending: Boolean, requestId: String): Boolean =
+        sending && requestId.isNotBlank()
+
     fun runSend(
         draft: HttpRequestDraft,
         requestId: String,

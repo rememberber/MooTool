@@ -56,7 +56,7 @@ class JsonInspectorCopyResultCaptureTest {
                         MooButton(
                             zh.t("json.action.copy"),
                             p5Toolbar = true,
-                            enabled = JsonInspectorPresentation.resultCopyEnabled(sampleResult),
+                            enabled = JsonInspectorPresentation.resultCopyActionEnabled(sampleResult),
                             modifier = Modifier.focusRequester(focus),
                             onClick = {},
                         )

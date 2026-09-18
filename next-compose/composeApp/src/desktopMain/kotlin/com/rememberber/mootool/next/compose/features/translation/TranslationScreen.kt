@@ -524,15 +524,23 @@ private fun TranslatePane(
                 container.t("translation.now"),
                 prominent = true,
                 onClick = onManual,
-                enabled = TranslationWiringPresentation.canRunTranslate(session.source, session.translating),
+                enabled = TranslationWiringPresentation.translateActionEnabled(session.source, session.translating),
                 p5Toolbar = true,
             )
             OverflowActionCluster(
                 overflow = overflow,
                 moreLabel = container.t("json.action.overflow"),
                 actions = listOf(
-                    OverflowAction(container.t("translation.copy"), enabled = session.target.isNotEmpty(), onClick = onCopy),
-                    OverflowAction(container.t("translation.saveWord"), enabled = session.source.isNotBlank(), onClick = onSaveWord),
+                    OverflowAction(
+                        container.t("translation.copy"),
+                        enabled = TranslationWiringPresentation.copyResultActionEnabled(session.target),
+                        onClick = onCopy,
+                    ),
+                    OverflowAction(
+                        container.t("translation.saveWord"),
+                        enabled = TranslationWiringPresentation.saveWordFromSourceActionEnabled(session.source),
+                        onClick = onSaveWord,
+                    ),
                     OverflowAction(container.t("common.action.clear"), onClick = onClear)
                 )
             )
@@ -695,7 +703,7 @@ private fun WordBookPane(
                 })
                 MooButton(
                     container.t("common.delete"),
-                    enabled = session.selectedWordId.isNotBlank(),
+                    enabled = TranslationWiringPresentation.deleteWordActionEnabled(session.selectedWordId),
                     onClick = { session.deleteWordConfirm = true; onReload() }
                 )
             }
@@ -720,8 +728,19 @@ private fun WordBookPane(
                 )
                 val current = words.firstOrNull { it.id == session.selectedWordId }
                 Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    MooButton(container.t("translation.apply"), enabled = current != null, onClick = { current?.let(onApply) })
-                    MooButton(container.t("translation.retranslate"), enabled = current != null && current.sourceText.isNotBlank(), onClick = { current?.let(onRetranslate) })
+                    MooButton(
+                        container.t("translation.apply"),
+                        enabled = TranslationWiringPresentation.applyWordActionEnabled(current != null),
+                        onClick = { current?.let(onApply) },
+                    )
+                    MooButton(
+                        container.t("translation.retranslate"),
+                        enabled = TranslationWiringPresentation.retranslateWordActionEnabled(
+                            current != null,
+                            current?.sourceText.orEmpty(),
+                        ),
+                        onClick = { current?.let(onRetranslate) },
+                    )
                 }
             }
                 MooTextField(
@@ -739,7 +758,11 @@ private fun WordBookPane(
                     singleLine = false
                 )
                 MooTextField(session.wordRemark, { session.wordRemark = it; onReload() }, placeholder = container.t("translation.remark"), dense = true)
-                MooButton(container.t("common.save"), prominent = true, onClick = {
+                MooButton(
+                    container.t("common.save"),
+                    prominent = true,
+                    enabled = TranslationWiringPresentation.saveWordEntryActionEnabled(session.wordSource),
+                    onClick = {
                     when (
                         val outcome = TranslationWiringPresentation.runSaveWord {
                             container.translations.saveWord(
@@ -768,7 +791,9 @@ private fun WordBookPane(
                         }
                     }
                     onReload()
-                }, modifier = Modifier.align(Alignment.End))
+                },
+                    modifier = Modifier.align(Alignment.End),
+                )
         }
     }
     if (session.deleteWordConfirm) {
@@ -779,7 +804,11 @@ private fun WordBookPane(
             ) {
                 Text(container.t("translation.confirmDeleteWord"), color = colors.textPrimary)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MooButton(container.t("common.delete"), danger = true, onClick = {
+                    MooButton(
+                        container.t("common.delete"),
+                        danger = true,
+                        enabled = TranslationWiringPresentation.deleteWordConfirmActionEnabled(session.selectedWordId),
+                        onClick = {
                         if (session.selectedWordId.isNotBlank()) container.translations.deleteWord(session.selectedWordId)
                         session.selectedWordId = ""
                         session.wordSource = ""
@@ -787,7 +816,8 @@ private fun WordBookPane(
                         session.wordRemark = ""
                         session.deleteWordConfirm = false
                         onReload()
-                    })
+                    },
+                    )
                     MooButton(container.t("common.cancel"), onClick = { session.deleteWordConfirm = false; onReload() })
                 }
             }
@@ -815,7 +845,7 @@ private fun HistoryPane(
             )
             MooButton(
                 container.t("translation.clearHistory"),
-                enabled = items.isNotEmpty(),
+                enabled = TranslationWiringPresentation.clearHistoryActionEnabled(items.size),
                 onClick = { session.clearHistoryConfirm = true; onReload() }
             )
         }
@@ -872,11 +902,16 @@ private fun HistoryPane(
             ) {
                 Text(container.t("translation.confirmClearHistory"), color = colors.textPrimary)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MooButton(container.t("translation.clearHistory"), prominent = true, onClick = {
+                    MooButton(
+                        container.t("translation.clearHistory"),
+                        prominent = true,
+                        enabled = TranslationWiringPresentation.clearHistoryConfirmActionEnabled(items.size),
+                        onClick = {
                         container.translations.clearHistory()
                         session.clearHistoryConfirm = false
                         onReload()
-                    })
+                    },
+                    )
                     MooButton(container.t("common.cancel"), onClick = { session.clearHistoryConfirm = false; onReload() })
                 }
             }

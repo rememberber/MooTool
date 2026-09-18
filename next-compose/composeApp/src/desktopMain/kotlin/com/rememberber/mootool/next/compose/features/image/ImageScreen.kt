@@ -286,37 +286,37 @@ fun ImageScreen(container: AppContainer, detached: Boolean) {
                     MooMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
                         MooMenuItem(
                             onClick = { moreOpen = false; importClipboard(container, session) { loadAssets(it) } },
-                            enabled = !session.busy
+                            enabled = ImageWiringPresentation.importActionEnabled(session.busy)
                         ) {
                             Text(container.t("image.fromClipboard"))
                         }
                         MooMenuItem(
                             onClick = { moreOpen = false; importBase64() },
-                            enabled = !session.busy
+                            enabled = ImageWiringPresentation.importActionEnabled(session.busy)
                         ) {
                             Text(container.t("image.fromBase64"))
                         }
                         MooMenuItem(
                             onClick = { moreOpen = false; session.svgOpen = true; refresh() },
-                            enabled = processing.isNotEmpty() && !session.busy
+                            enabled = ImageWiringPresentation.processSelectionActionEnabled(processing.size, session.busy)
                         ) {
                             Text(container.t("image.toSvg"))
                         }
                         MooMenuItem(
                             onClick = { moreOpen = false; session.compressOpen = true; refresh() },
-                            enabled = processing.isNotEmpty() && !session.busy
+                            enabled = ImageWiringPresentation.processSelectionActionEnabled(processing.size, session.busy)
                         ) {
                             Text(container.t("image.compress"))
                         }
                         MooMenuItem(
                             onClick = { moreOpen = false; session.watermarkOpen = true; refresh() },
-                            enabled = processing.isNotEmpty() && !session.busy
+                            enabled = ImageWiringPresentation.processSelectionActionEnabled(processing.size, session.busy)
                         ) {
                             Text(container.t("image.watermark"))
                         }
                         MooMenuItem(
                             onClick = { moreOpen = false; exportBase64() },
-                            enabled = current != null
+                            enabled = ImageWiringPresentation.actOnCurrentActionEnabled(current != null, session.busy)
                         ) {
                             Text(container.t("image.toBase64"))
                         }
@@ -355,7 +355,12 @@ fun ImageScreen(container: AppContainer, detached: Boolean) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(container.t("image.library"), color = colors.textPrimary)
-                        MooButton(container.t("image.import"), onClick = { importFiles(container, session) { loadAssets(it) } }, enabled = !session.busy, p5Toolbar = true)
+                        MooButton(
+                            container.t("image.import"),
+                            onClick = { importFiles(container, session) { loadAssets(it) } },
+                            enabled = ImageWiringPresentation.importActionEnabled(session.busy),
+                            p5Toolbar = true,
+                        )
                     }
                     if (assets.isEmpty()) {
                         Text(container.t("image.empty"), color = colors.textSecondary, modifier = Modifier.padding(12.dp))
@@ -419,9 +424,19 @@ fun ImageScreen(container: AppContainer, detached: Boolean) {
                             session.renameOpen = true
                             session.promptValue = current?.name.orEmpty()
                             refresh()
-                        }, enabled = current != null && !session.busy)
-                        MooButton(container.t("image.export"), onClick = { exportSelected(container, session, processing) }, enabled = processing.isNotEmpty() && !session.busy, p5Toolbar = true)
-                        MooButton(container.t("common.delete"), onClick = { session.deleteOpen = true; refresh() }, enabled = processing.isNotEmpty() && !session.busy, p5Toolbar = true)
+                        }, enabled = ImageWiringPresentation.actOnCurrentActionEnabled(current != null, session.busy))
+                        MooButton(
+                            container.t("image.export"),
+                            onClick = { exportSelected(container, session, processing) },
+                            enabled = ImageWiringPresentation.processSelectionActionEnabled(processing.size, session.busy),
+                            p5Toolbar = true,
+                        )
+                        MooButton(
+                            container.t("common.delete"),
+                            onClick = { session.deleteOpen = true; refresh() },
+                            enabled = ImageWiringPresentation.processSelectionActionEnabled(processing.size, session.busy),
+                            p5Toolbar = true,
+                        )
                     }
                 }
                 VerticalPaneHandle(
@@ -641,7 +656,7 @@ private fun Base64Dialog(container: AppContainer, session: ImageSession, onLoade
                                 notifyImageFailure(container, session, decoded.error)
                             }
                         }
-                    }, enabled = session.base64Text.isNotBlank())
+                    }, enabled = ImageWiringPresentation.exportBase64ActionEnabled(session.base64Text))
                 }
                 MooButton(container.t("common.cancel"), onClick = { session.base64Mode = null; container.sessionManager.bump() })
             }
@@ -698,7 +713,12 @@ private fun WatermarkDialog(container: AppContainer, session: ImageSession, coun
             }
             OutputModePicker(container, session)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("image.startProcess"), prominent = true, onClick = { session.watermarkOpen = false; onConfirm() }, enabled = session.watermarkText.isNotBlank())
+                MooButton(
+                    container.t("image.startProcess"),
+                    prominent = true,
+                    onClick = { session.watermarkOpen = false; onConfirm() },
+                    enabled = ImageWiringPresentation.startWatermarkActionEnabled(session.watermarkText),
+                )
                 MooButton(container.t("common.cancel"), onClick = { session.watermarkOpen = false; container.sessionManager.bump() })
             }
         }
@@ -762,7 +782,12 @@ private fun PromptDialog(container: AppContainer, session: ImageSession, title: 
                 modifier = Modifier.fillMaxWidth()
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(confirm, prominent = true, onClick = onConfirm, enabled = session.promptValue.isNotBlank())
+                MooButton(
+                    confirm,
+                    prominent = true,
+                    onClick = onConfirm,
+                    enabled = ImageWiringPresentation.renamePromptActionEnabled(session.promptValue),
+                )
                 MooButton(container.t("common.cancel"), onClick = { session.renameOpen = false; session.saveOpen = false; container.sessionManager.bump() })
             }
         }

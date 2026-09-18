@@ -80,15 +80,14 @@ import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
 import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.chooseFileWithExportDirectory
+import com.rememberber.mootool.next.compose.ui.persistToolsExportDirectory
 import com.rememberber.mootool.next.compose.ui.workbench.applyUserEditClearingStatusNotice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.withContext
-import java.awt.FileDialog
-import java.awt.Frame
-import java.io.File
 
 @Composable
 fun TextDiffScreen(container: AppContainer, detached: Boolean) {
@@ -134,7 +133,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
             MooButton(
                 container.t("diff.compare"),
                 prominent = true,
-                enabled = TextDiffPresentation.canManualCompare(session.left, session.right),
+                enabled = TextDiffPresentation.manualCompareActionEnabled(session.left, session.right),
                 p5Toolbar = true,
                 onClick = {
                     runCompare(container, session, saveHistory = true) { refresh() }
@@ -143,7 +142,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
             val visible = session.visibleSegments()
             MooButton(
                 container.t("diff.previous"),
-                enabled = TextDiffPresentation.canNavigateDiffs(visible.size),
+                enabled = TextDiffPresentation.navigateDiffActionEnabled(visible.size),
                 p5Toolbar = true,
                 onClick = {
                 navigate(session, visible, -1, { leftField = it }, { rightField = it })
@@ -151,7 +150,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
             })
             MooButton(
                 container.t("diff.next"),
-                enabled = TextDiffPresentation.canNavigateDiffs(visible.size),
+                enabled = TextDiffPresentation.navigateDiffActionEnabled(visible.size),
                 p5Toolbar = true,
                 onClick = {
                 navigate(session, visible, 1, { leftField = it }, { rightField = it })
@@ -175,15 +174,16 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                     session.navIndex = -1
                     refresh()
                 })
-                MooButton(container.t("diff.copy"), p5Toolbar = true, onClick = {
-                    if (session.result.unified.isEmpty()) {
-                        session.notice = container.t("diff.status.noCopy")
-                    } else {
+                MooButton(
+                    container.t("diff.copy"),
+                    p5Toolbar = true,
+                    enabled = TextDiffPresentation.copyPatchActionEnabled(session.result.unified),
+                    onClick = {
                         container.copyText(session.result.unified)
                         session.notice = container.t("diff.status.copied")
-                    }
-                    refresh()
-                })
+                        refresh()
+                    },
+                )
                 Row(Modifier.mooDiffImportCluster(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     MooButton(container.t("diff.importLeft"), p5Toolbar = true, onClick = {
                         importSide(container, session, side = "left") { refresh() }
@@ -217,16 +217,15 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                             session.navIndex = -1
                             refresh()
                         }) { Text(container.t("common.action.swap")) }
-                        MooMenuItem(onClick = {
-                            moreOpen = false
-                            if (session.result.unified.isEmpty()) {
-                                session.notice = container.t("diff.status.noCopy")
-                            } else {
+                        MooMenuItem(
+                            enabled = TextDiffPresentation.copyPatchActionEnabled(session.result.unified),
+                            onClick = {
+                                moreOpen = false
                                 container.copyText(session.result.unified)
                                 session.notice = container.t("diff.status.copied")
-                            }
-                            refresh()
-                        }) { Text(container.t("diff.copy")) }
+                                refresh()
+                            },
+                        ) { Text(container.t("diff.copy")) }
                         MooMenuItem(onClick = {
                             moreOpen = false
                             importSide(container, session, side = "left") { refresh() }
@@ -549,16 +548,13 @@ private fun statusText(container: AppContainer, session: DiffSession): String {
 
 private fun importSide(container: AppContainer, session: DiffSession, side: String, onDone: () -> Unit) {
     val title = if (side == "left") container.t("diff.importLeft") else container.t("diff.importRight")
-    val dialog = FileDialog(null as Frame?, title, FileDialog.LOAD)
-    dialog.isVisible = true
-    val name = dialog.file ?: return
-    val directory = dialog.directory ?: return
-    val file = File(directory, name)
+    val file = chooseFileWithExportDirectory(container, save = false, title = title) ?: return
     when (val outcome = TextDiffPresentation.runReadImportFile(file)) {
         is TextDiffPresentation.ImportOutcome.Success -> {
             if (side == "left") session.left = outcome.content else session.right = outcome.content
             session.navIndex = -1
             session.notice = container.t("json.notice.imported")
+            persistToolsExportDirectory(container, file)
             container.toastSuccess(container.t("json.notice.imported"))
             onDone()
         }

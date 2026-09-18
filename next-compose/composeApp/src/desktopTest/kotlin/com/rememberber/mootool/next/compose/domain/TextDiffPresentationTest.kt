@@ -27,6 +27,16 @@ class TextDiffPresentationTest {
     }
 
     @Test
+    fun toolbarActionEnabledMatchesGuards() {
+        assertFalse(TextDiffPresentation.manualCompareActionEnabled("", ""))
+        assertTrue(TextDiffPresentation.manualCompareActionEnabled("a", ""))
+        assertFalse(TextDiffPresentation.navigateDiffActionEnabled(0))
+        assertTrue(TextDiffPresentation.navigateDiffActionEnabled(1))
+        assertFalse(TextDiffPresentation.copyPatchActionEnabled(""))
+        assertTrue(TextDiffPresentation.copyPatchActionEnabled("--- a\n+++ b\n"))
+    }
+
+    @Test
     fun runCompareUsesDiffEngine() {
         val result = TextDiffPresentation.runCompare("a", "b", ignoreWhitespace = false)
         assertTrue(result.segments.isNotEmpty())

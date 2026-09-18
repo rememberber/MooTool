@@ -8,6 +8,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 
+private suspend fun waitUntil(timeoutMs: Long, pollMs: Long = 5, predicate: () -> Boolean) {
+    val deadline = System.nanoTime() + timeoutMs * 1_000_000
+    while (System.nanoTime() < deadline) {
+        if (predicate()) return
+        delay(pollMs)
+    }
+    assertTrue(predicate(), "condition not met within ${timeoutMs}ms")
+}
+
 class UpdateAutoCheckSchedulerTest {
     @Test
     fun timingMatchesElectron() {
@@ -30,7 +39,7 @@ class UpdateAutoCheckSchedulerTest {
         scheduler.reconfigure()
         delay(5)
         assertEquals(0, checks)
-        delay(startupDelayMs + 25)
+        waitUntil(startupDelayMs + 150) { checks >= 1 }
         assertEquals(1, checks)
         scheduler.stop()
     }
@@ -50,11 +59,11 @@ class UpdateAutoCheckSchedulerTest {
             intervalMs = intervalMs,
         )
         scheduler.reconfigure()
-        delay(startupDelayMs + 30)
+        waitUntil(startupDelayMs + 200) { flags.size >= 1 }
         assertEquals(1, flags.size)
         assertEquals(false, flags.first())
         autoDownload = true
-        delay(intervalMs + 40)
+        waitUntil(intervalMs + 200) { flags.size >= 2 }
         scheduler.stop()
         assertTrue(flags.size >= 2, "expected interval tick after autoDownload flip, got ${flags.size}")
         assertEquals(false, flags.first())

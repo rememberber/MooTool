@@ -19,6 +19,16 @@ class ReformatWiringPresentationTest {
     }
 
     @Test
+    fun toolbarActionEnabledMatchesGuards() {
+        assertFalse(ReformatWiringPresentation.formatActionEnabled(busy = true, inputNotBlank = true))
+        assertTrue(ReformatWiringPresentation.formatActionEnabled(busy = false, inputNotBlank = true))
+        assertFalse(ReformatWiringPresentation.copyResultActionEnabled(""))
+        assertTrue(ReformatWiringPresentation.copyResultActionEnabled("formatted"))
+        assertFalse(ReformatWiringPresentation.saveResultActionEnabled("  "))
+        assertTrue(ReformatWiringPresentation.saveResultActionEnabled("out"))
+    }
+
+    @Test
     fun defaultSaveFileNameMatchesSaveResult() {
         assertEquals(
             "App.java",

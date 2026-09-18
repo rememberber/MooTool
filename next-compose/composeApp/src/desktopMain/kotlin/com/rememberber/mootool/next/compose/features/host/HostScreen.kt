@@ -422,7 +422,7 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                     MooButton(
                         container.t("common.save"),
                         onClick = { saveCurrent() },
-                        enabled = session.dirty,
+                        enabled = HostWiringPresentation.saveProfileActionEnabled(session.dirty),
                         p5Toolbar = true
                     )
                     MooButton(
@@ -559,14 +559,18 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                     Text(session.systemContent, color = colors.textPrimary, fontSize = 11.sp, fontFamily = FontFamily.Monospace)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MooButton(container.t("common.action.copy"), onClick = {
+                    MooButton(
+                        container.t("common.action.copy"),
+                        enabled = HostWiringPresentation.copySystemHostsActionEnabled(session.systemPath),
+                        onClick = {
                         if (container.copyText(session.systemContent)) {
                             session.notice = container.t("common.copied")
                         } else {
                             session.notice = container.t("json.notice.copyFailed")
                         }
                         persist()
-                    })
+                    },
+                    )
                     MooButton(container.t("common.close"), onClick = { session.systemOpen = false; persist() })
                 }
             }
@@ -644,7 +648,11 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                 Text(container.t("quickNote.rename"), color = colors.textPrimary)
                 MooTextField(session.renameValue, { session.renameValue = it; persist() })
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MooButton(container.t("common.save"), prominent = true, onClick = {
+                    MooButton(
+                        container.t("common.save"),
+                        prominent = true,
+                        enabled = HostWiringPresentation.renameProfileActionEnabled(session.renameValue),
+                        onClick = {
                         val nextName = session.renameValue.trim()
                         if (nextName.isEmpty() || session.selectedId.isBlank()) {
                             notifyHostFailure(container, session, container.t("host.error.name")) { persist() }
@@ -668,7 +676,8 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                                 ) { persist() }
                             }
                         persist()
-                    })
+                    },
+                    )
                     MooButton(container.t("common.cancel"), onClick = { session.renameOpen = false; persist() })
                 }
             }
@@ -682,7 +691,11 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
             ) {
                 Text(container.t("host.confirmDelete"), color = colors.textPrimary)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MooButton(container.t("common.delete"), danger = true, onClick = {
+                    MooButton(
+                        container.t("common.delete"),
+                        danger = true,
+                        enabled = HostWiringPresentation.deleteProfileActionEnabled(session.selectedId),
+                        onClick = {
                         val id = session.selectedId
                         if (id.isNotBlank()) container.hostProfiles.delete(id)
                         session.selectedId = ""
@@ -694,7 +707,8 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                         reloadProfiles()
                         container.notifyHostProfileMenuChanged()
                         persist()
-                    })
+                    },
+                    )
                     MooButton(container.t("common.cancel"), onClick = { session.deleteConfirm = false; persist() })
                 }
             }
@@ -843,11 +857,23 @@ private fun ProfileList(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             MooButton(container.t("host.import"), onClick = onImport)
-            MooButton(container.t("host.export"), onClick = onExport, enabled = session.content.isNotBlank())
+            MooButton(
+                container.t("host.export"),
+                onClick = onExport,
+                enabled = HostWiringPresentation.exportProfileActionEnabled(session.content),
+            )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            MooButton(container.t("host.copy"), onClick = onCopy, enabled = session.selectedId.isNotBlank() || session.content.isNotBlank())
-            MooButton(container.t("common.delete"), onClick = onDelete, enabled = session.selectedId.isNotBlank())
+            MooButton(
+                container.t("host.copy"),
+                onClick = onCopy,
+                enabled = HostWiringPresentation.copyProfileActionEnabled(session.selectedId, session.content),
+            )
+            MooButton(
+                container.t("common.delete"),
+                onClick = onDelete,
+                enabled = HostWiringPresentation.deleteProfileActionEnabled(session.selectedId),
+            )
         }
     }
 }
@@ -907,7 +933,7 @@ private fun FindBar(
         )
         MooButton(
             container.t("find.find"),
-            enabled = session.findQuery.isNotBlank(),
+            enabled = HostWiringPresentation.findQueryActionEnabled(session.findQuery),
             onClick = { jumpFind(true) },
             p5Toolbar = true,
         )
@@ -932,8 +958,18 @@ private fun FindBar(
             color = colors.textSecondary,
             fontSize = 12.sp,
         )
-        MooButton(container.t("find.previous"), onClick = { jumpFind(false) }, p5Toolbar = true)
-        MooButton(container.t("find.next"), onClick = { jumpFind(true) }, p5Toolbar = true)
+        MooButton(
+            container.t("find.previous"),
+            enabled = HostWiringPresentation.findStepActionEnabled(session.findQuery),
+            onClick = { jumpFind(false) },
+            p5Toolbar = true,
+        )
+        MooButton(
+            container.t("find.next"),
+            enabled = HostWiringPresentation.findStepActionEnabled(session.findQuery),
+            onClick = { jumpFind(true) },
+            p5Toolbar = true,
+        )
         MooButton(container.t("find.replace"), onClick = {
             val selection = contentField.selection
             val caret = maxOf(selection.start, selection.end)

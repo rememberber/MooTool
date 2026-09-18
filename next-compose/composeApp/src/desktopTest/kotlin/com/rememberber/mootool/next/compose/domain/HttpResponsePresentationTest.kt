@@ -33,6 +33,27 @@ class HttpResponsePresentationTest {
     }
 
     @Test
+    fun copyAndSaveResponseActionEnabledRequireVisibleAndNotSending() {
+        val visible = sampleResponse(ok = true, status = 200, body = "x")
+        assertTrue(HttpResponsePresentation.copyResponseActionEnabled(visible, sending = false))
+        assertTrue(HttpResponsePresentation.saveResponseActionEnabled(visible, sending = false))
+        assertFalse(HttpResponsePresentation.copyResponseActionEnabled(null, sending = false))
+        assertFalse(HttpResponsePresentation.saveResponseActionEnabled(null, sending = false))
+        assertFalse(HttpResponsePresentation.copyResponseActionEnabled(visible, sending = true))
+        assertFalse(HttpResponsePresentation.saveResponseActionEnabled(visible, sending = true))
+    }
+
+    @Test
+    fun responseFindAndFindBarActionEnabled() {
+        val visible = sampleResponse(ok = true, status = 200, body = "x")
+        assertFalse(HttpResponsePresentation.responseFindOpenActionEnabled(findOpen = false, visible = null, sending = false))
+        assertTrue(HttpResponsePresentation.responseFindOpenActionEnabled(findOpen = false, visible = visible, sending = false))
+        assertTrue(HttpResponsePresentation.responseFindOpenActionEnabled(findOpen = true, visible = null, sending = true))
+        assertFalse(HttpResponsePresentation.findQueryActionEnabled("  "))
+        assertTrue(HttpResponsePresentation.findStepActionEnabled("q"))
+    }
+
+    @Test
     fun runWriteResponseTextRoundTripAndMissingParentFails() {
         val dir = kotlin.io.path.createTempDirectory("http-response-write-").toFile()
         try {

@@ -167,7 +167,7 @@ fun EncodeScreen(container: AppContainer, detached: Boolean) {
                     labels.forward,
                     prominent = true,
                     p5Toolbar = true,
-                    enabled = EncodeWiringPresentation.canConvert(session.left()),
+                    enabled = EncodeWiringPresentation.forwardConvertActionEnabled(session.left()),
                     modifier = Modifier.mooEncodeConvertButton(),
                     onClick = {
                         convert(container, session, forward = true)
@@ -177,7 +177,7 @@ fun EncodeScreen(container: AppContainer, detached: Boolean) {
                 MooButton(
                     labels.reverse,
                     p5Toolbar = true,
-                    enabled = EncodeWiringPresentation.canConvert(session.right()),
+                    enabled = EncodeWiringPresentation.reverseConvertActionEnabled(session.right()),
                     modifier = Modifier.mooEncodeConvertButton(),
                     onClick = {
                         convert(container, session, forward = false)

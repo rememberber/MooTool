@@ -74,13 +74,12 @@ import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
 import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.chooseFileWithExportDirectory
+import com.rememberber.mootool.next.compose.ui.persistToolsExportDirectory
 import com.rememberber.mootool.next.compose.ui.workbench.onUserInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.awt.FileDialog
-import java.awt.Frame
-import java.io.File
 
 @Composable
 fun VariablesScreen(container: AppContainer, detached: Boolean) {
@@ -174,12 +173,21 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                 overflow = overflow,
                 moreLabel = container.t("json.action.overflow"),
                 actions = buildList {
-                    add(OverflowAction(container.t("common.export"), enabled = EnvWiringPresentation.exportEnabled(snapshot != null)) {
+                    add(OverflowAction(
+                        container.t("common.export"),
+                        enabled = EnvWiringPresentation.exportActionEnabled(snapshot != null),
+                    ) {
                         val current = session.snapshot ?: return@OverflowAction
-                        val file = chooseSave(container.t("common.export"), "mootool-next-compose-environment.txt") ?: return@OverflowAction
+                        val file = chooseFileWithExportDirectory(
+                            container,
+                            save = true,
+                            title = container.t("common.export"),
+                            defaultFileName = "mootool-next-compose-environment.txt",
+                        ) ?: return@OverflowAction
                         when (val outcome = EnvWiringPresentation.runWriteExport(file, current)) {
                             EnvWiringPresentation.ExportOutcome.Success -> {
                                 session.notice = container.t("variables.exported")
+                                persistToolsExportDirectory(container, file)
                                 container.toastSuccess(container.t("variables.exported"))
                             }
                             is EnvWiringPresentation.ExportOutcome.Failure -> {
@@ -576,11 +584,3 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
     }
 }
 
-private fun chooseSave(title: String, defaultName: String): File? {
-    val dialog = FileDialog(null as Frame?, title, FileDialog.SAVE)
-    dialog.file = defaultName
-    dialog.isVisible = true
-    val directory = dialog.directory ?: return null
-    val file = dialog.file ?: return null
-    return File(directory, file)
-}

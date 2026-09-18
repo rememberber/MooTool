@@ -12,6 +12,12 @@ class ImageWiringPresentationTest {
         assertFalse(ImageWiringPresentation.canProcessSelection(selectedCount = 0, busy = false))
         assertFalse(ImageWiringPresentation.canProcessSelection(selectedCount = 2, busy = true))
         assertTrue(ImageWiringPresentation.canProcessSelection(selectedCount = 1, busy = false))
+        assertTrue(ImageWiringPresentation.processSelectionActionEnabled(selectedCount = 1, busy = false))
+        assertFalse(ImageWiringPresentation.importActionEnabled(busy = true))
+        assertTrue(ImageWiringPresentation.actOnCurrentActionEnabled(hasCurrent = true, busy = false))
+        assertFalse(ImageWiringPresentation.exportBase64ActionEnabled("  "))
+        assertTrue(ImageWiringPresentation.startWatermarkActionEnabled("wm"))
+        assertFalse(ImageWiringPresentation.renamePromptActionEnabled(""))
     }
 
     @Test

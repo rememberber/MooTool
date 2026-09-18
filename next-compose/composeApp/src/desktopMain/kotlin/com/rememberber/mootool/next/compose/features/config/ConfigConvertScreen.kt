@@ -64,11 +64,9 @@ import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
 import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
+import com.rememberber.mootool.next.compose.ui.chooseFileWithExportDirectory
+import com.rememberber.mootool.next.compose.ui.persistToolsExportDirectory
 import com.rememberber.mootool.next.compose.ui.workbench.applyUserEditClearingStatusNotice
-import java.awt.FileDialog
-import java.awt.Frame
-import java.io.File
-import java.nio.charset.StandardCharsets
 
 @Composable
 fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
@@ -160,10 +158,15 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
                                 refresh()
                             }
                         })
-                        MooButton(container.t("config.exportProperties"), p5Toolbar = true, onClick = {
-                            exportText(container, session, session.properties, "config.properties")
-                            refresh()
-                        })
+                        MooButton(
+                            container.t("config.exportProperties"),
+                            enabled = ConfigWiringPresentation.exportTextActionEnabled(session.properties),
+                            p5Toolbar = true,
+                            onClick = {
+                                exportText(container, session, session.properties, "config.properties")
+                                refresh()
+                            },
+                        )
                     }
                 }
                 },
@@ -176,7 +179,7 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
                     MooButton(
                         container.t("config.toYaml"),
                         prominent = true,
-                        enabled = ConfigWiringPresentation.canToYaml(session.properties),
+                        enabled = ConfigWiringPresentation.propertiesToYamlActionEnabled(session.properties),
                         p5Toolbar = true,
                         onClick = {
                             convert(container, session, toYaml = true)
@@ -185,7 +188,7 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
                     )
                     MooButton(
                         container.t("config.toProperties"),
-                        enabled = ConfigWiringPresentation.canToProperties(session.yaml),
+                        enabled = ConfigWiringPresentation.yamlToPropertiesActionEnabled(session.yaml),
                         p5Toolbar = true,
                         onClick = {
                             convert(container, session, toYaml = false)
@@ -219,10 +222,15 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
                                 refresh()
                             }
                         })
-                        MooButton(container.t("config.exportYaml"), p5Toolbar = true, onClick = {
-                            exportText(container, session, session.yaml, "config.yaml")
-                            refresh()
-                        })
+                        MooButton(
+                            container.t("config.exportYaml"),
+                            enabled = ConfigWiringPresentation.exportTextActionEnabled(session.yaml),
+                            p5Toolbar = true,
+                            onClick = {
+                                exportText(container, session, session.yaml, "config.yaml")
+                                refresh()
+                            },
+                        )
                     }
                 }
                 }
@@ -262,7 +270,7 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
                     MooButton(
                         container.t("config.validate"),
                         prominent = true,
-                        enabled = ConfigWiringPresentation.canValidateSource(session.validateSource),
+                        enabled = ConfigWiringPresentation.validateYamlActionEnabled(session.validateSource),
                         p5Toolbar = true,
                         onClick = {
                             validate(container, session)
@@ -271,7 +279,7 @@ fun ConfigConvertScreen(container: AppContainer, detached: Boolean) {
                     )
                     MooButton(
                         container.t("config.format"),
-                        enabled = ConfigWiringPresentation.canValidateSource(session.validateSource),
+                        enabled = ConfigWiringPresentation.formatYamlActionEnabled(session.validateSource),
                         p5Toolbar = true,
                         onClick = {
                         format(container, session)
@@ -443,9 +451,12 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
 }
 
 private fun importText(container: AppContainer, session: ConfigSession, title: String): String? {
-    val file = chooseFile(save = false, title = title) ?: return null
+    val file = chooseFileWithExportDirectory(container, save = false, title = title) ?: return null
     return when (val outcome = ConfigWiringPresentation.runReadImportFile(file)) {
-        is ConfigWiringPresentation.ImportOutcome.Success -> outcome.content
+        is ConfigWiringPresentation.ImportOutcome.Success -> {
+            persistToolsExportDirectory(container, file)
+            outcome.content
+        }
         is ConfigWiringPresentation.ImportOutcome.Failure -> {
             val message = container.t(
                 "reformat.error.read",
@@ -459,16 +470,18 @@ private fun importText(container: AppContainer, session: ConfigSession, title: S
 }
 
 private fun exportText(container: AppContainer, session: ConfigSession, content: String, kindKey: String) {
-    if (content.isEmpty()) {
-        session.notice = container.t("config.nothingToSave")
-        return
-    }
     val extension = if (kindKey == "config.yaml") "yml" else "properties"
-    val file = chooseFile(save = true, title = container.t(kindKey), defaultName = "config.$extension") ?: return
+    val file = chooseFileWithExportDirectory(
+        container,
+        save = true,
+        title = container.t(kindKey),
+        defaultFileName = "config.$extension",
+    ) ?: return
     when (val outcome = ConfigWiringPresentation.runWriteExportFile(file, content)) {
         ConfigWiringPresentation.WriteExportOutcome.Success -> {
             session.error = ""
             session.notice = container.t("json.notice.exported")
+            persistToolsExportDirectory(container, file)
             container.toastSuccess(container.t("json.notice.exported"))
         }
         is ConfigWiringPresentation.WriteExportOutcome.Failure -> {
@@ -498,13 +511,4 @@ private fun notifyConfigFailure(
     if (shouldToast) {
         container.toastError(message)
     }
-}
-
-private fun chooseFile(save: Boolean, title: String, defaultName: String = ""): File? {
-    val dialog = FileDialog(null as Frame?, title, if (save) FileDialog.SAVE else FileDialog.LOAD)
-    if (defaultName.isNotEmpty()) dialog.file = defaultName
-    dialog.isVisible = true
-    val file = dialog.file ?: return null
-    val directory = dialog.directory ?: return null
-    return File(directory, file)
 }

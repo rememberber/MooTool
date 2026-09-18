@@ -15,6 +15,28 @@ object HostWiringPresentation {
 
     fun canToggleContentSearch(applying: Boolean): Boolean = !applying
 
+    /** 对齐 `HostScreen` 工具栏保存：同 `disabled={!dirty}`。 */
+    fun saveProfileActionEnabled(dirty: Boolean): Boolean = dirty
+
+    fun exportProfileActionEnabled(content: String): Boolean = content.isNotBlank()
+
+    fun copyProfileActionEnabled(selectedId: String, content: String): Boolean =
+        selectedId.isNotBlank() || content.isNotBlank()
+
+    fun deleteProfileActionEnabled(selectedId: String): Boolean = selectedId.isNotBlank()
+
+    /** 对齐 Host 查找条「查找」：同 [EditorFindBarPresentation.findQueryActionEnabled]。 */
+    fun findQueryActionEnabled(query: String): Boolean =
+        EditorFindBarPresentation.findQueryActionEnabled(query)
+
+    fun findStepActionEnabled(query: String): Boolean = EditorFindBarPresentation.findStepActionEnabled(query)
+
+    /** 对齐重命名对话框 `disabled={!renameValue.trim()}`。 */
+    fun renameProfileActionEnabled(renameValue: String): Boolean = renameValue.trim().isNotEmpty()
+
+    /** 对齐系统 hosts 对话框复制：`disabled={!systemHosts}` → 已读到路径即可复制（含空文件）。 */
+    fun copySystemHostsActionEnabled(systemPath: String): Boolean = systemPath.isNotBlank()
+
     fun showFilteredEmpty(profileCount: Int, query: String): Boolean =
         profileCount == 0 && JsonVaultSearchPresentation.isFiltering(query)
 

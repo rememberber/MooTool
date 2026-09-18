@@ -8,6 +8,12 @@ object TimeWiringPresentation {
 
     fun canCopyField(value: String): Boolean = value.isNotBlank()
 
+    fun timestampToLocalActionEnabled(timestamp: String): Boolean = canConvertTimestamp(timestamp)
+
+    fun localToTimestampActionEnabled(localTime: String): Boolean = canConvertLocal(localTime)
+
+    fun copyFieldActionEnabled(value: String): Boolean = canCopyField(value)
+
     sealed interface ConvertOutcome {
         data class ToLocal(val result: TimestampConversion) : ConvertOutcome
         data class ToTimestamp(val timestamp: String) : ConvertOutcome

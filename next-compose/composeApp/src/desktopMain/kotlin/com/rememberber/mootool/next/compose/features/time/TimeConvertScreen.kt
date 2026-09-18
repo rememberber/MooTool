@@ -189,7 +189,7 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
                 )
                 MooButton(
                     container.t("time.copy"),
-                    enabled = TimeWiringPresentation.canCopyField(session.timestamp),
+                    enabled = TimeWiringPresentation.copyFieldActionEnabled(session.timestamp),
                     onClick = { copyField(container, session, session.timestamp, refresh = { refresh() }) },
                     p5Toolbar = true,
                 )
@@ -218,13 +218,13 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
                 MooButton(
                     container.t("time.toLocal"),
                     prominent = true,
-                    enabled = TimeWiringPresentation.canConvertTimestamp(session.timestamp),
+                    enabled = TimeWiringPresentation.timestampToLocalActionEnabled(session.timestamp),
                     onClick = { convertToLocal(container, session, refresh = { refresh() }) },
                     p5Toolbar = true
                 )
                 MooButton(
                     container.t("time.toTimestamp"),
-                    enabled = TimeWiringPresentation.canConvertLocal(session.localTime),
+                    enabled = TimeWiringPresentation.localToTimestampActionEnabled(session.localTime),
                     onClick = { convertToTimestamp(container, session, refresh = { refresh() }) },
                     p5Toolbar = true
                 )
@@ -246,7 +246,12 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
                     }
                 )
                 Text(container.t("time.formatHint"), color = colors.textMuted, fontSize = 10.sp)
-                MooButton(container.t("time.copy"), onClick = { copyField(container, session, session.localTime, refresh = { refresh() }) }, p5Toolbar = true)
+                MooButton(
+                    container.t("time.copy"),
+                    enabled = TimeWiringPresentation.copyFieldActionEnabled(session.localTime),
+                    onClick = { copyField(container, session, session.localTime, refresh = { refresh() }) },
+                    p5Toolbar = true,
+                )
             }
         }
 

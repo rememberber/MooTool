@@ -32,6 +32,32 @@ object HttpResponsePresentation {
     fun statusMetaSuccess(visible: HttpResponseResult?): Boolean =
         visible != null && visible.ok && visible.status in 200..399
 
+    private fun responseToolbarIoEnabled(visible: HttpResponseResult?, sending: Boolean): Boolean =
+        visible != null && !sending
+
+    /** 对齐 `HttpScreen` 响应复制钮：无可见响应或发送中禁用。 */
+    fun copyResponseActionEnabled(visible: HttpResponseResult?, sending: Boolean): Boolean =
+        responseToolbarIoEnabled(visible, sending)
+
+    /** 对齐 `HttpScreen` 响应另存/二进制另存钮与溢出菜单项。 */
+    fun saveResponseActionEnabled(visible: HttpResponseResult?, sending: Boolean): Boolean =
+        responseToolbarIoEnabled(visible, sending)
+
+    /** 对齐 `HttpScreen` 响应「查找」钮：无可见响应或发送中禁用；查找条已打开时仍须可点关闭。 */
+    fun responseFindOpenActionEnabled(
+        findOpen: Boolean,
+        visible: HttpResponseResult?,
+        sending: Boolean,
+    ): Boolean = findOpen || responseToolbarIoEnabled(visible, sending)
+
+    /** 对齐 HTTP 响应查找条「查找」：同 [EditorFindBarPresentation.findQueryActionEnabled]。 */
+    fun findQueryActionEnabled(query: String): Boolean =
+        EditorFindBarPresentation.findQueryActionEnabled(query)
+
+    /** 对齐 HTTP 响应查找条「上一处/下一处」：同 [EditorFindBarPresentation.findStepActionEnabled]。 */
+    fun findStepActionEnabled(query: String): Boolean =
+        EditorFindBarPresentation.findStepActionEnabled(query)
+
     sealed interface WriteExportOutcome {
         data object Success : WriteExportOutcome
         data class Failure(val error: Throwable) : WriteExportOutcome

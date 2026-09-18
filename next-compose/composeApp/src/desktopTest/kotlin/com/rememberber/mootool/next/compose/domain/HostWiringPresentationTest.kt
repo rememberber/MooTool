@@ -15,6 +15,24 @@ class HostWiringPresentationTest {
     }
 
     @Test
+    fun profileAndFindActionEnabled() {
+        assertFalse(HostWiringPresentation.saveProfileActionEnabled(dirty = false))
+        assertTrue(HostWiringPresentation.saveProfileActionEnabled(dirty = true))
+        assertFalse(HostWiringPresentation.exportProfileActionEnabled("  "))
+        assertTrue(HostWiringPresentation.exportProfileActionEnabled("127.0.0.1 x"))
+        assertTrue(HostWiringPresentation.copyProfileActionEnabled("", "hosts"))
+        assertFalse(HostWiringPresentation.copyProfileActionEnabled("", "  "))
+        assertFalse(HostWiringPresentation.deleteProfileActionEnabled(""))
+        assertTrue(HostWiringPresentation.deleteProfileActionEnabled("p1"))
+        assertFalse(HostWiringPresentation.findQueryActionEnabled(""))
+        assertTrue(HostWiringPresentation.findQueryActionEnabled("q"))
+        assertFalse(HostWiringPresentation.renameProfileActionEnabled("  "))
+        assertTrue(HostWiringPresentation.renameProfileActionEnabled(" prod "))
+        assertFalse(HostWiringPresentation.copySystemHostsActionEnabled(""))
+        assertTrue(HostWiringPresentation.copySystemHostsActionEnabled("/etc/hosts"))
+    }
+
+    @Test
     fun contentSearchToggleAndFilteredEmpty() {
         assertFalse(HostWiringPresentation.canToggleContentSearch(applying = true))
         assertTrue(HostWiringPresentation.showFilteredEmpty(profileCount = 0, query = "prod"))

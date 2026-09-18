@@ -56,6 +56,25 @@ class TranslationWiringPresentationTest {
                 translating = false,
             ),
         )
+        assertTrue(TranslationWiringPresentation.translateActionEnabled("hello", translating = false))
+    }
+
+    @Test
+    fun toolbarWordBookAndHistoryActionEnabled() {
+        assertFalse(TranslationWiringPresentation.copyResultActionEnabled(""))
+        assertTrue(TranslationWiringPresentation.copyResultActionEnabled("译文"))
+        assertFalse(TranslationWiringPresentation.saveWordFromSourceActionEnabled("  "))
+        assertTrue(TranslationWiringPresentation.saveWordFromSourceActionEnabled("word"))
+        assertFalse(TranslationWiringPresentation.deleteWordActionEnabled(""))
+        assertTrue(TranslationWiringPresentation.deleteWordConfirmActionEnabled("id-1"))
+        assertFalse(TranslationWiringPresentation.applyWordActionEnabled(false))
+        assertTrue(TranslationWiringPresentation.retranslateWordActionEnabled(true, "src"))
+        assertFalse(TranslationWiringPresentation.retranslateWordActionEnabled(true, ""))
+        assertFalse(TranslationWiringPresentation.saveWordEntryActionEnabled(""))
+        assertFalse(TranslationWiringPresentation.clearHistoryActionEnabled(0))
+        assertTrue(TranslationWiringPresentation.clearHistoryActionEnabled(1))
+        assertFalse(TranslationWiringPresentation.clearHistoryConfirmActionEnabled(0))
+        assertTrue(TranslationWiringPresentation.clearHistoryConfirmActionEnabled(2))
     }
 
     @Test

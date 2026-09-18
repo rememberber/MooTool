@@ -11,6 +11,17 @@ object ConfigWiringPresentation {
 
     fun canValidateSource(source: String): Boolean = source.isNotBlank()
 
+    fun propertiesToYamlActionEnabled(properties: String): Boolean = canToYaml(properties)
+
+    fun yamlToPropertiesActionEnabled(yaml: String): Boolean = canToProperties(yaml)
+
+    fun validateYamlActionEnabled(source: String): Boolean = canValidateSource(source)
+
+    fun formatYamlActionEnabled(source: String): Boolean = canValidateSource(source)
+
+    /** 对齐 `ConfigConvertScreen` 侧栏导出：对应 pane 无文本时禁用。 */
+    fun exportTextActionEnabled(content: String): Boolean = content.isNotBlank()
+
     sealed interface ConvertOutcome {
         data class Success(val output: String) : ConvertOutcome
         data class Failure(val error: Throwable) : ConvertOutcome

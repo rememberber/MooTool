@@ -17,6 +17,8 @@ class EnvWiringPresentationTest {
     fun exportRequiresSnapshot() {
         assertFalse(EnvWiringPresentation.exportEnabled(hasSnapshot = false))
         assertTrue(EnvWiringPresentation.exportEnabled(hasSnapshot = true))
+        assertFalse(EnvWiringPresentation.exportActionEnabled(hasSnapshot = false))
+        assertTrue(EnvWiringPresentation.exportActionEnabled(hasSnapshot = true))
     }
 
     @Test

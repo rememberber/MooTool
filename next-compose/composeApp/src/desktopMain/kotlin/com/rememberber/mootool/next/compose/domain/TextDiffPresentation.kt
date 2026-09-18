@@ -13,6 +13,15 @@ object TextDiffPresentation {
 
     fun canManualCompare(left: String, right: String): Boolean = left.isNotEmpty() || right.isNotEmpty()
 
+    /** 对齐 `TextDiffScreen` 手动比较钮：两侧皆空时禁用。 */
+    fun manualCompareActionEnabled(left: String, right: String): Boolean = canManualCompare(left, right)
+
+    /** 对齐 `TextDiffScreen` 上/下差异钮（Electron `disabled={visibleSegments.length === 0}`）。 */
+    fun navigateDiffActionEnabled(visibleSegmentCount: Int): Boolean = canNavigateDiffs(visibleSegmentCount)
+
+    /** 对齐 `TextDiffScreen` 复制统一补丁：无 unified 文本时禁用（Electron 点击则 `noCopy` 状态）。 */
+    fun copyPatchActionEnabled(unified: String): Boolean = unified.isNotEmpty()
+
     fun runCompare(left: String, right: String, ignoreWhitespace: Boolean): DiffResult =
         DiffEngine.compare(left, right, ignoreWhitespace)
 

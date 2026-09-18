@@ -4,6 +4,12 @@ package com.rememberber.mootool.next.compose.domain
 object EncodeWiringPresentation {
     fun canConvert(sourceText: String): Boolean = sourceText.isNotBlank()
 
+    /** 对齐 `EncodeScreen` 正向转换钮：源侧无文本时禁用。 */
+    fun forwardConvertActionEnabled(sourceText: String): Boolean = canConvert(sourceText)
+
+    /** 对齐 `EncodeScreen` 反向转换钮：结果侧无文本时禁用。 */
+    fun reverseConvertActionEnabled(sourceText: String): Boolean = canConvert(sourceText)
+
     sealed interface ConvertOutcome {
         data class Success(val output: String) : ConvertOutcome
         data class Failure(val error: Throwable) : ConvertOutcome

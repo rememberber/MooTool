@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.EditorColumnEditPresentation
+import com.rememberber.mootool.next.compose.domain.EditorFindBarPresentation
 import com.rememberber.mootool.next.compose.domain.JsonVaultFooterPresentation
 import com.rememberber.mootool.next.compose.domain.EditorSettingsLiveApply
 import com.rememberber.mootool.next.compose.domain.FindReplace
@@ -835,7 +836,7 @@ private fun FindBar(container: AppContainer, session: JsonSession, onChanged: ()
         )
         MooButton(
             container.t("find.find"),
-            enabled = session.findQuery.isNotBlank(),
+            enabled = EditorFindBarPresentation.findQueryActionEnabled(session.findQuery),
             onClick = { jumpFind(container, session, true); onChanged() },
         )
         MooTextField(session.replaceText, { session.replaceText = it; onChanged() }, modifier = Modifier.width(180.dp), placeholder = container.t("json.find.replace"))
@@ -859,8 +860,16 @@ private fun FindBar(container: AppContainer, session: JsonSession, onChanged: ()
             color = MooTheme.colors.textSecondary,
             fontSize = 12.sp,
         )
-        MooButton(container.t("find.previous"), onClick = { jumpFind(container, session, false); onChanged() })
-        MooButton(container.t("find.next"), onClick = { jumpFind(container, session, true); onChanged() })
+        MooButton(
+            container.t("find.previous"),
+            enabled = EditorFindBarPresentation.findStepActionEnabled(session.findQuery),
+            onClick = { jumpFind(container, session, false); onChanged() },
+        )
+        MooButton(
+            container.t("find.next"),
+            enabled = EditorFindBarPresentation.findStepActionEnabled(session.findQuery),
+            onClick = { jumpFind(container, session, true); onChanged() },
+        )
         MooButton(container.t("find.replace"), onClick = {
             onEdt {
                 if (!RstaFindNavigation.replaceAndSelectNext(session.editor, session.findQuery, session.replaceText, session.findOptions)) {
@@ -1457,6 +1466,7 @@ private fun InspectorPane(
                 MooButton(
                     container.t("json.action.inferSchema"),
                     p5Toolbar = true,
+                    enabled = JsonInspectorPresentation.inferSchemaActionEnabled(structureAnalysis),
                     modifier = Modifier.padding(top = 6.dp),
                     onClick = {
                         showResult(container, session, translator, container.t("json.action.inferSchema")) { input ->
@@ -1497,6 +1507,7 @@ private fun InspectorPane(
             container.t("json.format.apply"),
             prominent = true,
             p5Toolbar = true,
+            enabled = JsonInspectorPresentation.formatAdvancedActionEnabled(structureAnalysis),
             onClick = {
                 transform(
                     container,
@@ -1514,25 +1525,41 @@ private fun InspectorPane(
         }
         MooCard(Modifier.fillMaxWidth()) {
         Text(container.t("json.panel.convert"), color = colors.textPrimary, fontSize = 12.sp)
+        val structureConvertEnabled =
+            JsonInspectorPresentation.jsonStructureConvertActionEnabled(structureAnalysis)
+        val textConvertEnabled = JsonInspectorPresentation.editorTextConvertActionEnabled(inspectorText)
+        val dialogConvertEnabled = JsonInspectorPresentation.conversionDialogActionEnabled()
         InspectorActionGrid(
             listOf(
-                container.t("json.action.jsonToXml") to {
+                InspectorGridAction(
+                    container.t("json.action.jsonToXml"),
+                    enabled = structureConvertEnabled,
+                ) {
                     showResult(container, session, translator, container.t("json.action.jsonToXml")) { input ->
                         JsonWiringPresentation.runTransform(input) { JsonEngine.jsonToXml(it, translator) }
                     }
                     onChanged()
                 },
-                container.t("json.action.xmlToJson") to {
+                InspectorGridAction(
+                    container.t("json.action.xmlToJson"),
+                    enabled = dialogConvertEnabled,
+                ) {
                     session.conversionMode = "xml"
                     session.conversionInput = ""
                     onChanged()
                 },
-                container.t("json.action.beanToJson") to {
+                InspectorGridAction(
+                    container.t("json.action.beanToJson"),
+                    enabled = dialogConvertEnabled,
+                ) {
                     session.conversionMode = "bean"
                     session.conversionInput = ""
                     onChanged()
                 },
-                container.t("json.action.jsonToBean") to {
+                InspectorGridAction(
+                    container.t("json.action.jsonToBean"),
+                    enabled = structureConvertEnabled,
+                ) {
                     showResult(container, session, translator, container.t("json.action.jsonToBean")) { input ->
                         JsonWiringPresentation.runTransform(input) {
                             JsonEngine.jsonToJavaBean(it, translator, session.className.ifBlank { "Root" })
@@ -1540,13 +1567,19 @@ private fun InspectorPane(
                     }
                     onChanged()
                 },
-                container.t("json.action.swap") to {
+                InspectorGridAction(
+                    container.t("json.action.swap"),
+                    enabled = structureConvertEnabled,
+                ) {
                     transform(container, session, translator, container.t("json.action.swap")) { input ->
                         JsonWiringPresentation.runTransform(input) { JsonEngine.swapKeysAndValues(it, translator) }
                     }
                     onChanged()
                 },
-                container.t("json.action.escape") to {
+                InspectorGridAction(
+                    container.t("json.action.escape"),
+                    enabled = textConvertEnabled,
+                ) {
                     transform(
                         container,
                         session,
@@ -1556,7 +1589,10 @@ private fun InspectorPane(
                     ) { input -> JsonWiringPresentation.runTransform(input) { JsonEngine.escapeJsonString(it) } }
                     onChanged()
                 },
-                container.t("json.action.unescape") to {
+                InspectorGridAction(
+                    container.t("json.action.unescape"),
+                    enabled = textConvertEnabled,
+                ) {
                     transform(
                         container,
                         session,
@@ -1568,19 +1604,25 @@ private fun InspectorPane(
                     }
                     onChanged()
                 },
-                container.t("json.action.escapeText") to {
+                InspectorGridAction(
+                    container.t("json.action.escapeText"),
+                    enabled = textConvertEnabled,
+                ) {
                     transform(container, session, translator, container.t("json.action.escapeText")) { input ->
                         JsonWiringPresentation.runTransform(input) { JsonEngine.escapeJavaString(it) }
                     }
                     onChanged()
                 },
-                container.t("json.action.unescapeText") to {
+                InspectorGridAction(
+                    container.t("json.action.unescapeText"),
+                    enabled = textConvertEnabled,
+                ) {
                     transform(container, session, translator, container.t("json.action.unescapeText")) { input ->
                         JsonWiringPresentation.runTransform(input) { JsonEngine.unescapeJsonText(it) }
                     }
                     onChanged()
-                }
-            )
+                },
+            ),
         )
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(container.t("json.dialog.className"), color = colors.textSecondary, fontSize = 11.sp)
@@ -1637,6 +1679,7 @@ private fun InspectorPane(
         MooButton(
             container.t("json.path.copy"),
             p5Toolbar = true,
+            enabled = JsonInspectorPresentation.pathCopyActionEnabled(session.jsonPath),
             onClick = { jsonInspectorCopyJsonPath(session.jsonPath, container) },
         )
         }
@@ -1645,12 +1688,14 @@ private fun InspectorPane(
                 container.t("json.path.query"),
                 prominent = true,
                 p5Toolbar = true,
+                enabled = JsonInspectorPresentation.pathQueryActionEnabled(session.jsonPath),
                 onClick = { queryJsonPathInspector(container, session, translator, onChanged) },
                 modifier = Modifier.weight(0.8f)
             )
             MooButton(
                 container.t("json.path.pick"),
                 p5Toolbar = true,
+                enabled = JsonInspectorPresentation.pathPickerOpenActionEnabled(pathEntries.size),
                 onClick = {
                     session.pathPickerOpen = true
                     onChanged()
@@ -1676,7 +1721,7 @@ private fun InspectorPane(
             MooButton(
                 container.t("json.action.copy"),
                 p5Toolbar = true,
-                enabled = JsonInspectorPresentation.resultCopyEnabled(resultDisplay.text),
+                enabled = JsonInspectorPresentation.resultCopyActionEnabled(resultDisplay.text),
                 onClick = { jsonInspectorCopyResult(resultDisplay.text, container) },
             )
         }
@@ -1768,13 +1813,25 @@ private fun InspectorCheck(label: String, checked: Boolean, onChange: (Boolean) 
     }
 }
 
+private data class InspectorGridAction(
+    val label: String,
+    val enabled: Boolean = true,
+    val onClick: () -> Unit,
+)
+
 @Composable
-private fun InspectorActionGrid(actions: List<Pair<String, () -> Unit>>) {
+private fun InspectorActionGrid(actions: List<InspectorGridAction>) {
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         actions.chunked(2).forEach { pair ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                pair.forEach { (label, onClick) ->
-                    MooButton(label, onClick = onClick, p5Toolbar = true, modifier = Modifier.weight(1f))
+                pair.forEach { action ->
+                    MooButton(
+                        action.label,
+                        enabled = action.enabled,
+                        onClick = action.onClick,
+                        p5Toolbar = true,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
                 if (pair.size == 1) Spacer(Modifier.weight(1f))
             }

@@ -36,6 +36,15 @@ class HttpRequestPresentationTest {
         assertTrue(HttpRequestPresentation.canSend("https://example.com", sending = false))
         assertFalse(HttpRequestPresentation.canSend("  ", sending = false))
         assertFalse(HttpRequestPresentation.canSend("https://example.com", sending = true))
+        assertTrue(HttpRequestPresentation.sendActionEnabled("https://example.com", sending = false))
+        assertFalse(HttpRequestPresentation.sendActionEnabled("", sending = false))
+    }
+
+    @Test
+    fun stopSendActionEnabledRequiresSendingAndRequestId() {
+        assertFalse(HttpRequestPresentation.stopSendActionEnabled(sending = false, requestId = "id"))
+        assertFalse(HttpRequestPresentation.stopSendActionEnabled(sending = true, requestId = ""))
+        assertTrue(HttpRequestPresentation.stopSendActionEnabled(sending = true, requestId = "http-1"))
     }
 
     @Test

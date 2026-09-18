@@ -72,6 +72,7 @@ import com.rememberber.mootool.next.compose.domain.HttpPair
 import com.rememberber.mootool.next.compose.domain.toHttpProxyConfig
 import com.rememberber.mootool.next.compose.domain.HttpRequestTab
 import com.rememberber.mootool.next.compose.domain.HttpResponseFind
+import com.rememberber.mootool.next.compose.domain.HttpCollectionPresentation
 import com.rememberber.mootool.next.compose.domain.HttpRequestPresentation
 import com.rememberber.mootool.next.compose.domain.HttpResponsePresentation
 import com.rememberber.mootool.next.compose.domain.HttpResponseResult
@@ -513,6 +514,10 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                     if (session.sending) {
                         MooButton(
                             container.t("common.stop"),
+                            enabled = HttpRequestPresentation.stopSendActionEnabled(
+                                session.sending,
+                                session.requestId,
+                            ),
                             onClick = {
                                 HttpEngine.cancel(session.requestId)
                                 session.sending = false
@@ -522,7 +527,16 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                             p5Toolbar = true
                         )
                     } else {
-                        MooButton(container.t("http.send"), prominent = true, onClick = { send() }, p5Toolbar = true)
+                        MooButton(
+                            container.t("http.send"),
+                            prominent = true,
+                            p5Toolbar = true,
+                            enabled = HttpRequestPresentation.sendActionEnabled(
+                                session.url.trim(),
+                                session.sending,
+                            ),
+                            onClick = { send() },
+                        )
                     }
                 }
                 Column(
@@ -704,6 +718,11 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                     MooButton(
                         container.t("http.find"),
                         primary = session.findOpen,
+                        enabled = HttpResponsePresentation.responseFindOpenActionEnabled(
+                            session.findOpen,
+                            visible,
+                            session.sending,
+                        ),
                         onClick = {
                             if (session.findOpen) {
                                 session.findOpen = false
@@ -716,7 +735,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                     )
                     MooButton(
                         container.t(CopyFeedbackPolicy.buttonKey(session.copyState, "common.action.copy")),
-                        enabled = visible != null && !session.sending,
+                        enabled = HttpResponsePresentation.copyResponseActionEnabled(visible, session.sending),
                         onClick = { copyResponse(payload) },
                         p5Toolbar = true
                     )
@@ -727,7 +746,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                             } else {
                                 container.t("http.saveResponse")
                             },
-                            enabled = visible != null && !session.sending,
+                            enabled = HttpResponsePresentation.saveResponseActionEnabled(visible, session.sending),
                             onClick = { saveResponse(visible) },
                             p5Toolbar = true
                         )
@@ -740,7 +759,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                                         moreOpen = false
                                         saveResponse(visible)
                                     },
-                                    enabled = visible != null && !session.sending
+                                    enabled = HttpResponsePresentation.saveResponseActionEnabled(visible, session.sending),
                                 ) {
                                     Text(
                                         if (visible?.binary == true && session.responseTab == HttpResponseTab.Body) {
@@ -916,7 +935,7 @@ private fun CollectionPane(
             MooButton(
                 container.t("common.delete"),
                 onClick = { session.deleteConfirm = true; onChanged() },
-                enabled = session.selectedId.isNotBlank(),
+                enabled = HttpCollectionPresentation.deleteSavedActionEnabled(session.selectedId),
                 p5Toolbar = true
             )
         }
@@ -1066,7 +1085,11 @@ private fun CurlDialog(container: AppContainer, session: HttpSession, onChanged:
             Text(container.t("http.curlPrompt"), color = MooTheme.colors.textPrimary)
             MooTextField(session.curlValue, { session.curlValue = it; onChanged() }, modifier = Modifier.weight(1f).fillMaxWidth(), singleLine = false)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("http.importCurl"), prominent = true, onClick = {
+                MooButton(
+                    container.t("http.importCurl"),
+                    prominent = true,
+                    enabled = HttpCollectionPresentation.curlImportActionEnabled(session.curlValue),
+                    onClick = {
                     runCatching { HttpEngine.parseCurl(session.curlValue) }
                         .onSuccess {
                             session.loadDraft(it)
@@ -1080,7 +1103,8 @@ private fun CurlDialog(container: AppContainer, session: HttpSession, onChanged:
                             notifyHttpFailure(container, session, message, onChanged)
                         }
                     onChanged()
-                })
+                },
+                )
                 MooButton(container.t("common.cancel"), onClick = { session.curlOpen = false; onChanged() })
             }
         }
@@ -1097,7 +1121,11 @@ private fun SaveDialog(container: AppContainer, session: HttpSession, onChanged:
             Text(container.t("http.saveName"), color = MooTheme.colors.textPrimary)
             MooTextField(session.saveName, { session.saveName = it; onChanged() })
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.save"), prominent = true, onClick = {
+                MooButton(
+                    container.t("common.save"),
+                    prominent = true,
+                    enabled = HttpCollectionPresentation.saveCollectionActionEnabled(session.saveName),
+                    onClick = {
                     val name = session.saveName.trim()
                     if (name.isEmpty()) return@MooButton
                     val saved = container.httpCollections.save(session.draft().copy(name = name), session.response)
@@ -1106,7 +1134,8 @@ private fun SaveDialog(container: AppContainer, session: HttpSession, onChanged:
                     session.notice = container.t("common.save")
                     container.toastSuccess(container.t("common.save"))
                     onChanged()
-                })
+                },
+                )
                 MooButton(container.t("common.cancel"), onClick = { session.saveOpen = false; onChanged() })
             }
         }
@@ -1122,13 +1151,18 @@ private fun DeleteDialog(container: AppContainer, session: HttpSession, onChange
         ) {
             Text(container.t("http.confirmDelete"), color = MooTheme.colors.textPrimary)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.delete"), danger = true, onClick = {
+                MooButton(
+                    container.t("common.delete"),
+                    danger = true,
+                    enabled = HttpCollectionPresentation.deleteSavedActionEnabled(session.selectedId),
+                    onClick = {
                     if (session.selectedId.isNotBlank()) container.httpCollections.delete(session.selectedId)
                     session.loadDraft(HttpEngine.emptyDraft(container.t("http.untitled")))
                     session.response = null
                     session.deleteConfirm = false
                     onChanged()
-                })
+                },
+                )
                 MooButton(container.t("common.cancel"), onClick = { session.deleteConfirm = false; onChanged() })
             }
         }
@@ -1198,7 +1232,7 @@ private fun HttpFindBar(
         )
         MooButton(
             container.t("find.find"),
-            enabled = session.findQuery.isNotBlank(),
+            enabled = HttpResponsePresentation.findQueryActionEnabled(session.findQuery),
             onClick = { step(true) },
         )
         MooButton(container.t("find.matchCase") + ": ${session.findOptions.matchCase}", onClick = {
@@ -1221,8 +1255,16 @@ private fun HttpFindBar(
             color = MooTheme.colors.textSecondary,
             fontSize = 12.sp,
         )
-        MooButton(container.t("find.previous"), onClick = { step(false) })
-        MooButton(container.t("find.next"), onClick = { step(true) })
+        MooButton(
+            container.t("find.previous"),
+            enabled = HttpResponsePresentation.findStepActionEnabled(session.findQuery),
+            onClick = { step(false) },
+        )
+        MooButton(
+            container.t("find.next"),
+            enabled = HttpResponsePresentation.findStepActionEnabled(session.findQuery),
+            onClick = { step(true) },
+        )
         MooButton(container.t("common.close"), onClick = ::closeFind)
     }
 }

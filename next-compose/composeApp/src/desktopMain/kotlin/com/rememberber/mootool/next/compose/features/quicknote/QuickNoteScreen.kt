@@ -52,6 +52,7 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.DocumentFormatEngine
 import com.rememberber.mootool.next.compose.domain.EditorSettingsLiveApply
 import com.rememberber.mootool.next.compose.domain.EditorColumnEditPresentation
+import com.rememberber.mootool.next.compose.domain.EditorFindBarPresentation
 import com.rememberber.mootool.next.compose.domain.FindReplace
 import com.rememberber.mootool.next.compose.domain.NoteAttachmentEngine
 import com.rememberber.mootool.next.compose.domain.NoteColors
@@ -1833,7 +1834,7 @@ private fun QuickNoteFindBar(
         )
         MooButton(
             container.t("find.find"),
-            enabled = session.findQuery.isNotBlank(),
+            enabled = EditorFindBarPresentation.findQueryActionEnabled(session.findQuery),
             onClick = { jump(true) },
         )
         MooTextField(
@@ -1862,8 +1863,16 @@ private fun QuickNoteFindBar(
             color = colors.textSecondary,
             fontSize = 12.sp,
         )
-        MooButton(container.t("find.previous"), onClick = { jump(false) })
-        MooButton(container.t("find.next"), onClick = { jump(true) })
+        MooButton(
+            container.t("find.previous"),
+            enabled = EditorFindBarPresentation.findStepActionEnabled(session.findQuery),
+            onClick = { jump(false) },
+        )
+        MooButton(
+            container.t("find.next"),
+            enabled = EditorFindBarPresentation.findStepActionEnabled(session.findQuery),
+            onClick = { jump(true) },
+        )
         MooButton(container.t("find.replace"), onClick = {
             quickNoteOnEdt {
                 if (!RstaFindNavigation.replaceAndSelectNext(session.editor, session.findQuery, session.replaceText, session.findOptions)) {

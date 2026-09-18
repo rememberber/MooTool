@@ -13,6 +13,14 @@ class TimeWiringPresentationTest {
     }
 
     @Test
+    fun toolbarActionEnabledMatchesGuards() {
+        assertFalse(TimeWiringPresentation.timestampToLocalActionEnabled(""))
+        assertTrue(TimeWiringPresentation.localToTimestampActionEnabled("2026-01-01"))
+        assertFalse(TimeWiringPresentation.copyFieldActionEnabled("  "))
+        assertTrue(TimeWiringPresentation.copyFieldActionEnabled("123"))
+    }
+
+    @Test
     fun runTimestampToLocalUsesEngine() {
         val outcome = TimeWiringPresentation.runTimestampToLocal("0", TimestampUnit.Second, "Asia/Shanghai")
         assertTrue(outcome is TimeWiringPresentation.ConvertOutcome.ToLocal)

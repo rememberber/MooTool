@@ -12,6 +12,14 @@ class EncodeWiringPresentationTest {
     }
 
     @Test
+    fun convertActionEnabledMatchesGuards() {
+        assertFalse(EncodeWiringPresentation.forwardConvertActionEnabled(""))
+        assertTrue(EncodeWiringPresentation.forwardConvertActionEnabled("x"))
+        assertFalse(EncodeWiringPresentation.reverseConvertActionEnabled("  "))
+        assertTrue(EncodeWiringPresentation.reverseConvertActionEnabled("y"))
+    }
+
+    @Test
     fun runConvertUsesEncodeEngine() {
         val outcome = EncodeWiringPresentation.runConvert(
             EncodeTab.Url,

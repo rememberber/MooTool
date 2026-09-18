@@ -16,6 +16,15 @@ class ConfigWiringPresentationTest {
     }
 
     @Test
+    fun toolbarActionEnabledMatchesGuards() {
+        assertFalse(ConfigWiringPresentation.propertiesToYamlActionEnabled(""))
+        assertTrue(ConfigWiringPresentation.propertiesToYamlActionEnabled("k=v"))
+        assertFalse(ConfigWiringPresentation.exportTextActionEnabled("  "))
+        assertTrue(ConfigWiringPresentation.exportTextActionEnabled("a: 1"))
+        assertTrue(ConfigWiringPresentation.formatYamlActionEnabled("x: y"))
+    }
+
+    @Test
     fun runToYamlRoundTrip() {
         val outcome = ConfigWiringPresentation.runToYaml("a=b")
         assertTrue(outcome is ConfigWiringPresentation.ConvertOutcome.Success)
