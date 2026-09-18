@@ -7,6 +7,11 @@ import kotlin.test.assertTrue
 
 class ReformatWiringPresentationTest {
     @Test
+    fun shouldToastFormatFailure() {
+        assertTrue(ReformatWiringPresentation.shouldToastFormatFailure(IllegalStateException()))
+    }
+
+    @Test
     fun canRunFormatRequiresInputAndNotBusy() {
         assertFalse(ReformatWiringPresentation.canRunFormat(busy = true, inputNotBlank = true))
         assertFalse(ReformatWiringPresentation.canRunFormat(busy = false, inputNotBlank = false))
@@ -52,6 +57,12 @@ class ReformatWiringPresentationTest {
         assertEquals(ReformatType.Nginx, ReformatWiringPresentation.inferTypeFromFileName("site.conf"))
         assertEquals(ReformatType.Html, ReformatWiringPresentation.inferTypeFromFileName("index.htm"))
         assertEquals(null, ReformatWiringPresentation.inferTypeFromFileName("readme.txt"))
+    }
+
+    @Test
+    fun shouldToastFailures() {
+        assertTrue(ReformatWiringPresentation.shouldToastFormatFailure(IllegalStateException()))
+        assertTrue(ReformatWiringPresentation.shouldToastIoFailure(IllegalStateException()))
     }
 
     @Test

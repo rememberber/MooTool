@@ -18,4 +18,10 @@ object HttpRequestPresentation {
         timeoutMs: Int,
         proxy: HttpProxyConfig = HttpProxyConfig(),
     ): HttpResponseResult = HttpEngine.send(draft, requestId, timeoutMs, proxy)
+
+    fun shouldToastResponseError(errorCode: HttpErrorCode?): Boolean = errorCode != null
+
+    fun shouldToastClientValidation(): Boolean = true
+
+    fun shouldToastCopyFailure(): Boolean = true
 }

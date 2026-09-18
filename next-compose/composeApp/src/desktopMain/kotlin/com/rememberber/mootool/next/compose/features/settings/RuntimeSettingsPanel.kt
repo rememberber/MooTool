@@ -19,8 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
-import com.rememberber.mootool.next.compose.domain.CodeRunEngine
-import com.rememberber.mootool.next.compose.domain.CodeRunPaths
+import com.rememberber.mootool.next.compose.domain.CodeRunWiringPresentation
 import com.rememberber.mootool.next.compose.domain.CodeRuntime
 import com.rememberber.mootool.next.compose.domain.CodeRuntimeStatus
 import com.rememberber.mootool.next.compose.model.RuntimeSettings
@@ -40,17 +39,12 @@ fun RuntimeSettingsPanel(container: AppContainer) {
     var detecting by remember { mutableStateOf(false) }
     var statuses by remember { mutableStateOf<List<CodeRuntimeStatus>>(emptyList()) }
 
-    fun paths(runtime: RuntimeSettings) = CodeRunPaths(
-        java = runtime.javaPath,
-        groovy = runtime.groovyPath,
-        python = runtime.pythonPath,
-        node = runtime.nodePath
-    )
-
     fun detect() {
         scope.launch {
             detecting = true
-            val next = withContext(Dispatchers.IO) { CodeRunEngine.detect(paths(settings.runtime)) }
+            val next = withContext(Dispatchers.IO) {
+                CodeRunWiringPresentation.runDetect(CodeRunWiringPresentation.pathsFrom(settings.runtime))
+            }
             statuses = next
             detecting = false
         }
@@ -115,7 +109,7 @@ private fun RuntimeRow(
     onPathChange: (String) -> Unit
 ) {
     val colors = MooTheme.colors
-    val label = CodeRunEngine.displayName(runtime)
+    val label = CodeRunWiringPresentation.displayName(runtime)
     Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(label, color = colors.textPrimary, fontSize = 12.sp)

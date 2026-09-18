@@ -23,4 +23,9 @@ class EncodeWiringPresentationTest {
         assertTrue(outcome is EncodeWiringPresentation.ConvertOutcome.Success)
         assertTrue((outcome as EncodeWiringPresentation.ConvertOutcome.Success).output.contains("a"))
     }
+
+    @Test
+    fun shouldToastConvertFailure() {
+        assertTrue(EncodeWiringPresentation.shouldToastConvertFailure(IllegalStateException()))
+    }
 }

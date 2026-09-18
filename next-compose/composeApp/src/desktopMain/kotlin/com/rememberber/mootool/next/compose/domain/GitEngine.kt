@@ -243,6 +243,9 @@ object GitEngine {
         val current = status(root, isolateConfig)
         if (!current.repository) return@locked GitActionResult(false, "Git repository is not initialized")
         if (current.merging) return@locked GitActionResult(false, "Finish or abort the current merge/rebase before pulling")
+        if (current.conflicts > 0) {
+            return@locked GitActionResult(false, "Resolve all conflicts before pulling")
+        }
         if (current.remote.isBlank()) return@locked GitActionResult(false, "No origin remote is configured")
         val result = run(listOf("pull", "--no-rebase", "origin"), root, isolateConfig, token, REMOTE_TIMEOUT_MS)
         if (result.exitCode == 0) GitActionResult(true, result.stdout.trim().ifBlank { result.stderr.trim().ifBlank { "Done" } })

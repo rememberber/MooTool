@@ -7,6 +7,13 @@ package com.rememberber.mootool.next.compose.domain
 object GitMergeProductFlowPresentation {
     const val EVIDENCE_CONFLICT_FILE = "conflict.json"
 
+    /** 多文件冲突时优先选中证据脚本产物 `conflict.json`，便于 §B 产品走查稳定。 */
+    fun preferredConflictSelectionPath(conflictPaths: List<String>): String? {
+        if (conflictPaths.isEmpty()) return null
+        if (conflictPaths.contains(EVIDENCE_CONFLICT_FILE)) return EVIDENCE_CONFLICT_FILE
+        return conflictPaths.first()
+    }
+
     fun autoSelectConflictPath(
         merging: Boolean,
         conflicts: Int,
@@ -16,15 +23,24 @@ object GitMergeProductFlowPresentation {
         if (!merging || conflicts <= 0) return null
         val conflictPaths = changes.filter { it.second }.map { it.first }
         if (currentSelected.isNotBlank() && conflictPaths.contains(currentSelected)) return null
-        return conflictPaths.firstOrNull()
+        return preferredConflictSelectionPath(conflictPaths)
     }
 
     fun showResolveActions(merging: Boolean, selectedConflict: Boolean): Boolean =
         merging && selectedConflict
 
-    fun productFlowHintKey(merging: Boolean, conflicts: Int, selectedConflict: Boolean): String? {
+    fun productFlowHintKey(
+        merging: Boolean,
+        conflicts: Int,
+        selectedConflict: Boolean,
+        operation: String = "merge",
+    ): String? {
         if (!merging || conflicts <= 0) return null
-        return if (selectedConflict) "git.mergeProductFlowResolve" else "git.mergeProductFlowSelect"
+        return if (operation == "rebase") {
+            if (selectedConflict) "git.rebaseProductFlowResolve" else "git.rebaseProductFlowSelect"
+        } else {
+            if (selectedConflict) "git.mergeProductFlowResolve" else "git.mergeProductFlowSelect"
+        }
     }
 
     fun evidenceReady(merging: Boolean, conflicts: Int, unmergedPaths: List<String>): Boolean =
@@ -39,7 +55,7 @@ object GitMergeProductFlowPresentation {
         busy: Boolean,
     ): Boolean = !busy && showResolveActions(merging, selectedConflict)
 
-    /** 产品主窗 merge 走查：全部冲突已标记后继续合并（§B continue 钮）。 */
+    /** 产品主窗 merge/rebase 走查：全部冲突已标记后继续（§B continue 钮）。 */
     fun mergeContinueActionEnabled(merging: Boolean, conflicts: Int, busy: Boolean): Boolean =
-        GitOperationPresentation.continueOperationEnabled(merging, conflicts) && !busy
+        GitOperationPresentation.continueActionEnabled(busy, merging, conflicts)
 }

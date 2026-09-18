@@ -24,4 +24,10 @@ class CryptoWiringPresentationTest {
         assertTrue(outcome is CryptoWiringPresentation.DigestOutcome.Success)
         assertEquals(64, (outcome as CryptoWiringPresentation.DigestOutcome.Success).output.length)
     }
+
+    @Test
+    fun shouldToastFailures() {
+        assertTrue(CryptoWiringPresentation.shouldToastOperationFailure(IllegalStateException()))
+        assertTrue(CryptoWiringPresentation.shouldToastVerifyFailure())
+    }
 }

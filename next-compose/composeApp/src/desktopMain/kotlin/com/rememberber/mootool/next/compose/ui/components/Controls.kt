@@ -1390,6 +1390,9 @@ fun Modifier.mooJsonToolbarIoCluster(): Modifier = heightIn(min = 34.dp)
 /** Electron 文本对比工具栏左右导入簇（对齐 F04 `mooJsonToolbarIoCluster` 34dp 行高）。 */
 fun Modifier.mooDiffImportCluster(): Modifier = heightIn(min = 34.dp)
 
+/** Electron 随手记工具栏 `.io-actions` 导入/导出簇（对齐 F04 `mooJsonToolbarIoCluster`）。 */
+fun Modifier.mooQuickNoteToolbarIoCluster(): Modifier = heightIn(min = 34.dp)
+
 /** Electron 文本对比工具栏差异导航区。 */
 @Composable
 fun Modifier.mooDiffNavCluster(): Modifier = heightIn(min = 34.dp)
@@ -1410,6 +1413,10 @@ fun Modifier.mooSettingsSettingRow(): Modifier = fillMaxWidth()
 /** Electron 图片工具主工具栏行。 */
 @Composable
 fun Modifier.mooImageToolToolbar(): Modifier = heightIn(min = MooTheme.dimens.toolbar)
+
+/** Electron `.image-library footer` 40px 操作行。 */
+@Composable
+fun Modifier.mooImageLibraryFooterActions(): Modifier = heightIn(min = 40.dp)
 
 /** Electron `.http-collection` / `.host-profiles` 侧栏集合区。 */
 @Composable
@@ -1519,6 +1526,9 @@ fun Modifier.mooGitMergeResolveRow(): Modifier = heightIn(min = 34.dp)
 /** Electron `.qrcode-options` 尺寸/纠错行。 */
 @Composable
 fun Modifier.mooQrOptionsRow(): Modifier = heightIn(min = 34.dp)
+
+/** Electron F17 预览区保存/复制操作行（对齐工具栏 34dp 密度）。 */
+fun Modifier.mooQrPreviewActions(): Modifier = heightIn(min = 34.dp)
 
 /** Electron 系统信息双列属性行。 */
 @Composable
@@ -1658,6 +1668,10 @@ fun Modifier.mooHostProfileSearch(): Modifier = heightIn(min = 33.dp)
 @Composable
 fun Modifier.mooTimeCurrentBand(): Modifier = heightIn(min = 104.dp)
 
+/** Electron 时间转换「转本地/转时间戳」操作行。 */
+@Composable
+fun Modifier.mooTimeConvertActions(): Modifier = heightIn(min = 34.dp)
+
 /** Electron `.time-quick-zones` 快捷时区 segmented 容器。 */
 @Composable
 fun Modifier.mooTimeQuickZones(): Modifier {
@@ -1750,6 +1764,10 @@ fun Modifier.mooProtobufWirePane(): Modifier = heightIn(min = 200.dp)
 /** Electron `.protobuf-convert-grid` 中间转换列。 */
 @Composable
 fun Modifier.mooProtobufConvertGrid(): Modifier = widthIn(min = 120.dp).padding(horizontal = 4.dp)
+
+/** Electron `.translation-record-layout > aside > footer` 词书侧栏底栏。 */
+@Composable
+fun Modifier.mooTranslationWordBookAsideFooter(): Modifier = padding(top = 5.dp)
 
 /** Electron `.translation-toolbar` 自动翻译开关行。 */
 @Composable

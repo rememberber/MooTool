@@ -1,5 +1,7 @@
 package com.rememberber.mootool.next.compose.domain
 
+import kotlin.coroutines.cancellation.CancellationException
+
 /** F23 图片：busy/选中态工具栏守卫（SVG 数值 clamp 见 [ImageSvgWiringPresentation]）。 */
 object ImageWiringPresentation {
     fun canImport(busy: Boolean): Boolean = !busy
@@ -24,4 +26,22 @@ object ImageWiringPresentation {
             onSuccess = { DecodeOutcome.Success(it) },
             onFailure = { DecodeOutcome.Failure(it) },
         )
+
+    sealed interface ExportAssetsOutcome {
+        data object Success : ExportAssetsOutcome
+        data class Failure(val error: Throwable) : ExportAssetsOutcome
+    }
+
+    fun runExportAssets(block: () -> Unit): ExportAssetsOutcome =
+        runCatching(block).fold(
+            onSuccess = { ExportAssetsOutcome.Success },
+            onFailure = { ExportAssetsOutcome.Failure(it) },
+        )
+
+    fun shouldToastProcessFailure(error: Throwable): Boolean {
+        if (error is CancellationException) return false
+        val image = error as? ImageException
+        if (image?.code == "cancelled") return false
+        return true
+    }
 }

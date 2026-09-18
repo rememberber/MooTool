@@ -34,6 +34,11 @@ class EnvWiringPresentationTest {
     }
 
     @Test
+    fun shouldToastIoFailure() {
+        assertTrue(EnvWiringPresentation.shouldToastIoFailure(IllegalStateException()))
+    }
+
+    @Test
     fun runWriteExportWritesUtf8() {
         val dir = File.createTempFile("env-export-", ".dir").apply { delete(); mkdirs() }
         try {
@@ -54,5 +59,10 @@ class EnvWiringPresentationTest {
         } finally {
             dir.deleteRecursively()
         }
+    }
+
+    @Test
+    fun shouldToastOperationFailure() {
+        assertTrue(EnvWiringPresentation.shouldToastOperationFailure(IllegalStateException()))
     }
 }

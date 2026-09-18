@@ -1,5 +1,7 @@
 package com.rememberber.mootool.next.compose.domain
 
+import java.io.File
+
 /** F17 设置 → 会话 QR 尺寸/纠错与生成 clamp（可单测，对齐 Electron `qrTools` + 设置默认值）。 */
 object QrWiringPresentation {
     data class Defaults(val size: Int, val correction: QrErrorCorrection)
@@ -47,4 +49,19 @@ object QrWiringPresentation {
             onFailure = { GenerateOutcome.Failure(it) },
         )
     }
+
+    sealed interface WritePngOutcome {
+        data object Success : WritePngOutcome
+        data class Failure(val error: Throwable) : WritePngOutcome
+    }
+
+    fun runWritePngFile(file: File, pngBytes: ByteArray): WritePngOutcome =
+        runCatching { file.writeBytes(pngBytes) }.fold(
+            onSuccess = { WritePngOutcome.Success },
+            onFailure = { WritePngOutcome.Failure(it) },
+        )
+
+    fun shouldToastOperationFailure(error: Throwable): Boolean = true
+
+    fun shouldToastErrorMessage(): Boolean = true
 }

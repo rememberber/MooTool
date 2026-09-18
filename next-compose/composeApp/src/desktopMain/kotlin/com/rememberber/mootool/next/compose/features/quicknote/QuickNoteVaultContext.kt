@@ -7,6 +7,7 @@ import com.rememberber.mootool.next.compose.domain.NoteFrontmatter
 import com.rememberber.mootool.next.compose.domain.NoteMetadata
 import com.rememberber.mootool.next.compose.domain.QuickNoteHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.QuickNoteVaultFooterPresentation
+import com.rememberber.mootool.next.compose.domain.QuickNoteWiringPresentation
 import com.rememberber.mootool.next.compose.domain.VaultGitCheckpointMessages
 import com.rememberber.mootool.next.compose.domain.VaultChangeKind
 import com.rememberber.mootool.next.compose.domain.VaultConflictEngine
@@ -18,6 +19,53 @@ import com.rememberber.mootool.next.compose.sessions.QuickNoteSession
 import com.rememberber.mootool.next.compose.storage.NoteVault
 import com.rememberber.mootool.next.compose.storage.VaultEntry
 import javax.swing.SwingUtilities
+
+/** Vault 对话框/树操作：保存守卫已 toast，勿再弹失败 toast。 */
+internal class QuickNoteVaultMutationAborted : Exception()
+
+internal fun notifyQuickNoteOperationFailure(
+    container: AppContainer,
+    session: QuickNoteSession,
+    error: Throwable? = null,
+    fallbackKey: String = "quickNote.saveFailed",
+    toast: Boolean = true,
+) {
+    val message = QuickNoteWiringPresentation.operationFailureMessage(fallbackKey, error, container::t)
+    session.error = message
+    if (toast && QuickNoteWiringPresentation.shouldToastOperationFailure()) {
+        container.toastError(message)
+    }
+}
+
+internal fun notifyQuickNoteIoFailure(
+    container: AppContainer,
+    session: QuickNoteSession,
+    error: Throwable,
+    path: String,
+    read: Boolean,
+) {
+    val message = container.t(
+        if (read) "reformat.error.read" else "reformat.error.write",
+        mapOf("message" to (error.message ?: path)),
+    )
+    session.error = message
+    session.notice = message
+    if (QuickNoteWiringPresentation.shouldToastIoFailure(error)) {
+        container.toastError(message)
+    }
+}
+
+internal fun notifyQuickNoteSaveGuardFailure(
+    container: AppContainer,
+    session: QuickNoteSession,
+    message: String? = null,
+) {
+    val resolved = message ?: session.error.ifBlank { container.t("quickNote.saveFailed") }
+    session.error = resolved
+    if (QuickNoteWiringPresentation.shouldToastSaveFailure()) {
+        container.toastError(resolved)
+    }
+}
 
 internal fun prepareQuickNoteVaultContext(
     container: AppContainer,
@@ -66,7 +114,7 @@ internal fun quickNoteVaultSaveIfNeeded(
         quickNoteSaveCurrent(container, session, vault, monitor, onConflict = onConflict)
     }
     if (!ok) {
-        session.error = session.error.ifBlank { container.t("quickNote.saveFailed") }
+        notifyQuickNoteSaveGuardFailure(container, session)
     }
     return ok
 }
@@ -154,7 +202,9 @@ internal fun quickNoteSaveCurrent(
                 removed.forEach { path -> runCatching { NoteAttachmentEngine.deleteIfUnreferenced(vault, path) } }
             }
         }
-        .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
+        .onFailure {
+            notifyQuickNoteOperationFailure(container, session, it, toast = showToast)
+        }
         .isSuccess
 }
 

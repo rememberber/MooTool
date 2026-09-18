@@ -446,17 +446,30 @@ private fun runMatch(container: AppContainer, session: RegexSession, onChanged: 
             } else {
                 session.matches = emptyList()
                 session.notice = ""
-                session.error = when (response.code) {
+                val code = response.code
+                session.error = when (code) {
                     "timeout" -> container.t("regex.timeout")
                     "limit" -> container.t("regex.limit")
                     "cancelled" -> container.t("regex.cancelled")
                     "worker-unavailable" -> container.t("regex.workerUnavailable")
-                    else -> container.t("regex.invalid", mapOf("message" to response.error.ifBlank { response.code }))
+                    else -> container.t("regex.invalid", mapOf("message" to response.error.ifBlank { code }))
                 }
-                container.toastError(session.error)
+                notifyRegexFailure(container, session, session.error, code)
             }
             onChanged()
         }
+    }
+}
+
+private fun notifyRegexFailure(
+    container: AppContainer,
+    session: RegexSession,
+    message: String,
+    workerCode: String,
+) {
+    session.error = message
+    if (RegexWiringPresentation.shouldToastWorkerError(workerCode)) {
+        container.toastError(message)
     }
 }
 

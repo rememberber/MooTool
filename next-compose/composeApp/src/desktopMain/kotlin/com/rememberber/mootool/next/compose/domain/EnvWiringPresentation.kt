@@ -46,4 +46,8 @@ object EnvWiringPresentation {
             onSuccess = { ExportOutcome.Success },
             onFailure = { ExportOutcome.Failure(it) },
         )
+
+    fun shouldToastOperationFailure(error: Throwable): Boolean = true
+
+    fun shouldToastIoFailure(error: Throwable): Boolean = true
 }

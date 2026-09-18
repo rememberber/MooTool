@@ -9,6 +9,9 @@
 | 产品窗列选高亮 | `115-json-column-edit-product.png` | Alt 拖选，非写入 |
 | 列选 ASCII 写入 | `122-json-column-type.png`、`125-quicknote-column-latch.png` | 键入 `x`，**不是**系统输入法 |
 | 5 MiB setText | `docs/evidence/2026-09-09-p0-p1/` 等 | 大文档性能 |
+| IME 证据脚本正文/路径 | `EditorColumnEditPresentation` + `ProductEvidencePrepScriptTest`（DIFF-606） |
+| JSON 列编辑闩锁钮 Compose 帧 | `201-compose-json-column-edit-latch-tab-focus.png`（DIFF-606；**不能**代替系统 IME 产品窗） |
+| 随手记列编辑闩锁钮 Compose 帧 | `203-compose-quicknote-column-edit-latch-tab-focus.png`（DIFF-608；**不能**代替系统 IME 产品窗） |
 
 ## 待本机手工（通过后才可标 F04/F01 编辑器项已验收）
 

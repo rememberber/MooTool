@@ -38,6 +38,10 @@ object GitOperationPresentation {
     fun continueOperationEnabled(merging: Boolean, conflicts: Int): Boolean =
         merging && conflicts == 0
 
+    /** 对齐 `VaultGitDialog` continue 钮：`busy` 时禁用，其余同 [continueOperationEnabled]。 */
+    fun continueActionEnabled(busy: Boolean, merging: Boolean, conflicts: Int): Boolean =
+        !busy && continueOperationEnabled(merging, conflicts)
+
     /** 对齐 Electron commit：`!merging && conflicts==0 && changes && message.trim()`。 */
     fun commitEnabled(
         merging: Boolean,
@@ -46,11 +50,23 @@ object GitOperationPresentation {
         messageTrimmed: String,
     ): Boolean = !merging && conflicts == 0 && hasChanges && messageTrimmed.isNotEmpty()
 
+    /** 对齐 `VaultGitDialog` 提交钮：`busy` 时禁用，其余同 [commitEnabled]。 */
+    fun commitActionEnabled(
+        busy: Boolean,
+        merging: Boolean,
+        conflicts: Int,
+        hasChanges: Boolean,
+        messageTrimmed: String,
+    ): Boolean = !busy && commitEnabled(merging, conflicts, hasChanges, messageTrimmed)
+
     /** 对齐 Electron configure-remote：`repository && (draftRemote || statusRemote)`。 */
     fun configureRemoteEnabled(repository: Boolean, draftRemoteTrimmed: String, statusRemote: String): Boolean =
         repository && (draftRemoteTrimmed.isNotEmpty() || statusRemote.isNotBlank())
 
     fun initEnabled(available: Boolean, busy: Boolean): Boolean = !busy && available
+
+    /** 对齐 `VaultGitDialog` 初始化仓库钮：同 [initEnabled]。 */
+    fun initActionEnabled(available: Boolean, busy: Boolean): Boolean = initEnabled(available, busy)
 
     fun discardEnabled(busy: Boolean): Boolean = !busy
 

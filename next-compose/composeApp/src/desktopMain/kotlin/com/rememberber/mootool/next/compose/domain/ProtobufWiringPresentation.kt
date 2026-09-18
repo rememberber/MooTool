@@ -48,6 +48,8 @@ object ProtobufWiringPresentation {
 
     fun canConvertBase64(base64: String): Boolean = base64.isNotBlank()
 
+    fun shouldToastOperationFailure(error: Throwable): Boolean = true
+
     fun copyPayload(
         tab: String,
         wireOutput: String,

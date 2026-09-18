@@ -15,4 +15,6 @@ object MessageBoardWiringPresentation {
         sizePercent: Int,
         fits: (Int) -> Boolean,
     ): Int = MessageBoardEngine.fitFontSize(availableWidth, availableHeight, sizePercent, fits)
+
+    fun shouldToastWakeFailure(displayAwake: Boolean): Boolean = !displayAwake
 }

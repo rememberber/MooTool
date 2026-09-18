@@ -1,5 +1,6 @@
 package com.rememberber.mootool.next.compose.domain
 
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -19,5 +20,17 @@ class ImageSvgWiringPresentationTest {
         assertFalse(ImageSvgWiringPresentation.canStartSvgBatch(selectedCount = 0, busy = false))
         assertFalse(ImageSvgWiringPresentation.canStartSvgBatch(selectedCount = 2, busy = true))
         assertTrue(ImageSvgWiringPresentation.canStartSvgBatch(selectedCount = 2, busy = false))
+    }
+
+    @Test
+    fun runWriteSvgFileRoundTrip() {
+        val file = Files.createTempFile("svg-out-", ".svg")
+        try {
+            val outcome = ImageSvgWiringPresentation.runWriteSvgFile(file, "<svg/>")
+            assertTrue(outcome is ImageSvgWiringPresentation.WriteSvgOutcome.Success)
+            assertEquals("<svg/>", Files.readString(file))
+        } finally {
+            Files.deleteIfExists(file)
+        }
     }
 }

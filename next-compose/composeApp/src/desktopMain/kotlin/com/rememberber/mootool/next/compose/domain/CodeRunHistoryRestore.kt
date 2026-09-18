@@ -15,7 +15,7 @@ object CodeRunHistoryRestore {
 
     private fun inferRuntimeFromSummary(summary: String): CodeRuntime {
         val prefix = summary.substringBefore('·').trim()
-        return CodeRuntime.entries.firstOrNull { CodeRunEngine.displayName(it) == prefix }
+        return CodeRuntime.entries.firstOrNull { CodeRunWiringPresentation.displayName(it) == prefix }
             ?: CodeRuntime.Java
     }
 

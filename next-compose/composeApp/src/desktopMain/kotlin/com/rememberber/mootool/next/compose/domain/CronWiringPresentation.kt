@@ -28,4 +28,6 @@ object CronWiringPresentation {
             onSuccess = { (runs, description) -> ScheduleOutcome.Success(runs, description) },
             onFailure = { ScheduleOutcome.Failure(it) },
         )
+
+    fun shouldToastPreviewFailure(error: Throwable): Boolean = true
 }

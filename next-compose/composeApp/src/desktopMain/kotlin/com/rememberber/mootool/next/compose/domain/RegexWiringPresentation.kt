@@ -21,4 +21,6 @@ object RegexWiringPresentation {
             onSuccess = { MatchOutcome.Success(it) },
             onFailure = { MatchOutcome.Failure(it) },
         )
+
+    fun shouldToastWorkerError(code: String): Boolean = code != "cancelled"
 }

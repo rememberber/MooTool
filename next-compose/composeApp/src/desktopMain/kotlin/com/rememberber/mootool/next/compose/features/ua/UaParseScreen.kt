@@ -293,9 +293,21 @@ private fun parseSource(container: AppContainer, session: UaSession) {
         is UaWiringPresentation.ParseOutcome.Failure -> {
             val error = outcome.error
             session.notice = ""
-            session.error = if ((error as? UaException)?.code == "empty") container.t("ua.empty") else (error.message ?: container.t("ua.empty"))
-            container.toastError(session.error)
+            val message = if ((error as? UaException)?.code == "empty") container.t("ua.empty") else (error.message ?: container.t("ua.empty"))
+            notifyUaFailure(container, session, message, error)
         }
+    }
+}
+
+private fun notifyUaFailure(
+    container: AppContainer,
+    session: UaSession,
+    message: String,
+    error: Throwable,
+) {
+    session.error = message
+    if (UaWiringPresentation.shouldToastParseFailure(error)) {
+        container.toastError(message)
     }
 }
 

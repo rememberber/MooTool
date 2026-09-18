@@ -41,4 +41,10 @@ class HostWiringPresentationTest {
         assertEquals(HostWiringPresentation.ExportProfileOutcome.Success, outcome)
         assertEquals("127.0.0.1 dev.local", file.readText())
     }
+
+    @Test
+    fun shouldToastFailures() {
+        assertTrue(HostWiringPresentation.shouldToastOperationFailure(IllegalStateException()))
+        assertTrue(HostWiringPresentation.shouldToastIoFailure(IllegalStateException()))
+    }
 }

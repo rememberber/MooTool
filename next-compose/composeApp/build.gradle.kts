@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.testing.Test
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -227,4 +228,10 @@ tasks.register("verifyNativePackageMetadata") {
 
 tasks.matching { it.name == "desktopProcessResources" || it.name == "compileKotlinDesktop" }.configureEach {
     dependsOn(syncProtocHelpers)
+}
+
+/** Compose Desktop UI tests share AWT; serial forks reduce macOS JVM abort (exit 134) on full suite. */
+tasks.named<Test>("desktopTest") {
+    maxParallelForks = 1
+    jvmArgs("-Xmx2g")
 }

@@ -37,6 +37,12 @@ class JsonWiringPresentationTest {
     }
 
     @Test
+    fun shouldToastFailures() {
+        assertTrue(JsonWiringPresentation.shouldToastTransformFailure(IllegalStateException()))
+        assertTrue(JsonWiringPresentation.shouldToastIoFailure(IllegalStateException()))
+    }
+
+    @Test
     fun runReadImportAndWriteExportRoundTrip() {
         val dir = File.createTempFile("json-io-", ".dir").apply { delete(); mkdirs() }
         try {

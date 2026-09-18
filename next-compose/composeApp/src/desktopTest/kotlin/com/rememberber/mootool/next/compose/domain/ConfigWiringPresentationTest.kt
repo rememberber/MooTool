@@ -67,4 +67,10 @@ class ConfigWiringPresentationTest {
         val outcome = ConfigWiringPresentation.runWriteExportFile(target, "a=b")
         assertTrue(outcome is ConfigWiringPresentation.WriteExportOutcome.Failure)
     }
+
+    @Test
+    fun shouldToastFailures() {
+        assertTrue(ConfigWiringPresentation.shouldToastConvertFailure(IllegalStateException()))
+        assertTrue(ConfigWiringPresentation.shouldToastIoFailure(IllegalStateException()))
+    }
 }

@@ -85,6 +85,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.components.mooToolShell
+import com.rememberber.mootool.next.compose.ui.components.mooImageLibraryFooterActions
 import com.rememberber.mootool.next.compose.ui.components.mooImageToolToolbar
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
@@ -406,7 +407,14 @@ fun ImageScreen(container: AppContainer, detached: Boolean) {
                             }
                         }
                     }
-                    Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .mooImageLibraryFooterActions()
+                            .padding(horizontal = 11.dp, vertical = 0.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         MooButton(container.t("image.rename"), p5Toolbar = true, onClick = {
                             session.renameOpen = true
                             session.promptValue = current?.name.orEmpty()
@@ -550,7 +558,10 @@ fun ImageScreen(container: AppContainer, detached: Boolean) {
             val renamed = container.imageLibrary.rename(session.currentName, session.promptValue)
             session.renameOpen = false
             loadAssets(renamed.name)
-        }.onFailure { session.error = messageFor(container, it); refresh() }
+        }.onFailure {
+            notifyImageFailure(container, session, it)
+            refresh()
+        }
     }
     if (session.saveOpen) PromptDialog(container, session, container.t("image.saveName"), container.t("common.save")) {
         val asset = current ?: return@PromptDialog
@@ -560,7 +571,10 @@ fun ImageScreen(container: AppContainer, detached: Boolean) {
             loadAssets(saved.name)
             session.notice = container.t("image.saved")
             container.toastSuccess(container.t("image.saved"))
-        }.onFailure { session.error = messageFor(container, it); refresh() }
+        }.onFailure {
+            notifyImageFailure(container, session, it)
+            refresh()
+        }
     }
     if (session.deleteOpen) {
         MooOverlay(onDismiss = { session.deleteOpen = false; refresh() }) {
@@ -624,8 +638,7 @@ private fun Base64Dialog(container: AppContainer, session: ImageSession, onLoade
                                 onLoaded(saved.name)
                             }
                             is ImageWiringPresentation.DecodeOutcome.Failure -> {
-                                session.error = messageFor(container, decoded.error)
-                                container.sessionManager.bump()
+                                notifyImageFailure(container, session, decoded.error)
                             }
                         }
                     }, enabled = session.base64Text.isNotBlank())
@@ -898,8 +911,10 @@ private fun processImages(
             }
             session.busy = false
             session.notice = ""
-            session.error = messageFor(container, error)
-            withContext(Dispatchers.Swing) { container.sessionManager.bump(); container.sessionManager.persistImage() }
+            withContext(Dispatchers.Swing) {
+                notifyImageFailure(container, session, error, bump = true)
+                container.sessionManager.persistImage()
+            }
         }
     }
 }
@@ -930,8 +945,10 @@ private fun vectorize(
                 if (session.cancelled) throw ImageException("cancelled", "Cancelled")
                 val asset = container.imageLibrary.read(name)
                 val svg = ImageEngine.vectorize(asset.image, options)
-                target.writeText(svg)
-                written.add(target)
+                when (val outcome = ImageSvgWiringPresentation.runWriteSvgFile(target, svg)) {
+                    ImageSvgWiringPresentation.WriteSvgOutcome.Success -> written.add(target)
+                    is ImageSvgWiringPresentation.WriteSvgOutcome.Failure -> throw outcome.error
+                }
             }
         }.onSuccess {
             session.busy = false
@@ -957,11 +974,22 @@ private fun vectorize(
             }
             session.busy = false
             session.notice = ""
-            session.error = messageFor(container, error)
-            withContext(Dispatchers.Swing) { container.sessionManager.persistImage(); container.sessionManager.bump() }
+            val pathHint = written.firstOrNull()?.parent?.toString()
+                ?: targets.firstOrNull()?.parent?.toString()
+            withContext(Dispatchers.Swing) {
+                notifyImageFailure(container, session, error, pathHint = pathHint, bump = true)
+                container.sessionManager.persistImage()
+            }
         }
     }
 }
+
+private fun ioFailureMessage(container: AppContainer, error: Throwable, hint: String?): String =
+    if (error is java.io.IOException) {
+        container.t("reformat.error.write", mapOf("message" to (error.message ?: hint.orEmpty())))
+    } else {
+        messageFor(container, error)
+    }
 
 private fun capture(
     container: AppContainer,
@@ -1059,24 +1087,28 @@ private fun importPickedFiles(
         session.error = ""
         onLoaded(imported.first().name)
     }.onFailure {
-        session.error = messageFor(container, it)
-        container.sessionManager.bump()
+        notifyImageFailure(container, session, it)
     }
 }
 
 private fun exportSelected(container: AppContainer, session: ImageSession, names: List<String>) {
     val directory = chooseDirectory(container, container.t("image.export")) ?: return
-    runCatching {
-        container.imageLibrary.export(names, directory.toPath())
-        session.notice = container.t("image.exported", mapOf("directory" to directory.absolutePath))
-        container.toastSuccess(session.notice)
-        session.error = ""
-        session.lastOutputs = listOf(directory.absolutePath)
-        container.sessionManager.persistImage()
-        container.sessionManager.bump()
-    }.onFailure {
-        session.error = messageFor(container, it)
-        container.sessionManager.bump()
+    when (
+        val outcome = ImageWiringPresentation.runExportAssets {
+            container.imageLibrary.export(names, directory.toPath())
+        }
+    ) {
+        ImageWiringPresentation.ExportAssetsOutcome.Success -> {
+            session.notice = container.t("image.exported", mapOf("directory" to directory.absolutePath))
+            container.toastSuccess(session.notice)
+            session.error = ""
+            session.lastOutputs = listOf(directory.absolutePath)
+            container.sessionManager.persistImage()
+            container.sessionManager.bump()
+        }
+        is ImageWiringPresentation.ExportAssetsOutcome.Failure -> {
+            notifyImageFailure(container, session, outcome.error)
+        }
     }
 }
 
@@ -1178,6 +1210,25 @@ private class ImageSelection(private val image: BufferedImage) : Transferable {
 
 private fun ByteArray.toImageBitmap(): ImageBitmap =
     SkiaImage.makeFromEncoded(this).toComposeImageBitmap()
+
+private fun notifyImageFailure(
+    container: AppContainer,
+    session: ImageSession,
+    error: Throwable,
+    pathHint: String? = null,
+    bump: Boolean = true,
+) {
+    session.error = when {
+        error is java.io.IOException -> ioFailureMessage(container, error, pathHint)
+        else -> messageFor(container, error)
+    }
+    if (ImageWiringPresentation.shouldToastProcessFailure(error)) {
+        container.toastError(session.error)
+    }
+    if (bump) {
+        container.sessionManager.bump()
+    }
+}
 
 private fun messageFor(container: AppContainer, error: Throwable): String =
     ScreenCaptureFailureMessages.imageOperationMessage({ container.t(it) }, error)

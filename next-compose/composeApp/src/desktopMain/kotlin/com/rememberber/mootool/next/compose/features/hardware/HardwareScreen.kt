@@ -45,6 +45,7 @@ import com.rememberber.mootool.next.compose.ui.components.mooToolShell
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
 import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.sessions.HardwareSession
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import com.rememberber.mootool.next.compose.ui.workbench.OnToolLeaveUnlessDetached
 import kotlinx.coroutines.CancellationException
@@ -89,8 +90,8 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
                     session.error = ""
                     container.toastSuccess(container.t("hardware.refresh"))
                 }.onFailure {
-                    session.error = it.message ?: container.t("hardware.error.generic")
-                    container.toastError(session.error)
+                    val message = it.message ?: container.t("hardware.error.generic")
+                    notifyHardwareFailure(container, session, message, it)
                 }
                 persist()
             }
@@ -157,7 +158,14 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
                         if (snapshot == null) return@OverflowAction
                         val text = HardwareEngine.plainText(snapshot, session.tab, session.revealSensitive) { container.t(it) }
                         if (!container.copyText(text)) {
-                            session.error = container.t("common.copyFailed")
+                            val message = container.t("common.copyFailed")
+                            notifyHardwareFailure(
+                                container,
+                                session,
+                                message,
+                                IllegalStateException(message),
+                                local = true,
+                            )
                             persist()
                         }
                     })
@@ -221,6 +229,24 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
         }
         }
     }
+    }
+}
+
+private fun notifyHardwareFailure(
+    container: AppContainer,
+    session: HardwareSession,
+    message: String,
+    error: Throwable,
+    local: Boolean = false,
+) {
+    session.error = message
+    val shouldToast = if (local) {
+        HardwareWiringPresentation.shouldToastLocalFailure()
+    } else {
+        HardwareWiringPresentation.shouldToastCollectFailure(error)
+    }
+    if (shouldToast) {
+        container.toastError(message)
     }
 }
 

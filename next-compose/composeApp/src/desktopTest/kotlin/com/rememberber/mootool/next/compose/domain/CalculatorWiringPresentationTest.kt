@@ -24,4 +24,9 @@ class CalculatorWiringPresentationTest {
         assertTrue(outcome is CalculatorWiringPresentation.TextOutcome.Success)
         assertEquals("3", (outcome as CalculatorWiringPresentation.TextOutcome.Success).value)
     }
+
+    @Test
+    fun shouldToastOperationFailure() {
+        assertTrue(CalculatorWiringPresentation.shouldToastOperationFailure(IllegalStateException()))
+    }
 }

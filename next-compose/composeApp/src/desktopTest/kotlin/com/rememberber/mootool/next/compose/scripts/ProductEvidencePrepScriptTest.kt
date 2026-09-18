@@ -1,6 +1,8 @@
 package com.rememberber.mootool.next.compose.scripts
 
 import com.rememberber.mootool.next.compose.domain.GitEngine
+import com.rememberber.mootool.next.compose.domain.EditorColumnEditPresentation
+import com.rememberber.mootool.next.compose.domain.VaultConflictProductEvidencePresentation
 import org.junit.Assume
 import org.junit.Test
 import java.nio.file.Files
@@ -19,9 +21,21 @@ class ProductEvidencePrepScriptTest {
             runPrepScript(composeRoot, "prepare-vault-conflict-evidence.sh", dataRoot)
             val sample = dataRoot.resolve("data/vaults/json/sample.json")
             assertTrue(sample.isRegularFile(), "missing sample.json at $sample")
-            assertTrue(sample.toFile().readText().contains("vault-external-conflict"))
-            val quickNote = dataRoot.resolve("data/vaults/quick-note/sample-external.md")
+            val sampleText = sample.toFile().readText()
+            assertTrue(VaultConflictProductEvidencePresentation.matchesEvidenceInitialJson(sampleText))
+            assertEquals(
+                VaultConflictProductEvidencePresentation.EVIDENCE_JSON_RELATIVE_PATH,
+                sample.fileName.toString(),
+            )
+            val quickNote = dataRoot.resolve(
+                "data/vaults/quick-note/${VaultConflictProductEvidencePresentation.EVIDENCE_QUICKNOTE_RELATIVE_PATH}",
+            )
             assertTrue(quickNote.isRegularFile(), "missing quick-note sample at $quickNote")
+            assertTrue(
+                VaultConflictProductEvidencePresentation.matchesEvidenceInitialQuickNote(
+                    quickNote.toFile().readText(),
+                ),
+            )
         } finally {
             dataRoot.toFile().deleteRecursively()
         }
@@ -45,16 +59,44 @@ class ProductEvidencePrepScriptTest {
     }
 
     @Test
+    fun prepareGitRebaseConflictScriptLeavesUnmergedConflictJson() {
+        Assume.assumeTrue("git CLI not installed", GitEngine.detect(isolateConfig = true).available)
+        val composeRoot = locateNextComposeRoot()
+        val dataRoot = Files.createTempDirectory("mootool-evidence-git-rebase-")
+        try {
+            runPrepScript(composeRoot, "prepare-git-rebase-conflict-evidence.sh", dataRoot)
+            val vault = dataRoot.resolve("data/vaults/json")
+            assertTrue(vault.resolve("conflict.json").isRegularFile())
+            val rebaseDir = vault.resolve(".git/rebase-merge")
+            val rebaseApply = vault.resolve(".git/rebase-apply")
+            assertTrue(rebaseDir.exists() || rebaseApply.exists(), "expected rebase in progress under $vault")
+            val unmerged = git(vault, "diff", "--name-only", "--diff-filter=U").trim()
+            assertEquals("conflict.json", unmerged)
+        } finally {
+            dataRoot.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun prepareEditorImeScriptWritesJsonAndQuickNoteSamples() {
         val composeRoot = locateNextComposeRoot()
         val dataRoot = Files.createTempDirectory("mootool-evidence-ime-")
         try {
             runPrepScript(composeRoot, "prepare-editor-ime-evidence.sh", dataRoot)
-            val jsonSample = dataRoot.resolve("data/vaults/json/ime-sample.json")
-            val noteSample = dataRoot.resolve("data/vaults/quick-note/ime-sample.md")
+            val jsonSample = dataRoot.resolve(
+                "data/vaults/json/${EditorColumnEditPresentation.JSON_IME_SAMPLE}",
+            )
+            val noteSample = dataRoot.resolve(
+                "data/vaults/quick-note/${EditorColumnEditPresentation.QUICK_NOTE_IME_SAMPLE}",
+            )
             assertTrue(jsonSample.isRegularFile())
             assertTrue(noteSample.isRegularFile())
-            assertTrue(noteSample.toFile().readText().contains("IME"))
+            assertTrue(
+                EditorColumnEditPresentation.matchesEvidenceJsonImeSample(jsonSample.toFile().readText()),
+            )
+            assertTrue(
+                EditorColumnEditPresentation.matchesEvidenceQuickNoteImeSample(noteSample.toFile().readText()),
+            )
         } finally {
             dataRoot.toFile().deleteRecursively()
         }

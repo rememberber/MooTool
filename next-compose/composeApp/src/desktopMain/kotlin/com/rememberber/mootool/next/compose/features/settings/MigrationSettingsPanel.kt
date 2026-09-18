@@ -351,7 +351,7 @@ fun MigrationSettingsPanel(container: AppContainer) {
                                     preview = CrossProductImporter.inspect(Path.of(sourceDirectory.trim()))
                                 }.onFailure {
                                     importError = it.message ?: container.t("settings.import.failed")
-                                    container.toastError(importError)
+                                    notifySettingsValidationFailure(container, importError)
                                 }
                             }
                         }

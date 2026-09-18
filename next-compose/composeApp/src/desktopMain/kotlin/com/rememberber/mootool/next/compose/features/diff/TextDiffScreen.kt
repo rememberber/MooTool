@@ -567,9 +567,20 @@ private fun importSide(container: AppContainer, session: DiffSession, side: Stri
                 "reformat.error.read",
                 mapOf("message" to (outcome.error.message ?: file.path)),
             )
-            session.notice = message
-            container.toastError(message)
+            notifyDiffImportFailure(container, session, message, outcome.error)
             onDone()
         }
+    }
+}
+
+private fun notifyDiffImportFailure(
+    container: AppContainer,
+    session: DiffSession,
+    message: String,
+    error: Throwable,
+) {
+    session.notice = message
+    if (TextDiffPresentation.shouldToastImportFailure(error)) {
+        container.toastError(message)
     }
 }

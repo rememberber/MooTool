@@ -54,4 +54,8 @@ object JsonWiringPresentation {
             onSuccess = { WriteExportOutcome.Success },
             onFailure = { WriteExportOutcome.Failure(it) },
         )
+
+    fun shouldToastTransformFailure(error: Throwable): Boolean = true
+
+    fun shouldToastIoFailure(error: Throwable): Boolean = true
 }

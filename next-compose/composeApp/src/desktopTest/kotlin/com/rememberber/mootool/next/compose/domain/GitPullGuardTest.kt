@@ -37,6 +37,35 @@ class GitPullGuardTest {
         }
     }
 
+    @Test
+    fun pullBlockedWhileMergeConflictsRemain() {
+        assumeGit()
+        val root = Files.createTempDirectory("mootool-compose-git-pull-conflict-guard-")
+        try {
+            val identity = GitIdentity("Test User", "test@local")
+            assertTrue(GitEngine.init(root, identity, isolateConfig = true).success)
+            root.resolve("conflict.json").writeText("""{"side":"base"}""")
+            assertTrue(GitEngine.commit(root, "Base", identity, isolateConfig = true).success)
+            val baseBranch = GitEngine.status(root, isolateConfig = true).branch
+            git(root, "checkout", "-b", "other")
+            root.resolve("conflict.json").writeText("""{"side":"other"}""")
+            git(root, "add", "--all")
+            git(root, "commit", "-m", "Other")
+            git(root, "checkout", baseBranch)
+            root.resolve("conflict.json").writeText("""{"side":"base-branch"}""")
+            git(root, "add", "--all")
+            git(root, "commit", "-m", "Base branch")
+            assertTrue(kotlin.runCatching { git(root, "merge", "other") }.isFailure)
+            val status = GitEngine.status(root, isolateConfig = true)
+            assertTrue(status.conflicts >= 1)
+            val pull = GitEngine.pull(root, isolateConfig = true)
+            assertFalse(pull.success)
+            assertTrue(pull.message.contains("merge", ignoreCase = true), pull.message)
+        } finally {
+            root.toFile().deleteRecursively()
+        }
+    }
+
     private fun assumeGit() {
         Assume.assumeTrue("git CLI not installed", GitEngine.detect(isolateConfig = true).available)
     }

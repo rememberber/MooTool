@@ -115,10 +115,14 @@ fun MessageBoardScreen(container: AppContainer, detached: Boolean) {
     fun enterPresentation() {
         session.presenting = true
         session.displayAwake = container.displayWake.acquire(WAKE_TOKEN)
-        session.error = if (MessageBoardWiringPresentation.wakeErrorIfNeeded(session.displayAwake)) {
+        val wakeFailed = MessageBoardWiringPresentation.wakeErrorIfNeeded(session.displayAwake)
+        session.error = if (wakeFailed) {
             container.t("messageBoard.wakeUnavailable")
         } else {
             ""
+        }
+        if (wakeFailed) {
+            notifyMessageBoardWakeFailure(container, session, session.error)
         }
         refresh()
     }
@@ -430,6 +434,17 @@ private fun MessageBoardPresetChip(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
+    }
+}
+
+private fun notifyMessageBoardWakeFailure(
+    container: AppContainer,
+    session: MessageBoardSession,
+    message: String,
+) {
+    session.error = message
+    if (MessageBoardWiringPresentation.shouldToastWakeFailure(session.displayAwake)) {
+        container.toastError(message)
     }
 }
 

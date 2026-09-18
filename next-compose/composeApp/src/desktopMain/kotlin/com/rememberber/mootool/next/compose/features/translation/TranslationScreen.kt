@@ -78,6 +78,7 @@ import com.rememberber.mootool.next.compose.ui.components.mooTranslationResultPa
 import com.rememberber.mootool.next.compose.ui.components.mooTranslationHistoryArticle
 import com.rememberber.mootool.next.compose.ui.components.mooTranslationAutoRow
 import com.rememberber.mootool.next.compose.ui.components.mooTranslationLangBar
+import com.rememberber.mootool.next.compose.ui.components.mooTranslationWordBookAsideFooter
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
@@ -175,8 +176,8 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
                     session.error = ""
                     container.translations.saveHistory(text, result.text, sourceLang, targetLang, result.provider)
                 } else if (TranslationResponsePresentation.shouldShowError(result.errorCode)) {
-                    session.error = messageFor(container, result.errorCode, result.statusText)
-                    session.notice = ""
+                    val message = messageFor(container, result.errorCode, result.statusText)
+                    notifyTranslationFailure(container, session, message, errorCode = result.errorCode)
                 }
                 persist()
             }
@@ -335,11 +336,25 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
                 },
                 onSaveWord = {
                     if (session.source.isBlank()) return@TranslatePane
-                    runCatching {
-                        container.translations.saveWord(null, session.source, session.target, sourceLang, targetLang, "")
-                        session.notice = container.t("translation.savedWord")
-                        container.toastSuccess(container.t("translation.savedWord"))
-                    }.onFailure { session.error = it.message ?: container.t("translation.error.generic") }
+                    when (
+                        val outcome = TranslationWiringPresentation.runSaveWord {
+                            container.translations.saveWord(null, session.source, session.target, sourceLang, targetLang, "")
+                        }
+                    ) {
+                        is TranslationWiringPresentation.SaveWordOutcome.Success -> {
+                            session.notice = container.t("translation.savedWord")
+                            container.toastSuccess(container.t("translation.savedWord"))
+                            session.error = ""
+                        }
+                        is TranslationWiringPresentation.SaveWordOutcome.Failure -> {
+                            val message = TranslationWiringPresentation.failureMessage(
+                                "translation.error.generic",
+                                outcome.error,
+                                container::t,
+                            )
+                            notifyTranslationFailure(container, session, message, saveError = outcome.error)
+                        }
+                    }
                     persist()
                 },
                 onClear = {
@@ -388,8 +403,9 @@ fun TranslationScreen(container: AppContainer, detached: Boolean) {
                         )
                         withContext(Dispatchers.Main) {
                             if (!result.ok) {
-                                if (result.errorCode != TranslationErrorCode.ABORTED) {
-                                    session.error = messageFor(container, result.errorCode, result.statusText)
+                                if (TranslationResponsePresentation.shouldShowError(result.errorCode)) {
+                                    val message = messageFor(container, result.errorCode, result.statusText)
+                                    notifyTranslationFailure(container, session, message, errorCode = result.errorCode)
                                     persist()
                                 }
                                 return@withContext
@@ -662,7 +678,9 @@ private fun WordBookPane(
                 }
             }
             Row(
-                Modifier.fillMaxWidth().padding(top = 5.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .mooTranslationWordBookAsideFooter(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -722,19 +740,33 @@ private fun WordBookPane(
                 )
                 MooTextField(session.wordRemark, { session.wordRemark = it; onReload() }, placeholder = container.t("translation.remark"), dense = true)
                 MooButton(container.t("common.save"), prominent = true, onClick = {
-                    runCatching {
-                        val saved = container.translations.saveWord(
-                            session.selectedWordId.ifBlank { null },
-                            session.wordSource,
-                            session.wordTarget,
-                            session.wordSourceLang,
-                            session.wordTargetLang,
-                            session.wordRemark
-                        )
-                        session.selectedWordId = saved.id
-                        session.notice = container.t("common.save")
-                        container.toastSuccess(container.t("common.save"))
-                    }.onFailure { session.error = it.message ?: container.t("translation.error.generic") }
+                    when (
+                        val outcome = TranslationWiringPresentation.runSaveWord {
+                            container.translations.saveWord(
+                                session.selectedWordId.ifBlank { null },
+                                session.wordSource,
+                                session.wordTarget,
+                                session.wordSourceLang,
+                                session.wordTargetLang,
+                                session.wordRemark,
+                            )
+                        }
+                    ) {
+                        is TranslationWiringPresentation.SaveWordOutcome.Success -> {
+                            session.selectedWordId = outcome.value.id
+                            session.notice = container.t("common.save")
+                            container.toastSuccess(container.t("common.save"))
+                            session.error = ""
+                        }
+                        is TranslationWiringPresentation.SaveWordOutcome.Failure -> {
+                            val message = TranslationWiringPresentation.failureMessage(
+                                "translation.error.generic",
+                                outcome.error,
+                                container::t,
+                            )
+                            notifyTranslationFailure(container, session, message, saveError = outcome.error)
+                        }
+                    }
                     onReload()
                 }, modifier = Modifier.align(Alignment.End))
         }
@@ -849,6 +881,24 @@ private fun HistoryPane(
                 }
             }
         }
+    }
+}
+
+private fun notifyTranslationFailure(
+    container: AppContainer,
+    session: TranslationSession,
+    message: String,
+    errorCode: TranslationErrorCode? = null,
+    saveError: Throwable? = null,
+) {
+    session.error = message
+    session.notice = ""
+    val shouldToast = when {
+        saveError != null -> TranslationWiringPresentation.shouldToastSaveFailure(saveError)
+        else -> TranslationWiringPresentation.shouldToastTranslateFailure(errorCode)
+    }
+    if (shouldToast) {
+        container.toastError(message)
     }
 }
 

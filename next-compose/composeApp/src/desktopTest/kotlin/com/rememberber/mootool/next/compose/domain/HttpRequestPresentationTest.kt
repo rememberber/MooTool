@@ -39,6 +39,22 @@ class HttpRequestPresentationTest {
     }
 
     @Test
+    fun shouldToastResponseErrorWhenCodePresent() {
+        assertTrue(HttpRequestPresentation.shouldToastResponseError(HttpErrorCode.NETWORK))
+        assertFalse(HttpRequestPresentation.shouldToastResponseError(null))
+    }
+
+    @Test
+    fun shouldToastClientValidation() {
+        assertTrue(HttpRequestPresentation.shouldToastClientValidation())
+    }
+
+    @Test
+    fun shouldToastCopyFailure() {
+        assertTrue(HttpRequestPresentation.shouldToastCopyFailure())
+    }
+
+    @Test
     fun runSendRejectsBlankUrlDraft() {
         val result = HttpRequestPresentation.runSend(
             HttpEngine.emptyDraft().copy(url = "  "),

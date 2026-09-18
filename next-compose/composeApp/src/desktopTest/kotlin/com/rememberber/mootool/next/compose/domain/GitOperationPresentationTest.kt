@@ -62,10 +62,38 @@ class GitOperationPresentationTest {
                 messageTrimmed = "msg",
             ),
         )
+        assertFalse(
+            GitOperationPresentation.commitEnabled(
+                merging = false,
+                conflicts = 2,
+                hasChanges = true,
+                messageTrimmed = "msg",
+            ),
+        )
+        assertFalse(
+            GitOperationPresentation.commitActionEnabled(
+                busy = true,
+                merging = false,
+                conflicts = 0,
+                hasChanges = true,
+                messageTrimmed = "msg",
+            ),
+        )
+        assertTrue(
+            GitOperationPresentation.commitActionEnabled(
+                busy = false,
+                merging = false,
+                conflicts = 0,
+                hasChanges = true,
+                messageTrimmed = "msg",
+            ),
+        )
         assertTrue(GitOperationPresentation.configureRemoteEnabled(repository = true, draftRemoteTrimmed = "", statusRemote = "origin"))
         assertFalse(GitOperationPresentation.configureRemoteEnabled(repository = false, draftRemoteTrimmed = "x", statusRemote = ""))
         assertTrue(GitOperationPresentation.continueOperationEnabled(merging = true, conflicts = 0))
         assertFalse(GitOperationPresentation.continueOperationEnabled(merging = true, conflicts = 1))
+        assertFalse(GitOperationPresentation.continueActionEnabled(busy = true, merging = true, conflicts = 0))
+        assertTrue(GitOperationPresentation.continueActionEnabled(busy = false, merging = true, conflicts = 0))
     }
 
     @Test
@@ -73,6 +101,8 @@ class GitOperationPresentationTest {
         assertTrue(GitOperationPresentation.initEnabled(available = true, busy = false))
         assertFalse(GitOperationPresentation.initEnabled(available = false, busy = false))
         assertFalse(GitOperationPresentation.initEnabled(available = true, busy = true))
+        assertTrue(GitOperationPresentation.initActionEnabled(available = true, busy = false))
+        assertFalse(GitOperationPresentation.initActionEnabled(available = true, busy = true))
         assertTrue(GitOperationPresentation.discardEnabled(busy = false))
         assertFalse(GitOperationPresentation.discardEnabled(busy = true))
         assertTrue(GitOperationPresentation.showAbortAction(merging = true, conflicts = 0))

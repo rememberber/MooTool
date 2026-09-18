@@ -32,6 +32,15 @@ class CodeRunEngineTest {
         assertEquals("Hello", CodeRunEngine.publicTypeName("public record Hello(int n) {}"))
         assertTrue(CodeRunEngine.formatSource("class Demo{public static void main(String[] args){}}", CodeRuntime.Java).contains("class Demo"))
         assertEquals("    print(\"moo\")", CodeRunEngine.formatSource("\tprint(\"moo\")  ", CodeRuntime.Python))
+        assertTrue(
+            CodeRunEngine.formatSource("const x={a:1};console.log(x)", CodeRuntime.Node).contains("const x = { a: 1 }"),
+        )
+    }
+
+    @Test
+    fun displayNameMatchesElectronRuntimeTools() {
+        assertEquals("Node.js", CodeRunEngine.displayName(CodeRuntime.Node))
+        assertEquals("Groovy", CodeRunEngine.displayName(CodeRuntime.Groovy))
     }
 
     @Test

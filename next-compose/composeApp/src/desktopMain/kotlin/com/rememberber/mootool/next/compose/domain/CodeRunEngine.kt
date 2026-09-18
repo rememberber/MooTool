@@ -171,6 +171,7 @@ object CodeRunEngine {
         if (code.isBlank()) return ""
         return when (runtime) {
             CodeRuntime.Java -> ReformatEngine.format(code, ReformatType.Java, 4)
+            CodeRuntime.Node -> CodeEditorSurfaceFormatEngine.formatJavascript(code)
             else -> code.replace("\t", "    ").split(Regex("\\r?\\n")).joinToString("\n") { it.trimEnd() }.trimEnd()
         }
     }

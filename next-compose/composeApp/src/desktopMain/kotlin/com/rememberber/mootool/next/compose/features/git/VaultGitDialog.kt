@@ -42,11 +42,13 @@ import com.rememberber.mootool.next.compose.domain.GitDiffPresentation
 import com.rememberber.mootool.next.compose.domain.GitDiffSelection
 import com.rememberber.mootool.next.compose.domain.GitEditorFlushPolicy
 import com.rememberber.mootool.next.compose.domain.GitVaultFlushAction
+import com.rememberber.mootool.next.compose.domain.GitActionResult
 import com.rememberber.mootool.next.compose.domain.GitEngine
 import com.rememberber.mootool.next.compose.domain.GitMergeConflictPresentation
 import com.rememberber.mootool.next.compose.domain.GitMergeProductFlowPresentation
 import com.rememberber.mootool.next.compose.domain.GitOperationPresentation
 import com.rememberber.mootool.next.compose.domain.GitVaultRemotePresentation
+import com.rememberber.mootool.next.compose.domain.VaultGitToastPresentation
 import com.rememberber.mootool.next.compose.domain.GitRemoteCommitResult
 import com.rememberber.mootool.next.compose.domain.SettingsVaultGitNormalize
 import com.rememberber.mootool.next.compose.domain.GitFileDiff
@@ -127,7 +129,7 @@ fun VaultGitDialog(
                 history = nextHistory
                 syncRemoteField(nextStatus)
             } catch (error: Exception) {
-                container.toastError(error.message?.ifBlank { null } ?: container.t("json.notice.failed"))
+                notifyVaultGitPanelFailure(container, error)
             } finally {
                 busy = false
             }
@@ -146,7 +148,7 @@ fun VaultGitDialog(
                 if (GitEditorFlushPolicy.shouldFlushEditor(workingTree)) {
                     val flushed = onFlush()
                     if (flushed != null) {
-                        container.toastError(flushed)
+                        notifyVaultGitFlushBlocked(container, flushed)
                         return@launch
                     }
                 }
@@ -158,7 +160,7 @@ fun VaultGitDialog(
                         onVaultRefresh()
                     }
                 } else {
-                    container.toastError(result.message.ifBlank { container.t("json.notice.failed") })
+                    notifyVaultGitActionFailure(container, result)
                     if (workingTree == GitVaultFlushAction.Pull) {
                         onVaultRefresh()
                     } else {
@@ -177,7 +179,7 @@ fun VaultGitDialog(
                 }
                 onGitStatusChanged()
             } catch (error: Exception) {
-                container.toastError(error.message?.ifBlank { null } ?: container.t("json.notice.failed"))
+                notifyVaultGitPanelFailure(container, error)
             } finally {
                 busy = false
             }
@@ -196,7 +198,7 @@ fun VaultGitDialog(
                 fileDiffs = next
                 selectedDiffPath = GitDiffSelection.selected(next, "")?.path.orEmpty()
             } catch (error: Exception) {
-                container.toastError(error.message?.ifBlank { null } ?: container.t("json.notice.failed"))
+                notifyVaultGitPanelFailure(container, error)
             } finally {
                 busy = false
             }
@@ -354,6 +356,7 @@ fun VaultGitDialog(
                                 status.merging,
                                 status.conflicts,
                                 selectedConflict,
+                                status.operation,
                             )?.let { flowKey ->
                                 Text(
                                     container.t(flowKey),
@@ -379,7 +382,7 @@ fun VaultGitDialog(
                             container.t("git.init"),
                             prominent = true,
                             p5Toolbar = true,
-                            enabled = !busy && GitOperationPresentation.initEnabled(status.available, busy),
+                            enabled = GitOperationPresentation.initActionEnabled(status.available, busy),
                             onClick = { runAction { GitEngine.init(root, identity()) } },
                             leading = { GitPanelIcon(GitPanelIconKind.Branch, colors.textStrong) },
                         )
@@ -388,20 +391,30 @@ fun VaultGitDialog(
                         MooButton(
                             container.t("git.fetch"),
                             p5Toolbar = true,
-                            enabled = !busy && GitVaultRemotePresentation.fetchEnabled(status.remote),
+                            enabled = GitVaultRemotePresentation.fetchActionEnabled(status.remote, busy),
                             onClick = { runAction { GitEngine.fetch(root, token = token()) } },
                             leading = { GitPanelIcon(GitPanelIconKind.CloudDownload, colors.textBody) },
                         )
                         MooButton(
                             container.t("git.pull"),
                             p5Toolbar = true,
-                            enabled = !busy && GitVaultRemotePresentation.pullEnabled(status.remote, status.merging),
+                            enabled = GitVaultRemotePresentation.pullActionEnabled(
+                                status.remote,
+                                status.merging,
+                                busy,
+                                conflicts = status.conflicts,
+                            ),
                             onClick = { runAction(workingTree = GitVaultFlushAction.Pull) { GitEngine.pull(root, token = token()) } },
                         )
                         MooButton(
                             container.t("git.push"),
                             p5Toolbar = true,
-                            enabled = !busy && GitVaultRemotePresentation.pushEnabled(status.remote, status.merging),
+                            enabled = GitVaultRemotePresentation.pushActionEnabled(
+                                status.remote,
+                                status.merging,
+                                busy,
+                                conflicts = status.conflicts,
+                            ),
                             onClick = { runAction(workingTree = GitVaultFlushAction.Push) { GitEngine.push(root, token = token()) } },
                             leading = { GitPanelIcon(GitPanelIconKind.CloudUpload, colors.textBody) },
                         )
@@ -460,7 +473,7 @@ fun VaultGitDialog(
                                 GitRemoteCommitResult.Cleared -> ""
                                 is GitRemoteCommitResult.Accepted -> outcome.remote
                                 GitRemoteCommitResult.Rejected -> {
-                                    container.toastError(container.t("settings.vault.gitRemoteInvalid"))
+                                    notifyVaultGitInvalidRemote(container)
                                     return@MooButton
                                 }
                             }
@@ -652,7 +665,8 @@ fun VaultGitDialog(
                                             container.t("git.commit"),
                                             prominent = true,
                                             p5Toolbar = true,
-                                            enabled = !busy && GitOperationPresentation.commitEnabled(
+                                            enabled = GitOperationPresentation.commitActionEnabled(
+                                                busy = busy,
                                                 merging = status.merging,
                                                 conflicts = status.conflicts,
                                                 hasChanges = status.changes.isNotEmpty(),
@@ -824,5 +838,31 @@ private fun GitFileDiffPane(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
             )
         }
+    }
+}
+
+private fun notifyVaultGitPanelFailure(container: AppContainer, error: Throwable?) {
+    val message = VaultGitToastPresentation.panelFailureMessage(error, container.t("json.notice.failed"))
+    if (VaultGitToastPresentation.shouldToastPanelFailure()) {
+        container.toastError(message)
+    }
+}
+
+private fun notifyVaultGitActionFailure(container: AppContainer, result: GitActionResult) {
+    val message = VaultGitToastPresentation.actionFailureMessage(result.message, container.t("json.notice.failed"))
+    if (VaultGitToastPresentation.shouldToastActionFailure()) {
+        container.toastError(message)
+    }
+}
+
+private fun notifyVaultGitFlushBlocked(container: AppContainer, message: String) {
+    if (VaultGitToastPresentation.shouldToastFlushBlocked()) {
+        container.toastError(message)
+    }
+}
+
+private fun notifyVaultGitInvalidRemote(container: AppContainer) {
+    if (VaultGitToastPresentation.shouldToastInvalidRemote()) {
+        container.toastError(container.t("settings.vault.gitRemoteInvalid"))
     }
 }

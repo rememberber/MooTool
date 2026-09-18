@@ -26,4 +26,6 @@ object TextDiffPresentation {
             onSuccess = { ImportOutcome.Success(it) },
             onFailure = { ImportOutcome.Failure(it) },
         )
+
+    fun shouldToastImportFailure(error: Throwable): Boolean = true
 }

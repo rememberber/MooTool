@@ -377,7 +377,7 @@ fun SettingsScreen(container: AppContainer) {
                                         true
                                     }
                                     NumericSettingCommitResult.Rejected -> {
-                                        container.toastError(container.t("settings.vault.numericInvalid"))
+                                        notifySettingsValidationFailure(container, container.t("settings.vault.numericInvalid"))
                                         false
                                     }
                                 }
@@ -407,7 +407,7 @@ fun SettingsScreen(container: AppContainer) {
                                         true
                                     }
                                     NumericSettingCommitResult.Rejected -> {
-                                        container.toastError(container.t("settings.vault.numericInvalid"))
+                                        notifySettingsValidationFailure(container, container.t("settings.vault.numericInvalid"))
                                         false
                                     }
                                 }
@@ -508,7 +508,7 @@ fun SettingsScreen(container: AppContainer) {
                             }.onFailure {
                                 backupNotice = ""
                                 backupError = it.message ?: container.t("settings.backup.failed")
-                                container.toastError(backupError)
+                                notifySettingsValidationFailure(container, backupError)
                             }
                         }
                     })
@@ -539,7 +539,7 @@ fun SettingsScreen(container: AppContainer) {
                                 .onFailure {
                                     backupNotice = ""
                                     backupError = it.message ?: container.t("settings.backup.failed")
-                                    container.toastError(backupError)
+                                    notifySettingsValidationFailure(container, backupError)
                                 }
                         }
                     })
@@ -632,7 +632,7 @@ fun SettingsScreen(container: AppContainer) {
                                         true
                                     }
                                     GitRemoteCommitResult.Rejected -> {
-                                        container.toastError(container.t("settings.vault.gitRemoteInvalid"))
+                                        notifySettingsValidationFailure(container, container.t("settings.vault.gitRemoteInvalid"))
                                         false
                                     }
                                 }
@@ -672,7 +672,7 @@ fun SettingsScreen(container: AppContainer) {
                                         true
                                     }
                                     VaultNumericCommitResult.Rejected -> {
-                                        container.toastError(container.t("settings.vault.numericInvalid"))
+                                        notifySettingsValidationFailure(container, container.t("settings.vault.numericInvalid"))
                                         false
                                     }
                                 }
@@ -691,7 +691,7 @@ fun SettingsScreen(container: AppContainer) {
                                         true
                                     }
                                     VaultNumericCommitResult.Rejected -> {
-                                        container.toastError(container.t("settings.vault.numericInvalid"))
+                                        notifySettingsValidationFailure(container, container.t("settings.vault.numericInvalid"))
                                         false
                                     }
                                 }
@@ -710,7 +710,7 @@ fun SettingsScreen(container: AppContainer) {
                                         true
                                     }
                                     VaultNumericCommitResult.Rejected -> {
-                                        container.toastError(container.t("settings.vault.numericInvalid"))
+                                        notifySettingsValidationFailure(container, container.t("settings.vault.numericInvalid"))
                                         false
                                     }
                                 }
@@ -762,7 +762,7 @@ fun SettingsScreen(container: AppContainer) {
                                         true
                                     }
                                     ProxyPortCommitResult.Rejected -> {
-                                        container.toastError(container.t("settings.network.proxyPortInvalid"))
+                                        notifySettingsValidationFailure(container, container.t("settings.network.proxyPortInvalid"))
                                         false
                                     }
                                 }
@@ -824,7 +824,7 @@ fun SettingsScreen(container: AppContainer) {
                                         true
                                     }
                                     TimeoutCommitResult.Rejected -> {
-                                        container.toastError(container.t("settings.network.timeoutInvalid"))
+                                        notifySettingsValidationFailure(container, container.t("settings.network.timeoutInvalid"))
                                         false
                                     }
                                 }
@@ -851,7 +851,7 @@ fun SettingsScreen(container: AppContainer) {
                                         true
                                     }
                                     TimeoutCommitResult.Rejected -> {
-                                        container.toastError(container.t("settings.network.timeoutInvalid"))
+                                        notifySettingsValidationFailure(container, container.t("settings.network.timeoutInvalid"))
                                         false
                                     }
                                 }
@@ -873,7 +873,7 @@ fun SettingsScreen(container: AppContainer) {
                                         true
                                     }
                                     NumericSettingCommitResult.Rejected -> {
-                                        container.toastError(container.t("settings.vault.numericInvalid"))
+                                        notifySettingsValidationFailure(container, container.t("settings.vault.numericInvalid"))
                                         false
                                     }
                                 }
@@ -901,7 +901,7 @@ fun SettingsScreen(container: AppContainer) {
                                         true
                                     }
                                     NumericSettingCommitResult.Rejected -> {
-                                        container.toastError(container.t("settings.vault.numericInvalid"))
+                                        notifySettingsValidationFailure(container, container.t("settings.vault.numericInvalid"))
                                         false
                                     }
                                 }
@@ -1164,7 +1164,7 @@ private fun commitVaultPath(container: AppContainer, raw: String, apply: (String
     when (val normalized = VaultPathConfig.normalizedCustomRoot(raw)) {
         null -> {
             if (raw.trim().isNotEmpty()) {
-                container.toastError(container.t("settings.vault.absoluteRequired"))
+                notifySettingsValidationFailure(container, container.t("settings.vault.absoluteRequired"))
             }
         }
         else -> apply(normalized)

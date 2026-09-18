@@ -50,4 +50,6 @@ object CalculatorWiringPresentation {
             onSuccess = { TextOutcome.Success(it) },
             onFailure = { TextOutcome.Failure(it) },
         )
+
+    fun shouldToastOperationFailure(error: Throwable): Boolean = true
 }

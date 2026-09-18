@@ -72,4 +72,27 @@ class TranslationWiringPresentationTest {
         assertEquals(false, result.ok)
         assertEquals(TranslationErrorCode.INVALID_REQUEST, result.errorCode)
     }
+
+    @Test
+    fun runSaveWordWrapsSuccessAndFailure() {
+        val ok = TranslationWiringPresentation.runSaveWord { "saved" }
+        assertTrue(ok is TranslationWiringPresentation.SaveWordOutcome.Success)
+        assertEquals("saved", (ok as TranslationWiringPresentation.SaveWordOutcome.Success).value)
+        val fail = TranslationWiringPresentation.runSaveWord<String> { throw IllegalStateException("db") }
+        assertTrue(fail is TranslationWiringPresentation.SaveWordOutcome.Failure)
+    }
+
+    @Test
+    fun failureMessagePrefersThrowableMessage() {
+        val t: (String) -> String = { key -> "fallback:$key" }
+        assertEquals("db", TranslationWiringPresentation.failureMessage("translation.error.generic", IllegalStateException("db"), t))
+        assertEquals("fallback:translation.error.generic", TranslationWiringPresentation.failureMessage("translation.error.generic", IllegalStateException(), t))
+    }
+
+    @Test
+    fun shouldToastFailures() {
+        assertFalse(TranslationWiringPresentation.shouldToastTranslateFailure(TranslationErrorCode.ABORTED))
+        assertTrue(TranslationWiringPresentation.shouldToastTranslateFailure(TranslationErrorCode.NETWORK))
+        assertTrue(TranslationWiringPresentation.shouldToastSaveFailure(IllegalStateException()))
+    }
 }

@@ -459,9 +459,20 @@ private fun runCalc(
         is CalculatorWiringPresentation.TextOutcome.Failure -> {
             session.notice = ""
             val message = messageFor(container, outcome.error)
-            session.error = message
-            container.toastError(message)
+            notifyCalculatorFailure(container, session, message, outcome.error)
         }
+    }
+}
+
+private fun notifyCalculatorFailure(
+    container: AppContainer,
+    session: CalculatorSession,
+    message: String,
+    error: Throwable,
+) {
+    session.error = message
+    if (CalculatorWiringPresentation.shouldToastOperationFailure(error)) {
+        container.toastError(message)
     }
 }
 

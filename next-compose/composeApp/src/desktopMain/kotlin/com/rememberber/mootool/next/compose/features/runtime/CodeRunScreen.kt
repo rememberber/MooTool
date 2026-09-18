@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.features.settings.SettingsNavCategory
-import com.rememberber.mootool.next.compose.domain.CodeRunEngine
 import com.rememberber.mootool.next.compose.domain.CodeRunWiringPresentation
 import com.rememberber.mootool.next.compose.domain.CodeRunHistoryMetadata
 import com.rememberber.mootool.next.compose.domain.CodeRunHistoryRestore
@@ -153,14 +152,16 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
     fun run() {
         if (session.running) return
         if (!CodeRunWiringPresentation.canRun(status)) {
-            session.error = container.t("runtime.configure", mapOf("name" to CodeRunEngine.displayName(runtime)))
+            val message = container.t("runtime.configure", mapOf("name" to CodeRunWiringPresentation.displayName(runtime)))
+            notifyCodeRunFailure(container, session, message, validation = true)
             persist()
             return
         }
         val arguments = when (val parsed = CodeRunWiringPresentation.parseRunArguments(session.arguments(runtime))) {
             is CodeRunWiringPresentation.ArgumentsOutcome.Success -> parsed.arguments
             is CodeRunWiringPresentation.ArgumentsOutcome.Failure -> {
-                session.error = parsed.error.message ?: container.t("runtime.error.INVALID_REQUEST")
+                val message = parsed.error.message ?: container.t("runtime.error.INVALID_REQUEST")
+                notifyCodeRunFailure(container, session, message, validation = true)
                 persist()
                 return
             }
@@ -200,14 +201,14 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                 session.error = result.errorCode?.let { messageFor(container, it, result.statusText) }.orEmpty()
                 container.history.save(
                     ToolId.Java.id,
-                    CodeRunEngine.displayName(runtime),
-                    "${CodeRunEngine.displayName(runtime)} · ${result.exitCode ?: "-"}",
+                    CodeRunWiringPresentation.displayName(runtime),
+                    "${CodeRunWiringPresentation.displayName(runtime)} · ${result.exitCode ?: "-"}",
                     input.code.take(8_000),
                     listOf(result.stdout, result.stderr).filter { it.isNotBlank() }.joinToString("\n").take(8_000),
                     CodeRunHistoryMetadata.encode(runtime, session.arguments(runtime), session.workingDirectory(runtime)),
                 )
                 if (session.error.isNotEmpty()) {
-                    container.toastError(session.error)
+                    notifyCodeRunFailure(container, session, session.error, result.errorCode)
                 } else {
                     val code = result.exitCode?.toString() ?: "-"
                     container.toastSuccess(container.t("runtime.exitCode", mapOf("code" to code)))
@@ -218,14 +219,14 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
     }
 
     fun cancelRun() {
-        if (session.requestId.isNotBlank()) CodeRunEngine.cancel(session.requestId)
+        if (session.requestId.isNotBlank()) CodeRunWiringPresentation.cancelRun(session.requestId)
     }
 
     fun formatSource() {
         if (session.running) return
         runCatching {
             session.editor(runtime).setText(
-                CodeRunEngine.formatSource(session.editor(runtime).text, runtime),
+                CodeRunWiringPresentation.formatSource(session.editor(runtime).text, runtime),
                 recordUndo = true
             )
             persist()
@@ -337,7 +338,7 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
             Spacer(Modifier.weight(1f))
             if (session.running) {
                 MooButton(container.t("runtime.stop"), p5Toolbar = true, onClick = {
-                    if (session.requestId.isNotBlank()) CodeRunEngine.cancel(session.requestId)
+                    if (session.requestId.isNotBlank()) CodeRunWiringPresentation.cancelRun(session.requestId)
                 })
             } else {
                 MooButton(container.t("runtime.run"), prominent = true, p5Toolbar = true, onClick = { run() })
@@ -367,7 +368,7 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        container.t("runtime.configure", mapOf("name" to CodeRunEngine.displayName(runtime))),
+                        container.t("runtime.configure", mapOf("name" to CodeRunWiringPresentation.displayName(runtime))),
                         color = colors.textBody,
                         fontSize = 12.sp,
                         modifier = Modifier.weight(1f),
@@ -379,7 +380,7 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
             }
             Text(
                 status?.let {
-                    if (it.available) "${it.command} · ${it.version}" else container.t("runtime.missing", mapOf("name" to CodeRunEngine.displayName(runtime)))
+                    if (it.available) "${it.command} · ${it.version}" else container.t("runtime.missing", mapOf("name" to CodeRunWiringPresentation.displayName(runtime)))
                 } ?: container.t("runtime.ready"),
                 color = colors.textSecondary,
                 fontSize = 12.sp
@@ -413,7 +414,7 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(container.t("runtime.editor"), color = colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                            Text(CodeRunEngine.displayName(runtime), color = colors.textSecondary, fontSize = 11.sp)
+                            Text(CodeRunWiringPresentation.displayName(runtime), color = colors.textSecondary, fontSize = 11.sp)
                         }
                         EditorHost(
                             buffer = sourceEditor,
@@ -497,7 +498,7 @@ private fun RuntimeOutputPane(
     val colors = MooTheme.colors
     val result = session.result
     val header = when {
-        session.running -> container.t("runtime.running", mapOf("name" to CodeRunEngine.displayName(runtime)))
+        session.running -> container.t("runtime.running", mapOf("name" to CodeRunWiringPresentation.displayName(runtime)))
         result?.timedOut == true -> container.t("runtime.timeout")
         result?.cancelled == true -> container.t("runtime.cancelled")
         result?.truncated == true -> container.t("runtime.truncated")
@@ -549,6 +550,24 @@ private fun RuntimeOutputPane(
                 Text(container.t("runtime.duration", mapOf("duration" to it.durationMs.toString())), color = colors.textMuted, fontSize = 10.sp)
             }
         }
+    }
+}
+
+private fun notifyCodeRunFailure(
+    container: AppContainer,
+    session: CodeRunSession,
+    message: String,
+    errorCode: CodeRunErrorCode? = null,
+    validation: Boolean = false,
+) {
+    session.error = message
+    val shouldToast = if (validation) {
+        CodeRunWiringPresentation.shouldToastValidationFailure()
+    } else {
+        CodeRunWiringPresentation.shouldToastRunFailure(errorCode)
+    }
+    if (shouldToast) {
+        container.toastError(message)
     }
 }
 

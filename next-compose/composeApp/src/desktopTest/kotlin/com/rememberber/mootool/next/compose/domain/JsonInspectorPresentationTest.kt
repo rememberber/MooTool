@@ -37,4 +37,56 @@ class JsonInspectorPresentationTest {
             ),
         )
     }
+
+    @Test
+    fun runCopyJsonPathEmptySkipsCopy() {
+        assertTrue(
+            JsonInspectorPresentation.runCopyJsonPath("  ", { true })
+                is JsonInspectorPresentation.CopyJsonPathOutcome.Empty,
+        )
+    }
+
+    @Test
+    fun runCopyJsonPathSuccessAndFailure() {
+        assertTrue(
+            JsonInspectorPresentation.runCopyJsonPath("$.a", { true })
+                is JsonInspectorPresentation.CopyJsonPathOutcome.Success,
+        )
+        assertTrue(
+            JsonInspectorPresentation.runCopyJsonPath("$.a", { false })
+                is JsonInspectorPresentation.CopyJsonPathOutcome.Failure,
+        )
+    }
+
+    @Test
+    fun shouldToastPathCopy() {
+        assertTrue(JsonInspectorPresentation.shouldToastPathCopySuccess())
+        assertTrue(JsonInspectorPresentation.shouldToastPathCopyFailure())
+    }
+
+    @Test
+    fun shouldToastPathQueryFailure() {
+        assertTrue(JsonInspectorPresentation.shouldToastPathQueryFailure())
+    }
+
+    @Test
+    fun resultCopyEnabledRequiresNonBlankDisplay() {
+        assertFalse(JsonInspectorPresentation.resultCopyEnabled(""))
+        assertFalse(JsonInspectorPresentation.resultCopyEnabled("   "))
+        assertTrue(JsonInspectorPresentation.resultCopyEnabled("""{"a":1}"""))
+    }
+
+    @Test
+    fun runCopyResultTextEmptySkipsCopy() {
+        assertTrue(
+            JsonInspectorPresentation.runCopyResultText("  ", { true })
+                is JsonInspectorPresentation.CopyJsonPathOutcome.Empty,
+        )
+    }
+
+    @Test
+    fun shouldToastResultCopy() {
+        assertTrue(JsonInspectorPresentation.shouldToastResultCopySuccess())
+        assertTrue(JsonInspectorPresentation.shouldToastResultCopyFailure())
+    }
 }

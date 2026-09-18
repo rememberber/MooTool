@@ -24,4 +24,10 @@ class MessageBoardWiringPresentationTest {
         assertFalse(MessageBoardWiringPresentation.canEnterPresentation("hi", displayAwake = false))
         assertTrue(MessageBoardWiringPresentation.canEnterPresentation("hi", displayAwake = true))
     }
+
+    @Test
+    fun shouldToastWakeFailureWhenNotAwake() {
+        assertTrue(MessageBoardWiringPresentation.shouldToastWakeFailure(displayAwake = false))
+        assertFalse(MessageBoardWiringPresentation.shouldToastWakeFailure(displayAwake = true))
+    }
 }

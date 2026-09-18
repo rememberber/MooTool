@@ -16,4 +16,14 @@ class ColorWiringPresentationTest {
         assertFalse(ColorWiringPresentation.canApplyCode("  "))
         assertTrue(ColorWiringPresentation.canApplyCode("#fff"))
     }
+
+    @Test
+    fun shouldToastOperationFailure() {
+        assertTrue(ColorWiringPresentation.shouldToastOperationFailure(IllegalStateException()))
+    }
+
+    @Test
+    fun shouldToastErrorMessage() {
+        assertTrue(ColorWiringPresentation.shouldToastErrorMessage())
+    }
 }

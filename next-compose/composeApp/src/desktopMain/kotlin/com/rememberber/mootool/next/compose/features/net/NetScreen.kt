@@ -72,6 +72,7 @@ import com.rememberber.mootool.next.compose.ui.components.rememberFollowTailScro
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import com.rememberber.mootool.next.compose.ui.workbench.blockedByIme
+import com.rememberber.mootool.next.compose.sessions.NetSession
 import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
 import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
 import com.rememberber.mootool.next.compose.ui.workbench.OnToolLeaveUnlessDetached
@@ -116,7 +117,11 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                     session.ipv6Addresses = it.ipv6.joinToString("\n")
                     session.error = ""
                 }.onFailure {
-                    session.error = it.message ?: container.t("net.error.COMMAND_FAILED")
+                    notifyNetFailure(
+                        container,
+                        session,
+                        it.message ?: container.t("net.error.COMMAND_FAILED"),
+                    ) { persist() }
                 }
                 persist()
             }
@@ -130,8 +135,11 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
         if (action == NetworkAction.PortScan) {
             when (val start = NetWiringPresentation.portScanStart(target.orEmpty(), ports.orEmpty())) {
                 is NetWiringPresentation.PortScanStart.Blocked -> {
-                    session.error = errorMessage(container, start.errorCode, "")
-                    persist()
+                    notifyNetFailure(
+                        container,
+                        session,
+                        errorMessage(container, start.errorCode, ""),
+                    ) { persist() }
                     return
                 }
                 is NetWiringPresentation.PortScanStart.Ready -> {
@@ -148,8 +156,11 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                 else -> null
             }
             if (hostStart is NetWiringPresentation.HostCommandStart.Blocked) {
-                session.error = errorMessage(container, hostStart.errorCode, "")
-                persist()
+                notifyNetFailure(
+                    container,
+                    session,
+                    errorMessage(container, hostStart.errorCode, ""),
+                ) { persist() }
                 return
             }
             if (hostStart is NetWiringPresentation.HostCommandStart.Ready) {
@@ -194,7 +205,7 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                 } else ""
                 val label = networkActionLabel(container, action)
                 session.notice = label
-                if (session.error.isNotEmpty()) container.toastError(session.error) else container.toastSuccess(label)
+                notifyNetActionResult(container, session, result.errorCode, label)
                 val historyOutput = session.output.take(8_000)
                 val wire = NetHistoryMetadata.actionWireId(action)
                 val summary = "${label} ${resolvedTarget.orEmpty()} ${resolvedPorts.orEmpty()}".trim()
@@ -342,8 +353,7 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                                     persist()
                                 }
                                 .onFailure {
-                                    session.error = convertMessage(container, it)
-                                    persist()
+                                    notifyNetFailure(container, session, convertMessage(container, it)) { persist() }
                                 }
                         })
                         MooButton("↑ ${container.t("common.convert")}", p5Toolbar = true, onClick = {
@@ -361,8 +371,7 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                                     persist()
                                 }
                                 .onFailure {
-                                    session.error = convertMessage(container, it)
-                                    persist()
+                                    notifyNetFailure(container, session, convertMessage(container, it)) { persist() }
                                 }
                         })
                     }
@@ -558,6 +567,35 @@ private fun networkActionLabel(container: AppContainer, action: NetworkAction): 
     NetworkAction.FlushDns -> container.t("net.flushDns")
     NetworkAction.Resolve -> container.t("net.resolve")
     NetworkAction.Whois -> container.t("net.whois")
+}
+
+private fun notifyNetActionResult(
+    container: AppContainer,
+    session: NetSession,
+    errorCode: NetworkErrorCode?,
+    successLabel: String,
+) {
+    if (session.error.isNotEmpty()) {
+        if (NetWiringPresentation.shouldToastNetworkError(errorCode)) {
+            container.toastError(session.error)
+        }
+    } else {
+        container.toastSuccess(successLabel)
+    }
+}
+
+private fun notifyNetFailure(
+    container: AppContainer,
+    session: NetSession,
+    message: String,
+    onPersist: () -> Unit,
+) {
+    session.notice = ""
+    session.error = message
+    if (NetWiringPresentation.shouldToastLocalFailure()) {
+        container.toastError(message)
+    }
+    onPersist()
 }
 
 private fun errorMessage(container: AppContainer, code: NetworkErrorCode, raw: String): String {

@@ -381,8 +381,7 @@ private fun convert(container: AppContainer, session: ConfigSession, toYaml: Boo
         is ConfigWiringPresentation.ConvertOutcome.Failure -> {
             session.notice = ""
             val message = messageFor(container, outcome.error)
-            session.error = message
-            container.toastError(message)
+            notifyConfigFailure(container, session, message, outcome.error)
         }
     }
 }
@@ -429,8 +428,7 @@ private fun format(container: AppContainer, session: ConfigSession) {
             session.valid = false
             session.notice = ""
             val message = messageFor(container, outcome.error)
-            session.error = message
-            container.toastError(message)
+            notifyConfigFailure(container, session, message, outcome.error)
         }
     }
 }
@@ -453,9 +451,8 @@ private fun importText(container: AppContainer, session: ConfigSession, title: S
                 "reformat.error.read",
                 mapOf("message" to (outcome.error.message ?: file.path)),
             )
-            session.error = message
             session.notice = message
-            container.toastError(message)
+            notifyConfigFailure(container, session, message, outcome.error, toastIo = true)
             null
         }
     }
@@ -479,10 +476,27 @@ private fun exportText(container: AppContainer, session: ConfigSession, content:
                 "reformat.error.write",
                 mapOf("message" to (outcome.error.message ?: file.path)),
             )
-            session.error = message
             session.notice = message
-            container.toastError(message)
+            notifyConfigFailure(container, session, message, outcome.error, toastIo = true)
         }
+    }
+}
+
+private fun notifyConfigFailure(
+    container: AppContainer,
+    session: ConfigSession,
+    message: String,
+    error: Throwable,
+    toastIo: Boolean = false,
+) {
+    session.error = message
+    val shouldToast = if (toastIo) {
+        ConfigWiringPresentation.shouldToastIoFailure(error)
+    } else {
+        ConfigWiringPresentation.shouldToastConvertFailure(error)
+    }
+    if (shouldToast) {
+        container.toastError(message)
     }
 }
 

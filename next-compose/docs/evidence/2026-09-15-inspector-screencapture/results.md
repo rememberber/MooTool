@@ -151,6 +151,20 @@
 | `157-compose-vault-conflict-savecopy-tab-focus.png` | Compose 场景 Vault 外部冲突（删除态）「另存副本」钮焦点环（[DIFF-563](../../diff/563-f-tools-engines-css-vault-mcp-p7-slice.md)；非产品主窗） |
 | `158-compose-git-merge-resolve-tab-focus.png` | Compose 场景 Vault Git merge ours/theirs 行「采用 ours」钮焦点环（[DIFF-564](../../diff/564-f-tools-run-engines-css-vault-mcp-git-p7-slice.md)；非产品主窗） |
 | `159-compose-regex-test-tab-focus.png` | Compose 场景 F15 正则「测试」钮 + 结果侧栏命中卡焦点环（[DIFF-565](../../diff/565-f15-regex-worker-css-vault-mcp-p7-slice.md)；非产品主窗） |
+| `204-compose-git-merge-push-disabled-tab-focus.png` | Compose 场景 A03 Vault Git merge 进行中 push 禁用态（`GitMergePushDisabledCaptureTest`，[DIFF-609](../../diff/609-git-merge-push-disabled-evidence-slice.md)；与 `199` continue 互补，非产品主窗） |
+| `205-compose-vault-external-conflict-sample-deleted-savecopy-tab-focus.png` | Compose 场景 F04 §A 证据 `sample.json` 外部删除冲突「保存副本」焦点环（`VaultConflictDeletedProductEvidenceCaptureTest`，[DIFF-610](../../diff/610-vault-external-delete-evidence-slice.md)；与 `200`/`146` 互补，非产品主窗） |
+| `206-compose-quicknote-external-conflict-deleted-savecopy-tab-focus.png` | Compose 场景 F01 §A 证据 `sample-external.md` 外部删除冲突「保存副本」焦点环（`QuickNoteConflictDeletedProductEvidenceCaptureTest`，[DIFF-611](../../diff/611-quicknote-external-delete-evidence-slice.md)；与 `202` 互补，非产品主窗） |
+| `207-compose-git-rebase-continue-tab-focus.png` | Compose 场景 A03 Vault Git rebase 冲突清零后 continue 焦点环（`GitRebaseContinueCaptureTest`，[DIFF-612](../../diff/612-git-rebase-product-evidence-slice.md)；与 `199` merge continue 互补，非产品主窗） |
+| `208-compose-json-inspector-copy-result-tab-focus.png` | Compose 场景 F04 检查器结果区「复制」焦点环（`JsonInspectorCopyResultCaptureTest`，[DIFF-613](../../diff/613-json-inspector-result-copy-slice.md)；与 `166` 路径复制互补，非产品主窗） |
+| `209-compose-git-rebase-flow-hint-tab-focus.png` | Compose 场景 A03 Vault Git rebase §C 状态/hint +「刷新」焦点环（`GitRebaseFlowOverlayCaptureTest`，[DIFF-614](../../diff/614-git-rebase-flow-hint-capture-slice.md)；与 `153` merge hint 互补，非产品主窗） |
+| `210-compose-git-rebase-resolve-tab-focus.png` | Compose 场景 A03 Vault Git rebase §C ours/theirs「采用 ours」焦点环（`GitRebaseResolveCaptureTest`，[DIFF-615](../../diff/615-git-rebase-resolve-capture-slice.md)；与 `158` merge resolve 互补，非产品主窗） |
+| `211-compose-git-rebase-push-pull-disabled-tab-focus.png` | Compose 场景 A03 rebase 进行中 push/pull 禁用（`GitRebasePushPullDisabledCaptureTest`，[DIFF-616](../../diff/616-git-rebase-push-pull-disabled-slice.md)；与 `204` merge 互补，非产品主窗） |
+| `212-compose-git-merge-commit-disabled-tab-focus.png` | Compose 场景 A03 merge 冲突期「提交」禁用（`GitVaultCommitDisabledCaptureTest`，[DIFF-618](../../diff/618-git-vault-commit-disabled-slice.md)；非产品主窗） |
+| `213-compose-git-rebase-commit-disabled-tab-focus.png` | Compose 场景 A03 rebase 冲突期「提交」禁用（`GitVaultCommitDisabledCaptureTest`，[DIFF-618](../../diff/618-git-vault-commit-disabled-slice.md)；非产品主窗） |
+| `214-compose-git-rebase-fetch-enabled-pull-disabled-tab-focus.png` | Compose 场景 A03 rebase 冲突期 fetch 可用 / pull 禁用（`GitVaultFetchDuringConflictCaptureTest`，[DIFF-619](../../diff/619-git-fetch-during-conflict-slice.md)；非产品主窗） |
+| `215-compose-json-inspector-duplicate-path-tab-focus.png` | Compose 场景 F04 检查器结构面板重复键路径 Tab 焦点环（`JsonInspectorDuplicatePathCaptureTest`，[DIFF-622](../../diff/622-json-inspector-duplicate-path-capture-slice.md)；与 DIFF-620 行为链互补，非产品主窗） |
+| `216-compose-git-push-disabled-unresolved-conflicts-tab-focus.png` | Compose 场景 A03 未解决冲突期 push 禁用（`GitVaultPushDisabledConflictsCaptureTest`，[DIFF-623](../../diff/623-git-push-disabled-unresolved-conflicts-slice.md)；与 `204`/`211` merge/rebase 进行中互补，非产品主窗） |
+| `217-compose-git-pull-disabled-unresolved-conflicts-tab-focus.png` | Compose 场景 A03 未解决冲突期 pull 禁用（`GitVaultPullDisabledConflictsCaptureTest`，[DIFF-624](../../diff/624-git-pull-disabled-unresolved-conflicts-slice.md)；fetch 仍可用见 `214`，非产品主窗） |
 
 有窗口帧不等于该工具整行已验收。Vault/Git 冲突**产品主窗**步骤见 [2026-09-17-vault-conflict-product-window](../2026-09-17-vault-conflict-product-window/results.md)（未执行）。曾用 Unicode `type "中"` 插入 JSON，那不是系统 IME 预编辑，不能当 IME 验收。
 

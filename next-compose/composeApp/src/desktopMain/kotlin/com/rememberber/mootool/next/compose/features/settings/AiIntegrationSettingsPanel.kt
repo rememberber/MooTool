@@ -117,7 +117,7 @@ fun AiIntegrationSettingsPanel(container: AppContainer) {
                             revision += 1
                         }.onFailure {
                             error = it.message ?: it.toString()
-                            container.toastError(error)
+                            notifySettingsValidationFailure(container, error)
                         }
                         busy = false
                     }
@@ -132,7 +132,7 @@ fun AiIntegrationSettingsPanel(container: AppContainer) {
                         container.toastSuccess(container.t("settings.ai.connected", mapOf("count" to result.tools.size.toString())))
                     }.onFailure {
                         error = it.message ?: it.toString()
-                        container.toastError(error)
+                        notifySettingsValidationFailure(container, error)
                     }
                     busy = false
                 }

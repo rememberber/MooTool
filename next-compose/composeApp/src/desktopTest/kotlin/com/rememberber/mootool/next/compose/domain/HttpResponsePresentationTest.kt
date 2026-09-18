@@ -65,6 +65,11 @@ class HttpResponsePresentationTest {
             dir.deleteRecursively()
         }
     }
+
+    @Test
+    fun shouldToastWriteFailure() {
+        assertTrue(HttpResponsePresentation.shouldToastWriteFailure(IllegalStateException()))
+    }
 }
 
 private fun sampleResponse(

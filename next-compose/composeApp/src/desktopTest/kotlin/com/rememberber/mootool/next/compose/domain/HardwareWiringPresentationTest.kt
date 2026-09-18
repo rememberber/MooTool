@@ -1,5 +1,6 @@
 package com.rememberber.mootool.next.compose.domain
 
+import kotlinx.coroutines.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -30,5 +31,12 @@ class HardwareWiringPresentationTest {
         val outcome = HardwareWiringPresentation.runCollect(loadSampleMs = 0)
         assertTrue(outcome is HardwareWiringPresentation.CollectOutcome.Success)
         assertTrue((outcome as HardwareWiringPresentation.CollectOutcome.Success).snapshot.sections.isNotEmpty())
+    }
+
+    @Test
+    fun shouldToastCollectFailureSkipsCancel() {
+        assertFalse(HardwareWiringPresentation.shouldToastCollectFailure(CancellationException()))
+        assertTrue(HardwareWiringPresentation.shouldToastCollectFailure(IllegalStateException()))
+        assertTrue(HardwareWiringPresentation.shouldToastLocalFailure())
     }
 }

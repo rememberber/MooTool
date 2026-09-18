@@ -20,4 +20,6 @@ object EncodeWiringPresentation {
             onSuccess = { ConvertOutcome.Success(it) },
             onFailure = { ConvertOutcome.Failure(it) },
         )
+
+    fun shouldToastConvertFailure(error: Throwable): Boolean = true
 }

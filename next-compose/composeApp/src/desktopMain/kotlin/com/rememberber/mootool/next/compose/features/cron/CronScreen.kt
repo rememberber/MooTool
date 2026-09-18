@@ -398,13 +398,25 @@ private fun parseRuns(container: AppContainer, session: CronSession, language: S
                     val error = result.error
                     session.runs = emptyList()
                     session.notice = ""
-                    val message = (error as? CronException)?.message ?: error.message.orEmpty()
-                    session.error = container.t("cron.invalid", mapOf("message" to message.ifBlank { "invalid" }))
-                    container.toastError(session.error)
+                    val detail = (error as? CronException)?.message ?: error.message.orEmpty()
+                    val message = container.t("cron.invalid", mapOf("message" to detail.ifBlank { "invalid" }))
+                    notifyCronFailure(container, session, message, error)
                 }
             }
             onChanged()
         }
+    }
+}
+
+private fun notifyCronFailure(
+    container: AppContainer,
+    session: CronSession,
+    message: String,
+    error: Throwable,
+) {
+    session.error = message
+    if (CronWiringPresentation.shouldToastPreviewFailure(error)) {
+        container.toastError(message)
     }
 }
 

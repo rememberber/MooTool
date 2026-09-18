@@ -34,4 +34,9 @@ class ProtobufWiringPresentationTest {
             ProtobufWiringPresentation.copyPayload("convert", wireOutput = "", base64 = "YQ==", hex = "61", binary = ""),
         )
     }
+
+    @Test
+    fun shouldToastOperationFailure() {
+        assertTrue(ProtobufWiringPresentation.shouldToastOperationFailure(IllegalStateException()))
+    }
 }

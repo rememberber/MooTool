@@ -114,7 +114,7 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                     session.snapshot = it
                     session.error = ""
                 }.onFailure {
-                    session.error = messageFor(container, it)
+                    notifyEnvFailure(container, session, it) { persist() }
                 }
                 persist()
             }
@@ -183,13 +183,7 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                                 container.toastSuccess(container.t("variables.exported"))
                             }
                             is EnvWiringPresentation.ExportOutcome.Failure -> {
-                                val message = container.t(
-                                    "reformat.error.write",
-                                    mapOf("message" to (outcome.error.message ?: file.path)),
-                                )
-                                session.error = message
-                                session.notice = message
-                                container.toastError(message)
+                                notifyEnvIoFailure(container, session, outcome.error, file.path) { persist() }
                             }
                         }
                         persist()
@@ -397,7 +391,7 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                                     container.toastSuccess(container.t("variables.deleted"))
                                     session.error = ""
                                 }.onFailure {
-                                    session.error = messageFor(container, it)
+                                    notifyEnvFailure(container, session, it) { persist() }
                                 }
                                 persist()
                             }
@@ -500,7 +494,7 @@ private fun EditorDialog(
                                 container.toastSuccess(container.t("variables.saved"))
                                 session.error = ""
                             }.onFailure {
-                                session.error = messageFor(container, it)
+                                notifyEnvFailure(container, session, it) { persist() }
                             }
                             persist()
                             if (result.isSuccess) onSaved()
@@ -537,6 +531,39 @@ private fun scopeHintKey(scope: EnvDisplayScope) = when (scope) {
     EnvDisplayScope.User -> "variables.scopeHint.user"
     EnvDisplayScope.System -> "variables.scopeHint.system"
     EnvDisplayScope.Process -> "variables.scopeHint.process"
+}
+
+private fun notifyEnvFailure(
+    container: AppContainer,
+    session: VariablesSession,
+    error: Throwable,
+    onPersist: () -> Unit,
+) {
+    val message = messageFor(container, error)
+    session.error = message
+    if (EnvWiringPresentation.shouldToastOperationFailure(error)) {
+        container.toastError(message)
+    }
+    onPersist()
+}
+
+private fun notifyEnvIoFailure(
+    container: AppContainer,
+    session: VariablesSession,
+    error: Throwable,
+    path: String,
+    onPersist: () -> Unit,
+) {
+    val message = container.t(
+        "reformat.error.write",
+        mapOf("message" to (error.message ?: path)),
+    )
+    session.error = message
+    session.notice = message
+    if (EnvWiringPresentation.shouldToastIoFailure(error)) {
+        container.toastError(message)
+    }
+    onPersist()
 }
 
 private fun messageFor(container: AppContainer, error: Throwable): String {

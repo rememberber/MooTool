@@ -33,4 +33,22 @@ object CodeRunWiringPresentation {
         cacheRoot: Path,
         onOutput: (CodeRunOutputEvent) -> Unit = {},
     ): CodeRunResult = CodeRunEngine.run(input, paths, cacheRoot, onOutput)
+
+    /** 对齐 Electron `formatRuntimeSource`；UI 格式化按钮与 `Cmd/Ctrl+Shift+F` 走此路径。 */
+    fun formatSource(code: String, runtime: CodeRuntime): String =
+        CodeRunEngine.formatSource(code, runtime)
+
+    /** 对齐 Electron `runtimeDisplayName`（Tab 标签、横幅、历史摘要）。 */
+    fun displayName(runtime: CodeRuntime): String = CodeRunEngine.displayName(runtime)
+
+    fun cancelRun(requestId: String): Boolean = CodeRunEngine.cancel(requestId)
+
+    /** 切页/关闭应用时终止全部在途运行（对齐 F05 切页取消链）。 */
+    fun cancelAllRuns() {
+        CodeRunEngine.cancelAll()
+    }
+
+    fun shouldToastRunFailure(errorCode: CodeRunErrorCode?): Boolean = errorCode != CodeRunErrorCode.ABORTED
+
+    fun shouldToastValidationFailure(): Boolean = true
 }

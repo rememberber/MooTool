@@ -48,4 +48,6 @@ object HttpResponsePresentation {
             onSuccess = { WriteExportOutcome.Success },
             onFailure = { WriteExportOutcome.Failure(it) },
         )
+
+    fun shouldToastWriteFailure(error: Throwable): Boolean = true
 }

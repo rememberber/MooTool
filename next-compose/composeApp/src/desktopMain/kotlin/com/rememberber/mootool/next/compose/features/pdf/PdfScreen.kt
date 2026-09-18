@@ -531,9 +531,7 @@ private fun ingestPdfFiles(container: AppContainer, session: PdfSession, files: 
             is PdfWiringPresentation.InspectOutcome.Failure -> {
                 val error = inspected.error
                 val message = messageFor(container, error)
-                if (PdfImportPresentation.showEncryptedImportToast(error)) {
-                    container.toastError(message)
-                }
+                notifyPdfImportFailure(container, error, message)
                 errors += message
             }
         }
@@ -588,7 +586,7 @@ private fun runSplit(
                 selected.forEach { it.status = if ((error as? PdfException)?.code == "cancelled") PdfTaskStatus.Ready else PdfTaskStatus.Error }
                 session.lastOutputs = emptyList()
                 session.notice = ""
-                session.error = messageFor(container, error)
+                notifyPdfJobFailure(container, session, error)
                 }
             }
             onChanged()
@@ -642,11 +640,24 @@ private fun runMerge(
                 selected.forEach { it.status = if ((error as? PdfException)?.code == "cancelled") PdfTaskStatus.Ready else PdfTaskStatus.Error }
                 if ((error as? PdfException)?.code == "cancelled") runCatching { output.delete() }
                 session.notice = ""
-                session.error = messageFor(container, error)
+                notifyPdfJobFailure(container, session, error)
                 }
             }
             onChanged()
         }
+    }
+}
+
+private fun notifyPdfJobFailure(container: AppContainer, session: PdfSession, error: Throwable) {
+    session.error = messageFor(container, error)
+    if (PdfWiringPresentation.shouldToastJobFailure(error)) {
+        container.toastError(session.error)
+    }
+}
+
+private fun notifyPdfImportFailure(container: AppContainer, error: Throwable, message: String) {
+    if (PdfImportPresentation.showEncryptedImportToast(error)) {
+        container.toastError(message)
     }
 }
 

@@ -321,7 +321,7 @@ private fun AsymmetricPanel(
                                 session.error = ""
                             }.onFailure { error ->
                                 session.notice = ""
-                                session.error = messageFor(container, error)
+                                notifyCryptoFailure(container, session, messageFor(container, error), error)
                             }
                             onChanged()
                         }
@@ -342,8 +342,7 @@ private fun AsymmetricPanel(
                         container.toastSuccess(container.t("crypto.publicKeyRestored"))
                     }.onFailure { error ->
                         session.notice = ""
-                        session.error = messageFor(container, error)
-                        container.toastError(session.error)
+                        notifyCryptoFailure(container, session, messageFor(container, error), error)
                     }
                     onChanged()
                 }
@@ -469,13 +468,14 @@ private fun AsymmetricPanel(
                 }.onSuccess { valid ->
                     val notice = container.t(if (valid) "crypto.verified" else "crypto.notVerified")
                     session.notice = notice
-                    if (valid) container.toastSuccess(notice) else container.toastError(notice)
-                    if (!valid) session.error = container.t("crypto.notVerified")
+                    if (valid) {
+                        container.toastSuccess(notice)
+                    } else {
+                        notifyCryptoVerifyFailure(container, session, container.t("crypto.notVerified"))
+                    }
                 }.onFailure { error ->
                     session.notice = ""
-                    val message = messageFor(container, error)
-                    session.error = message
-                    container.toastError(message)
+                    notifyCryptoFailure(container, session, messageFor(container, error), error)
                 }
                 onChanged()
             })
@@ -735,9 +735,7 @@ private fun digestPickedFile(
                 saveHistory(container, "digest", "file", digestLabel(session.digestAlgorithm), file.path, digest)
             }.onFailure { error ->
                 session.notice = ""
-                val message = messageFor(container, error)
-                session.error = message
-                container.toastError(message)
+                notifyCryptoFailure(container, session, messageFor(container, error), error)
             }
             onChanged()
         }
@@ -769,9 +767,7 @@ private fun runCrypto(
         saveHistory(container, tab, operation, algorithm, input, output)
     }.onFailure { error ->
         session.notice = ""
-        val message = messageFor(container, error)
-        session.error = message
-        container.toastError(message)
+        notifyCryptoFailure(container, session, messageFor(container, error), error)
     }
 }
 
@@ -831,8 +827,25 @@ private fun generateRandom(container: AppContainer, session: CryptoSession, kind
         }
     }.onFailure { error ->
         session.notice = ""
-        val message = messageFor(container, error)
-        session.error = message
+        notifyCryptoFailure(container, session, messageFor(container, error), error)
+    }
+}
+
+private fun notifyCryptoFailure(
+    container: AppContainer,
+    session: CryptoSession,
+    message: String,
+    error: Throwable,
+) {
+    session.error = message
+    if (CryptoWiringPresentation.shouldToastOperationFailure(error)) {
+        container.toastError(message)
+    }
+}
+
+private fun notifyCryptoVerifyFailure(container: AppContainer, session: CryptoSession, message: String) {
+    session.error = message
+    if (CryptoWiringPresentation.shouldToastVerifyFailure()) {
         container.toastError(message)
     }
 }

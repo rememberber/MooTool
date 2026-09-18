@@ -25,4 +25,6 @@ object TimeWiringPresentation {
             onSuccess = { ConvertOutcome.ToTimestamp(it) },
             onFailure = { ConvertOutcome.Failure(it) },
         )
+
+    fun shouldToastConvertFailure(error: Throwable): Boolean = true
 }

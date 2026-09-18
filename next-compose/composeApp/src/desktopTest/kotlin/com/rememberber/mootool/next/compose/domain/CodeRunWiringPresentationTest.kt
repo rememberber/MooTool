@@ -35,4 +35,47 @@ class CodeRunWiringPresentationTest {
         assertTrue(parsed is CodeRunWiringPresentation.ArgumentsOutcome.Success)
         assertEquals(listOf("--name", "Moo"), (parsed as CodeRunWiringPresentation.ArgumentsOutcome.Success).arguments)
     }
+
+    @Test
+    fun displayNameMatchesElectronRuntimeTools() {
+        assertEquals("Node.js", CodeRunWiringPresentation.displayName(CodeRuntime.Node))
+        assertEquals("Groovy", CodeRunWiringPresentation.displayName(CodeRuntime.Groovy))
+        assertEquals("Java", CodeRunWiringPresentation.displayName(CodeRuntime.Java))
+        assertEquals("Python", CodeRunWiringPresentation.displayName(CodeRuntime.Python))
+    }
+
+    @Test
+    fun cancelRunDelegatesToEngine() {
+        assertFalse(CodeRunWiringPresentation.cancelRun("nonexistent-request-id"))
+    }
+
+    @Test
+    fun cancelAllRunsWithoutActiveJobsDoesNotThrow() {
+        CodeRunWiringPresentation.cancelAllRuns()
+    }
+
+    @Test
+    fun runDetectReturnsFourRuntimeStatuses() {
+        val paths = CodeRunWiringPresentation.pathsFrom(RuntimeSettings())
+        assertEquals(4, CodeRunWiringPresentation.runDetect(paths).size)
+    }
+
+    @Test
+    fun formatSourceDelegatesToEngineForNodeSample() {
+        assertTrue(
+            CodeRunWiringPresentation.formatSource("const x={a:1};console.log(x)", CodeRuntime.Node)
+                .contains("const x = { a: 1 }"),
+        )
+        assertEquals(
+            "    print(\"moo\")",
+            CodeRunWiringPresentation.formatSource("\tprint(\"moo\")  ", CodeRuntime.Python),
+        )
+    }
+
+    @Test
+    fun shouldToastRunFailureSkipsAborted() {
+        assertFalse(CodeRunWiringPresentation.shouldToastRunFailure(CodeRunErrorCode.ABORTED))
+        assertTrue(CodeRunWiringPresentation.shouldToastRunFailure(CodeRunErrorCode.TIMEOUT))
+        assertTrue(CodeRunWiringPresentation.shouldToastValidationFailure())
+    }
 }

@@ -57,4 +57,8 @@ object PdfWiringPresentation {
             onSuccess = { JobOutcome.Success(it) },
             onFailure = { JobOutcome.Failure(it) },
         )
+
+    /** 拆分/合并失败是否应向用户弹出 error toast（取消不算）。 */
+    fun shouldToastJobFailure(error: Throwable): Boolean =
+        (error as? PdfException)?.code != "cancelled"
 }

@@ -32,4 +32,23 @@ object TranslationWiringPresentation {
         !translating &&
             text.isNotBlank() &&
             text.length <= TranslationEngine.MAX_TEXT_UNITS
+
+    sealed interface SaveWordOutcome<T> {
+        data class Success<T>(val value: T) : SaveWordOutcome<T>
+        data class Failure<T>(val error: Throwable) : SaveWordOutcome<T>
+    }
+
+    fun <T> runSaveWord(block: () -> T): SaveWordOutcome<T> =
+        runCatching(block).fold(
+            onSuccess = { SaveWordOutcome.Success(it) },
+            onFailure = { SaveWordOutcome.Failure(it) },
+        )
+
+    fun failureMessage(fallbackKey: String, error: Throwable, t: (String) -> String): String =
+        error.message?.takeIf { it.isNotBlank() } ?: t(fallbackKey)
+
+    fun shouldToastTranslateFailure(errorCode: TranslationErrorCode?): Boolean =
+        TranslationResponsePresentation.shouldShowError(errorCode)
+
+    fun shouldToastSaveFailure(error: Throwable): Boolean = true
 }

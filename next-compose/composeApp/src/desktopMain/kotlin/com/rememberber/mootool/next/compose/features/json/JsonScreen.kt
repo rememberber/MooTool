@@ -60,6 +60,7 @@ import com.rememberber.mootool.next.compose.domain.JsonVaultFooterPresentation
 import com.rememberber.mootool.next.compose.domain.EditorSettingsLiveApply
 import com.rememberber.mootool.next.compose.domain.FindReplace
 import com.rememberber.mootool.next.compose.domain.JsonEngine
+import com.rememberber.mootool.next.compose.domain.JsonInspectorPresentation
 import com.rememberber.mootool.next.compose.domain.JsonWiringPresentation
 import com.rememberber.mootool.next.compose.domain.JsonStatus
 import com.rememberber.mootool.next.compose.domain.JsonTranslator
@@ -631,8 +632,7 @@ private fun JsonToolbar(
                         "reformat.error.read",
                         mapOf("message" to (outcome.error.message ?: file.path)),
                     )
-                    session.notice = message
-                    container.toastError(message)
+                    notifyJsonFailure(container, session, message, outcome.error, io = true)
                 }
             }
             onChanged()
@@ -653,8 +653,7 @@ private fun JsonToolbar(
                         "reformat.error.write",
                         mapOf("message" to (outcome.error.message ?: file.path)),
                     )
-                    session.notice = message
-                    container.toastError(message)
+                    notifyJsonFailure(container, session, message, outcome.error, io = true)
                 }
             }
             onChanged()
@@ -1442,7 +1441,17 @@ private fun InspectorPane(
                 maxDepthLabel = container.t("json.analysis.maxDepth"),
                 duplicatesLabel = container.t("json.analysis.duplicates"),
                 utf8Label = container.t("json.analysis.utf8"),
-                onDuplicatePathClick = { jsonInspectorCopyJsonPath(it, container) },
+                onDuplicatePathClick = { path ->
+                    jsonInspectorDuplicatePathClick(
+                        path = path,
+                        inspectorInput = inspectorText,
+                        session = session,
+                        container = container,
+                        pathAppliedNotice = container.t("json.notice.pathApplied"),
+                        translator = translator,
+                        onChanged = onChanged,
+                    )
+                },
             )
             if (jsonInspectorInferSchemaEnabled(structureAnalysis)) {
                 MooButton(
@@ -1651,7 +1660,6 @@ private fun InspectorPane(
         }
         }
         MooCard(Modifier.fillMaxWidth().mooJsonInspectorSectionResult()) {
-        Text(container.t("json.panel.result"), color = colors.textPrimary, fontSize = 12.sp)
         val resultDisplay = jsonInspectorResultDisplay(
             pathResult = session.pathResult,
             notice = session.notice,
@@ -1659,6 +1667,19 @@ private fun InspectorPane(
             pathAppliedNotice = container.t("json.notice.pathApplied"),
             jsonPathPanelTitle = container.t("json.panel.jsonPath"),
         )
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(container.t("json.panel.result"), color = colors.textPrimary, fontSize = 12.sp)
+            MooButton(
+                container.t("json.action.copy"),
+                p5Toolbar = true,
+                enabled = JsonInspectorPresentation.resultCopyEnabled(resultDisplay.text),
+                onClick = { jsonInspectorCopyResult(resultDisplay.text, container) },
+            )
+        }
         Text(
             resultDisplay.text,
             color = if (resultDisplay.isError) colors.danger else colors.textPrimary,
@@ -1712,7 +1733,7 @@ private fun InspectorPane(
                                 JsonHistoryMetadata.encodePathQuery(),
                             )
                         } else if (session.notice.isNotBlank()) {
-                            container.toastError(session.notice)
+                            notifyJsonInspectorPathQueryFailure(container, session, session.notice)
                         }
                         onChanged()
                     }
@@ -1857,8 +1878,7 @@ private fun InputDialog(
                         closeConversion()
                     }.onFailure {
                         val message = it.message ?: container.t("json.notice.failed")
-                        session.notice = message
-                        container.toastError(message)
+                        notifyJsonFailure(container, session, message, it)
                     }
                     onChanged()
                 })
@@ -1910,8 +1930,7 @@ private fun transform(
         }
         is JsonWiringPresentation.TransformOutcome.Failure -> {
             val message = outcome.error.message ?: container.t("json.notice.failed")
-            session.notice = message
-            container.toastError(message)
+            notifyJsonFailure(container, session, message, outcome.error)
         }
     }
 }
@@ -1984,9 +2003,30 @@ private fun showResult(
         is JsonWiringPresentation.TransformOutcome.Failure -> {
             if (fillPathResult) session.pathResult = ""
             val message = outcome.error.message ?: container.t("json.notice.failed")
-            session.notice = message
-            container.toastError(message)
+            if (fillPathResult) {
+                notifyJsonInspectorPathQueryFailure(container, session, message)
+            } else {
+                notifyJsonFailure(container, session, message, outcome.error)
+            }
         }
+    }
+}
+
+private fun notifyJsonFailure(
+    container: AppContainer,
+    session: JsonSession,
+    message: String,
+    error: Throwable = IllegalStateException(message),
+    io: Boolean = false,
+) {
+    session.notice = message
+    val shouldToast = if (io) {
+        JsonWiringPresentation.shouldToastIoFailure(error)
+    } else {
+        JsonWiringPresentation.shouldToastTransformFailure(error)
+    }
+    if (shouldToast) {
+        container.toastError(message)
     }
 }
 

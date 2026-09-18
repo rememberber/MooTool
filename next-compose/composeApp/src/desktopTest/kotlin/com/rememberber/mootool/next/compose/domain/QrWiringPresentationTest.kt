@@ -1,5 +1,6 @@
 package com.rememberber.mootool.next.compose.domain
 
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -40,5 +41,28 @@ class QrWiringPresentationTest {
         assertFalse(QrWiringPresentation.canRecognize(null, busy = false))
         assertTrue(QrWiringPresentation.canRecognize(byteArrayOf(1), busy = false))
         assertTrue(QrWiringPresentation.canCopyRecognition("ok"))
+    }
+
+    @Test
+    fun runWritePngFileRoundTrip() {
+        val file = Files.createTempFile("qr-out-", ".png")
+        try {
+            val bytes = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
+            val outcome = QrWiringPresentation.runWritePngFile(file.toFile(), bytes)
+            assertTrue(outcome is QrWiringPresentation.WritePngOutcome.Success)
+            assertEquals(bytes.size.toLong(), Files.size(file))
+        } finally {
+            Files.deleteIfExists(file)
+        }
+    }
+
+    @Test
+    fun shouldToastOperationFailure() {
+        assertTrue(QrWiringPresentation.shouldToastOperationFailure(IllegalStateException()))
+    }
+
+    @Test
+    fun shouldToastErrorMessage() {
+        assertTrue(QrWiringPresentation.shouldToastErrorMessage())
     }
 }

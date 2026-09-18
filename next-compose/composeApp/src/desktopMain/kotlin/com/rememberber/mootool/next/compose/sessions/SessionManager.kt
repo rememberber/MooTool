@@ -37,6 +37,7 @@ import com.rememberber.mootool.next.compose.domain.TranslationEngine
 import com.rememberber.mootool.next.compose.domain.TranslationTab
 import com.rememberber.mootool.next.compose.domain.VaultSort
 import com.rememberber.mootool.next.compose.domain.CodeRunEngine
+import com.rememberber.mootool.next.compose.domain.CodeRunWiringPresentation
 import com.rememberber.mootool.next.compose.domain.CodeRunRuntimeOptionsNormalize
 import com.rememberber.mootool.next.compose.domain.CodeRunResult
 import com.rememberber.mootool.next.compose.domain.CodeRuntime
@@ -2432,7 +2433,7 @@ class SessionManager(private val store: SessionStore) {
     }
 
     fun cancelCodeRun() {
-        CodeRunEngine.cancelAll()
+        CodeRunWiringPresentation.cancelAllRuns()
         val session = codeRunSessionCache ?: return
         session.requestId = ""
         session.running = false

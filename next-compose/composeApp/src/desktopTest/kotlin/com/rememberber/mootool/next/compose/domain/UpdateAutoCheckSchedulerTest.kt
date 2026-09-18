@@ -18,18 +18,19 @@ class UpdateAutoCheckSchedulerTest {
     @Test
     fun runsCheckAfterStartupDelayWhenEnabled() = runBlocking {
         var checks = 0
+        val startupDelayMs = 15L
         val scheduler = UpdateAutoCheckScheduler(
             scope = CoroutineScope(Dispatchers.Default),
             enabled = { true },
             autoDownload = { true },
             check = { checks++ },
-            startupDelayMs = 15,
+            startupDelayMs = startupDelayMs,
             intervalMs = 60_000,
         )
         scheduler.reconfigure()
         delay(5)
         assertEquals(0, checks)
-        delay(20)
+        delay(startupDelayMs + 25)
         assertEquals(1, checks)
         scheduler.stop()
     }
@@ -38,20 +39,24 @@ class UpdateAutoCheckSchedulerTest {
     fun passesLatestAutoDownloadFlagOnEachCheck() = runBlocking {
         var autoDownload = false
         val flags = mutableListOf<Boolean>()
+        val startupDelayMs = 50L
+        val intervalMs = 100L
         val scheduler = UpdateAutoCheckScheduler(
             scope = CoroutineScope(Dispatchers.Default),
             enabled = { true },
             autoDownload = { autoDownload },
             check = { flags += it },
-            startupDelayMs = 10,
-            intervalMs = 20,
+            startupDelayMs = startupDelayMs,
+            intervalMs = intervalMs,
         )
         scheduler.reconfigure()
-        delay(15)
+        delay(startupDelayMs + 30)
+        assertEquals(1, flags.size)
+        assertEquals(false, flags.first())
         autoDownload = true
-        delay(25)
+        delay(intervalMs + 40)
         scheduler.stop()
-        assertTrue(flags.size >= 2)
+        assertTrue(flags.size >= 2, "expected interval tick after autoDownload flip, got ${flags.size}")
         assertEquals(false, flags.first())
         assertEquals(true, flags.last())
     }

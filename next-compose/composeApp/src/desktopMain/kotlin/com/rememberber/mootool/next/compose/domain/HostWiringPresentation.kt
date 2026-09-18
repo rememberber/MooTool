@@ -99,4 +99,8 @@ object HostWiringPresentation {
             onSuccess = { ExportProfileOutcome.Success },
             onFailure = { ExportProfileOutcome.Failure(it) },
         )
+
+    fun shouldToastOperationFailure(error: Throwable): Boolean = true
+
+    fun shouldToastIoFailure(error: Throwable): Boolean = true
 }

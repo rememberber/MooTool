@@ -26,5 +26,15 @@ class EditorColumnEditPresentationTest {
         assertTrue(EditorColumnEditPresentation.JSON_IME_SAMPLE.endsWith(".json"))
         assertTrue(EditorColumnEditPresentation.QUICK_NOTE_IME_SAMPLE.endsWith(".md"))
         assertTrue(EditorColumnEditPresentation.commandPaletteKeywords.any { it == "列编辑" })
+        assertTrue(
+            EditorColumnEditPresentation.matchesEvidenceJsonImeSample(
+                EditorColumnEditPresentation.evidenceJsonImeSampleBody,
+            ),
+        )
+        assertTrue(
+            EditorColumnEditPresentation.matchesEvidenceWalkthroughPath(
+                EditorColumnEditPresentation.JSON_IME_SAMPLE,
+            ),
+        )
     }
 }

@@ -1,5 +1,9 @@
 package com.rememberber.mootool.next.compose.domain
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
+
 /** F23 SVG 批量选项 clamp（可单测，对齐 ImageScreen 输入边界）。 */
 object ImageSvgWiringPresentation {
     fun coerceColors(value: Int): Int = value.coerceIn(2, 64)
@@ -17,4 +21,15 @@ object ImageSvgWiringPresentation {
     }
 
     fun canStartSvgBatch(selectedCount: Int, busy: Boolean): Boolean = selectedCount > 0 && !busy
+
+    sealed interface WriteSvgOutcome {
+        data object Success : WriteSvgOutcome
+        data class Failure(val error: Throwable) : WriteSvgOutcome
+    }
+
+    fun runWriteSvgFile(target: Path, svg: String): WriteSvgOutcome =
+        runCatching { Files.writeString(target, svg, StandardCharsets.UTF_8) }.fold(
+            onSuccess = { WriteSvgOutcome.Success },
+            onFailure = { WriteSvgOutcome.Failure(it) },
+        )
 }

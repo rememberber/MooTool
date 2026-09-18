@@ -8,6 +8,7 @@
 | validate-structure-summary | next-tauri | `next-tauri/src/features/json/jsonTools.test.ts` `validates input and reports structural metrics` | `JsonEngineTest.analyzeStructure_matchesTauriFixture`（[DIFF-487](../diff/487-json-validate-structure-summary.md)） |
 | inspector-structure-panel | next-tauri | `JsonToolSurface.tsx` `json-analysis`（`analyzeJson` + `findDuplicateJsonKeys` + UTF-8） | `JsonInspectorStructureTest` + 检查器 `JsonInspectorStructurePanel`（[DIFF-488](../diff/488-json-inspector-structure-panel.md)） |
 | inspector-schema-path-sync | next-tauri / macOS | `JsonToolSurface.tsx` `path.picker`；`JSONTreePane` 复制路径 | `JsonEngineTest.inferJsonSchema_*` + `JsonInspectorPathUiTest` + 弹层 `jsonPathPickerSelectionForOpen`（[DIFF-489](../diff/489-json-inspector-schema-path-sync.md)） |
+| inspector-duplicate-path | macOS 树 / Compose | 重复键路径 → JSONPath + 预览 + 复制 | `JsonInspectorDuplicatePathTest` + `jsonInspectorDuplicatePathClick`（[DIFF-620](../diff/620-json-inspector-duplicate-path-sync-slice.md)）；Tab 焦点帧 `215`（[DIFF-622](../diff/622-json-inspector-duplicate-path-capture-slice.md)） |
 | sort-duplicate-keys | 同上 | 同上 | `JsonEngineTest.sortsKeysAndDetectsDuplicates` |
 | xml-roundtrip | 同上 | 同上 | `JsonEngineTest.mirrorsElectronJsonToolsVitestBasics` / `convertsJsonAndXml` |
 | path-query-enumerate | 同上 | 同上 | `mirrorsElectronJsonToolsVitestBasics` / `queriesAndEnumeratesPaths` |

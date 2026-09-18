@@ -32,4 +32,9 @@ class CronWiringPresentationTest {
         assertTrue(outcome is CronWiringPresentation.ScheduleOutcome.Success)
         assertTrue((outcome as CronWiringPresentation.ScheduleOutcome.Success).runs.isNotEmpty())
     }
+
+    @Test
+    fun shouldToastPreviewFailure() {
+        assertTrue(CronWiringPresentation.shouldToastPreviewFailure(IllegalStateException()))
+    }
 }

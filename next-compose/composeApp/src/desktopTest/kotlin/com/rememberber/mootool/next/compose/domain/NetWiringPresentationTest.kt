@@ -7,6 +7,18 @@ import kotlin.test.assertTrue
 
 class NetWiringPresentationTest {
     @Test
+    fun shouldToastNetworkErrorSkipsAborted() {
+        assertFalse(NetWiringPresentation.shouldToastNetworkError(NetworkErrorCode.ABORTED))
+        assertTrue(NetWiringPresentation.shouldToastNetworkError(NetworkErrorCode.INVALID_TARGET))
+        assertFalse(NetWiringPresentation.shouldToastNetworkError(null))
+    }
+
+    @Test
+    fun shouldToastLocalFailure() {
+        assertTrue(NetWiringPresentation.shouldToastLocalFailure())
+    }
+
+    @Test
     fun portScanStartTrimsAndValidates() {
         val ready = NetWiringPresentation.portScanStart(" 127.0.0.1 ", " 22,80 ")
         assertTrue(ready is NetWiringPresentation.PortScanStart.Ready)

@@ -23,4 +23,8 @@ object CryptoWiringPresentation {
             onSuccess = { DigestOutcome.Success(it) },
             onFailure = { DigestOutcome.Failure(it) },
         )
+
+    fun shouldToastOperationFailure(error: Throwable): Boolean = true
+
+    fun shouldToastVerifyFailure(): Boolean = true
 }

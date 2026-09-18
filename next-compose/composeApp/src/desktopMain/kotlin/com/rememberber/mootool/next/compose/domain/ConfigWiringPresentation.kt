@@ -57,4 +57,8 @@ object ConfigWiringPresentation {
             onSuccess = { WriteExportOutcome.Success },
             onFailure = { WriteExportOutcome.Failure(it) },
         )
+
+    fun shouldToastConvertFailure(error: Throwable): Boolean = true
+
+    fun shouldToastIoFailure(error: Throwable): Boolean = true
 }

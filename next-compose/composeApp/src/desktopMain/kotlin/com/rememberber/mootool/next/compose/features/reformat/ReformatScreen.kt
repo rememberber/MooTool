@@ -411,7 +411,8 @@ private fun runFormat(container: AppContainer, session: ReformatSession, onChang
                 }
                 is ReformatWiringPresentation.FormatRunOutcome.Failure -> {
                 session.notice = ""
-                session.error = messageFor(container, result.error)
+                val message = messageFor(container, result.error)
+                notifyReformatFailure(container, session, message, result.error)
                 }
             }
             onChanged()
@@ -445,9 +446,8 @@ private fun loadSourceFile(container: AppContainer, session: ReformatSession, fi
                 "reformat.error.read",
                 mapOf("message" to (outcome.error.message ?: file.path)),
             )
-            session.error = message
             session.notice = message
-            container.toastError(message)
+            notifyReformatFailure(container, session, message, outcome.error, io = true)
         }
     }
 }
@@ -476,10 +476,27 @@ private fun saveResult(container: AppContainer, session: ReformatSession) {
                 "reformat.error.write",
                 mapOf("message" to (outcome.error.message ?: file.path)),
             )
-            session.error = message
             session.notice = message
-            container.toastError(message)
+            notifyReformatFailure(container, session, message, outcome.error, io = true)
         }
+    }
+}
+
+private fun notifyReformatFailure(
+    container: AppContainer,
+    session: ReformatSession,
+    message: String,
+    error: Throwable,
+    io: Boolean = false,
+) {
+    session.error = message
+    val shouldToast = if (io) {
+        ReformatWiringPresentation.shouldToastIoFailure(error)
+    } else {
+        ReformatWiringPresentation.shouldToastFormatFailure(error)
+    }
+    if (shouldToast) {
+        container.toastError(message)
     }
 }
 

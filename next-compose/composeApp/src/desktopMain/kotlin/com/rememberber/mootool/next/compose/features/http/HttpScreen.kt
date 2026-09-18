@@ -238,8 +238,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
             session.notice = container.t("json.notice.copied")
             session.copyState = CopyFeedbackPolicy.afterCopy(true)
         } else {
-            session.notice = ""
-            session.error = container.t("json.notice.copyFailed")
+            notifyHttpCopyFailure(container, session, container.t("json.notice.copyFailed"))
             session.copyState = CopyFeedbackPolicy.afterCopy(false)
         }
         session.copyGeneration += 1
@@ -263,12 +262,8 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                     container.toastSuccess(savedNotice)
                 }
                 is HttpResponsePresentation.WriteExportOutcome.Failure -> {
-                    session.notice = ""
-                    session.error = container.t(
-                        "reformat.error.write",
-                        mapOf("message" to (outcome.error.message ?: target.path)),
-                    )
-                    container.toastError(session.error)
+                    notifyHttpWriteFailure(container, session, outcome.error, target.path) { persist() }
+                    return
                 }
             }
             persist()
@@ -276,8 +271,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
         }
         val payload = HttpResponseFind.payload(visible, session.responseTab)
         if (payload.isBlank()) {
-            session.error = container.t("http.responseEmpty")
-            persist()
+            notifyHttpFailure(container, session, container.t("http.responseEmpty")) { persist() }
             return
         }
         val target = chooseSaveFile()
@@ -294,12 +288,8 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                 container.toastSuccess(savedNotice)
             }
             is HttpResponsePresentation.WriteExportOutcome.Failure -> {
-                session.notice = ""
-                session.error = container.t(
-                    "reformat.error.write",
-                    mapOf("message" to (outcome.error.message ?: target.path)),
-                )
-                container.toastError(session.error)
+                notifyHttpWriteFailure(container, session, outcome.error, target.path) { persist() }
+                return
             }
         }
         persist()
@@ -307,8 +297,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
 
     fun send() {
         if (session.url.isBlank()) {
-            session.error = container.t("http.urlRequired")
-            persist()
+            notifyHttpFailure(container, session, container.t("http.urlRequired")) { persist() }
             return
         }
         val timeoutResult = HttpTimeoutSettings.commit(session.timeoutMs, settings.network.requestTimeoutMs)
@@ -339,7 +328,8 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
                 session.response = result
                 session.findIndex = HttpResponseFind.FIND_INDEX_UNSET
                 session.notice = "${result.status} ${result.statusText} · ${result.durationMs} ms"
-                session.error = result.errorCode?.let { messageFor(container, it, result.statusText) }.orEmpty()
+                val errorMessage = result.errorCode?.let { messageFor(container, it, result.statusText) }.orEmpty()
+                notifyHttpResponseFailure(container, session, result.errorCode, errorMessage)
                 container.history.save(
                     ToolId.Http.id,
                     draft.method.name,
@@ -1085,7 +1075,10 @@ private fun CurlDialog(container: AppContainer, session: HttpSession, onChanged:
                             session.curlValue = ""
                             session.error = ""
                         }
-                        .onFailure { session.error = it.message ?: container.t("http.error.INVALID_REQUEST") }
+                        .onFailure {
+                            val message = it.message ?: container.t("http.error.INVALID_REQUEST")
+                            notifyHttpFailure(container, session, message, onChanged)
+                        }
                     onChanged()
                 })
                 MooButton(container.t("common.cancel"), onClick = { session.curlOpen = false; onChanged() })
@@ -1254,6 +1247,62 @@ private fun chooseSaveFile(): File? {
     val directory = dialog.directory ?: return null
     val file = dialog.file ?: return null
     return File(directory, file)
+}
+
+private fun notifyHttpFailure(
+    container: AppContainer,
+    session: HttpSession,
+    message: String,
+    onPersist: () -> Unit,
+) {
+    session.notice = ""
+    session.error = message
+    if (HttpRequestPresentation.shouldToastClientValidation()) {
+        container.toastError(message)
+    }
+    onPersist()
+}
+
+private fun notifyHttpResponseFailure(
+    container: AppContainer,
+    session: HttpSession,
+    errorCode: HttpErrorCode?,
+    message: String,
+) {
+    session.error = message
+    if (HttpRequestPresentation.shouldToastResponseError(errorCode) && message.isNotBlank()) {
+        container.toastError(message)
+    }
+}
+
+private fun notifyHttpWriteFailure(
+    container: AppContainer,
+    session: HttpSession,
+    error: Throwable,
+    path: String,
+    onPersist: () -> Unit,
+) {
+    session.notice = ""
+    session.error = container.t(
+        "reformat.error.write",
+        mapOf("message" to (error.message ?: path)),
+    )
+    if (HttpResponsePresentation.shouldToastWriteFailure(error)) {
+        container.toastError(session.error)
+    }
+    onPersist()
+}
+
+private fun notifyHttpCopyFailure(
+    container: AppContainer,
+    session: HttpSession,
+    message: String,
+) {
+    session.notice = ""
+    session.error = message
+    if (HttpRequestPresentation.shouldToastCopyFailure()) {
+        container.toastError(message)
+    }
 }
 
 private fun messageFor(container: AppContainer, code: HttpErrorCode, raw: String): String {

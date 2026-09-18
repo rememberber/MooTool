@@ -20,6 +20,10 @@ object ReformatWiringPresentation {
             onFailure = { FormatRunOutcome.Failure(it) },
         )
 
+    fun shouldToastFormatFailure(error: Throwable): Boolean = true
+
+    fun shouldToastIoFailure(error: Throwable): Boolean = true
+
     fun formatErrorMessage(error: Throwable): FormatErrorMessage {
         val reformat = error as? ReformatException
         return if (reformat != null && reformat.line >= 1) {

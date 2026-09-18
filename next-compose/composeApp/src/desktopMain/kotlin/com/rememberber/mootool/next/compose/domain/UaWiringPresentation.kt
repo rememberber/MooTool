@@ -16,4 +16,6 @@ object UaWiringPresentation {
             onSuccess = { ParseOutcome.Success(it) },
             onFailure = { ParseOutcome.Failure(it) },
         )
+
+    fun shouldToastParseFailure(error: Throwable): Boolean = true
 }

@@ -46,6 +46,7 @@ import com.rememberber.mootool.next.compose.domain.QrException
 import com.rememberber.mootool.next.compose.domain.QrWiringPresentation
 import com.rememberber.mootool.next.compose.ui.components.mooQrGenerateButton
 import com.rememberber.mootool.next.compose.ui.components.mooQrOptionsRow
+import com.rememberber.mootool.next.compose.ui.components.mooQrPreviewActions
 import com.rememberber.mootool.next.compose.domain.QrTab
 import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.storage.VaultPathConfig
@@ -286,19 +287,25 @@ private fun GeneratePanel(
         right = {
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             PreviewBox(preview, container.t("qrcode.preview"), Modifier.weight(1f).fillMaxWidth())
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                Modifier.mooQrPreviewActions(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 MooButton(container.t("common.save"), enabled = QrWiringPresentation.hasPngOutput(session.pngBytes), p5Toolbar = true, onClick = {
                     val bytes = session.pngBytes ?: return@MooButton
                     val exportDir = VaultPathConfig.effectiveCustomRoot(container.settings.value.tools.exportDirectory)
                     val file = chooseSave(container.t("common.save"), exportDir) ?: return@MooButton
-                    runCatching { file.writeBytes(bytes) }
-                        .onSuccess {
+                    when (val outcome = QrWiringPresentation.runWritePngFile(file, bytes)) {
+                        QrWiringPresentation.WritePngOutcome.Success -> {
                             persistToolsExportDirectory(container, file)
                             session.notice = container.t("common.save")
                             container.toastSuccess(container.t("common.save"))
                             session.error = ""
                         }
-                        .onFailure { session.error = it.message ?: container.t("qrcode.error.generic") }
+                        is QrWiringPresentation.WritePngOutcome.Failure -> {
+                            notifyQrIoFailure(container, session, outcome.error, file.path, onChanged)
+                        }
+                    }
                     onChanged()
                 })
                 MooButton(container.t("common.action.copy"), enabled = QrWiringPresentation.hasPngOutput(session.pngBytes), p5Toolbar = true, onClick = {
@@ -351,9 +358,7 @@ private fun RecognizePanel(
                 MooButton(container.t("qrcode.fromClipboard"), p5Toolbar = true, onClick = {
                     val image = readClipboardImage()
                     if (image == null) {
-                        session.error = container.t("qrcode.clipboardEmpty")
-                        session.notice = ""
-                        onChanged()
+                        notifyQrFailure(container, session, container.t("qrcode.clipboardEmpty"), onChanged)
                         return@MooButton
                     }
                     session.recognitionName = container.t("qrcode.clipboard")
@@ -514,8 +519,7 @@ private fun generateQr(
                 )
                 }
                 is QrWiringPresentation.GenerateOutcome.Failure -> {
-                session.notice = ""
-                session.error = messageFor(container, result.error)
+                notifyQrFailure(container, session, result.error, onChanged)
                 }
             }
             onChanged()
@@ -553,8 +557,7 @@ private fun recognizeQr(
                     QrHistoryMetadata.encodeRecognize(),
                 )
             }.onFailure { error ->
-                session.notice = ""
-                session.error = messageFor(container, error)
+                notifyQrFailure(container, session, error, onChanged)
             }
             onChanged()
         }
@@ -563,6 +566,54 @@ private fun recognizeQr(
 
 private fun applyHistory(session: QrSession, item: HistoryRecord) {
     QrHistoryRestore.apply(session, item)
+}
+
+private fun notifyQrFailure(
+    container: AppContainer,
+    session: QrSession,
+    message: String,
+    onChanged: () -> Unit,
+) {
+    session.notice = ""
+    session.error = message
+    if (QrWiringPresentation.shouldToastErrorMessage()) {
+        container.toastError(message)
+    }
+    onChanged()
+}
+
+private fun notifyQrIoFailure(
+    container: AppContainer,
+    session: QrSession,
+    error: Throwable,
+    path: String,
+    onChanged: () -> Unit,
+) {
+    val message = container.t(
+        "reformat.error.write",
+        mapOf("message" to (error.message ?: path)),
+    )
+    session.error = message
+    session.notice = message
+    if (QrWiringPresentation.shouldToastOperationFailure(error)) {
+        container.toastError(message)
+    }
+    onChanged()
+}
+
+private fun notifyQrFailure(
+    container: AppContainer,
+    session: QrSession,
+    error: Throwable,
+    onChanged: () -> Unit,
+) {
+    if (!QrWiringPresentation.shouldToastOperationFailure(error)) {
+        session.notice = ""
+        session.error = messageFor(container, error)
+        onChanged()
+        return
+    }
+    notifyQrFailure(container, session, messageFor(container, error), onChanged)
 }
 
 private fun messageFor(container: AppContainer, error: Throwable): String {
@@ -627,9 +678,7 @@ private fun applyLogoFile(container: AppContainer, session: QrSession, file: Fil
             onChanged()
         }
         .onFailure { error ->
-            session.error = messageFor(container, error)
-            session.notice = ""
-            onChanged()
+            notifyQrFailure(container, session, error, onChanged)
         }
 }
 

@@ -26,6 +26,30 @@ class GitMergeProductFlowPresentationTest {
     }
 
     @Test
+    fun autoSelectPrefersEvidenceConflictFileAmongMany() {
+        val many = listOf(
+            "aaa.json" to true,
+            GitMergeProductFlowPresentation.EVIDENCE_CONFLICT_FILE to true,
+            "zzz.json" to true,
+        )
+        assertEquals(
+            GitMergeProductFlowPresentation.EVIDENCE_CONFLICT_FILE,
+            GitMergeProductFlowPresentation.autoSelectConflictPath(
+                merging = true,
+                conflicts = 3,
+                changes = many,
+                currentSelected = "",
+            ),
+        )
+        assertEquals(
+            GitMergeProductFlowPresentation.EVIDENCE_CONFLICT_FILE,
+            GitMergeProductFlowPresentation.preferredConflictSelectionPath(
+                listOf("aaa.json", GitMergeProductFlowPresentation.EVIDENCE_CONFLICT_FILE),
+            ),
+        )
+    }
+
+    @Test
     fun autoSelectSkipsWhenConflictAlreadySelected() {
         assertNull(
             GitMergeProductFlowPresentation.autoSelectConflictPath(
@@ -46,6 +70,24 @@ class GitMergeProductFlowPresentationTest {
         assertEquals(
             "git.mergeProductFlowResolve",
             GitMergeProductFlowPresentation.productFlowHintKey(true, 1, selectedConflict = true),
+        )
+        assertEquals(
+            "git.rebaseProductFlowSelect",
+            GitMergeProductFlowPresentation.productFlowHintKey(
+                true,
+                1,
+                selectedConflict = false,
+                operation = "rebase",
+            ),
+        )
+        assertEquals(
+            "git.rebaseProductFlowResolve",
+            GitMergeProductFlowPresentation.productFlowHintKey(
+                true,
+                1,
+                selectedConflict = true,
+                operation = "rebase",
+            ),
         )
     }
 

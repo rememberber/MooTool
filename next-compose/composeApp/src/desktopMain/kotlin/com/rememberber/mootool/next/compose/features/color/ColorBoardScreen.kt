@@ -321,8 +321,7 @@ fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
                         refresh()
                     }
                     ColorHistoryRestore.Result.InvalidColor -> {
-                        session.error = container.t("color.error.invalid")
-                        refresh()
+                        notifyColorFailure(container, session, container.t("color.error.invalid")) { refresh() }
                     }
                 }
             },
@@ -653,9 +652,7 @@ private fun pickScreen(
                 )
             }.onFailure { error ->
                 session.picking = false
-                session.notice = ""
-                session.error = messageFor(container, error)
-                onChanged()
+                notifyColorFailure(container, session, error, onChanged)
             }
         }
     }
@@ -686,9 +683,7 @@ private fun applyCode(container: AppContainer, session: ColorSession, onChanged:
     runCatching { ColorEngine.parseColor(session.code) }
         .onSuccess { color -> selectColor(container, session, color, false, container.t("color.inputColor"), onChanged) }
         .onFailure { error ->
-            session.notice = ""
-            session.error = messageFor(container, error)
-            onChanged()
+            notifyColorFailure(container, session, error, onChanged)
         }
 }
 
@@ -703,9 +698,7 @@ private fun selectHex(
     runCatching { ColorEngine.parseColor(hex) }
         .onSuccess { selectColor(container, session, it, asSecondary, operation, onChanged) }
         .onFailure { error ->
-            session.notice = ""
-            session.error = messageFor(container, error)
-            onChanged()
+            notifyColorFailure(container, session, error, onChanged)
         }
 }
 
@@ -793,8 +786,8 @@ private fun addFolder(container: AppContainer, session: ColorSession, onChanged:
             onChanged()
         }
         .onFailure { error ->
-            session.error = if (error.message == "duplicate") container.t("favorite.duplicateFolder") else container.t("color.error.folder")
-            onChanged()
+            val message = if (error.message == "duplicate") container.t("favorite.duplicateFolder") else container.t("color.error.folder")
+            notifyColorFailure(container, session, message, onChanged)
         }
 }
 
@@ -808,8 +801,8 @@ private fun renameFolder(container: AppContainer, session: ColorSession, onChang
             onChanged()
         }
         .onFailure { error ->
-            session.error = if (error.message == "duplicate") container.t("favorite.duplicateFolder") else container.t("color.error.folder")
-            onChanged()
+            val message = if (error.message == "duplicate") container.t("favorite.duplicateFolder") else container.t("color.error.folder")
+            notifyColorFailure(container, session, message, onChanged)
         }
 }
 
@@ -820,6 +813,35 @@ private fun deleteFolder(container: AppContainer, session: ColorSession, onChang
     session.notice = container.t("color.deleteFolder")
     session.error = ""
     onChanged()
+}
+
+private fun notifyColorFailure(
+    container: AppContainer,
+    session: ColorSession,
+    message: String,
+    onChanged: () -> Unit,
+) {
+    session.notice = ""
+    session.error = message
+    if (ColorWiringPresentation.shouldToastErrorMessage()) {
+        container.toastError(message)
+    }
+    onChanged()
+}
+
+private fun notifyColorFailure(
+    container: AppContainer,
+    session: ColorSession,
+    error: Throwable,
+    onChanged: () -> Unit,
+) {
+    if (!ColorWiringPresentation.shouldToastOperationFailure(error)) {
+        session.notice = ""
+        session.error = messageFor(container, error)
+        onChanged()
+        return
+    }
+    notifyColorFailure(container, session, messageFor(container, error), onChanged)
 }
 
 private fun messageFor(container: AppContainer, error: Throwable): String =

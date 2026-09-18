@@ -13,4 +13,32 @@ object JsonInspectorPresentation {
     fun duplicatePathClickEnabled(path: String): Boolean = path.isNotBlank()
 
     fun pathCopyEnabled(selectedPath: String): Boolean = selectedPath.isNotBlank()
+
+    sealed interface CopyJsonPathOutcome {
+        data object Empty : CopyJsonPathOutcome
+        data object Success : CopyJsonPathOutcome
+        data object Failure : CopyJsonPathOutcome
+    }
+
+    fun runCopyJsonPath(path: String, copyText: (String) -> Boolean): CopyJsonPathOutcome =
+        runCopyResultText(path, copyText)
+
+    fun resultCopyEnabled(displayText: String): Boolean = displayText.isNotBlank()
+
+    fun runCopyResultText(text: String, copyText: (String) -> Boolean): CopyJsonPathOutcome {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return CopyJsonPathOutcome.Empty
+        return if (copyText(trimmed)) CopyJsonPathOutcome.Success else CopyJsonPathOutcome.Failure
+    }
+
+    fun shouldToastPathCopySuccess(): Boolean = true
+
+    fun shouldToastPathCopyFailure(): Boolean = true
+
+    fun shouldToastResultCopySuccess(): Boolean = true
+
+    fun shouldToastResultCopyFailure(): Boolean = true
+
+    /** 对齐 Electron `showError`：JSONPath 查询失败写 notice 并 error toast。 */
+    fun shouldToastPathQueryFailure(): Boolean = true
 }

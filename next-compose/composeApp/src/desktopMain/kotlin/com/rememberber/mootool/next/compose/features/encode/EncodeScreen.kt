@@ -319,9 +319,20 @@ private fun convert(container: AppContainer, session: EncodeSession, forward: Bo
         is EncodeWiringPresentation.ConvertOutcome.Failure -> {
             session.notice = ""
             val message = messageFor(container, outcome.error)
-            session.error = message
-            container.toastError(message)
+            notifyEncodeFailure(container, session, message, outcome.error)
         }
+    }
+}
+
+private fun notifyEncodeFailure(
+    container: AppContainer,
+    session: EncodeSession,
+    message: String,
+    error: Throwable,
+) {
+    session.error = message
+    if (EncodeWiringPresentation.shouldToastConvertFailure(error)) {
+        container.toastError(message)
     }
 }
 

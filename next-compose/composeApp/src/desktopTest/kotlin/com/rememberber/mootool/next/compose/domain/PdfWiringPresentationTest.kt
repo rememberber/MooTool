@@ -28,4 +28,10 @@ class PdfWiringPresentationTest {
         val outcome = PdfWiringPresentation.inspectFile(java.nio.file.Path.of("/nonexistent/mootool-562.pdf"))
         assertTrue(outcome is PdfWiringPresentation.InspectOutcome.Failure)
     }
+
+    @Test
+    fun shouldToastJobFailureSkipsCancelled() {
+        assertFalse(PdfWiringPresentation.shouldToastJobFailure(PdfException("cancelled", "x")))
+        assertTrue(PdfWiringPresentation.shouldToastJobFailure(IllegalStateException("fail")))
+    }
 }

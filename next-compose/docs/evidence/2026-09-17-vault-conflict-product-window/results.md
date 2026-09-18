@@ -17,8 +17,27 @@
 | 冲突对话框「重新加载」「另存副本」可点击 | `VaultConflictDialogInteractionTest.reloadAndSaveCopyButtonsInvokeCallbacks`（DIFF-448） |
 | merge 中 pull 错误优先于 remote | `GitPullGuardTest`（DIFF-448） |
 | Git pull merge 冲突 resolve/continue | `GitEngineTest.pullLeavesMergeConflictWhenHistoriesDiverge`（DIFF-137） |
+| §B 证据脚本等价链 + 面板 Presentation | `GitMergeProductEvidenceFlowTest` + `preferredConflictSelectionPath`（DIFF-604） |
+| §B merge 冲突期 push/pull 禁用、完成后 push 恢复 | `GitVaultRemotePresentation.pushActionEnabled` + `GitMergeProductEvidenceFlowTest`（DIFF-609） |
+| merge continue 钮 Compose 焦点帧 | `199-compose-git-merge-continue-tab-focus.png`（DIFF-604） |
+| merge 进行中 push 禁用态 Compose 帧 | `204-compose-git-merge-push-disabled-tab-focus.png`（DIFF-609） |
+| §C 证据脚本等价链 + rebase 走查提示 | `GitRebaseProductEvidenceFlowTest` + `git.rebaseProductFlow*`（DIFF-612）；自动选中 `conflict.json` → `git.rebaseProductFlowResolve`、完成后 pull 恢复（DIFF-617） |
+| rebase continue 钮 Compose 焦点帧 | `207-compose-git-rebase-continue-tab-focus.png`（DIFF-612） |
+| rebase §C 走查 hint + 刷新钮 Compose 帧 | `209-compose-git-rebase-flow-hint-tab-focus.png`（DIFF-614） |
+| rebase §C ours/theirs 解析钮 Compose 帧 | `210-compose-git-rebase-resolve-tab-focus.png`（DIFF-615） |
+| rebase 冲突期 push/pull 禁用 Compose 帧 | `211-compose-git-rebase-push-pull-disabled-tab-focus.png`（DIFF-616） |
+| merge/rebase 冲突期提交禁用 Compose 帧 | `212`/`213`（DIFF-618；`GitOperationPresentation.commitEnabled`） |
+| rebase 冲突期 fetch 可用 / pull 禁用 Compose 帧 | `214`（DIFF-619） |
 | Compose Tab 焦点帧 | `141`–`144`（DIFF-436～439） |
 | JSON Vault 冲突 Overlay 完整链（非主窗） | `147-compose-json-vault-conflict-overlay-keep-tab-focus.png`（`VaultConflictOverlayCaptureTest`，DIFF-542/543；**不能**代替 §A 产品主窗 PNG） |
+| §A 证据脚本 `sample.json` 监视器→冲突链 | `VaultConflictProductEvidencePresentation` + `VaultConflictProductEvidenceFlowTest`（DIFF-605） |
+| §A 证据 sample 冲突 reload 帧 | `200-compose-vault-external-conflict-sample-reload-tab-focus.png`（DIFF-605） |
+| §A 证据 `sample.json` 外部删除→冲突链 | `VaultConflictDeletedProductEvidenceFlowTest`（DIFF-610） |
+| §A 证据 sample 外部删除 saveCopy 帧 | `205-compose-vault-external-conflict-sample-deleted-savecopy-tab-focus.png`（DIFF-610） |
+| §A F01 `sample-external.md` 监视器→冲突链 | `QuickNoteVaultConflictProductEvidenceFlowTest`（DIFF-607） |
+| §A F01 sample 冲突 keep 帧 | `202-compose-quicknote-external-conflict-keep-tab-focus.png`（DIFF-607） |
+| §A F01 `sample-external.md` 外部删除→冲突链 | `QuickNoteVaultConflictDeletedProductEvidenceFlowTest`（DIFF-611） |
+| §A F01 sample 外部删除 saveCopy 帧 | `206-compose-quicknote-external-conflict-deleted-savecopy-tab-focus.png`（DIFF-611） |
 
 ## 待本机产品窗（通过后才可标 F04/F01 冲突 UI 已验收）
 
@@ -61,6 +80,21 @@ export MOOTOOL_COMPOSE_DATA_DIR="$(mktemp -d /tmp/mootool-compose-git-evidence-X
 2. 主窗打开 **Git 面板**，选中冲突文件，应显示「使用本地版本 / 使用远端版本」。
 3. 分别 resolve 后 **继续合并**，工作区内容与 Electron 行为一致。
 4. 产品窗截图：`NNN-json-vault-git-merge-conflict-product.png`。
+
+### C. Vault Git rebase 冲突面板
+
+0. 使用**独立**隔离目录（勿与 §A/§B 共用；勿 `eval` 整段脚本输出）：
+
+```bash
+export MOOTOOL_COMPOSE_DATA_DIR="$(mktemp -d /tmp/mootool-compose-git-rebase-evidence-XXXX)"
+./scripts/prepare-git-rebase-conflict-evidence.sh   # 断言 rebase-merge + conflict.json 未合并
+./gradlew :composeApp:runDistributable --offline
+```
+
+1. 主窗打开 **Git 面板**，应显示变基进行中（`git.operationRebase`）与 §C 走查提示（`git.rebaseProductFlow*`）。
+2. 变更列表应自动选中 `conflict.json`；resolve 后冲突计数归零，点「继续合并 / Rebase」完成变基。
+3. 变基冲突期 push/pull 应禁用（与 merge 相同 `GitVaultRemotePresentation` 逻辑；Compose 帧 `204` 为 merge 态示意）。
+4. 产品窗截图：`NNN-json-vault-git-rebase-conflict-product.png`。
 
 ## 执行记录
 

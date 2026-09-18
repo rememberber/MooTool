@@ -1,5 +1,7 @@
 package com.rememberber.mootool.next.compose.domain
 
+import kotlinx.coroutines.CancellationException
+
 /** F25 系统信息采集工具栏启用守卫（可单测）。 */
 object HardwareWiringPresentation {
     fun refreshEnabled(loading: Boolean): Boolean = !loading
@@ -18,4 +20,8 @@ object HardwareWiringPresentation {
             onSuccess = { CollectOutcome.Success(it) },
             onFailure = { CollectOutcome.Failure(it) },
         )
+
+    fun shouldToastCollectFailure(error: Throwable): Boolean = error !is CancellationException
+
+    fun shouldToastLocalFailure(): Boolean = true
 }

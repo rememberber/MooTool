@@ -38,4 +38,9 @@ class TimeWiringPresentationTest {
         val outcome = TimeWiringPresentation.runTimestampToLocal("nope", TimestampUnit.Second, "UTC")
         assertTrue(outcome is TimeWiringPresentation.ConvertOutcome.Failure)
     }
+
+    @Test
+    fun shouldToastConvertFailure() {
+        assertTrue(TimeWiringPresentation.shouldToastConvertFailure(TimeException("invalid", "")))
+    }
 }

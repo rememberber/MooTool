@@ -57,6 +57,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooMenu
 import com.rememberber.mootool.next.compose.ui.components.MooMenuItem
 import com.rememberber.mootool.next.compose.ui.components.MooStatusPill
 import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
+import com.rememberber.mootool.next.compose.ui.components.mooTimeConvertActions
 import com.rememberber.mootool.next.compose.ui.components.mooTimeCurrentBand
 import com.rememberber.mootool.next.compose.ui.components.mooTimeQuickZones
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
@@ -213,7 +214,7 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.mooTimeConvertActions(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MooButton(
                     container.t("time.toLocal"),
                     prominent = true,
@@ -371,8 +372,7 @@ private fun convertToLocal(container: AppContainer, session: TimeSession, refres
             saveHistory(container, session, notice, session.timestamp, result.localTime)
         }
         is TimeWiringPresentation.ConvertOutcome.Failure -> {
-            session.notice = ""
-            session.error = messageFor(container, outcome.error)
+            notifyTimeConvertFailure(container, session, outcome.error)
         }
         is TimeWiringPresentation.ConvertOutcome.ToTimestamp -> Unit
     }
@@ -390,12 +390,20 @@ private fun convertToTimestamp(container: AppContainer, session: TimeSession, re
             saveHistory(container, session, notice, session.localTime, outcome.timestamp)
         }
         is TimeWiringPresentation.ConvertOutcome.Failure -> {
-            session.notice = ""
-            session.error = messageFor(container, outcome.error)
+            notifyTimeConvertFailure(container, session, outcome.error)
         }
         is TimeWiringPresentation.ConvertOutcome.ToLocal -> Unit
     }
     refresh()
+}
+
+private fun notifyTimeConvertFailure(container: AppContainer, session: TimeSession, error: Throwable) {
+    session.notice = ""
+    val message = messageFor(container, error)
+    session.error = message
+    if (TimeWiringPresentation.shouldToastConvertFailure(error)) {
+        container.toastError(message)
+    }
 }
 
 private fun saveHistory(container: AppContainer, session: TimeSession, summary: String, input: String, output: String) {

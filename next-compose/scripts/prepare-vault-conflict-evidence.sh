@@ -37,6 +37,10 @@ export MOOTOOL_COMPOSE_DATA_DIR="${ROOT}"
 # 随手记 Vault 根（可选 §A 第二组 PNG）: ${VAULT_QN}
 # 外部改写（步骤 3）:
 #   printf '%s\\n' '{"disk":true}' > "${VAULT_JSON}/sample.json"
+# 外部删除（步骤 3b，须先打开 sample.json 并保持脏编辑）:
+#   rm "${VAULT_JSON}/sample.json"
+# 随手记外部删除（步骤 3c，须先打开 sample-external.md 并保持脏编辑）:
+#   rm "${VAULT_QN}/sample-external.md"
 $(mootool_evidence_print_run_distributable_hint)
 $(mootool_evidence_print_vault_conflict_product_hint)
 # 登记: docs/evidence/2026-09-17-vault-conflict-product-window/results.md §A

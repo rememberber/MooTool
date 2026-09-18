@@ -427,9 +427,20 @@ private fun runOp(
         is ProtobufWiringPresentation.OperationOutcome.Failure -> {
             session.notice = ""
             val message = messageFor(container, outcome.error)
-            session.error = message
-            container.toastError(message)
+            notifyProtobufFailure(container, session, message, outcome.error)
         }
+    }
+}
+
+private fun notifyProtobufFailure(
+    container: AppContainer,
+    session: ProtobufSession,
+    message: String,
+    error: Throwable,
+) {
+    session.error = message
+    if (ProtobufWiringPresentation.shouldToastOperationFailure(error)) {
+        container.toastError(message)
     }
 }
 

@@ -141,8 +141,7 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
     fun saveCurrent(showNotice: Boolean = true): Boolean {
         val nextName = session.name.trim()
         if (nextName.isEmpty()) {
-            session.error = container.t("host.error.name")
-            persist()
+            notifyHostFailure(container, session, container.t("host.error.name")) { persist() }
             return false
         }
         return runCatching {
@@ -158,8 +157,7 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
             persist()
             true
         }.getOrElse {
-            session.error = it.message ?: container.t("host.error.generic")
-            persist()
+            notifyHostFailure(container, session, it.message ?: container.t("host.error.generic")) { persist() }
             false
         }
     }
@@ -313,8 +311,13 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                                 "reformat.error.read",
                                 mapOf("message" to (outcome.error.message ?: file.path)),
                             )
-                            session.error = message
-                            container.toastError(message)
+                            notifyHostFailure(
+                                container,
+                                session,
+                                message,
+                                outcome.error,
+                                io = true,
+                            ) { persist() }
                         }
                     }
                 },
@@ -335,8 +338,13 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                                 "reformat.error.write",
                                 mapOf("message" to (outcome.error.message ?: file.path)),
                             )
-                            session.error = message
-                            container.toastError(message)
+                            notifyHostFailure(
+                                container,
+                                session,
+                                message,
+                                outcome.error,
+                                io = true,
+                            ) { persist() }
                         }
                     }
                 },
@@ -392,7 +400,11 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                                                 session.error = ""
                                             }
                                             is HostWiringPresentation.SystemReadOutcome.Failure ->
-                                                session.error = messageFor(container, result.error)
+                                                notifyHostFailure(
+                                                    container,
+                                                    session,
+                                                    messageFor(container, result.error),
+                                                ) { persist() }
                                         }
                                         persist()
                                     }
@@ -435,7 +447,11 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                                             session.error = ""
                                         }
                                         is HostWiringPresentation.ApplyPreviewOutcome.Failure ->
-                                            session.error = messageFor(container, preview.error)
+                                            notifyHostFailure(
+                                                container,
+                                                session,
+                                                messageFor(container, preview.error),
+                                            ) { persist() }
                                     }
                                     persist()
                                 }
@@ -466,7 +482,11 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                                             session.error = ""
                                         }
                                         is HostWiringPresentation.RestoreOutcome.Failure ->
-                                            session.error = messageFor(container, result.error)
+                                            notifyHostFailure(
+                                                container,
+                                                session,
+                                                messageFor(container, result.error),
+                                            ) { persist() }
                                     }
                                     persist()
                                 }
@@ -600,7 +620,11 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                                     )
                                     }
                                     is HostWiringPresentation.ApplyOutcome.Failure ->
-                                        session.error = messageFor(container, result.error)
+                                        notifyHostFailure(
+                                            container,
+                                            session,
+                                            messageFor(container, result.error),
+                                        ) { persist() }
                                 }
                                 persist()
                             }
@@ -623,8 +647,7 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                     MooButton(container.t("common.save"), prominent = true, onClick = {
                         val nextName = session.renameValue.trim()
                         if (nextName.isEmpty() || session.selectedId.isBlank()) {
-                            session.error = container.t("host.error.name")
-                            persist()
+                            notifyHostFailure(container, session, container.t("host.error.name")) { persist() }
                             return@MooButton
                         }
                         runCatching { container.hostProfiles.save(session.selectedId, nextName, session.content) }
@@ -637,7 +660,13 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                                 reloadProfiles()
                                 container.notifyHostProfileMenuChanged()
                             }
-                            .onFailure { session.error = it.message ?: container.t("host.error.generic") }
+                            .onFailure {
+                                notifyHostFailure(
+                                    container,
+                                    session,
+                                    it.message ?: container.t("host.error.generic"),
+                                ) { persist() }
+                            }
                         persist()
                     })
                     MooButton(container.t("common.cancel"), onClick = { session.renameOpen = false; persist() })
@@ -967,6 +996,26 @@ private fun pickHostFile(container: AppContainer, save: Boolean, defaultName: St
     ) ?: return null
     if (save) persistToolsExportDirectory(container, file)
     return file
+}
+
+private fun notifyHostFailure(
+    container: AppContainer,
+    session: HostSession,
+    message: String,
+    error: Throwable = IllegalStateException(message),
+    io: Boolean = false,
+    onPersist: () -> Unit,
+) {
+    session.error = message
+    val shouldToast = if (io) {
+        HostWiringPresentation.shouldToastIoFailure(error)
+    } else {
+        HostWiringPresentation.shouldToastOperationFailure(error)
+    }
+    if (shouldToast) {
+        container.toastError(message)
+    }
+    onPersist()
 }
 
 private fun messageFor(container: AppContainer, error: Throwable): String {

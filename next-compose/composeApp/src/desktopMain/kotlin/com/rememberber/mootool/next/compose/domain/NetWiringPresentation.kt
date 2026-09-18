@@ -54,4 +54,9 @@ object NetWiringPresentation {
             PortScanStart.Blocked(error.code)
         }
     }
+
+    fun shouldToastNetworkError(errorCode: NetworkErrorCode?): Boolean =
+        errorCode != null && errorCode != NetworkErrorCode.ABORTED
+
+    fun shouldToastLocalFailure(): Boolean = true
 }

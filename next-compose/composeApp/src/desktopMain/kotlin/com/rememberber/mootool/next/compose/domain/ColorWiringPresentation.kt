@@ -10,4 +10,8 @@ object ColorWiringPresentation {
 
     fun runFormatColor(primary: RgbColor, format: ColorFormat): String =
         ColorEngine.formatColor(primary, format)
+
+    fun shouldToastOperationFailure(error: Throwable): Boolean = true
+
+    fun shouldToastErrorMessage(): Boolean = true
 }

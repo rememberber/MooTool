@@ -51,4 +51,9 @@ class TextDiffPresentationTest {
         val outcome = TextDiffPresentation.runReadImportFile(file)
         assertTrue(outcome is TextDiffPresentation.ImportOutcome.Failure)
     }
+
+    @Test
+    fun shouldToastImportFailure() {
+        assertTrue(TextDiffPresentation.shouldToastImportFailure(IllegalStateException()))
+    }
 }
