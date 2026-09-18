@@ -122,5 +122,10 @@ class GitOperationPresentationTest {
         assertFalse(GitOperationPresentation.resolveConflictEnabled(busy = true))
         assertTrue(GitOperationPresentation.refreshEnabled(busy = false))
         assertTrue(GitOperationPresentation.abortConfirmEnabled(busy = false))
+        assertFalse(GitOperationPresentation.refreshActionEnabled(busy = true))
+        assertTrue(GitOperationPresentation.discardActionEnabled(busy = false))
+        assertFalse(GitOperationPresentation.discardActionEnabled(busy = true))
+        assertTrue(GitOperationPresentation.abortActionEnabled(busy = false))
+        assertTrue(GitOperationPresentation.resolveConflictActionEnabled(busy = false))
     }
 }

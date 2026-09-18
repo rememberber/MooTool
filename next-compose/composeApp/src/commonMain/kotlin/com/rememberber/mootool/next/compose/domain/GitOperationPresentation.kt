@@ -70,6 +70,18 @@ object GitOperationPresentation {
 
     fun discardEnabled(busy: Boolean): Boolean = !busy
 
+    /** 对齐 `VaultGitDialog` 刷新钮：同 [refreshEnabled]。 */
+    fun refreshActionEnabled(busy: Boolean): Boolean = refreshEnabled(busy)
+
+    /** 对齐 `VaultGitDialog` 丢弃变更钮：同 [discardEnabled]。 */
+    fun discardActionEnabled(busy: Boolean): Boolean = discardEnabled(busy)
+
+    /** 对齐 `VaultGitDialog` 中止 merge/rebase 确认钮：同 [abortConfirmEnabled]。 */
+    fun abortActionEnabled(busy: Boolean): Boolean = abortConfirmEnabled(busy)
+
+    /** 对齐 `VaultGitDialog` ours/theirs：同 [resolveConflictEnabled]。 */
+    fun resolveConflictActionEnabled(busy: Boolean): Boolean = resolveConflictEnabled(busy)
+
     /** 对齐 Electron `VaultGitDialog`：merge/rebase 或存在未解决冲突时显示 abort。 */
     fun showAbortAction(merging: Boolean, conflicts: Int): Boolean = merging || conflicts > 0
 

@@ -53,7 +53,9 @@ object GitMergeProductFlowPresentation {
         merging: Boolean,
         selectedConflict: Boolean,
         busy: Boolean,
-    ): Boolean = !busy && showResolveActions(merging, selectedConflict)
+    ): Boolean =
+        GitOperationPresentation.resolveConflictActionEnabled(busy) &&
+            showResolveActions(merging, selectedConflict)
 
     /** 产品主窗 merge/rebase 走查：全部冲突已标记后继续（§B continue 钮）。 */
     fun mergeContinueActionEnabled(merging: Boolean, conflicts: Int, busy: Boolean): Boolean =

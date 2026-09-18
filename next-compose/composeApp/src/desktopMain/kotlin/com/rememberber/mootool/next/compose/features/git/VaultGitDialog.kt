@@ -240,7 +240,7 @@ fun VaultGitDialog(
                         prominent = true,
                         danger = true,
                         p5Toolbar = true,
-                        enabled = GitOperationPresentation.abortConfirmEnabled(busy),
+                        enabled = GitOperationPresentation.abortActionEnabled(busy),
                         onClick = {
                             confirmDiscardPath = null
                             runAction(
@@ -268,7 +268,7 @@ fun VaultGitDialog(
                         prominent = true,
                         danger = true,
                         p5Toolbar = true,
-                        enabled = GitOperationPresentation.abortConfirmEnabled(busy),
+                        enabled = GitOperationPresentation.abortActionEnabled(busy),
                         onClick = {
                             confirmAbort = false
                             runAction(
@@ -373,7 +373,7 @@ fun VaultGitDialog(
                     MooButton(
                         container.t("git.refresh"),
                         p5Toolbar = true,
-                        enabled = GitOperationPresentation.refreshEnabled(busy),
+                        enabled = GitOperationPresentation.refreshActionEnabled(busy),
                         onClick = { load() },
                         leading = { GitPanelIcon(GitPanelIconKind.Refresh, colors.textBody) },
                     )
@@ -424,7 +424,7 @@ fun VaultGitDialog(
                             container.t(GitOperationPresentation.abortButtonKey(status.operation)),
                             danger = true,
                             p5Toolbar = true,
-                            enabled = GitOperationPresentation.abortConfirmEnabled(busy),
+                            enabled = GitOperationPresentation.abortActionEnabled(busy),
                             onClick = { confirmAbort = true },
                             leading = { GitPanelIcon(GitPanelIconKind.Merge, colors.danger) },
                         )
@@ -599,7 +599,7 @@ fun VaultGitDialog(
                                             container.t("git.discard"),
                                             danger = true,
                                             p5Toolbar = true,
-                                            enabled = !busy && GitOperationPresentation.discardEnabled(busy),
+                                            enabled = GitOperationPresentation.discardActionEnabled(busy),
                                             onClick = { confirmDiscardPath = selectedChange.path },
                                             leading = { GitPanelIcon(GitPanelIconKind.Undo, colors.danger) },
                                         )
