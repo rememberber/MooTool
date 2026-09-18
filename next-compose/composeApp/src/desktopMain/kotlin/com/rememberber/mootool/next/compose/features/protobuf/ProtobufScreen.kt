@@ -94,23 +94,30 @@ fun ProtobufScreen(container: AppContainer, detached: Boolean) {
                 moreLabel = container.t("json.action.overflow"),
                 actions = buildList {
                     add(OverflowAction(container.t("common.action.history")) { session.historyOpen = true; refresh() })
-                    add(OverflowAction(container.t("protobuf.copy")) {
-                        val content = ProtobufWiringPresentation.copyPayload(
-                            session.tab,
-                            session.wireOutput,
-                            session.base64,
-                            session.hex,
-                            session.binary,
-                        )
-                        if (content.isEmpty()) {
-                            session.notice = container.t("protobuf.nothingToCopy")
-                        } else {
+                    add(
+                        OverflowAction(
+                            label = container.t("protobuf.copy"),
+                            enabled = ProtobufWiringPresentation.copyPayloadActionEnabled(
+                                session.tab,
+                                session.wireOutput,
+                                session.base64,
+                                session.hex,
+                                session.binary,
+                            ),
+                        ) {
+                            val content = ProtobufWiringPresentation.copyPayload(
+                                session.tab,
+                                session.wireOutput,
+                                session.base64,
+                                session.hex,
+                                session.binary,
+                            )
                             container.copyText(content)
                             session.notice = container.t("common.copied")
                             session.error = ""
-                        }
-                        refresh()
-                    })
+                            refresh()
+                        },
+                    )
                     if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.Protobuf) })
                 }
             )
@@ -222,7 +229,7 @@ private fun JsonTab(
                     container.t("protobuf.toBinary"),
                     prominent = true,
                     p5Toolbar = true,
-                    enabled = ProtobufWiringPresentation.canJsonToBinary(session.proto, session.messageName, session.json),
+                    enabled = ProtobufWiringPresentation.jsonToBinaryActionEnabled(session.proto, session.messageName, session.json),
                     onClick = {
                     runOp(
                         container,
@@ -240,7 +247,7 @@ private fun JsonTab(
                 MooButton(
                     container.t("protobuf.toJson"),
                     p5Toolbar = true,
-                    enabled = ProtobufWiringPresentation.canBinaryToJson(session.proto, session.messageName, session.binary),
+                    enabled = ProtobufWiringPresentation.binaryToJsonActionEnabled(session.proto, session.messageName, session.binary),
                     onClick = {
                     runOp(
                         container,
@@ -299,7 +306,7 @@ private fun WireTab(
                     container.t("protobuf.decode"),
                     prominent = true,
                     p5Toolbar = true,
-                    enabled = ProtobufWiringPresentation.canDecodeWire(session.wireInput),
+                    enabled = ProtobufWiringPresentation.decodeWireActionEnabled(session.wireInput),
                     onClick = {
                     runOp(
                         container,
@@ -356,7 +363,7 @@ private fun ConvertTab(
                     container.t("protobuf.hexToBase64"),
                     prominent = true,
                     p5Toolbar = true,
-                    enabled = ProtobufWiringPresentation.canConvertHex(session.hex),
+                    enabled = ProtobufWiringPresentation.convertHexActionEnabled(session.hex),
                     onClick = {
                     runOp(
                         container,
@@ -374,7 +381,7 @@ private fun ConvertTab(
                 MooButton(
                     container.t("protobuf.base64ToHex"),
                     p5Toolbar = true,
-                    enabled = ProtobufWiringPresentation.canConvertBase64(session.base64),
+                    enabled = ProtobufWiringPresentation.convertBase64ActionEnabled(session.base64),
                     onClick = {
                     runOp(
                         container,

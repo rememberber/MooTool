@@ -143,7 +143,7 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
             MooButton(
                 container.t("hardware.refresh"),
                 onClick = { collect() },
-                enabled = HardwareWiringPresentation.refreshEnabled(session.loading),
+                enabled = HardwareWiringPresentation.refreshActionEnabled(session.loading),
                 p5Toolbar = true,
             )
             OverflowActionCluster(
@@ -153,7 +153,10 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
                     add(
                         OverflowAction(
                             container.t("hardware.copy"),
-                            enabled = HardwareWiringPresentation.copyReportEnabled(session.loading, groups.isNotEmpty()),
+                            enabled = HardwareWiringPresentation.copyReportActionEnabled(
+                                session.loading,
+                                groups.isNotEmpty(),
+                            ),
                         ) {
                         if (snapshot == null) return@OverflowAction
                         val text = HardwareEngine.plainText(snapshot, session.tab, session.revealSensitive) { container.t(it) }

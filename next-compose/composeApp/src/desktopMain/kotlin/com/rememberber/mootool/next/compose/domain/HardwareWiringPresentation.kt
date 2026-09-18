@@ -6,7 +6,12 @@ import kotlinx.coroutines.CancellationException
 object HardwareWiringPresentation {
     fun refreshEnabled(loading: Boolean): Boolean = !loading
 
+    fun refreshActionEnabled(loading: Boolean): Boolean = refreshEnabled(loading)
+
     fun copyReportEnabled(loading: Boolean, hasGroups: Boolean): Boolean = !loading && hasGroups
+
+    fun copyReportActionEnabled(loading: Boolean, hasGroups: Boolean): Boolean =
+        copyReportEnabled(loading, hasGroups)
 
     fun interfacesCommandEnabled(loading: Boolean, running: Boolean): Boolean = !loading && !running
 

@@ -13,6 +13,50 @@ object CryptoWiringPresentation {
     fun canSymmetricCrypt(keyValid: Boolean, busy: Boolean = false): Boolean =
         keyValid && !busy
 
+    fun publicEncryptActionEnabled(status: AsymmetricKeyStatus, asymBusy: Boolean): Boolean =
+        !asymBusy && status.publicReady
+
+    fun privateDecryptActionEnabled(status: AsymmetricKeyStatus, asymBusy: Boolean): Boolean =
+        !asymBusy && status.privateReady
+
+    fun privateEncryptActionEnabled(
+        algorithm: AsymmetricAlgorithm,
+        status: AsymmetricKeyStatus,
+        asymBusy: Boolean,
+    ): Boolean = rsaPrivateReverseEnabled(algorithm) && !asymBusy && status.privateReady
+
+    fun publicDecryptActionEnabled(
+        algorithm: AsymmetricAlgorithm,
+        status: AsymmetricKeyStatus,
+        asymBusy: Boolean,
+    ): Boolean = rsaPrivateReverseEnabled(algorithm) && !asymBusy && status.publicReady
+
+    fun signActionEnabled(status: AsymmetricKeyStatus, asymBusy: Boolean): Boolean =
+        !asymBusy && status.privateReady
+
+    fun verifyActionEnabled(
+        status: AsymmetricKeyStatus,
+        plain: String,
+        signature: String,
+        asymBusy: Boolean,
+    ): Boolean =
+        !asymBusy && status.publicReady && plain.isNotBlank() && signature.isNotBlank()
+
+    fun encodeBaseActionEnabled(plain: String): Boolean = plain.isNotBlank()
+
+    fun decodeBaseActionEnabled(cipher: String): Boolean = cipher.isNotBlank()
+
+    fun cipherCopyActionEnabled(value: String): Boolean = value.isNotBlank()
+
+    fun randomCopyActionEnabled(value: String): Boolean = cipherCopyActionEnabled(value)
+
+    fun randomGenerateActionEnabled(kind: RandomKind, randomLength: Int): Boolean =
+        when (kind) {
+            RandomKind.Uuid -> true
+            else ->
+                randomLength in CryptoEngine.MIN_RANDOM_LENGTH..CryptoEngine.MAX_RANDOM_LENGTH
+        }
+
     sealed interface DigestOutcome {
         data class Success(val output: String) : DigestOutcome
         data class Failure(val error: Throwable) : DigestOutcome

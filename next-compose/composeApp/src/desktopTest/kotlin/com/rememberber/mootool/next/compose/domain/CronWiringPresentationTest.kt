@@ -22,8 +22,12 @@ class CronWiringPresentationTest {
     fun parseAndCopyRunsGuards() {
         assertFalse(CronWiringPresentation.canParse(""))
         assertTrue(CronWiringPresentation.canParse("0 0 * * *"))
+        assertFalse(CronWiringPresentation.parseActionEnabled(""))
+        assertTrue(CronWiringPresentation.parseActionEnabled("0 0 * * *"))
         assertFalse(CronWiringPresentation.canCopyRuns(emptyList()))
         assertTrue(CronWiringPresentation.canCopyRuns(listOf("2026-01-01")))
+        assertFalse(CronWiringPresentation.copyRunsActionEnabled(emptyList()))
+        assertTrue(CronWiringPresentation.copyRunsActionEnabled(listOf("2026-01-01")))
     }
 
     @Test

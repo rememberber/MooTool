@@ -12,7 +12,11 @@ object CronWiringPresentation {
 
     fun canParse(expression: String): Boolean = expression.isNotBlank()
 
+    fun parseActionEnabled(expression: String): Boolean = canParse(expression)
+
     fun canCopyRuns(runs: List<String>): Boolean = runs.isNotEmpty()
+
+    fun copyRunsActionEnabled(runs: List<String>): Boolean = canCopyRuns(runs)
 
     sealed interface ScheduleOutcome {
         data class Success(val runs: List<String>, val description: String) : ScheduleOutcome

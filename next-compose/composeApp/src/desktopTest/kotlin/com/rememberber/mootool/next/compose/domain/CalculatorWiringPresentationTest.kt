@@ -29,4 +29,18 @@ class CalculatorWiringPresentationTest {
     fun shouldToastOperationFailure() {
         assertTrue(CalculatorWiringPresentation.shouldToastOperationFailure(IllegalStateException()))
     }
+
+    @Test
+    fun convertBaseActionEnabled() {
+        assertTrue(CalculatorWiringPresentation.convertBaseActionEnabled("ff", 16, 10))
+        assertFalse(CalculatorWiringPresentation.convertBaseActionEnabled("", 16, 10))
+        assertFalse(CalculatorWiringPresentation.convertBaseActionEnabled("gg", 16, 10))
+        assertTrue(CalculatorWiringPresentation.convertBaseActionEnabled("1010", 2, 10))
+        assertFalse(CalculatorWiringPresentation.convertBaseActionEnabled("102", 2, 10))
+        assertFalse(CalculatorWiringPresentation.canCopyResult(""))
+        assertTrue(CalculatorWiringPresentation.canCopyResult("42"))
+        assertFalse(CalculatorWiringPresentation.evaluateActionEnabled(""))
+        assertTrue(CalculatorWiringPresentation.evaluateActionEnabled("1+1"))
+        assertTrue(CalculatorWiringPresentation.copyResultActionEnabled("42"))
+    }
 }

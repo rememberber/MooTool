@@ -94,6 +94,9 @@ import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
 import com.rememberber.mootool.next.compose.ui.components.setPaneSize
 import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.mooDialogSurface
+import com.rememberber.mootool.next.compose.ui.chooseFileWithExportDirectory
+import com.rememberber.mootool.next.compose.ui.chooseFilesWithExportDirectory
+import com.rememberber.mootool.next.compose.ui.persistToolsExportDirectory
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
@@ -109,8 +112,6 @@ import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Image as SkiaImage
 import java.awt.Desktop
-import java.awt.FileDialog
-import java.awt.Frame
 import java.awt.Image as AwtImage
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
@@ -1092,8 +1093,10 @@ private fun importClipboard(container: AppContainer, session: ImageSession, onLo
 }
 
 private fun importFiles(container: AppContainer, session: ImageSession, onLoaded: (String?) -> Unit) {
-    val files = chooseImages(container.t("image.import"))
+    val picked = chooseFilesWithExportDirectory(container, container.t("image.import"))
+    val files = picked.filter { ImageLibraryStoreSafe(it.extension) }
     if (files.isEmpty()) return
+    files.firstOrNull()?.let { persistToolsExportDirectory(container, it) }
     importPickedFiles(container, session, files, onLoaded)
 }
 
@@ -1118,6 +1121,7 @@ private fun importPickedFiles(
 
 private fun exportSelected(container: AppContainer, session: ImageSession, names: List<String>) {
     val directory = chooseDirectory(container, container.t("image.export")) ?: return
+    persistToolsExportDirectory(container, directory)
     when (
         val outcome = ImageWiringPresentation.runExportAssets {
             container.imageLibrary.export(names, directory.toPath())
@@ -1154,16 +1158,24 @@ private fun copyCurrent(container: AppContainer, session: ImageSession, current:
 private fun chooseSvgTargets(container: AppContainer, names: List<String>): List<Path>? {
     val exportDir = ToolsExportWiringPresentation.defaultExportDirectory(container.settings.value.tools.exportDirectory)
     return if (names.size == 1) {
-        val chosen = chooseSave(
-            container.t("image.svgTitle"),
+        val preset = File(
             ToolsExportWiringPresentation.defaultSvgPath(
                 container.settings.value.tools.exportDirectory,
                 names[0],
             ),
+        )
+        val chosen = chooseFileWithExportDirectory(
+            container,
+            save = true,
+            title = container.t("image.svgTitle"),
+            defaultFileName = preset.name,
         ) ?: return null
-        listOf(if (chosen.extension.equals("svg", true)) chosen.toPath() else File(chosen.path + ".svg").toPath())
+        val file = if (chosen.extension.equals("svg", true)) chosen else File(chosen.path + ".svg")
+        persistToolsExportDirectory(container, file)
+        listOf(file.toPath())
     } else {
         val directory = chooseDirectory(container, container.t("image.svgTitle")) ?: return null
+        persistToolsExportDirectory(container, directory)
         val reserved = mutableSetOf<String>()
         names.map { name ->
             val stem = name.substringBeforeLast('.')
@@ -1178,29 +1190,8 @@ private fun chooseSvgTargets(container: AppContainer, names: List<String>): List
     }
 }
 
-private fun chooseImages(title: String): List<File> {
-    val dialog = FileDialog(null as Frame?, title, FileDialog.LOAD)
-    dialog.isMultipleMode = true
-    dialog.isVisible = true
-    val files = dialog.files?.toList().orEmpty()
-    if (files.isNotEmpty()) return files.filter { ImageLibraryStoreSafe(it.extension) }
-    val directory = dialog.directory ?: return emptyList()
-    val file = dialog.file ?: return emptyList()
-    return listOf(File(directory, file)).filter { ImageLibraryStoreSafe(it.extension) }
-}
-
 private fun ImageLibraryStoreSafe(extension: String): Boolean =
     com.rememberber.mootool.next.compose.storage.ImageLibraryStore.supported(extension)
-
-private fun chooseSave(title: String, defaultPath: String): File? {
-    val dialog = FileDialog(null as Frame?, title, FileDialog.SAVE)
-    dialog.directory = File(defaultPath).parent
-    dialog.file = File(defaultPath).name
-    dialog.isVisible = true
-    val directory = dialog.directory ?: return null
-    val file = dialog.file ?: return null
-    return File(directory, file)
-}
 
 private fun chooseDirectory(container: AppContainer, title: String): File? {
     val chooser = JFileChooser()

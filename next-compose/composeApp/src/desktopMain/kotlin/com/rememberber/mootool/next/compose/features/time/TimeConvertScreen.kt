@@ -333,7 +333,12 @@ private fun TimeValue(container: AppContainer, label: String, value: String, mod
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
-            MooButton(container.t("time.copy"), onClick = onCopy, p5Toolbar = true)
+            MooButton(
+                container.t("time.copy"),
+                enabled = TimeWiringPresentation.copyFieldActionEnabled(value),
+                onClick = onCopy,
+                p5Toolbar = true,
+            )
         }
     }
 }

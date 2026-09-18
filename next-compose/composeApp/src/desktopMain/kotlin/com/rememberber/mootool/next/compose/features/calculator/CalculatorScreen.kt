@@ -105,11 +105,16 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                 moreLabel = container.t("json.action.overflow"),
                 actions = buildList {
                     add(OverflowAction(container.t("common.action.history")) { session.historyOpen = true; refresh() })
-                    add(OverflowAction(container.t("time.copy")) {
-                        session.notice = copyText(session.result, container)
-                        session.error = ""
-                        refresh()
-                    })
+                    add(
+                        OverflowAction(
+                            container.t("time.copy"),
+                            enabled = CalculatorWiringPresentation.copyResultActionEnabled(session.result),
+                        ) {
+                            session.notice = copyText(session.result, container)
+                            session.error = ""
+                            refresh()
+                        },
+                    )
                     if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.Calculator) })
                 }
             )
@@ -151,7 +156,7 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                         MooButton(
                             "=",
                             prominent = true,
-                            enabled = CalculatorWiringPresentation.canEvaluate(session.expression),
+                            enabled = CalculatorWiringPresentation.evaluateActionEnabled(session.expression),
                             p5Toolbar = true,
                             onClick = {
                             runCalc(
@@ -168,7 +173,11 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                 Panel(container.t("calculator.base")) {
                     LabeledField(container.t("calculator.hex"), session.hex) { session.hex = it; refresh() }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        MooButton("HEX → DEC", p5Toolbar = true, onClick = {
+                        MooButton(
+                            "HEX → DEC",
+                            p5Toolbar = true,
+                            enabled = CalculatorWiringPresentation.convertBaseActionEnabled(session.hex, 16, 10),
+                            onClick = {
                             runCalc(
                                 container,
                                 session,
@@ -179,7 +188,11 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                             )
                             refresh()
                         })
-                        MooButton("DEC → HEX", p5Toolbar = true, onClick = {
+                        MooButton(
+                            "DEC → HEX",
+                            p5Toolbar = true,
+                            enabled = CalculatorWiringPresentation.convertBaseActionEnabled(session.decimal, 10, 16),
+                            onClick = {
                             runCalc(
                                 container,
                                 session,
@@ -193,7 +206,11 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                     }
                     LabeledField(container.t("calculator.decimal"), session.decimal) { session.decimal = it; refresh() }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        MooButton("DEC → BIN", p5Toolbar = true, onClick = {
+                        MooButton(
+                            "DEC → BIN",
+                            p5Toolbar = true,
+                            enabled = CalculatorWiringPresentation.convertBaseActionEnabled(session.decimal, 10, 2),
+                            onClick = {
                             runCalc(
                                 container,
                                 session,
@@ -204,7 +221,11 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
                             )
                             refresh()
                         })
-                        MooButton("BIN → DEC", p5Toolbar = true, onClick = {
+                        MooButton(
+                            "BIN → DEC",
+                            p5Toolbar = true,
+                            enabled = CalculatorWiringPresentation.convertBaseActionEnabled(session.binary, 2, 10),
+                            onClick = {
                             runCalc(
                                 container,
                                 session,

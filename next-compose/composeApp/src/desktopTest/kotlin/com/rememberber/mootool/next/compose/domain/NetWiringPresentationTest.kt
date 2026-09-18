@@ -69,4 +69,22 @@ class NetWiringPresentationTest {
         val snapshot = NetWiringPresentation.runLocalAddresses()
         assertTrue(snapshot.ipv4.isNotEmpty() || snapshot.ipv6.isNotEmpty())
     }
+
+    @Test
+    fun idleUtilityActionEnabled() {
+        assertTrue(NetWiringPresentation.flushDnsActionEnabled(running = false))
+        assertFalse(NetWiringPresentation.flushDnsActionEnabled(running = true))
+        assertTrue(NetWiringPresentation.refreshLocalAddressesActionEnabled(running = false))
+        assertFalse(NetWiringPresentation.refreshLocalAddressesActionEnabled(running = true))
+    }
+
+    @Test
+    fun ipv4LongConvertActionEnabled() {
+        assertTrue(NetWiringPresentation.ipv4ToLongActionEnabled("127.0.0.1"))
+        assertFalse(NetWiringPresentation.ipv4ToLongActionEnabled(""))
+        assertFalse(NetWiringPresentation.ipv4ToLongActionEnabled("256.0.0.1"))
+        assertTrue(NetWiringPresentation.longToIpv4ActionEnabled("2130706433"))
+        assertFalse(NetWiringPresentation.longToIpv4ActionEnabled(""))
+        assertFalse(NetWiringPresentation.longToIpv4ActionEnabled("4294967296"))
+    }
 }

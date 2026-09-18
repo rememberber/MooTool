@@ -78,11 +78,11 @@ import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
 import com.rememberber.mootool.next.compose.ui.workbench.DismissModalOverlaysOnDispose
 import com.rememberber.mootool.next.compose.ui.workbench.onUserInput
+import com.rememberber.mootool.next.compose.ui.chooseFileWithExportDirectory
+import com.rememberber.mootool.next.compose.ui.persistToolsExportDirectory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
-import java.awt.FileDialog
-import java.awt.Frame
 import java.io.File
 
 @Composable
@@ -265,7 +265,12 @@ private fun SymmetricPanel(
                         }
                         onChanged()
                     })
-                    MooButton(container.t("crypto.copy"), p5Toolbar = true, onClick = { session.notice = copyText(session.symCipher, container); onChanged() })
+                    MooButton(
+                        container.t("crypto.copy"),
+                        p5Toolbar = true,
+                        enabled = CryptoWiringPresentation.cipherCopyActionEnabled(session.symCipher),
+                        onClick = { session.notice = copyText(session.symCipher, container); onChanged() },
+                    )
                 }
             },
             right = {
@@ -416,23 +421,37 @@ private fun AsymmetricPanel(
             horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterHorizontally),
             verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
-            MooButton(container.t("crypto.publicEncrypt"), p5Toolbar = true, onClick = {
+            MooButton(
+                container.t("crypto.publicEncrypt"),
+                p5Toolbar = true,
+                enabled = CryptoWiringPresentation.publicEncryptActionEnabled(asymKeys, session.asymBusy),
+                onClick = {
                 runCrypto(container, session, "asymmetric", "publicEncrypt", session.asymAlgorithm.name, session.asymPlain) {
                     session.asymCipher = CryptoEngine.asymmetricEncrypt(session.asymAlgorithm, session.asymPlain, session.publicKey)
                     session.asymCipher
                 }
                 onChanged()
-            })
-            MooButton(container.t("crypto.privateDecrypt"), p5Toolbar = true, onClick = {
+            },
+            )
+            MooButton(
+                container.t("crypto.privateDecrypt"),
+                p5Toolbar = true,
+                enabled = CryptoWiringPresentation.privateDecryptActionEnabled(asymKeys, session.asymBusy),
+                onClick = {
                 runCrypto(container, session, "asymmetric", "privateDecrypt", session.asymAlgorithm.name, session.asymCipher) {
                     session.asymPlain = CryptoEngine.asymmetricDecrypt(session.asymAlgorithm, session.asymCipher, session.privateKey)
                     session.asymPlain
                 }
                 onChanged()
-            })
+            },
+            )
             MooButton(
                 container.t("crypto.privateEncrypt"),
-                enabled = CryptoWiringPresentation.rsaPrivateReverseEnabled(session.asymAlgorithm),
+                enabled = CryptoWiringPresentation.privateEncryptActionEnabled(
+                    session.asymAlgorithm,
+                    asymKeys,
+                    session.asymBusy,
+                ),
                 p5Toolbar = true,
                 onClick = {
                 runCrypto(container, session, "asymmetric", "privateEncrypt", "RSA", session.asymPlain) {
@@ -444,7 +463,11 @@ private fun AsymmetricPanel(
             })
             MooButton(
                 container.t("crypto.publicDecrypt"),
-                enabled = CryptoWiringPresentation.rsaPrivateReverseEnabled(session.asymAlgorithm),
+                enabled = CryptoWiringPresentation.publicDecryptActionEnabled(
+                    session.asymAlgorithm,
+                    asymKeys,
+                    session.asymBusy,
+                ),
                 p5Toolbar = true,
                 onClick = {
                 runCrypto(container, session, "asymmetric", "publicDecrypt", "RSA", session.asymCipher) {
@@ -454,14 +477,28 @@ private fun AsymmetricPanel(
                 }
                 onChanged()
             })
-            MooButton(container.t("crypto.sign"), p5Toolbar = true, onClick = {
+            MooButton(
+                container.t("crypto.sign"),
+                p5Toolbar = true,
+                enabled = CryptoWiringPresentation.signActionEnabled(asymKeys, session.asymBusy),
+                onClick = {
                 runCrypto(container, session, "asymmetric", "sign", session.asymAlgorithm.name, session.asymPlain) {
                     session.asymCipher = CryptoEngine.signContent(session.asymAlgorithm, session.asymPlain, session.privateKey, session.publicKey)
                     session.asymCipher
                 }
                 onChanged()
-            })
-            MooButton(container.t("crypto.verify"), p5Toolbar = true, onClick = {
+            },
+            )
+            MooButton(
+                container.t("crypto.verify"),
+                p5Toolbar = true,
+                enabled = CryptoWiringPresentation.verifyActionEnabled(
+                    asymKeys,
+                    session.asymPlain,
+                    session.asymCipher,
+                    session.asymBusy,
+                ),
+                onClick = {
                 session.error = ""
                 runCatching {
                     CryptoEngine.verifySignature(session.asymAlgorithm, session.asymPlain, session.asymCipher, session.publicKey)
@@ -479,7 +516,12 @@ private fun AsymmetricPanel(
                 }
                 onChanged()
             })
-            MooButton(container.t("crypto.copy"), p5Toolbar = true, onClick = { session.notice = copyText(session.asymCipher, container); onChanged() })
+            MooButton(
+                container.t("crypto.copy"),
+                p5Toolbar = true,
+                enabled = CryptoWiringPresentation.cipherCopyActionEnabled(session.asymCipher),
+                onClick = { session.notice = copyText(session.asymCipher, container); onChanged() },
+            )
         }
     }
 }
@@ -525,7 +567,11 @@ private fun DigestPanel(
                 onChanged()
             })
             MooButton(container.t("crypto.fileDigest"), p5Toolbar = true, onClick = {
-                val file = chooseFile(container.t("crypto.fileDigest")) ?: return@MooButton
+                val file = chooseFileWithExportDirectory(
+                    container,
+                    save = false,
+                    title = container.t("crypto.fileDigest"),
+                ) ?: return@MooButton
                 digestPickedFile(container, session, scope, file, onChanged)
             })
             SelectedFileName(session.digestFileName, Modifier.weight(1f, fill = false))
@@ -534,7 +580,12 @@ private fun DigestPanel(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(container.t("crypto.digestResult"), color = colors.textMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
             Text(session.digestOutput.ifEmpty { "—" }, color = colors.textBody, fontSize = 11.sp, modifier = Modifier.weight(1f))
-            MooGhostButton(container.t("crypto.copy"), onClick = { session.notice = copyText(session.digestOutput, container); onChanged() }, size = 24.dp) {
+            MooGhostButton(
+                container.t("crypto.copy"),
+                enabled = CryptoWiringPresentation.cipherCopyActionEnabled(session.digestOutput),
+                onClick = { session.notice = copyText(session.digestOutput, container); onChanged() },
+                size = 24.dp,
+            ) {
                 Text("⎘", color = colors.textMuted, fontSize = 12.sp)
             }
         }
@@ -578,21 +629,36 @@ private fun BasePanel(
                     verticalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    MooButton(container.t("crypto.encode"), prominent = true, p5Toolbar = true, onClick = {
+                    MooButton(
+                        container.t("crypto.encode"),
+                        prominent = true,
+                        p5Toolbar = true,
+                        enabled = CryptoWiringPresentation.encodeBaseActionEnabled(session.basePlain),
+                        onClick = {
                         runCrypto(container, session, "base", "encode", session.baseAlgorithm.name, session.basePlain) {
                             session.baseCipher = CryptoEngine.encodeBase(session.baseAlgorithm, session.basePlain)
                             session.baseCipher
                         }
                         onChanged()
-                    })
-                    MooButton(container.t("crypto.decode"), p5Toolbar = true, onClick = {
+                    },
+                    )
+                    MooButton(
+                        container.t("crypto.decode"),
+                        p5Toolbar = true,
+                        enabled = CryptoWiringPresentation.decodeBaseActionEnabled(session.baseCipher),
+                        onClick = {
                         runCrypto(container, session, "base", "decode", session.baseAlgorithm.name, session.baseCipher) {
                             session.basePlain = CryptoEngine.decodeBase(session.baseAlgorithm, session.baseCipher)
                             session.basePlain
                         }
                         onChanged()
                     })
-                    MooButton(container.t("crypto.copy"), p5Toolbar = true, onClick = { session.notice = copyText(session.baseCipher, container); onChanged() })
+                    MooButton(
+                        container.t("crypto.copy"),
+                        p5Toolbar = true,
+                        enabled = CryptoWiringPresentation.cipherCopyActionEnabled(session.baseCipher),
+                        onClick = { session.notice = copyText(session.baseCipher, container); onChanged() },
+                    )
                 }
             },
             right = {
@@ -617,19 +683,19 @@ private fun RandomPanel(container: AppContainer, session: CryptoSession, modifie
                 onChanged()
             }, modifier = Modifier.width(100.dp), compact = true)
         }
-        RandomRow(container, container.t("crypto.random.uuid"), session.uuid) {
+        RandomRow(container, container.t("crypto.random.uuid"), session.uuid, RandomKind.Uuid, session.randomLength) {
             generateRandom(container, session, RandomKind.Uuid)
             onChanged()
         }
-        RandomRow(container, container.t("crypto.random.digits"), session.digits) {
+        RandomRow(container, container.t("crypto.random.digits"), session.digits, RandomKind.Digits, session.randomLength) {
             generateRandom(container, session, RandomKind.Digits)
             onChanged()
         }
-        RandomRow(container, container.t("crypto.random.string"), session.randomText) {
+        RandomRow(container, container.t("crypto.random.string"), session.randomText, RandomKind.String, session.randomLength) {
             generateRandom(container, session, RandomKind.String)
             onChanged()
         }
-        RandomRow(container, container.t("crypto.random.password"), session.password) {
+        RandomRow(container, container.t("crypto.random.password"), session.password, RandomKind.Password, session.randomLength) {
             generateRandom(container, session, RandomKind.Password)
             onChanged()
         }
@@ -637,7 +703,14 @@ private fun RandomPanel(container: AppContainer, session: CryptoSession, modifie
 }
 
 @Composable
-private fun RandomRow(container: AppContainer, label: String, value: String, onGenerate: () -> Unit) {
+private fun RandomRow(
+    container: AppContainer,
+    label: String,
+    value: String,
+    kind: RandomKind,
+    randomLength: Int,
+    onGenerate: () -> Unit,
+) {
     val colors = MooTheme.colors
     Row(
         Modifier.fillMaxWidth().mooCryptoRandomRow().padding(vertical = 6.dp),
@@ -656,10 +729,22 @@ private fun RandomRow(container: AppContainer, label: String, value: String, onG
                 .border(1.dp, colors.borderControl, RoundedCornerShape(6.dp))
                 .padding(horizontal = 10.dp, vertical = 8.dp)
         )
-        MooGhostButton(container.t("crypto.copy"), onClick = { copyText(value, container) }, size = 32.dp) {
+        MooGhostButton(
+            container.t("crypto.copy"),
+            enabled = CryptoWiringPresentation.randomCopyActionEnabled(value),
+            onClick = { copyText(value, container) },
+            size = 32.dp,
+        ) {
             Text("⎘", color = colors.textMuted, fontSize = 13.sp)
         }
-        MooButton(container.t("crypto.generate"), prominent = true, p5Toolbar = true, onClick = onGenerate, modifier = Modifier.width(84.dp))
+        MooButton(
+            container.t("crypto.generate"),
+            prominent = true,
+            p5Toolbar = true,
+            enabled = CryptoWiringPresentation.randomGenerateActionEnabled(kind, randomLength),
+            onClick = onGenerate,
+            modifier = Modifier.width(84.dp),
+        )
     }
     Box(Modifier.fillMaxWidth().height(1.dp).background(colors.borderSoft))
 }
@@ -721,6 +806,7 @@ private fun digestPickedFile(
     file: java.io.File,
     onChanged: () -> Unit
 ) {
+    persistToolsExportDirectory(container, file)
     session.notice = container.t("common.processing")
     onChanged()
     scope.launch(Dispatchers.Default) {
@@ -869,13 +955,4 @@ private fun copyText(value: String, container: AppContainer): String {
     if (value.isEmpty()) return container.t("crypto.nothingToCopy")
     return if (container.copyText(value)) container.t("json.notice.copied") else container.t("crypto.error.generic")
 }
-
-private fun chooseFile(title: String): File? {
-    val dialog = FileDialog(null as Frame?, title, FileDialog.LOAD)
-    dialog.isVisible = true
-    val directory = dialog.directory ?: return null
-    val file = dialog.file ?: return null
-    return File(directory, file)
-}
-
 

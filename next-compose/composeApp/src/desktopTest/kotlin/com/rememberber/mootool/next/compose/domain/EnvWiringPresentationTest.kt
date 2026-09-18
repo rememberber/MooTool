@@ -11,6 +11,11 @@ class EnvWiringPresentationTest {
         assertFalse(EnvWiringPresentation.refreshEnabled(loading = true, saving = false))
         assertFalse(EnvWiringPresentation.refreshEnabled(loading = false, saving = true))
         assertTrue(EnvWiringPresentation.refreshEnabled(loading = false, saving = false))
+        assertFalse(EnvWiringPresentation.refreshActionEnabled(loading = true, saving = false))
+        assertTrue(EnvWiringPresentation.addVariableActionEnabled(canEdit = true, saving = false))
+        assertTrue(EnvWiringPresentation.saveEditorActionEnabled(trimmedKey = "K", saving = false))
+        assertTrue(EnvWiringPresentation.deleteRowActionEnabled(canDelete = true, saving = false))
+        assertTrue(EnvWiringPresentation.confirmDeleteActionEnabled(saving = false))
     }
 
     @Test

@@ -7,6 +7,9 @@ import java.nio.charset.StandardCharsets
 object EnvWiringPresentation {
     fun refreshEnabled(loading: Boolean, saving: Boolean): Boolean = !loading && !saving
 
+    fun refreshActionEnabled(loading: Boolean, saving: Boolean): Boolean =
+        refreshEnabled(loading, saving)
+
     fun exportEnabled(hasSnapshot: Boolean): Boolean = hasSnapshot
 
     /** 对齐 `VariablesScreen` 导出菜单项：无快照时禁用。 */
@@ -14,12 +17,23 @@ object EnvWiringPresentation {
 
     fun addVariableEnabled(canEdit: Boolean, saving: Boolean): Boolean = canEdit && !saving
 
+    fun addVariableActionEnabled(canEdit: Boolean, saving: Boolean): Boolean =
+        addVariableEnabled(canEdit, saving)
+
     fun saveEditorEnabled(trimmedKey: String, saving: Boolean): Boolean =
         trimmedKey.isNotEmpty() && !saving
 
+    fun saveEditorActionEnabled(trimmedKey: String, saving: Boolean): Boolean =
+        saveEditorEnabled(trimmedKey, saving)
+
     fun deleteRowEnabled(canDelete: Boolean, saving: Boolean): Boolean = canDelete && !saving
 
+    fun deleteRowActionEnabled(canDelete: Boolean, saving: Boolean): Boolean =
+        deleteRowEnabled(canDelete, saving)
+
     fun confirmDeleteEnabled(saving: Boolean): Boolean = !saving
+
+    fun confirmDeleteActionEnabled(saving: Boolean): Boolean = confirmDeleteEnabled(saving)
 
     sealed interface SnapshotOutcome {
         data class Success(val snapshot: EnvSnapshot) : SnapshotOutcome

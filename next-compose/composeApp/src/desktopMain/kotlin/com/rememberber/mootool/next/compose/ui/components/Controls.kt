@@ -519,6 +519,7 @@ fun MooGhostButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     size: Dp = 30.dp,
+    enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit
 ) {
     val colors = MooTheme.colors
@@ -527,17 +528,23 @@ fun MooGhostButton(
     val hovered by interaction.collectIsHoveredAsState()
     val cornerDp = LayoutPolicy.iconGhostCornerRadiusDp(colors.styleId)
     val shape = RoundedCornerShape(cornerDp.dp)
-    val fill = if (hovered) colors.hoveredControlFill() else Color.Transparent
+    val fill = if (hovered && enabled) colors.hoveredControlFill() else Color.Transparent
     Row(
         modifier = modifier
             .semantics { role = Role.Button; contentDescription = label }
+            .graphicsLayer { alpha = if (enabled) 1f else 0.42f }
             .mooFocusOutline(focused, shape)
             .clip(shape)
             .background(fill)
             .pointerHoverIcon(PointerIcon.Hand)
-            .hoverable(interaction)
-            .clickable(interactionSource = interaction, indication = LocalIndication.current, onClick = onClick)
-            .focusable(true, interaction)
+            .hoverable(interaction, enabled)
+            .clickable(
+                interactionSource = interaction,
+                indication = LocalIndication.current,
+                enabled = enabled,
+                onClick = onClick,
+            )
+            .focusable(enabled, interaction)
             .size(size),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,

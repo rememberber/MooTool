@@ -12,6 +12,15 @@ class RegexWiringPresentationTest {
     }
 
     @Test
+    fun runTestActionEnabledMatchesGuards() {
+        assertFalse(RegexWiringPresentation.runTestActionEnabled("", running = false))
+        assertFalse(RegexWiringPresentation.runTestActionEnabled("a", running = true))
+        assertTrue(RegexWiringPresentation.runTestActionEnabled("a", running = false))
+        assertTrue(RegexWiringPresentation.cancelTestActionEnabled(running = true))
+        assertFalse(RegexWiringPresentation.cancelTestActionEnabled(running = false))
+    }
+
+    @Test
     fun runMatchSuccess() {
         val outcome = RegexWiringPresentation.runMatch("a+", "aaa", RegexOptions())
         assertTrue(outcome is RegexWiringPresentation.MatchOutcome.Success)

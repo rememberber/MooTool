@@ -136,12 +136,12 @@ import com.rememberber.mootool.next.compose.ui.workbench.OnToolLeaveUnlessDetach
 import com.rememberber.mootool.next.compose.ui.workbench.onUserInput
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import com.rememberber.mootool.next.compose.ui.workbench.blockedByIme
+import com.rememberber.mootool.next.compose.ui.chooseFileWithExportDirectory
+import com.rememberber.mootool.next.compose.ui.persistToolsExportDirectory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.awt.FileDialog
-import java.awt.Frame
 import java.io.File
 import java.util.UUID
 import javax.swing.SwingUtilities
@@ -249,8 +249,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
     fun saveResponse(visible: HttpResponseResult?) {
         val bytes = HttpEngine.downloadBytes(visible)
         if (bytes != null && session.responseTab == HttpResponseTab.Body) {
-            val target = chooseSaveFile()
-            if (target == null) {
+            val target = pickHttpResponseSaveFile(container, binary = true) ?: run {
                 session.notice = container.t("common.cancel")
                 persist()
                 return
@@ -258,6 +257,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
             when (val outcome = HttpResponsePresentation.runWriteResponseBytes(target, bytes)) {
                 HttpResponsePresentation.WriteExportOutcome.Success -> {
                     session.error = ""
+                    persistToolsExportDirectory(container, target)
                     val savedNotice = container.t("http.responseSaved", mapOf("path" to target.absolutePath))
                     session.notice = savedNotice
                     container.toastSuccess(savedNotice)
@@ -275,8 +275,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
             notifyHttpFailure(container, session, container.t("http.responseEmpty")) { persist() }
             return
         }
-        val target = chooseSaveFile()
-        if (target == null) {
+        val target = pickHttpResponseSaveFile(container, binary = false) ?: run {
             session.notice = container.t("common.cancel")
             persist()
             return
@@ -284,6 +283,7 @@ fun HttpScreen(container: AppContainer, detached: Boolean) {
         when (val outcome = HttpResponsePresentation.runWriteResponseText(target, payload)) {
             HttpResponsePresentation.WriteExportOutcome.Success -> {
                 session.error = ""
+                persistToolsExportDirectory(container, target)
                 val savedNotice = container.t("http.responseSaved", mapOf("path" to target.absolutePath))
                 session.notice = savedNotice
                 container.toastSuccess(savedNotice)
@@ -1283,13 +1283,13 @@ private fun onEdt(block: () -> Unit) {
     if (SwingUtilities.isEventDispatchThread()) block() else SwingUtilities.invokeLater(block)
 }
 
-private fun chooseSaveFile(): File? {
-    val dialog = FileDialog(null as Frame?, "", FileDialog.SAVE)
-    dialog.isVisible = true
-    val directory = dialog.directory ?: return null
-    val file = dialog.file ?: return null
-    return File(directory, file)
-}
+private fun pickHttpResponseSaveFile(container: AppContainer, binary: Boolean): File? =
+    chooseFileWithExportDirectory(
+        container,
+        save = true,
+        title = container.t("http.saveResponse"),
+        defaultFileName = if (binary) "http-response.bin" else "http-response.txt",
+    )
 
 private fun notifyHttpFailure(
     container: AppContainer,

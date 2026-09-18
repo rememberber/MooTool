@@ -190,7 +190,7 @@ fun CronScreen(container: AppContainer, detached: Boolean) {
                         MooButton(
                             container.t("cron.parse"),
                             prominent = true,
-                            enabled = CronWiringPresentation.canParse(session.expression),
+                            enabled = CronWiringPresentation.parseActionEnabled(session.expression),
                             onClick = { parseRuns(container, session, language) { refresh() } },
                             p5Toolbar = true
                         )
@@ -205,17 +205,16 @@ fun CronScreen(container: AppContainer, detached: Boolean) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(container.t("cron.nextRuns"), color = colors.textBody, fontSize = 12.sp)
                     Spacer(Modifier.weight(1f))
-                    if (CronWiringPresentation.canCopyRuns(session.runs)) {
-                        MooButton(
-                            container.t("time.copy"),
-                            onClick = {
-                                container.copyText(session.runs.joinToString("\n"))
-                                session.notice = container.t("common.copied")
-                                refresh()
-                            },
-                            p5Toolbar = true
-                        )
-                    }
+                    MooButton(
+                        container.t("time.copy"),
+                        enabled = CronWiringPresentation.copyRunsActionEnabled(session.runs),
+                        onClick = {
+                            container.copyText(session.runs.joinToString("\n"))
+                            session.notice = container.t("common.copied")
+                            refresh()
+                        },
+                        p5Toolbar = true,
+                    )
                 }
                 Column(
                     Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(MooTheme.dimens.radiusLarge))

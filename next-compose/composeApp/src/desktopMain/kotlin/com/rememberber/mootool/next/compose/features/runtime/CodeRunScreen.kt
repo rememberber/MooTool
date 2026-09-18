@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
+import com.rememberber.mootool.next.compose.app.DesktopFileDialogs
 import com.rememberber.mootool.next.compose.features.settings.SettingsNavCategory
 import com.rememberber.mootool.next.compose.domain.CodeRunWiringPresentation
 import com.rememberber.mootool.next.compose.domain.CodeRunHistoryMetadata
@@ -92,8 +93,6 @@ import com.rememberber.mootool.next.compose.ui.workbench.clearErrorOnUserEdit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.awt.FileDialog
-import java.awt.Frame
 import java.io.File
 import java.util.UUID
 import androidx.compose.ui.text.font.FontWeight
@@ -458,14 +457,12 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                         placeholder = container.t("runtime.defaultWorkingDirectory")
                     )
                     MooButton(container.t("runtime.workingDirectory"), p5Toolbar = true, onClick = {
-                        val dialog = FileDialog(null as Frame?, container.t("runtime.workingDirectory"), FileDialog.LOAD)
-                        dialog.isMultipleMode = false
-                        dialog.isVisible = true
-                        val dir = dialog.directory
-                        if (!dir.isNullOrBlank()) {
-                            session.setWorkingDirectory(runtime, File(dir).absolutePath)
-                            persist()
-                        }
+                        val path = DesktopFileDialogs.chooseDirectory(
+                            container.t("runtime.workingDirectory"),
+                            session.workingDirectory(runtime),
+                        ) ?: return@MooButton
+                        session.setWorkingDirectory(runtime, path)
+                        persist()
                     })
                 }
                 MooButton(container.t("common.close"), onClick = { session.optionsOpen = false; persist() })

@@ -9,6 +9,10 @@ class UaWiringPresentationTest {
     fun canParseRequiresSource() {
         assertFalse(UaWiringPresentation.canParse(""))
         assertTrue(UaWiringPresentation.canParse("Mozilla/5.0"))
+        assertFalse(UaWiringPresentation.parseActionEnabled(""))
+        assertTrue(UaWiringPresentation.parseActionEnabled("Mozilla/5.0"))
+        assertFalse(UaWiringPresentation.copyResultActionEnabled(""))
+        assertTrue(UaWiringPresentation.copyResultActionEnabled("{}"))
     }
 
     @Test

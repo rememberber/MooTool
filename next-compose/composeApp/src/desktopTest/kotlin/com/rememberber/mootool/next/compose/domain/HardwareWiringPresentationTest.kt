@@ -10,6 +10,8 @@ class HardwareWiringPresentationTest {
     fun refreshDisabledWhileLoading() {
         assertFalse(HardwareWiringPresentation.refreshEnabled(loading = true))
         assertTrue(HardwareWiringPresentation.refreshEnabled(loading = false))
+        assertFalse(HardwareWiringPresentation.refreshActionEnabled(loading = true))
+        assertTrue(HardwareWiringPresentation.refreshActionEnabled(loading = false))
     }
 
     @Test
@@ -17,6 +19,9 @@ class HardwareWiringPresentationTest {
         assertFalse(HardwareWiringPresentation.copyReportEnabled(loading = true, hasGroups = true))
         assertFalse(HardwareWiringPresentation.copyReportEnabled(loading = false, hasGroups = false))
         assertTrue(HardwareWiringPresentation.copyReportEnabled(loading = false, hasGroups = true))
+        assertTrue(
+            HardwareWiringPresentation.copyReportActionEnabled(loading = false, hasGroups = true),
+        )
     }
 
     @Test

@@ -4,7 +4,7 @@
 
 ## 范围
 
-- **F18**：`TimeWiringPresentation.timestampToLocalActionEnabled` / `localToTimestampActionEnabled` / `copyFieldActionEnabled`；`TimeConvertScreen` 转换与复制钮 `enabled` 接线（含本地时间复制钮此前未禁用）。
+- **F18**：`TimeWiringPresentation.timestampToLocalActionEnabled` / `localToTimestampActionEnabled` / `copyFieldActionEnabled`；`TimeConvertScreen` 转换区与当前时间带 `TimeValue` 复制钮 `enabled` 接线。
 - **单测**：`TimeWiringPresentationTest.toolbarActionEnabledMatchesGuards`。
 
 ## 验证

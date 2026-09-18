@@ -6,6 +6,10 @@ object RegexWiringPresentation {
 
     fun showCancel(running: Boolean): Boolean = running
 
+    fun runTestActionEnabled(pattern: String, running: Boolean): Boolean = canRunTest(pattern, running)
+
+    fun cancelTestActionEnabled(running: Boolean): Boolean = showCancel(running)
+
     sealed interface MatchOutcome {
         data class Success(val matches: List<RegexMatch>) : MatchOutcome
         data class Failure(val error: Throwable) : MatchOutcome

@@ -4,9 +4,19 @@ package com.rememberber.mootool.next.compose.domain
 object CalculatorWiringPresentation {
     fun canEvaluate(expression: String): Boolean = expression.isNotBlank()
 
+    fun evaluateActionEnabled(expression: String): Boolean = canEvaluate(expression)
+
     fun canCopyResult(result: String): Boolean = result.isNotBlank()
 
+    fun copyResultActionEnabled(result: String): Boolean = canCopyResult(result)
+
     fun canConvertField(value: String): Boolean = value.isNotBlank()
+
+    fun convertBaseActionEnabled(value: String, fromRadix: Int, toRadix: Int): Boolean =
+        runCatching {
+            CalculatorEngine.convertBase(value, fromRadix, toRadix)
+            true
+        }.getOrDefault(false)
 
     fun canBinaryOp(first: String, second: String): Boolean = first.isNotBlank() && second.isNotBlank()
 

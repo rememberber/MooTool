@@ -40,6 +40,25 @@ object NetWiringPresentation {
 
     fun runCommandEnabled(idle: Boolean, startReady: Boolean): Boolean = idle && startReady
 
+    /** 无在途网络任务时可触发 flush DNS / 刷新本机地址等瞬时操作。 */
+    fun idleUtilityActionEnabled(running: Boolean): Boolean = !running
+
+    fun flushDnsActionEnabled(running: Boolean): Boolean = idleUtilityActionEnabled(running)
+
+    fun refreshLocalAddressesActionEnabled(running: Boolean): Boolean = idleUtilityActionEnabled(running)
+
+    fun ipv4ToLongActionEnabled(ipv4: String): Boolean =
+        runCatching {
+            NetEngine.ipv4ToLong(ipv4.trim())
+            true
+        }.getOrDefault(false)
+
+    fun longToIpv4ActionEnabled(longText: String): Boolean =
+        runCatching {
+            NetEngine.longToIpv4(longText.trim())
+            true
+        }.getOrDefault(false)
+
     fun runLocalAddresses(): LocalAddressSnapshot = NetEngine.localAddresses()
 
     fun portScanStart(target: String, portSpec: String): PortScanStart {

@@ -184,7 +184,7 @@ fun UaParseScreen(container: AppContainer, detached: Boolean) {
                     MooButton(
                         container.t("ua.parse"),
                         prominent = true,
-                        enabled = UaWiringPresentation.canParse(session.source),
+                        enabled = UaWiringPresentation.parseActionEnabled(session.source),
                         onClick = {
                             parseSource(container, session)
                             refresh()
@@ -217,7 +217,7 @@ fun UaParseScreen(container: AppContainer, detached: Boolean) {
                             refresh()
                         },
                         p5Toolbar = true,
-                        enabled = UaWiringPresentation.canCopyResult(
+                        enabled = UaWiringPresentation.copyResultActionEnabled(
                             session.result?.let { resultCodec.encodeToString(it) } ?: session.source,
                         ),
                     )

@@ -220,7 +220,7 @@ private fun TestWorkspace(
                     },
                     modifier = Modifier.weight(1f)
                 )
-                if (RegexWiringPresentation.showCancel(session.running)) {
+                if (RegexWiringPresentation.cancelTestActionEnabled(session.running)) {
                     MooButton(
                         container.t("regex.cancel"),
                         onClick = {
@@ -236,7 +236,7 @@ private fun TestWorkspace(
                     MooButton(
                         container.t("regex.tab.test"),
                         prominent = true,
-                        enabled = RegexWiringPresentation.canRunTest(session.pattern, session.running),
+                        enabled = RegexWiringPresentation.runTestActionEnabled(session.pattern, session.running),
                         onClick = { runMatch(container, session, onChanged) },
                         p5Toolbar = true
                     )

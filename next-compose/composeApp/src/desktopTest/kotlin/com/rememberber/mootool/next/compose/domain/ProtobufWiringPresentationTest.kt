@@ -36,6 +36,14 @@ class ProtobufWiringPresentationTest {
     }
 
     @Test
+    fun toolbarActionEnabledMatchesGuards() {
+        assertTrue(ProtobufWiringPresentation.jsonToBinaryActionEnabled("p", "M", "{}"))
+        assertFalse(ProtobufWiringPresentation.decodeWireActionEnabled("  "))
+        assertTrue(ProtobufWiringPresentation.copyPayloadActionEnabled("wire", wireOutput = "1", base64 = "", hex = "", binary = ""))
+        assertFalse(ProtobufWiringPresentation.copyPayloadActionEnabled("json", wireOutput = "", base64 = "", hex = "", binary = ""))
+    }
+
+    @Test
     fun shouldToastOperationFailure() {
         assertTrue(ProtobufWiringPresentation.shouldToastOperationFailure(IllegalStateException()))
     }

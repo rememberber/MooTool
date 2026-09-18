@@ -49,7 +49,6 @@ import com.rememberber.mootool.next.compose.ui.components.mooQrOptionsRow
 import com.rememberber.mootool.next.compose.ui.components.mooQrPreviewActions
 import com.rememberber.mootool.next.compose.domain.QrTab
 import com.rememberber.mootool.next.compose.model.AppSettings
-import com.rememberber.mootool.next.compose.storage.VaultPathConfig
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.ui.components.IoTwoPaneRow
@@ -64,6 +63,7 @@ import com.rememberber.mootool.next.compose.ui.components.MooPageTitle
 import com.rememberber.mootool.next.compose.ui.components.mooFocusClickable
 import com.rememberber.mootool.next.compose.ui.components.mooToolbarBackground
 import com.rememberber.mootool.next.compose.ui.components.mooStatusBarBackground
+import com.rememberber.mootool.next.compose.ui.chooseFileWithExportDirectory
 import com.rememberber.mootool.next.compose.ui.persistToolsExportDirectory
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.OverflowAction
@@ -76,8 +76,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Image
-import java.awt.FileDialog
-import java.awt.Frame
 import java.awt.Image as AwtImage
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
@@ -252,7 +250,8 @@ private fun GeneratePanel(
                     modifier = Modifier.weight(1f),
                     p5Toolbar = true,
                     onChoose = {
-                        val file = chooseImage(container.t("qrcode.chooseLogo")) ?: return@FileDropRow
+                        val file = pickImageFile(container, container.t("qrcode.chooseLogo")) ?: return@FileDropRow
+                        persistToolsExportDirectory(container, file)
                         applyLogoFile(container, session, file, onChanged)
                     },
                     onDropFiles = { files ->
@@ -293,8 +292,7 @@ private fun GeneratePanel(
             ) {
                 MooButton(container.t("common.save"), enabled = QrWiringPresentation.hasPngOutput(session.pngBytes), p5Toolbar = true, onClick = {
                     val bytes = session.pngBytes ?: return@MooButton
-                    val exportDir = VaultPathConfig.effectiveCustomRoot(container.settings.value.tools.exportDirectory)
-                    val file = chooseSave(container.t("common.save"), exportDir) ?: return@MooButton
+                    val file = pickSavePngFile(container, container.t("common.save")) ?: return@MooButton
                     when (val outcome = QrWiringPresentation.runWritePngFile(file, bytes)) {
                         QrWiringPresentation.WritePngOutcome.Success -> {
                             persistToolsExportDirectory(container, file)
@@ -348,7 +346,8 @@ private fun RecognizePanel(
                     modifier = Modifier.weight(1f),
                     p5Toolbar = true,
                     onChoose = {
-                        val file = chooseImage(container.t("qrcode.chooseImage")) ?: return@FileDropRow
+                        val file = pickImageFile(container, container.t("qrcode.chooseImage")) ?: return@FileDropRow
+                        persistToolsExportDirectory(container, file)
                         applyRecognitionFile(container, session, scope, file, onChanged)
                     },
                     onDropFiles = { files ->
@@ -694,28 +693,15 @@ private fun applyRecognitionFile(
     recognizeQr(container, session, scope, onChanged)
 }
 
-private fun chooseImage(title: String): File? {
-    val dialog = FileDialog(null as Frame?, title, FileDialog.LOAD)
-    dialog.isVisible = true
-    val directory = dialog.directory ?: return null
-    val file = dialog.file ?: return null
-    return File(directory, file)
-}
+private fun pickImageFile(container: AppContainer, title: String): File? =
+    chooseFileWithExportDirectory(container, save = false, title = title)
 
-private fun chooseSave(title: String, initialDirectory: String = ""): File? {
-    val dialog = FileDialog(null as Frame?, title, FileDialog.SAVE)
-    dialog.file = "mootool-qrcode.png"
-    if (initialDirectory.isNotBlank()) {
-        val dir = File(initialDirectory)
-        if (dir.isDirectory) {
-            dialog.directory = initialDirectory
-        } else {
-            dir.parentFile?.takeIf { it.isDirectory }?.let { dialog.directory = it.absolutePath }
-        }
-    }
-    dialog.isVisible = true
-    val directory = dialog.directory ?: return null
-    val file = dialog.file ?: return null
-    val chosen = File(directory, file)
+private fun pickSavePngFile(container: AppContainer, title: String): File? {
+    val chosen = chooseFileWithExportDirectory(
+        container,
+        save = true,
+        title = title,
+        defaultFileName = "mootool-qrcode.png",
+    ) ?: return null
     return if (chosen.extension.isBlank()) File(chosen.path + ".png") else chosen
 }

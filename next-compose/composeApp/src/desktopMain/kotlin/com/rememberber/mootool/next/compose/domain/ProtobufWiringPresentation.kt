@@ -48,6 +48,18 @@ object ProtobufWiringPresentation {
 
     fun canConvertBase64(base64: String): Boolean = base64.isNotBlank()
 
+    fun jsonToBinaryActionEnabled(proto: String, messageName: String, json: String): Boolean =
+        canJsonToBinary(proto, messageName, json)
+
+    fun binaryToJsonActionEnabled(proto: String, messageName: String, binary: String): Boolean =
+        canBinaryToJson(proto, messageName, binary)
+
+    fun decodeWireActionEnabled(input: String): Boolean = canDecodeWire(input)
+
+    fun convertHexActionEnabled(hex: String): Boolean = canConvertHex(hex)
+
+    fun convertBase64ActionEnabled(base64: String): Boolean = canConvertBase64(base64)
+
     fun shouldToastOperationFailure(error: Throwable): Boolean = true
 
     fun copyPayload(
@@ -61,4 +73,12 @@ object ProtobufWiringPresentation {
         "convert" -> base64.ifEmpty { hex }
         else -> binary
     }
+
+    fun copyPayloadActionEnabled(
+        tab: String,
+        wireOutput: String,
+        base64: String,
+        hex: String,
+        binary: String,
+    ): Boolean = copyPayload(tab, wireOutput, base64, hex, binary).isNotBlank()
 }

@@ -338,7 +338,11 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                 Section(container.t("net.ipv4Long")) {
                     LabeledField("IPv4", session.ipv4) { session.ipv4 = it; persist() }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        MooButton("${container.t("common.convert")} ↓", p5Toolbar = true, onClick = {
+                        MooButton(
+                            "${container.t("common.convert")} ↓",
+                            p5Toolbar = true,
+                            enabled = NetWiringPresentation.ipv4ToLongActionEnabled(session.ipv4),
+                            onClick = {
                             runCatching { NetEngine.ipv4ToLong(session.ipv4).toString() }
                                 .onSuccess { value ->
                                     session.longValue = value
@@ -356,7 +360,11 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                                     notifyNetFailure(container, session, convertMessage(container, it)) { persist() }
                                 }
                         })
-                        MooButton("↑ ${container.t("common.convert")}", p5Toolbar = true, onClick = {
+                        MooButton(
+                            "↑ ${container.t("common.convert")}",
+                            p5Toolbar = true,
+                            enabled = NetWiringPresentation.longToIpv4ActionEnabled(session.longValue),
+                            onClick = {
                             runCatching { NetEngine.longToIpv4(session.longValue) }
                                 .onSuccess { value ->
                                     session.ipv4 = value
@@ -475,7 +483,7 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                     MooButton(
                         container.t("net.flushDns"),
                         onClick = { runAction(NetworkAction.FlushDns) },
-                        enabled = session.running == null,
+                        enabled = NetWiringPresentation.flushDnsActionEnabled(session.running != null),
                         p5Toolbar = true
                     )
                 }
@@ -490,7 +498,12 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                             MooTextField(session.ipv6Addresses, {}, modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp), singleLine = false, code = true)
                         }
                     }
-                    MooButton(container.t("common.refresh"), onClick = { refreshAddresses() }, p5Toolbar = true)
+                    MooButton(
+                        container.t("common.refresh"),
+                        onClick = { refreshAddresses() },
+                        enabled = NetWiringPresentation.refreshLocalAddressesActionEnabled(session.running != null),
+                        p5Toolbar = true,
+                    )
                 }
             }
         }

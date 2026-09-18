@@ -77,6 +77,10 @@ import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.components.SettingRow
 import com.rememberber.mootool.next.compose.storage.VaultPathConfig
+import com.rememberber.mootool.next.compose.storage.BackupEngine
+import com.rememberber.mootool.next.compose.ui.chooseFileWithExportDirectory
+import com.rememberber.mootool.next.compose.ui.persistToolsExportDirectory
+import java.io.File
 import com.rememberber.mootool.next.compose.ui.components.SettingCommitTextField
 import com.rememberber.mootool.next.compose.ui.components.SettingTextField
 import com.rememberber.mootool.next.compose.ui.components.SettingsGroup
@@ -492,16 +496,20 @@ fun SettingsScreen(container: AppContainer) {
                     if (backupNotice.isNotBlank()) Text(backupNotice, color = colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp))
                     Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     MooButton(container.t("settings.backup.export"), onClick = {
-                        val dialog = java.awt.FileDialog(null as java.awt.Frame?, container.t("settings.backup.export"), java.awt.FileDialog.SAVE)
-                        dialog.file = com.rememberber.mootool.next.compose.storage.BackupEngine.defaultZipName()
-                        dialog.isVisible = true
-                        val directory = dialog.directory
-                        val file = dialog.file
-                        if (!directory.isNullOrBlank() && !file.isNullOrBlank()) {
-                            runCatching {
-                                val name = if (file.endsWith(".zip")) file else "$file.zip"
-                                container.exportBackup(java.nio.file.Path.of(directory, name))
-                            }.onSuccess {
+                        val chosen = chooseFileWithExportDirectory(
+                            container,
+                            save = true,
+                            title = container.t("settings.backup.export"),
+                            defaultFileName = BackupEngine.defaultZipName(),
+                        ) ?: return@MooButton
+                        val target = if (chosen.name.endsWith(".zip", ignoreCase = true)) {
+                            chosen
+                        } else {
+                            File(chosen.path + ".zip")
+                        }
+                        runCatching { container.exportBackup(target.toPath()) }
+                            .onSuccess {
+                                persistToolsExportDirectory(container, target)
                                 backupError = ""
                                 backupNotice = container.t("settings.backup.exported", mapOf("count" to it.manifest.files.size.toString()))
                                 container.toastSuccess(backupNotice)
@@ -510,10 +518,9 @@ fun SettingsScreen(container: AppContainer) {
                                 backupError = it.message ?: container.t("settings.backup.failed")
                                 notifySettingsValidationFailure(container, backupError)
                             }
-                        }
                     })
                     MooButton(container.t("settings.backup.preview"), onClick = {
-                        chooseBackupZip()?.let { zip ->
+                        chooseBackupZip(container)?.let { zip ->
                             runCatching { container.previewBackup(zip) }
                                 .onSuccess {
                                     backupError = ""
@@ -529,7 +536,7 @@ fun SettingsScreen(container: AppContainer) {
                         }
                     })
                     MooButton(container.t("settings.backup.restore"), onClick = {
-                        chooseBackupZip()?.let { zip ->
+                        chooseBackupZip(container)?.let { zip ->
                             runCatching { container.restoreBackup(zip) }
                                 .onSuccess {
                                     backupError = ""
@@ -1171,10 +1178,12 @@ private fun commitVaultPath(container: AppContainer, raw: String, apply: (String
     }
 }
 
-private fun chooseBackupZip(): java.nio.file.Path? {
-    val dialog = java.awt.FileDialog(null as java.awt.Frame?, "Backup", java.awt.FileDialog.LOAD)
-    dialog.isVisible = true
-    val directory = dialog.directory ?: return null
-    val file = dialog.file ?: return null
-    return java.nio.file.Path.of(directory, file)
+private fun chooseBackupZip(container: AppContainer): java.nio.file.Path? {
+    val chosen = chooseFileWithExportDirectory(
+        container,
+        save = false,
+        title = container.t("settings.backup.restore"),
+    ) ?: return null
+    persistToolsExportDirectory(container, chosen)
+    return chosen.toPath()
 }

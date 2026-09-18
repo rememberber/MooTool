@@ -4,7 +4,11 @@ package com.rememberber.mootool.next.compose.domain
 object UaWiringPresentation {
     fun canParse(source: String): Boolean = source.isNotBlank()
 
+    fun parseActionEnabled(source: String): Boolean = canParse(source)
+
     fun canCopyResult(result: String): Boolean = result.isNotBlank()
+
+    fun copyResultActionEnabled(result: String): Boolean = canCopyResult(result)
 
     sealed interface ParseOutcome {
         data class Success(val result: UaResult) : ParseOutcome

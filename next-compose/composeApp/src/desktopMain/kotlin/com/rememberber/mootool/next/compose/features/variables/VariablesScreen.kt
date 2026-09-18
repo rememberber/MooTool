@@ -161,12 +161,12 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                     session.targetScope = if (session.scope == EnvDisplayScope.System) EnvPersistScope.System else EnvPersistScope.User
                     session.editorOpen = true
                     persist()
-                }, enabled = EnvWiringPresentation.addVariableEnabled(canEdit, session.saving), p5Toolbar = true)
+                }, enabled = EnvWiringPresentation.addVariableActionEnabled(canEdit, session.saving), p5Toolbar = true)
             }
             MooButton(
                 container.t("common.refresh"),
                 onClick = { refresh() },
-                enabled = EnvWiringPresentation.refreshEnabled(session.loading, session.saving),
+                enabled = EnvWiringPresentation.refreshActionEnabled(session.loading, session.saving),
                 p5Toolbar = true
             )
             OverflowActionCluster(
@@ -328,7 +328,7 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                                 }
                                 if (canDelete) {
                                     MooGhostButton(container.t("common.delete"), onClick = {
-                                        if (!EnvWiringPresentation.deleteRowEnabled(canDelete = true, saving = session.saving)) {
+                                        if (!EnvWiringPresentation.deleteRowActionEnabled(canDelete = true, saving = session.saving)) {
                                             return@MooGhostButton
                                         }
                                         session.deleteKey = entry.key
@@ -380,7 +380,7 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                     MooButton(
                         container.t("common.delete"),
                         danger = true,
-                        enabled = EnvWiringPresentation.confirmDeleteEnabled(session.saving),
+                        enabled = EnvWiringPresentation.confirmDeleteActionEnabled(session.saving),
                         onClick = {
                         val persistScope = persistScope(session.scope) ?: return@MooButton
                         val key = session.deleteKey
@@ -508,7 +508,7 @@ private fun EditorDialog(
                             if (result.isSuccess) onSaved()
                         }
                     }
-                }, enabled = EnvWiringPresentation.saveEditorEnabled(session.editorKey.trim(), session.saving))
+                }, enabled = EnvWiringPresentation.saveEditorActionEnabled(session.editorKey.trim(), session.saving))
                 MooButton(container.t("common.cancel"), onClick = { session.editorOpen = false; persist() })
             }
         }

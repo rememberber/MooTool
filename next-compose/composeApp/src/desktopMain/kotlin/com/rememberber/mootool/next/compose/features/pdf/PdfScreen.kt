@@ -72,6 +72,9 @@ import com.rememberber.mootool.next.compose.ui.components.mooPdfEmptyState
 import com.rememberber.mootool.next.compose.ui.components.mooPdfOutputStrip
 import com.rememberber.mootool.next.compose.ui.components.mooPdfTableWrap
 import com.rememberber.mootool.next.compose.ui.components.mooPdfToolbarActions
+import com.rememberber.mootool.next.compose.ui.chooseFileWithExportDirectory
+import com.rememberber.mootool.next.compose.ui.chooseFilesWithExportDirectory
+import com.rememberber.mootool.next.compose.ui.persistToolsExportDirectory
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import com.rememberber.mootool.next.compose.sessions.dismissModalOverlays
@@ -82,8 +85,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.withContext
 import java.awt.Desktop
-import java.awt.FileDialog
-import java.awt.Frame
 import java.io.File
 
 @Composable
@@ -486,8 +487,11 @@ private fun ConfirmDialog(container: AppContainer, session: PdfSession, onConfir
 }
 
 private fun addFiles(container: AppContainer, session: PdfSession, onChanged: () -> Unit) {
-    val files = choosePdfs(container.t(if (session.tab == PdfTab.Split) "pdf.addTask" else "pdf.addFile"))
+    val title = container.t(if (session.tab == PdfTab.Split) "pdf.addTask" else "pdf.addFile")
+    val picked = chooseFilesWithExportDirectory(container, title, fileFilter = "*.pdf")
+    val files = picked.filter { it.extension.equals("pdf", ignoreCase = true) }
     if (files.isEmpty()) return
+    files.firstOrNull()?.let { persistToolsExportDirectory(container, it) }
     ingestPdfFiles(container, session, files, onChanged)
 }
 
@@ -606,7 +610,8 @@ private fun runMerge(
         onChanged()
         return
     }
-    val output = chooseSave(container.t("pdf.startMerge"), defaultMergeName(container)) ?: return
+    val output = pickMergeOutputFile(container) ?: return
+    persistToolsExportDirectory(container, output)
     session.busy = true
     session.cancelled = false
     session.error = ""
@@ -694,30 +699,16 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
     }
 }
 
-private fun defaultMergeName(container: AppContainer): String =
-    ToolsExportWiringPresentation.defaultMergePdfPath(container.settings.value.tools.exportDirectory)
-
-private fun choosePdfs(title: String): List<File> {
-    val dialog = FileDialog(null as Frame?, title, FileDialog.LOAD)
-    dialog.isMultipleMode = true
-    dialog.file = "*.pdf"
-    dialog.isVisible = true
-    val files = dialog.files?.toList().orEmpty()
-    if (files.isNotEmpty()) return files.filter { it.extension.equals("pdf", ignoreCase = true) }
-    val directory = dialog.directory ?: return emptyList()
-    val file = dialog.file ?: return emptyList()
-    return listOf(File(directory, file)).filter { it.exists() }
-}
-
-private fun chooseSave(title: String, defaultPath: String): File? {
-    val dialog = FileDialog(null as Frame?, title, FileDialog.SAVE)
-    val preset = File(defaultPath)
-    dialog.directory = preset.parent
-    dialog.file = preset.name
-    dialog.isVisible = true
-    val directory = dialog.directory ?: return null
-    val file = dialog.file ?: return null
-    val chosen = File(directory, file)
+private fun pickMergeOutputFile(container: AppContainer): File? {
+    val preset = File(
+        ToolsExportWiringPresentation.defaultMergePdfPath(container.settings.value.tools.exportDirectory),
+    )
+    val chosen = chooseFileWithExportDirectory(
+        container,
+        save = true,
+        title = container.t("pdf.startMerge"),
+        defaultFileName = preset.name,
+    ) ?: return null
     return if (chosen.extension.isBlank()) File(chosen.path + ".pdf") else chosen
 }
 
