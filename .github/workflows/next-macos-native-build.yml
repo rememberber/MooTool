@@ -49,3 +49,43 @@ jobs:
             next-macos-native/dist/universal/*.dmg
             next-macos-native/dist/universal/build-info.json
           if-no-files-found: error
+
+  release:
+    name: GitHub Pre-release (not Latest)
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: MooTool-Next-macOS-Native-universal
+          path: release-assets
+      - name: Create prerelease without changing repository Latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < next-macos-native/VERSION)"
+          notes="next-macos-native/release-notes/${version}.md"
+          test -f "$notes"
+          test "$RELEASE_TAG" = "next-macos-native-v${version}"
+          shopt -s nullglob
+          files=(release-assets/*.dmg release-assets/build-info.json)
+          test "${#files[@]}" -ge 2
+          dmg="release-assets/MooTool-Next-macOS-Native-${version}-mac-universal.dmg"
+          test -s "$dmg"
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_TAG} already exists; uploading assets" >&2
+            gh release upload "$RELEASE_TAG" "${files[@]}" --clobber
+          else
+            gh release create "$RELEASE_TAG" "${files[@]}" \
+              --title "MooTool Next macOS Native ${version}" \
+              --notes-file "$notes" \
+              --prerelease \
+              --latest=false
+          fi
+          echo "::warning::Native macOS packages use ad-hoc signing without Apple notarization. Did not update update-manifest.json. make_latest is false."

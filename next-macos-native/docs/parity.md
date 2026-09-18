@@ -53,7 +53,7 @@
 
 **「尚未覆盖 / 明确边界」列**：记录与 Electron 的**能力差距**及 0.8 **有意不交付**项（Monaco、附件双向实时同步、完整 cronstrue、HTTP 全量 cURL、安装包静默安装等），不是 0.8 待办清单。关联 workspace 文档（[quick-note-workspace.md](quick-note-workspace.md)、[json-engine.md](json-engine.md)、[reformat-workspace.md](reformat-workspace.md)、[text-diff-workspace.md](text-diff-workspace.md)、[note-attachments.md](note-attachments.md)）与上表同步。
 
-**发布与门禁**：根 [README.md](../../README.md) 与 [release-notes/0.7.0.md](../release-notes/0.7.0.md)、[0.8.0.md](../release-notes/0.8.0.md) 已标注 **0.8.0**；[`./scripts/check-core.sh`](../scripts/check-core.sh) **59 组 0 失败**、[`./scripts/smoke.sh`](../scripts/smoke.sh) 全绿见 [verification-0.8.0.md](verification-0.8.0.md)（2026-09-17）。
+**发布与门禁**：首个公开预发布版为 GitHub tag [`next-macos-native-v0.8.0`](https://github.com/rememberber/MooTool/releases/tag/next-macos-native-v0.8.0)（`prerelease`，`make_latest: false`）。根 [README.md](../../README.md) 与 [release-notes/0.7.0.md](../release-notes/0.7.0.md)、[0.8.0.md](../release-notes/0.8.0.md) 已标注 **0.8.0**；[`./scripts/check-core.sh`](../scripts/check-core.sh) **59 组 0 失败**、[`./scripts/smoke.sh`](../scripts/smoke.sh) 全绿见 [verification-0.8.0.md](verification-0.8.0.md)（2026-09-17）。
 
 ## 验证口径
 

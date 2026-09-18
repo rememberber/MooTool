@@ -11,7 +11,7 @@ MooTool 的各实现使用固定产品 ID，版本号、发布节奏、发布页
 | `java` | MooTool Java | 旧版独立维护 | `version_summary.json` + `download_links.json` |
 | `next-electron` | MooTool Next Electron | 活跃，当前客户端 | 根目录 `update-manifest.json` |
 | `next-tauri` | MooTool Next Tauri | 规划中 | 发布时启用自己的清单节点 |
-| `next-macos-native` | MooTool Next macOS Native | 规划中 | 发布时启用自己的清单节点 |
+| `next-macos-native` | MooTool Next macOS Native | 公开预发布 0.8.0 | 应用内检查本产品 GitHub Releases；清单节点暂不启用 |
 
 Electron 客户端在代码中固定使用 `next-electron`，不提供运行时切换产品的设置。这样即使 Java 或其他 Next 实现的版本号更高，也不会触发 Electron 更新。
 

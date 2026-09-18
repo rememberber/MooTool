@@ -87,7 +87,7 @@ Java 的历史更新协议没有预发布通道，因此 Java 发布工具只接
 | --- | --- | --- |
 | `.github/workflows/build-installers.yml` | `v*` | MooTool Java |
 | `.github/workflows/next-build-installers.yml` | `next-electron-v*` | MooTool Next Electron |
-| `.github/workflows/next-macos-native-build.yml` | `next-macos-native-v*` | MooTool Next macOS Native（构建工件，尚不自动发布） |
+| `.github/workflows/next-macos-native-build.yml` | `next-macos-native-v*` | MooTool Next macOS Native（Universal DMG Pre-release，`make_latest: false`） |
 
 每条发布流水线至少应完成以下校验：
 

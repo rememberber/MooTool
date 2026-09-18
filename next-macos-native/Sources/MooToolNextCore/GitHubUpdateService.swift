@@ -18,8 +18,9 @@ public struct UpdateCheckResult: Equatable, Sendable {
 }
 
 public enum GitHubUpdateService {
+    public static let productTagPrefix = "next-macos-native-v"
     public static let releasesPage = URL(string: "https://github.com/rememberber/MooTool/releases")!
-    private static let latestAPI = URL(string: "https://api.github.com/repos/rememberber/MooTool/releases/latest")!
+    private static let releasesAPI = URL(string: "https://api.github.com/repos/rememberber/MooTool/releases?per_page=100")!
 
     public static func compare(_ lhs: String, _ rhs: String) -> ComparisonResult {
         let left = parseVersion(lhs)
@@ -34,13 +35,35 @@ public enum GitHubUpdateService {
         return .orderedSame
     }
 
+    public static func latestNative(from releases: [[String: Any]], currentVersion: String) -> UpdateCheckResult {
+        var bestVersion: String?
+        var bestURL: URL?
+        for item in releases {
+            if item["draft"] as? Bool == true { continue }
+            guard let tag = item["tag_name"] as? String, tag.hasPrefix(productTagPrefix) else { continue }
+            let version = normalizeTag(tag)
+            guard !version.isEmpty else { continue }
+            if let current = bestVersion, compare(current, version) != .orderedAscending { continue }
+            bestVersion = version
+            bestURL = (item["html_url"] as? String).flatMap(URL.init(string:)) ?? releasesPage
+        }
+        guard let latest = bestVersion else {
+            return UpdateCheckResult(status: .failed, currentVersion: currentVersion, message: "No native releases")
+        }
+        let url = bestURL ?? releasesPage
+        if compare(currentVersion, latest) == .orderedAscending {
+            return UpdateCheckResult(status: .available, currentVersion: currentVersion, latestVersion: latest, releaseURL: url)
+        }
+        return UpdateCheckResult(status: .upToDate, currentVersion: currentVersion, latestVersion: latest, releaseURL: url)
+    }
+
     public static func check(currentVersion: String) async -> UpdateCheckResult {
         let trimmed = currentVersion.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed != "Development" else {
             return UpdateCheckResult(status: .failed, currentVersion: trimmed, message: "Development build")
         }
         do {
-            var request = URLRequest(url: latestAPI)
+            var request = URLRequest(url: releasesAPI)
             request.timeoutInterval = 15
             request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
             request.setValue("MooTool-Next-Native", forHTTPHeaderField: "User-Agent")
@@ -48,25 +71,22 @@ public enum GitHubUpdateService {
             guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
                 return UpdateCheckResult(status: .failed, currentVersion: trimmed, message: "HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0)")
             }
-            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let tag = json["tag_name"] as? String else {
+            guard let list = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
                 return UpdateCheckResult(status: .failed, currentVersion: trimmed, message: "Invalid release payload")
             }
-            let latest = normalizeTag(tag)
-            let html = json["html_url"] as? String
-            let url = html.flatMap(URL.init(string:)) ?? releasesPage
-            if compare(trimmed, latest) == .orderedAscending {
-                return UpdateCheckResult(status: .available, currentVersion: trimmed, latestVersion: latest, releaseURL: url)
-            }
-            return UpdateCheckResult(status: .upToDate, currentVersion: trimmed, latestVersion: latest, releaseURL: url)
+            return latestNative(from: list, currentVersion: trimmed)
         } catch {
             return UpdateCheckResult(status: .failed, currentVersion: trimmed, message: error.localizedDescription)
         }
     }
 
-    private static func normalizeTag(_ tag: String) -> String {
+    public static func normalizeTag(_ tag: String) -> String {
         var value = tag.trimmingCharacters(in: .whitespacesAndNewlines)
-        if value.hasPrefix("v") || value.hasPrefix("V") { value.removeFirst() }
+        if value.hasPrefix(productTagPrefix) {
+            value.removeFirst(productTagPrefix.count)
+        } else if value.hasPrefix("v") || value.hasPrefix("V") {
+            value.removeFirst()
+        }
         return value
     }
 

@@ -1157,6 +1157,20 @@ final class CoreTests: XCTestCase {
         try? FileManager.default.removeItem(at: folderRoot)
         XCTAssertEqual(GitHubUpdateService.compare("0.8.0", "0.9.0"), .orderedAscending)
         XCTAssertEqual(GitHubUpdateService.compare("1.0.0", "0.9.9"), .orderedDescending)
+        XCTAssertEqual(GitHubUpdateService.normalizeTag("next-macos-native-v0.8.0"), "0.8.0")
+        let nativeReleases: [[String: Any]] = [
+            ["tag_name": "next-electron-v1.2.0", "draft": false, "prerelease": false, "html_url": "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.0"],
+            ["tag_name": "v1.8.6", "draft": false, "html_url": "https://github.com/rememberber/MooTool/releases/tag/v1.8.6"],
+            ["tag_name": "next-macos-native-v0.7.0", "draft": false, "prerelease": true, "html_url": "https://github.com/rememberber/MooTool/releases/tag/next-macos-native-v0.7.0"],
+            ["tag_name": "next-macos-native-v0.8.0", "draft": false, "prerelease": true, "html_url": "https://github.com/rememberber/MooTool/releases/tag/next-macos-native-v0.8.0"],
+            ["tag_name": "next-macos-native-v0.9.0", "draft": true, "prerelease": true, "html_url": "https://github.com/rememberber/MooTool/releases/tag/next-macos-native-v0.9.0"]
+        ]
+        let nativeUpdate = GitHubUpdateService.latestNative(from: nativeReleases, currentVersion: "0.7.0")
+        XCTAssertEqual(nativeUpdate.status, .available)
+        XCTAssertEqual(nativeUpdate.latestVersion, "0.8.0")
+        XCTAssertEqual(nativeUpdate.releaseURL?.absoluteString, "https://github.com/rememberber/MooTool/releases/tag/next-macos-native-v0.8.0")
+        XCTAssertEqual(GitHubUpdateService.latestNative(from: nativeReleases, currentVersion: "0.8.0").status, .upToDate)
+        XCTAssertEqual(GitHubUpdateService.latestNative(from: [], currentVersion: "0.8.0").status, .failed)
         XCTAssertEqual(AppLocalization.toolTitle("quickNote", language: .enUS), "Quick Note")
         XCTAssertEqual(AppLocalization.string("http.tab.params", language: .enUS), "Params")
         XCTAssertEqual(AppLocalization.string("tool.send", language: .jaJP), "送信")
@@ -1203,7 +1217,7 @@ final class CoreTests: XCTestCase {
         var address = sockaddr_in(); address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
         address.sin_family = sa_family_t(AF_INET); address.sin_addr.s_addr = inet_addr("127.0.0.1")
         let bound = withUnsafePointer(to: &address) { pointer in
-            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(listener, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) }
+            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { Darwin.bind(listener, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) }
         }
         guard bound == 0, listen(listener, 1) == 0 else { throw ToolError("Cannot bind local fixture") }
         var size = socklen_t(MemoryLayout<sockaddr_in>.size)
@@ -1266,7 +1280,7 @@ private struct HTTPFixture: @unchecked Sendable {
         guard descriptor >= 0 else { throw ToolError("Cannot create fixture socket") }
         var address = sockaddr_in(); address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
         address.sin_family = sa_family_t(AF_INET); address.sin_addr.s_addr = inet_addr("127.0.0.1")
-        let bound = withUnsafePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(descriptor, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) } }
+        let bound = withUnsafePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { Darwin.bind(descriptor, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) } }
         guard bound == 0, listen(descriptor, 4) == 0 else { close(descriptor); throw ToolError("Cannot bind fixture") }
         var size = socklen_t(MemoryLayout<sockaddr_in>.size)
         _ = withUnsafeMutablePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(descriptor, $0, &size) } }
