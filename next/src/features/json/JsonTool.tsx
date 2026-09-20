@@ -7,6 +7,7 @@ import {
   defaultFindReplaceOptions,
   findAllMatches,
   findNextMatch,
+  findNextMatchWithWrap,
   replaceAllMatches,
   replaceCurrentMatch,
   type FindReplaceOptions
@@ -264,11 +265,13 @@ export function JsonTool() {
     const fromIndex = forward
       ? (selection?.end ?? 0)
       : (selection?.start ?? 0)
-    const match = findNextMatch(state.content, state.findQuery, state.findOptions, fromIndex, forward)
-    if (!match) {
+    const result = findNextMatchWithWrap(state.content, state.findQuery, state.findOptions, fromIndex, forward)
+    if (!result) {
       toast.info(t('findReplace.noMatches'))
       return
     }
+    const { match, wrapped } = result
+    if (wrapped) toast.info(t(forward ? 'findReplace.wrappedToStart' : 'findReplace.wrappedToEnd'))
     findIndexRef.current = forward ? match.end : match.start
     jsonFindIndex = findIndexRef.current
     editorRef.current?.selectRange(match.start, match.end)

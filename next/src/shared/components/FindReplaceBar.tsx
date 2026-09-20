@@ -87,9 +87,10 @@ export function FindReplaceBar({
           value={findText}
           onChange={(event) => onFindTextChange(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
               event.preventDefault()
-              onFind()
+              onFindNext()
+              event.currentTarget.focus()
             }
           }}
         />

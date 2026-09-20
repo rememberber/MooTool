@@ -42,6 +42,7 @@ import {
   defaultFindReplaceOptions,
   findAllMatches,
   findNextMatch,
+  findNextMatchWithWrap,
   replaceAllMatches,
   replaceCurrentMatch,
   type FindReplaceOptions
@@ -883,11 +884,13 @@ export function QuickNoteTool() {
     const fromIndex = forward
       ? (selection?.end ?? findIndexRef.current)
       : (selection?.start ?? findIndexRef.current)
-    const match = findNextMatch(state.content, state.findText, state.findOptions, fromIndex, forward)
-    if (!match) {
+    const result = findNextMatchWithWrap(state.content, state.findText, state.findOptions, fromIndex, forward)
+    if (!result) {
       toast.info(t('findReplace.noMatches'))
       return
     }
+    const { match, wrapped } = result
+    if (wrapped) toast.info(t(forward ? 'findReplace.wrappedToStart' : 'findReplace.wrappedToEnd'))
     findIndexRef.current = forward ? match.end : match.start
     quickNoteFindIndex = findIndexRef.current
     editorRef.current?.selectRange(match.start, match.end)

@@ -583,8 +583,17 @@ test('formats JSON and completes history and Vault workflows', async () => {
   await expect(mainPage.locator('.json-editor .cm-lineNumbers .cm-activeLineGutter')).toHaveCount(1)
   await expect(mainPage.locator('.json-editor .cm-foldGutter')).toHaveCount(1)
 
+  await editor.focus()
+  await mainPage.keyboard.press('ControlOrMeta+Home')
   await mainPage.locator('.editor-toolbar').getByRole('button', { name: '查找', exact: true }).click()
   const findInput = mainPage.getByRole('textbox', { name: '查找', exact: true })
+  await findInput.fill('"')
+  await expect(mainPage.locator('.json-editor .cm-searchMatch')).toHaveCount(4)
+  for (let index = 0; index < 5; index += 1) {
+    await findInput.press('Enter')
+    await expect(findInput).toBeFocused()
+  }
+  await expect(mainPage.locator('.toast--info .toast__message')).toHaveText('已到最后一个匹配项，继续从第一处查找')
   await findInput.fill('"a"')
   await expect(mainPage.locator('.json-editor .cm-searchMatch')).toHaveCount(1)
   await editor.focus()

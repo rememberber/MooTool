@@ -3,6 +3,7 @@ import {
   buildSearchRegExp,
   findAllMatches,
   findNextMatch,
+  findNextMatchWithWrap,
   replaceAllMatches,
   replaceCurrentMatch
 } from './findReplace'
@@ -52,6 +53,23 @@ describe('findReplace', () => {
     expect(findNextMatch(content, 'one', options, 11, true)).toEqual({ start: 0, end: 3 })
     expect(findNextMatch(content, 'one', options, 8, false)).toEqual({ start: 0, end: 3 })
     expect(findNextMatch(content, 'one', options, 0, false)).toEqual({ start: 8, end: 11 })
+  })
+
+  it('reports when navigation wraps around the document', () => {
+    const content = 'one two one'
+    const options = { matchCase: false, wholeWord: false, regex: false }
+    expect(findNextMatchWithWrap(content, 'one', options, 3, true)).toEqual({
+      match: { start: 8, end: 11 },
+      wrapped: false
+    })
+    expect(findNextMatchWithWrap(content, 'one', options, 11, true)).toEqual({
+      match: { start: 0, end: 3 },
+      wrapped: true
+    })
+    expect(findNextMatchWithWrap(content, 'one', options, 0, false)).toEqual({
+      match: { start: 8, end: 11 },
+      wrapped: true
+    })
   })
 
   it('replaces the current exact selection', () => {

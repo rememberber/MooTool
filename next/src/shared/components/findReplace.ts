@@ -9,6 +9,11 @@ export type FindMatch = {
   end: number
 }
 
+export type FindNavigationResult = {
+  match: FindMatch
+  wrapped: boolean
+}
+
 export const defaultFindReplaceOptions: FindReplaceOptions = {
   matchCase: false,
   wholeWord: false,
@@ -56,16 +61,30 @@ export function findNextMatch(
   fromIndex: number,
   forward: boolean
 ): FindMatch | null {
+  return findNextMatchWithWrap(content, query, options, fromIndex, forward)?.match ?? null
+}
+
+/** Find from the requested position and report when navigation continues from the opposite end. */
+export function findNextMatchWithWrap(
+  content: string,
+  query: string,
+  options: FindReplaceOptions,
+  fromIndex: number,
+  forward: boolean
+): FindNavigationResult | null {
   const matches = findAllMatches(content, query, options)
   if (!matches.length) return null
   if (forward) {
-    return matches.find((match) => match.start >= fromIndex) ?? matches[0]
+    const next = matches.find((match) => match.start >= fromIndex)
+    return next
+      ? { match: next, wrapped: false }
+      : { match: matches[0], wrapped: true }
   }
   for (let index = matches.length - 1; index >= 0; index -= 1) {
     const match = matches[index]
-    if (match.end <= fromIndex) return match
+    if (match.end <= fromIndex) return { match, wrapped: false }
   }
-  return matches[matches.length - 1]
+  return { match: matches[matches.length - 1], wrapped: true }
 }
 
 /** Expand `\n` `\t` `\r` and `\\` in a regex replacement. `$1` / `$&` stay as JS tokens. */

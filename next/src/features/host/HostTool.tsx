@@ -10,6 +10,7 @@ import {
   defaultFindReplaceOptions,
   findAllMatches,
   findNextMatch,
+  findNextMatchWithWrap,
   replaceAllMatches,
   replaceCurrentMatch,
   type FindReplaceOptions
@@ -236,11 +237,13 @@ export function HostTool() {
     const fromIndex = forward
       ? (selection?.end ?? 0)
       : (selection?.start ?? 0)
-    const match = findNextMatch(content, find, findOptions, fromIndex, forward)
-    if (!match) {
+    const result = findNextMatchWithWrap(content, find, findOptions, fromIndex, forward)
+    if (!result) {
       actions.toast.info(t('findReplace.noMatches'))
       return
     }
+    const { match, wrapped } = result
+    if (wrapped) actions.toast.info(t(forward ? 'findReplace.wrappedToStart' : 'findReplace.wrappedToEnd'))
     editorRef.current?.selectRange(match.start, match.end)
   }
 

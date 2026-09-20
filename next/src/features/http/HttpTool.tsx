@@ -10,7 +10,7 @@ import { resolveTextCodeEditorLanguage } from '@/shared/components/codeEditorLan
 import {
   defaultFindReplaceOptions,
   findAllMatches,
-  findNextMatch,
+  findNextMatchWithWrap,
   type FindReplaceOptions
 } from '@/shared/components/findReplace'
 import { httpMethods, type HttpCookieEntry, type HttpRequestDraft, type HttpRequestHistory, type HttpResponseResult, type KeyValueEntry, type SavedHttpRequest } from '@/shared/contracts/network'
@@ -159,11 +159,13 @@ export function HttpTool() {
     if (!find) return
     const selection = responseEditorRef.current?.getSelection()
     const fromIndex = forward ? (selection?.end ?? 0) : (selection?.start ?? 0)
-    const match = findNextMatch(responseText, find, findOptions, fromIndex, forward)
-    if (!match) {
+    const result = findNextMatchWithWrap(responseText, find, findOptions, fromIndex, forward)
+    if (!result) {
       actions.toast.info(t('findReplace.noMatches'))
       return
     }
+    const { match, wrapped } = result
+    if (wrapped) actions.toast.info(t(forward ? 'findReplace.wrappedToStart' : 'findReplace.wrappedToEnd'))
     responseEditorRef.current?.selectRange(match.start, match.end)
   }
 
