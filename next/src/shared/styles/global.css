@@ -7260,8 +7260,8 @@ select:not([multiple]) {
 }
 
 .image-canvas--fit img {
-  max-width: 100%;
-  max-height: 100%;
+  max-width: none;
+  max-height: none;
 }
 
 .image-canvas .image-placeholder {
@@ -7286,6 +7286,19 @@ select:not([multiple]) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.tool-page .image-zoom-toolbar .image-actual-size-button {
+  width: 38px;
+  flex-basis: 38px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.image-zoom-toolbar .icon-button[aria-pressed='true'] {
+  color: var(--accent-strong);
+  background: var(--control-active);
 }
 
 .base64-dialog-text {

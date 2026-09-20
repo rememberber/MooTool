@@ -1,5 +1,5 @@
-import { ClipboardCopy, ClipboardPaste, Download, FileImage, FolderOpen, ImageDown, ImagePlus, List, Maximize2, Minimize2, Minus, Pencil, Plus, Save, ScanLine, Shapes, Trash2, Type, Upload, ZoomIn } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ClipboardCopy, ClipboardPaste, Download, FileImage, FolderOpen, ImageDown, ImagePlus, List, Maximize2, Minimize2, Minus, Pencil, Plus, Save, ScanLine, Shapes, Trash2, Type, Upload } from 'lucide-react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ToolPageHeader, WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import type { ImageAsset, ImageAssetSummary, ImageVectorizeOptions } from '@/shared/contracts/images'
@@ -24,6 +24,10 @@ export function ImageTool() {
   const [compressOpen, setCompressOpen] = useState(false)
   const [watermarkOpen, setWatermarkOpen] = useState(false)
   const [svgOpen, setSvgOpen] = useState(false)
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 })
+  const canvasRef = useRef<HTMLDivElement>(null)
+  const zoomAnchorRef = useRef<ZoomAnchor | null>(null)
+  const effectiveZoomRef = useRef(1)
 
   const loadAssets = useCallback(async (preferredName?: string) => {
     const next = await window.mootool.listImageAssets()
@@ -41,6 +45,84 @@ export function ImageTool() {
 
   useEffect(() => { void loadAssets() }, [loadAssets])
   const processingNames = useMemo(() => selectedNames.length > 0 ? selectedNames : current ? [current.name] : [], [current, selectedNames])
+  const fitZoom = useMemo(() => current ? calculateFitZoom(current.width, current.height, canvasSize.width, canvasSize.height) : 1, [canvasSize, current])
+  const effectiveZoom = fit ? fitZoom : zoom
+  const maximumZoom = Math.max(5, fitZoom * 4)
+  effectiveZoomRef.current = effectiveZoom
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const measure = () => {
+      const style = window.getComputedStyle(canvas)
+      const width = Math.max(0, canvas.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight))
+      const height = Math.max(0, canvas.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom))
+      setCanvasSize((value) => value.width === width && value.height === height ? value : { width, height })
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(canvas)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const handleWheel = (event: WheelEvent) => {
+      if (!current || !event.ctrlKey) return
+      event.preventDefault()
+      rememberZoomAnchor(canvas, event.clientX, event.clientY, zoomAnchorRef)
+      const nextZoom = clampZoom(effectiveZoomRef.current * Math.exp(-event.deltaY * 0.01), maximumZoom)
+      if (Math.abs(nextZoom - effectiveZoomRef.current) < 0.001) {
+        zoomAnchorRef.current = null
+        return
+      }
+      effectiveZoomRef.current = nextZoom
+      setFit(false)
+      setZoom(nextZoom)
+    }
+    canvas.addEventListener('wheel', handleWheel, { passive: false })
+    return () => canvas.removeEventListener('wheel', handleWheel)
+  }, [current, maximumZoom])
+
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    if (fit) {
+      zoomAnchorRef.current = null
+      canvas.scrollLeft = 0
+      canvas.scrollTop = 0
+      return
+    }
+    const anchor = zoomAnchorRef.current
+    const image = canvas.querySelector('img')
+    if (!anchor || !image) return
+    const imageRect = image.getBoundingClientRect()
+    canvas.scrollLeft += imageRect.left + imageRect.width * anchor.xRatio - anchor.clientX
+    canvas.scrollTop += imageRect.top + imageRect.height * anchor.yRatio - anchor.clientY
+    zoomAnchorRef.current = null
+  }, [current, fit, zoom])
+
+  function changeZoom(factor: number): void {
+    const canvas = canvasRef.current
+    if (!current || !canvas) return
+    const canvasRect = canvas.getBoundingClientRect()
+    rememberZoomAnchor(canvas, canvasRect.left + canvasRect.width / 2, canvasRect.top + canvasRect.height / 2, zoomAnchorRef)
+    const nextZoom = clampZoom(effectiveZoomRef.current * factor, maximumZoom)
+    effectiveZoomRef.current = nextZoom
+    setFit(false)
+    setZoom(nextZoom)
+  }
+
+  function showOriginalSize(): void {
+    const canvas = canvasRef.current
+    if (!current || !canvas) return
+    const canvasRect = canvas.getBoundingClientRect()
+    rememberZoomAnchor(canvas, canvasRect.left + canvasRect.width / 2, canvasRect.top + canvasRect.height / 2, zoomAnchorRef)
+    effectiveZoomRef.current = 1
+    setFit(false)
+    setZoom(1)
+  }
 
   async function selectAsset(name: string): Promise<void> {
     try {
@@ -170,7 +252,7 @@ export function ImageTool() {
         <div className="image-main-toolbar"><button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('image.toggleList')} onClick={() => setListVisible((value) => !value)}><List size={14} /></button><button className="toolbar-button" type="button" disabled={busy} onClick={() => { void capture() }}><ScanLine size={14} />{t('image.screenshot')}</button><button className="toolbar-button" type="button" onClick={() => { void importClipboard() }}><ClipboardPaste size={14} />{t('image.fromClipboard')}</button><button className="toolbar-button" type="button" onClick={() => { void importImages() }}><FolderOpen size={14} />{t('image.import')}</button><button className="toolbar-button" type="button" onClick={() => setBase64Mode('import')}><ImageDown size={14} />{t('image.fromBase64')}</button><WorkspaceDragZone className="p4-toolbar__spacer" /><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setSvgOpen(true)}><Shapes size={14} />{t('image.toSvg')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setCompressOpen(true)}><Minimize2 size={14} />{t('image.compress')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setWatermarkOpen(true)}><Type size={14} />{t('image.watermark')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => { void saveCurrent() }}><Save size={14} />{t('common.save')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => { void copyImage() }}><ClipboardCopy size={14} />{t('image.copy')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => setBase64Mode('export')}><Upload size={14} />{t('image.toBase64')}</button></div>
         <ResizableColumns className={listVisible ? 'image-layout' : 'image-layout image-layout--collapsed'} columns={listVisible ? 2 : 1} defaultSizes={listVisible ? [230, 770] : [1]} minPaneWidths={listVisible ? [180, 360] : [360]} storageKey="image-library">
           {listVisible && <aside className="image-library"><header><span>{t('image.library')}</span><button className="icon-button" type="button" aria-label={t('image.import')} onClick={() => { void importImages() }}><ImagePlus size={14} /></button></header><div className="image-list">{assets.length === 0 ? <div className="history-empty">{t('image.empty')}</div> : assets.map((asset) => <div className={current?.name === asset.name ? 'image-list-item image-list-item--active' : 'image-list-item'} key={asset.name}><input type="checkbox" aria-label={`${t('image.select')} ${asset.name}`} checked={selectedNames.includes(asset.name)} onChange={(event) => toggleAsset(asset.name, event.target.checked)} /><button type="button" onClick={() => { void selectAsset(asset.name) }}><FileImage size={15} /><span><strong>{asset.name}</strong><small>{asset.width} × {asset.height} · {formatBytes(asset.size)}</small></span></button></div>)}</div><footer><button className="icon-button" type="button" disabled={!current} aria-label={t('common.rename')} onClick={() => { void renameCurrent() }}><Pencil size={14} /></button><button className="icon-button" type="button" disabled={!processingNames.length} aria-label={t('common.export')} onClick={() => { void exportSelected() }}><Download size={14} /></button><button className="icon-button icon-button--danger" type="button" disabled={!processingNames.length} aria-label={t('common.action.delete')} onClick={() => { void deleteSelected() }}><Trash2 size={14} /></button></footer></aside>}
-          <main className="image-canvas-panel" onDoubleClick={() => { if (current) void window.mootool.openImageAsset(current.name) }}><div className={fit ? 'image-canvas image-canvas--fit' : 'image-canvas'}>{current ? <img src={current.dataUrl} alt={current.name} style={fit ? undefined : { width: `${current.width * zoom}px`, height: `${current.height * zoom}px` }} /> : <div className="image-placeholder"><FileImage size={48} /><span>{t('image.emptyPreview')}</span></div>}</div><div className="image-zoom-toolbar" onDoubleClick={(event) => event.stopPropagation()}><button className="icon-button" type="button" aria-label={t('image.zoomIn')} disabled={!current} onClick={() => { setFit(false); setZoom((value) => Math.min(5, value * 1.1)) }}><Plus size={14} /></button><button className="icon-button" type="button" aria-label={t('image.zoomOut')} disabled={!current} onClick={() => { setFit(false); setZoom((value) => Math.max(0.1, value * 0.9)) }}><Minus size={14} /></button><button className="icon-button" type="button" aria-label={t('image.original')} disabled={!current} onClick={() => { setFit(false); setZoom(1) }}><ZoomIn size={14} /></button><button className="icon-button" type="button" aria-label={t('image.fit')} disabled={!current} onClick={() => setFit(true)}><Maximize2 size={14} /></button><span>{current ? `${current.width} × ${current.height} · ${formatBytes(current.size)} · ${fit ? t('image.fit') : `${Math.round(zoom * 100)}%`}` : ''}</span></div></main>
+          <main className="image-canvas-panel" onDoubleClick={() => { if (current) void window.mootool.openImageAsset(current.name) }}><div ref={canvasRef} className={fit ? 'image-canvas image-canvas--fit' : 'image-canvas'}>{current ? <img src={current.dataUrl} alt={current.name} style={{ width: `${current.width * effectiveZoom}px`, height: `${current.height * effectiveZoom}px` }} /> : <div className="image-placeholder"><FileImage size={48} /><span>{t('image.emptyPreview')}</span></div>}</div><div className="image-zoom-toolbar" onDoubleClick={(event) => event.stopPropagation()}><button className="icon-button" type="button" aria-label={t('image.zoomIn')} disabled={!current} onClick={() => changeZoom(1.1)}><Plus size={14} /></button><button className="icon-button" type="button" aria-label={t('image.zoomOut')} disabled={!current} onClick={() => changeZoom(1 / 1.1)}><Minus size={14} /></button><button className="icon-button image-actual-size-button" type="button" aria-label={t('image.original')} aria-pressed={!fit && Math.abs(zoom - 1) < 0.001} title={t('image.original')} disabled={!current} onClick={showOriginalSize}>1:1</button><button className="icon-button" type="button" aria-label={t('image.fit')} aria-pressed={fit} title={t('image.fit')} disabled={!current} onClick={() => setFit(true)}><Maximize2 size={14} /></button><span>{current ? `${current.width} × ${current.height} · ${formatBytes(current.size)} · ${fit ? `${t('image.fit')} · ` : ''}${Math.round(effectiveZoom * 100)}%` : ''}</span></div></main>
         </ResizableColumns>
       </div>
       <ImageBase64Dialog open={base64Mode !== null} mode={base64Mode ?? 'import'} value={base64Mode === 'export' ? current?.dataUrl ?? '' : ''} onClose={() => setBase64Mode(null)} onImport={(value) => { void importBase64(value) }} />
@@ -195,4 +277,36 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+type ZoomAnchor = {
+  clientX: number
+  clientY: number
+  xRatio: number
+  yRatio: number
+}
+
+function calculateFitZoom(imageWidth: number, imageHeight: number, viewportWidth: number, viewportHeight: number): number {
+  if (imageWidth <= 0 || imageHeight <= 0 || viewportWidth <= 0 || viewportHeight <= 0) return 1
+  return Math.min(viewportWidth / imageWidth, viewportHeight / imageHeight)
+}
+
+function clampZoom(value: number, maximum: number): number {
+  return Math.min(maximum, Math.max(0.1, value))
+}
+
+function rememberZoomAnchor(canvas: HTMLDivElement, clientX: number, clientY: number, anchorRef: { current: ZoomAnchor | null }): void {
+  const image = canvas.querySelector('img')
+  const imageRect = image?.getBoundingClientRect()
+  if (!imageRect || imageRect.width <= 0 || imageRect.height <= 0) {
+    anchorRef.current = null
+    return
+  }
+  const pointerInsideImage = clientX >= imageRect.left && clientX <= imageRect.right && clientY >= imageRect.top && clientY <= imageRect.bottom
+  anchorRef.current = {
+    clientX: pointerInsideImage ? clientX : imageRect.left + imageRect.width / 2,
+    clientY: pointerInsideImage ? clientY : imageRect.top + imageRect.height / 2,
+    xRatio: pointerInsideImage ? (clientX - imageRect.left) / imageRect.width : 0.5,
+    yRatio: pointerInsideImage ? (clientY - imageRect.top) / imageRect.height : 0.5
+  }
 }
