@@ -38,7 +38,7 @@ MooTool now has 7 independent product lines, each with its own code, build, vers
 | Product / source | Technology and overview | Target platforms | Status / download |
 | --- | --- | --- | --- |
 | [**MooTool Next Electron**](next/README.md) | Electron, Vite, React, TypeScript; the currently recommended desktop edition. | Windows / Linux / macOS | Stable: [Download 1.2.1](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.1) |
-| [**MooTool Java**](src/) | Java, Swing; the original desktop edition, still maintained. | Windows / Linux / macOS | Stable: [Download 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee mirror](https://gitee.com/zhoubochina/MooTool/releases) |
+| [**MooTool Java**](src/) | Java, Swing; the original desktop edition, still maintained. | Windows / Linux / macOS | Stable: [Download 1.8.7](https://github.com/rememberber/MooTool/releases/tag/v1.8.7) · [Gitee mirror](https://gitee.com/zhoubochina/MooTool/releases) |
 | [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2, Rust, React, TypeScript; 25 tools with independent storage and updates. | Windows / Linux / macOS | Release candidate: [Download 0.1.0-rc.2](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2) |
 | [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI, AppKit, system frameworks; native workspaces, JSON vault, quick notes, and image attachments. | macOS 14+ | Pre-release: [Download 0.8.0](https://github.com/rememberber/MooTool/releases/tag/next-macos-native-v0.8.0) |
 | [**MooTool Next Flutter**](next-flutter/README.md) | Flutter, Dart; tools and desktop channels are implemented, with platform acceptance and some capabilities still in progress. | Windows / Linux / macOS | 0.1.0 development build; local run and unsigned packaging scripts available. |
@@ -117,7 +117,7 @@ Other local stdio MCP clients can use **Copy MCP configuration**. See the [AI in
 ## Download
 
 - [MooTool Next Electron 1.2.1 (recommended)](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.1)
-- [MooTool Java 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6)
+- [MooTool Java 1.8.7](https://github.com/rememberber/MooTool/releases/tag/v1.8.7)
 - [MooTool Next Tauri 0.1.0-rc.2 (release candidate)](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2)
 - [MooTool Next macOS Native 0.8.0 (pre-release)](https://github.com/rememberber/MooTool/releases/tag/next-macos-native-v0.8.0)
 - [All GitHub Releases](https://github.com/rememberber/MooTool/releases)
@@ -399,7 +399,7 @@ See the [multi-product release conventions](RELEASE_CONVENTIONS.md) for version,
 
 Each product has an independent project. Read its README linked in the product table and work in the corresponding directory. The JDK, IntelliJ IDEA, Maven, and packaging instructions below apply only to MooTool Java at the repository root.
 
-Minimum JDK: **21**  
+Minimum JDK: **25**<br>
 Before you start, **configure IntelliJ IDEA as shown below**, then run **maven clean**:
 ![considerations](assets/material/gui_build.png)
 
@@ -410,7 +410,7 @@ Packaging JDKs can be downloaded and cached locally:
 - JDK archives: `downloads/jdks/`
 - Extracted JDKs: `jdks/<os>/<arch>/home`
 
-The download script uses Eclipse Temurin 21 and skips re-download when already present.
+The download script uses Eclipse Temurin 25 and reuses only a matching JDK. Add `--force` to replace an older cache.
 
 #### Prepare local packaging JDKs
 

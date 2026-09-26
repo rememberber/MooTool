@@ -38,7 +38,7 @@ MooTool 目前包含 7 条独立产品线，各自维护代码、构建、版本
 | 产品 / 源码 | 技术与介绍 | 目标平台 | 当前状态 / 下载 |
 | --- | --- | --- | --- |
 | [**MooTool Next Electron**](next/README.md) | Electron、Vite、React、TypeScript；当前推荐的主力桌面版本。 | Windows / Linux / macOS | 稳定版：[下载 1.2.1](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.1) |
-| [**MooTool Java**](src/) | Java、Swing；持续维护的原始桌面版本。 | Windows / Linux / macOS | 稳定版：[下载 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee 镜像](https://gitee.com/zhoubochina/MooTool/releases) |
+| [**MooTool Java**](src/) | Java、Swing；持续维护的原始桌面版本。 | Windows / Linux / macOS | 稳定版：[下载 1.8.7](https://github.com/rememberber/MooTool/releases/tag/v1.8.7) · [Gitee 镜像](https://gitee.com/zhoubochina/MooTool/releases) |
 | [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2、Rust、React、TypeScript；已实现 25 个工具、独立存储与更新。 | Windows / Linux / macOS | 候选预发布版：[下载 0.1.0-rc.2](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2) |
 | [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI、AppKit、系统框架；原生工作区、JSON 文档库、随手记与图片附件。 | macOS 14+ | 预发布版：[下载 0.8.0](https://github.com/rememberber/MooTool/releases/tag/next-macos-native-v0.8.0) |
 | [**MooTool Next Flutter**](next-flutter/README.md) | Flutter、Dart；工具与桌面通道已实现，平台验收和部分能力仍在完善。 | Windows / Linux / macOS | 0.1.0 开发版；提供本地运行与未签名打包脚本。 |
@@ -117,7 +117,7 @@ MooTool 目前包含 7 条独立产品线，各自维护代码、构建、版本
 ## 下载
 
 - [MooTool Next Electron 1.2.1（推荐）](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.1)
-- [MooTool Java 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6)
+- [MooTool Java 1.8.7](https://github.com/rememberber/MooTool/releases/tag/v1.8.7)
 - [MooTool Next Tauri 0.1.0-rc.2（候选预发布版）](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2)
 - [MooTool Next macOS Native 0.8.0（预发布版）](https://github.com/rememberber/MooTool/releases/tag/next-macos-native-v0.8.0)
 - [全部 GitHub Releases](https://github.com/rememberber/MooTool/releases)
@@ -401,7 +401,7 @@ MooTool
 
 各产品使用独立工程，请先阅读上方产品表链接的 README，并在对应目录开发。以下 JDK、IntelliJ IDEA、Maven 和打包说明仅适用于仓库根目录的 MooTool Java。
 
-最低JDK版本要求：**21**  
+最低JDK版本要求：**25**<br>
 在你开始开发之前, **请按下图设置IntelliJ IDEA**, 然后 **maven clean**:
 ![considerations](assets/material/gui_build.png)
 
@@ -412,7 +412,7 @@ MooTool
 - JDK 压缩包缓存：`downloads/jdks/`
 - 解压后的 JDK：`jdks/<os>/<arch>/home`
 
-下载脚本默认使用 Eclipse Temurin 21，并且如果本地已经存在对应 JDK，就不会重复下载。
+下载脚本默认使用 Eclipse Temurin 25；仅复用版本匹配的 JDK。旧缓存请加 `--force` 重新准备。
 
 #### 先准备本地打包 JDK
 

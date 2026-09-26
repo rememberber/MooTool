@@ -38,7 +38,7 @@ MooTool には現在 7 つの独立した製品ラインがあり、コード、
 | 製品 / ソース | 技術と概要 | 対象プラットフォーム | 状況 / ダウンロード |
 | --- | --- | --- | --- |
 | [**MooTool Next Electron**](next/README.md) | Electron、Vite、React、TypeScript。現在推奨する主力デスクトップ版。 | Windows / Linux / macOS | 安定版：[1.2.1 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.1) |
-| [**MooTool Java**](src/) | Java、Swing。保守を継続している従来のデスクトップ版。 | Windows / Linux / macOS | 安定版：[1.8.6 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee ミラー](https://gitee.com/zhoubochina/MooTool/releases) |
+| [**MooTool Java**](src/) | Java、Swing。保守を継続している従来のデスクトップ版。 | Windows / Linux / macOS | 安定版：[1.8.7 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/v1.8.7) · [Gitee ミラー](https://gitee.com/zhoubochina/MooTool/releases) |
 | [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2、Rust、React、TypeScript。25 個のツールと独立したデータ保存・更新を実装。 | Windows / Linux / macOS | リリース候補版：[0.1.0-rc.2 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2) |
 | [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI、AppKit、システムフレームワーク。ネイティブワークスペース、JSON ライブラリ、クイックメモ、画像添付。 | macOS 14+ | プレリリース：[0.8.0 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/next-macos-native-v0.8.0) |
 | [**MooTool Next Flutter**](next-flutter/README.md) | Flutter、Dart。ツールとデスクトップチャネルを実装済み。プラットフォーム検証と一部機能は対応中。 | Windows / Linux / macOS | 0.1.0 開発版。ローカル実行・未署名パッケージ作成スクリプトあり。 |
@@ -117,7 +117,7 @@ MooTool には現在 7 つの独立した製品ラインがあり、コード、
 ## ダウンロード
 
 - [MooTool Next Electron 1.2.1（推奨）](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.1)
-- [MooTool Java 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6)
+- [MooTool Java 1.8.7](https://github.com/rememberber/MooTool/releases/tag/v1.8.7)
 - [MooTool Next Tauri 0.1.0-rc.2（リリース候補版）](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2)
 - [MooTool Next macOS Native 0.8.0（プレリリース）](https://github.com/rememberber/MooTool/releases/tag/next-macos-native-v0.8.0)
 - [GitHub Releases 一覧](https://github.com/rememberber/MooTool/releases)
@@ -399,7 +399,7 @@ MooTool
 
 各製品は独立したプロジェクトです。製品表の README を読み、対応するディレクトリで開発してください。以下の JDK、IntelliJ IDEA、Maven、パッケージ作成の説明は、リポジトリ直下の MooTool Java にのみ適用されます。
 
-最低 JDK：**21**  
+最低 JDK：**25**<br>
 開発を始める前に、**下図のとおり IntelliJ IDEA を設定**し、**maven clean** を実行してください：
 ![considerations](assets/material/gui_build.png)
 
@@ -410,7 +410,7 @@ MooTool
 - JDK アーカイブ：`downloads/jdks/`
 - 展開済み JDK：`jdks/<os>/<arch>/home`
 
-ダウンロードスクリプトは Eclipse Temurin 21 を使用し、既存の JDK がある場合は再ダウンロードしません。
+ダウンロードスクリプトは Eclipse Temurin 25 を使用し、バージョンが一致する JDK のみ再利用します。古いキャッシュは `--force` で置き換えてください。
 
 #### ローカルパッケージング JDK の準備
 

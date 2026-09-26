@@ -6,7 +6,7 @@ before_install:
   - mvn install:install-file -Dfile=./lib/weblaf-1.29.jar -DgroupId=com.weblaf -DartifactId=weblaf-lnf -Dpackaging=jar -Dversion=1.2.9 -DgeneratePom=true -DcreateChecksum=true
 
 jdk:
-  - openjdk8
+  - openjdk25
 script: "mvn clean package -Dmaven.test.skip=true"
 
 notifications:
