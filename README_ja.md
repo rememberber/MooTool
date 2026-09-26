@@ -37,7 +37,7 @@ MooTool には現在 7 つの独立した製品ラインがあり、コード、
 
 | 製品 / ソース | 技術と概要 | 対象プラットフォーム | 状況 / ダウンロード |
 | --- | --- | --- | --- |
-| [**MooTool Next Electron**](next/README.md) | Electron、Vite、React、TypeScript。現在推奨する主力デスクトップ版。 | Windows / Linux / macOS | 安定版：[1.2.0 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.0) |
+| [**MooTool Next Electron**](next/README.md) | Electron、Vite、React、TypeScript。現在推奨する主力デスクトップ版。 | Windows / Linux / macOS | 安定版：[1.2.1 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.1) |
 | [**MooTool Java**](src/) | Java、Swing。保守を継続している従来のデスクトップ版。 | Windows / Linux / macOS | 安定版：[1.8.6 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee ミラー](https://gitee.com/zhoubochina/MooTool/releases) |
 | [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2、Rust、React、TypeScript。25 個のツールと独立したデータ保存・更新を実装。 | Windows / Linux / macOS | リリース候補版：[0.1.0-rc.2 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2) |
 | [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI、AppKit、システムフレームワーク。ネイティブワークスペース、JSON ライブラリ、クイックメモ、画像添付。 | macOS 14+ | プレリリース：[0.8.0 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/next-macos-native-v0.8.0) |
@@ -49,7 +49,7 @@ MooTool には現在 7 つの独立した製品ラインがあり、コード、
 
 ## AI から MooTool を使う（Next Electron）
 
-**MooTool Next Electron 1.2.0** は、MCP または単独 Skill を通じてローカル AI クライアントにツールを提供します。内蔵ランタイムを使うため Node.js の別途インストールは不要で、MooTool のウィンドウを閉じても呼び出せます。
+**MooTool Next Electron 1.2.1** は、MCP または単独 Skill を通じてローカル AI クライアントにツールを提供します。内蔵ランタイムを使うため Node.js の別途インストールは不要で、MooTool のウィンドウを閉じても呼び出せます。
 
 | クライアント | ワンクリック連携 |
 | --- | --- |
@@ -116,7 +116,7 @@ MooTool には現在 7 つの独立した製品ラインがあり、コード、
 
 ## ダウンロード
 
-- [MooTool Next Electron 1.2.0（推奨）](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.0)
+- [MooTool Next Electron 1.2.1（推奨）](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.1)
 - [MooTool Java 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6)
 - [MooTool Next Tauri 0.1.0-rc.2（リリース候補版）](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2)
 - [MooTool Next macOS Native 0.8.0（プレリリース）](https://github.com/rememberber/MooTool/releases/tag/next-macos-native-v0.8.0)
