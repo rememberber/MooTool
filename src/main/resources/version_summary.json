@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.8.6",
+  "currentVersion": "v1.8.7",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -57,7 +57,8 @@
     "v1.8.3": "53",
     "v1.8.4": "54",
     "v1.8.5": "55",
-    "v1.8.6": "56"
+    "v1.8.6": "56",
+    "v1.8.7": "57"
   },
   "versionDetailList": [
     {
@@ -376,6 +377,15 @@
       "logEn": "● feat: [Environment Variables] Added support for directly modifying system environment variables\n● feat: [Network/IP] Added IP range batch Ping scanning for network debugging\n● feat: [Quick Notes] Added line spacing adjustment\n● chore: Upgraded dependencies to the latest versions\n● fix: [Release] Fixed installer builds failing after the dependency upgrade due to jdom/JPMS conflicts\n\n",
       "titleJa": "環境変数、ネットワークスキャン、クイックノートの強化",
       "logJa": "● feat: 【環境変数】システム環境変数の直接編集に対応\n● feat: 【ネットワーク／IP】IP 範囲の一括 Ping スキャンに対応し、ネットワークデバッグを容易に\n● feat: 【クイックノート】行間の調整に対応\n● chore: 依存関係を最新バージョンに更新\n● fix: 【リリース】依存関係更新後に jdom／JPMS 衝突でインストーラー構築が失敗する問題を修正\n\n"
+    },
+    {
+      "version": "v1.8.7",
+      "title": "图片转 SVG 与 JDK 25",
+      "log": "● feat：【图片】图片助手支持将位图离线转换为 SVG\n● opt：【关于】推荐下载明确指向 MooTool Next Electron\n● chore：运行与打包 JDK 升级至 25\n\n",
+      "titleEn": "Image-to-SVG and JDK 25",
+      "logEn": "● feat: [Image] The image assistant can convert bitmaps to SVG offline\n● opt: [About] The recommended download now points to MooTool Next Electron\n● chore: Upgraded the runtime and packaging JDK to 25\n\n",
+      "titleJa": "画像の SVG 変換と JDK 25",
+      "logJa": "● feat: 【画像】画像アシスタントでビットマップをオフラインの SVG に変換できるようになりました\n● opt: 【バージョン情報】推奨ダウンロードを MooTool Next Electron に明確化\n● chore: 実行およびパッケージ用 JDK を 25 に更新\n\n"
     }
   ]
 }
