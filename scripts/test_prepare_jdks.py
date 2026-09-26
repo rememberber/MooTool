@@ -4,10 +4,38 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.prepare_jdks import TARGETS, format_size, install_from_existing_java_home, locate_java_home, parse_targets
+from scripts.prepare_jdks import TARGETS, format_size, install_from_existing_java_home, locate_java_home, parse_targets, prepare_target
 
 
 class PrepareJdksTests(unittest.TestCase):
+    def test_cached_jdk_requires_requested_version(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            home = root / "jdks" / "mac" / "arm64" / "home"
+            (home / "bin").mkdir(parents=True)
+            (home / "bin" / "java").touch()
+            for release in (None, 'JAVA_VERSION="21.0.8"\n'):
+                if release is not None:
+                    (home / "release").write_text(release)
+                with self.assertRaisesRegex(RuntimeError, "required Java 25"):
+                    prepare_target(root, "25", TARGETS["mac-arm64"], False, False, None)
+            (home / "release").write_text('JAVA_VERSION="25.0.1"\n')
+            self.assertEqual(prepare_target(root, "25", TARGETS["mac-arm64"], False, False, None), home)
+
+    def test_wrong_java_home_does_not_replace_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            source = root / "source"
+            source.mkdir()
+            (source / "release").write_text('JAVA_VERSION="21.0.8"\n')
+            home = root / "jdks" / "mac" / "arm64" / "home"
+            home.mkdir(parents=True)
+            marker = home / "keep"
+            marker.touch()
+            with self.assertRaisesRegex(RuntimeError, "required Java 25"):
+                prepare_target(root, "25", TARGETS["mac-arm64"], True, False, source)
+            self.assertTrue(marker.exists())
+
     def test_format_size_for_bytes(self) -> None:
         self.assertEqual(format_size(512), "512 B")
 
@@ -25,7 +53,7 @@ class PrepareJdksTests(unittest.TestCase):
     def test_locate_java_home_for_standard_layout(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)
-            home = root / "jdk-21"
+            home = root / "jdk-25"
             (home / "bin").mkdir(parents=True)
             (home / "bin" / "java").write_text("", encoding="utf-8")
             self.assertEqual(locate_java_home(root), home)
@@ -33,7 +61,7 @@ class PrepareJdksTests(unittest.TestCase):
     def test_locate_java_home_for_macos_layout(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)
-            home = root / "temurin-21.jdk" / "Contents" / "Home"
+            home = root / "temurin-25.jdk" / "Contents" / "Home"
             (home / "bin").mkdir(parents=True)
             (home / "bin" / "java").write_text("", encoding="utf-8")
             self.assertEqual(locate_java_home(root), home)
@@ -53,4 +81,3 @@ class PrepareJdksTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

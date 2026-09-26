@@ -399,7 +399,7 @@ See the [multi-product release conventions](RELEASE_CONVENTIONS.md) for version,
 
 Each product has an independent project. Read its README linked in the product table and work in the corresponding directory. The JDK, IntelliJ IDEA, Maven, and packaging instructions below apply only to MooTool Java at the repository root.
 
-Minimum JDK: **21**  
+Minimum JDK: **25**<br>
 Before you start, **configure IntelliJ IDEA as shown below**, then run **maven clean**:
 ![considerations](assets/material/gui_build.png)
 
@@ -410,7 +410,7 @@ Packaging JDKs can be downloaded and cached locally:
 - JDK archives: `downloads/jdks/`
 - Extracted JDKs: `jdks/<os>/<arch>/home`
 
-The download script uses Eclipse Temurin 21 and skips re-download when already present.
+The download script uses Eclipse Temurin 25 and reuses only a matching JDK. Add `--force` to replace an older cache.
 
 #### Prepare local packaging JDKs
 

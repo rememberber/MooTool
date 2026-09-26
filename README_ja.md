@@ -399,7 +399,7 @@ MooTool
 
 各製品は独立したプロジェクトです。製品表の README を読み、対応するディレクトリで開発してください。以下の JDK、IntelliJ IDEA、Maven、パッケージ作成の説明は、リポジトリ直下の MooTool Java にのみ適用されます。
 
-最低 JDK：**21**  
+最低 JDK：**25**<br>
 開発を始める前に、**下図のとおり IntelliJ IDEA を設定**し、**maven clean** を実行してください：
 ![considerations](assets/material/gui_build.png)
 
@@ -410,7 +410,7 @@ MooTool
 - JDK アーカイブ：`downloads/jdks/`
 - 展開済み JDK：`jdks/<os>/<arch>/home`
 
-ダウンロードスクリプトは Eclipse Temurin 21 を使用し、既存の JDK がある場合は再ダウンロードしません。
+ダウンロードスクリプトは Eclipse Temurin 25 を使用し、バージョンが一致する JDK のみ再利用します。古いキャッシュは `--force` で置き換えてください。
 
 #### ローカルパッケージング JDK の準備
 

@@ -68,6 +68,21 @@ def has_java_binary(home_dir: Path) -> bool:
     return any(candidate.exists() for candidate in java_binary_candidates(home_dir))
 
 
+def require_java_version(home_dir: Path, version: str) -> None:
+    release_file = home_dir / "release"
+    if release_file.is_file():
+        for line in release_file.read_text(encoding="utf-8").splitlines():
+            if line.startswith("JAVA_VERSION="):
+                actual = line.split("=", 1)[1].strip('"')
+                if actual.split(".", 1)[0].split("-", 1)[0] == version:
+                    return
+                break
+    raise RuntimeError(
+        f"JDK at {home_dir} does not match required Java {version}. "
+        "Use --force to replace an outdated cache, or provide a matching --java-home."
+    )
+
+
 def parse_targets(raw_targets: str) -> list[TargetSpec]:
     requested = [item.strip() for item in raw_targets.split(",") if item.strip()]
     if not requested:
@@ -207,6 +222,9 @@ def prepare_target(
     if resolve_only:
         return install_home
 
+    if java_home_override is not None:
+        require_java_version(java_home_override, version)
+
     if force:
         if archive_path.exists():
             archive_path.unlink()
@@ -214,6 +232,7 @@ def prepare_target(
             shutil.rmtree(install_home)
 
     if has_java_binary(install_home):
+        require_java_version(install_home, version)
         log(f"    reuse : {install_home}")
         return install_home
 
@@ -252,6 +271,7 @@ def prepare_target(
     if not has_java_binary(install_home):
         raise RuntimeError(f"Prepared JDK is missing java executable: {install_home}")
 
+    require_java_version(install_home, version)
     write_metadata(install_home, spec, version, source_url)
     log(f"    ready : {install_home}")
     return install_home
@@ -264,7 +284,7 @@ def main(argv: Iterable[str] | None = None) -> int:
         required=True,
         help="Comma-separated targets to prepare. Supported: mac-x64, mac-arm64, windows-x64, linux-x64, all",
     )
-    parser.add_argument("--version", default="21", help="Temurin feature version to download. Default: 21")
+    parser.add_argument("--version", default="25", help="Temurin feature version to download. Default: 25")
     parser.add_argument(
         "--project-root",
         default=Path(__file__).resolve().parents[1],
@@ -296,6 +316,5 @@ def main(argv: Iterable[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
 
 
