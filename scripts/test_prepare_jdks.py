@@ -1,10 +1,20 @@
 from __future__ import annotations
 
+import tarfile
 import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.prepare_jdks import TARGETS, format_size, install_from_existing_java_home, locate_java_home, parse_targets, prepare_target
+from scripts.prepare_jdks import (
+    TARGETS,
+    format_size,
+    install_from_existing_java_home,
+    install_jmods_from_archive,
+    locate_java_home,
+    locate_jmods_dir,
+    parse_targets,
+    prepare_target,
+)
 
 
 class PrepareJdksTests(unittest.TestCase):
@@ -20,6 +30,8 @@ class PrepareJdksTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "required Java 25"):
                     prepare_target(root, "25", TARGETS["mac-arm64"], False, False, None)
             (home / "release").write_text('JAVA_VERSION="25.0.1"\n')
+            (home / "jmods").mkdir()
+            (home / "jmods" / "java.base.jmod").write_bytes(b"jmod")
             self.assertEqual(prepare_target(root, "25", TARGETS["mac-arm64"], False, False, None), home)
 
     def test_wrong_java_home_does_not_replace_cache(self) -> None:
@@ -65,6 +77,38 @@ class PrepareJdksTests(unittest.TestCase):
             (home / "bin").mkdir(parents=True)
             (home / "bin" / "java").write_text("", encoding="utf-8")
             self.assertEqual(locate_java_home(root), home)
+
+    def test_locate_jmods_dir_for_temurin_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            jmods = root / "jdk-25.0.4.1+1-jmods"
+            jmods.mkdir(parents=True)
+            (jmods / "java.base.jmod").write_bytes(b"jmod")
+            self.assertEqual(locate_jmods_dir(root), jmods)
+
+    def test_locate_jmods_dir_for_nested_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            jmods = root / "jdk-25-jmods" / "jmods"
+            jmods.mkdir(parents=True)
+            (jmods / "java.base.jmod").write_bytes(b"jmod")
+            self.assertEqual(locate_jmods_dir(root), jmods)
+
+    def test_install_jmods_from_archive(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            payload = root / "stage" / "jdk-25.0.4.1+1-jmods"
+            payload.mkdir(parents=True)
+            (payload / "java.base.jmod").write_bytes(b"jmod")
+            archive = root / "jmods.tar.gz"
+            with tarfile.open(archive, "w:gz") as tar:
+                tar.add(payload, arcname="jdk-25.0.4.1+1-jmods")
+            home = root / "home"
+            home.mkdir()
+
+            install_jmods_from_archive(archive, TARGETS["linux-x64"], home)
+
+            self.assertEqual((home / "jmods" / "java.base.jmod").read_bytes(), b"jmod")
 
     def test_install_from_existing_java_home(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
