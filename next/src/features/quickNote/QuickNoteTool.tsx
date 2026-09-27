@@ -294,6 +294,7 @@ export function QuickNoteTool() {
   const editorRef = useRef<QuickNoteCodeEditorHandle>(null)
   const treeScrollRef = useRef<HTMLDivElement>(null)
   const findIndexRef = useRef(quickNoteFindIndex)
+  const [findFocusRequest, requestFindFocus] = useReducer((value: number) => value + 1, 0)
   const [state, dispatch] = useReducer(updateState, undefined, createQuickNoteState)
   const selectedNotePathRef = useRef(state.note?.relativePath ?? '')
   const documentRevisionRef = useRef(0)
@@ -876,6 +877,7 @@ export function QuickNoteTool() {
       replacedCount: 0,
       ...(selected !== undefined ? { findText: selected } : {})
     })
+    requestFindFocus()
   }
 
   function findAround(forward: boolean): void {
@@ -1055,6 +1057,7 @@ export function QuickNoteTool() {
             {state.findOpen && (
               <FindReplaceBar
                 className="quick-note-find-bar"
+                focusRequest={findFocusRequest}
                 findText={state.findText}
                 replaceText={state.replaceText}
                 options={state.findOptions}

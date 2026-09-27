@@ -262,6 +262,34 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
     }
   }, [contextMenu, toolActive])
 
+  useEffect(() => {
+    const menu = moreMenuRef.current
+    if (!menu) return
+    const close = () => { menu.open = false }
+    if (!toolActive) {
+      close()
+      return
+    }
+    const closeOutside = (event: Event) => {
+      if (event.target instanceof Node && !menu.contains(event.target)) close()
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || !menu.open) return
+      close()
+      menu.querySelector('summary')?.focus()
+    }
+    document.addEventListener('pointerdown', closeOutside, true)
+    document.addEventListener('focusin', closeOutside, true)
+    document.addEventListener('keydown', closeOnEscape, true)
+    window.addEventListener('blur', close)
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside, true)
+      document.removeEventListener('focusin', closeOutside, true)
+      document.removeEventListener('keydown', closeOnEscape, true)
+      window.removeEventListener('blur', close)
+    }
+  }, [toolActive])
+
   async function openFile(path: string): Promise<void> {
     if (dirty && path !== selectedPath && !await saveSelected(false)) return
     try {

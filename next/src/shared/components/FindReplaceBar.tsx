@@ -15,6 +15,8 @@ export type FindReplaceBarProps = {
   replacedCount: number
   className?: string
   autoFocus?: boolean
+  /** Change to focus the input again when an already-open bar is requested. */
+  focusRequest?: number
   /** When false, only the find row is shown. Defaults to true. */
   showReplace?: boolean
   onFindTextChange: (value: string) => void
@@ -36,6 +38,7 @@ export function FindReplaceBar({
   replacedCount,
   className = '',
   autoFocus = true,
+  focusRequest = 0,
   showReplace = true,
   onFindTextChange,
   onReplaceTextChange,
@@ -57,7 +60,7 @@ export function FindReplaceBar({
     if (!input) return
     input.focus()
     input.select()
-  }, [autoFocus])
+  }, [autoFocus, focusRequest])
 
   function patchOptions(patch: Partial<FindReplaceOptions>): void {
     onOptionsChange({ ...options, ...patch })

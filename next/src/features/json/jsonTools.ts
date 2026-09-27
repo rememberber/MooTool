@@ -81,7 +81,9 @@ export function escapeJavaString(input: string): string {
 }
 
 export function unescapeJsonText(input: string): string {
-  return JSON.parse(`"${input.replaceAll('"', '\\"')}"`) as string
+  // Consume escape pairs first so already escaped quotes stay intact.
+  const quoted = input.replace(/\\[\s\S]|"/g, (token) => token === '"' ? '\\"' : token)
+  return JSON.parse(`"${quoted}"`) as string
 }
 
 export function jsonToXml(input: string, t: Translate): string {

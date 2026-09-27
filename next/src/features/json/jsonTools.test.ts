@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   compressJson,
+  escapeJavaString,
   escapeJsonString,
   findDuplicateJsonKeys,
   formatJson,
@@ -12,6 +13,7 @@ import {
   queryJsonPath,
   swapJsonKeysAndValues,
   unescapeJsonString,
+  unescapeJsonText,
   validateJson,
   xmlToJson
 } from './jsonTools'
@@ -49,6 +51,26 @@ describe('jsonTools', () => {
   it('escapes and restores JSON strings', () => {
     const input = 'line one\nline two'
     expect(unescapeJsonString(escapeJsonString(input), t)).toBe(input)
+  })
+
+  it.each([
+    '{"name":"MooTool","items":[1,2]}',
+    '{\n  "name": "MooTool"\n}',
+    '引号 "quoted"，路径 C:\\Users\\bob\\',
+    'literal \\n and \\u0041; actual \n\r\t\b\f',
+    '\\" and \\\\"',
+    '',
+  ])('restores escaped text exactly: %j', (input) => {
+    expect(unescapeJsonText(escapeJavaString(input))).toBe(input)
+  })
+
+  it('unescapes text with bare quotes and JSON escape sequences', () => {
+    expect(unescapeJsonText('"hello"\\n\\u4e2d\\/')).toBe('"hello"\n中/')
+  })
+
+  it('rejects malformed text escape sequences', () => {
+    expect(() => unescapeJsonText('\\x')).toThrow()
+    expect(() => unescapeJsonText('trailing\\')).toThrow()
   })
 
   it('reports idle, valid, and invalid input', () => {

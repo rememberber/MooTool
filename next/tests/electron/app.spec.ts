@@ -694,6 +694,36 @@ test('resizes the JSON more-tools pane with collapsed navigation at a compact wi
   await expect(mainPage.locator('.app-shell')).not.toHaveClass(/app-shell--hide-nav-titles/)
 })
 
+test('dismisses JSON Vault more actions on outside interaction and Escape', async () => {
+  await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
+  const more = mainPage.locator('.vault-more-menu')
+  const summary = more.locator('summary')
+  await summary.click()
+  await expect(more).toHaveJSProperty('open', true)
+  await mainPage.locator('.vault-tree').click({ position: { x: 5, y: 5 } })
+  await expect(more).toHaveJSProperty('open', false)
+
+  await summary.click()
+  await mainPage.locator('.json-layout .cm-content').first().click()
+  await expect(more).toHaveJSProperty('open', false)
+
+  await summary.click()
+  await more.getByRole('button', { name: '刷新 Vault', exact: true }).focus()
+  await expect(more).toHaveJSProperty('open', true)
+  await mainPage.keyboard.press('Escape')
+  await expect(more).toHaveJSProperty('open', false)
+  await expect(summary).toBeFocused()
+
+  await summary.click()
+  await more.getByRole('button', { name: '在文件管理器中打开 Vault', exact: true }).focus()
+  await mainPage.keyboard.press('Tab')
+  await expect(more).toHaveJSProperty('open', false)
+
+  await summary.click()
+  await more.getByRole('button', { name: '刷新 Vault', exact: true }).click()
+  await expect(more).toHaveJSProperty('open', false)
+})
+
 test('manages JSON Vault folders, rename, duplicate, and move workflows', async () => {
   test.slow()
   await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
@@ -1397,8 +1427,20 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
     const offsets = await editorLineTopOffsets(mainPage, '.quick-note-code-editor')
     return offsets.length ? Math.max(...offsets) : Number.POSITIVE_INFINITY
   }).toBeLessThan(1.5)
-  await mainPage.getByRole('button', { name: '查找与替换' }).click()
-  await mainPage.getByRole('textbox', { name: '查找', exact: true }).fill('Vault')
+  await editor.focus()
+  await mainPage.keyboard.press('ArrowRight')
+  await mainPage.keyboard.press('ControlOrMeta+f')
+  const noteFindInput = mainPage.getByRole('textbox', { name: '查找', exact: true })
+  await expect(noteFindInput).toBeFocused()
+  await editor.focus()
+  await mainPage.keyboard.press('ControlOrMeta+End')
+  for (let index = 0; index < 'checkpoint'.length; index += 1) {
+    await mainPage.keyboard.press('Shift+ArrowLeft')
+  }
+  await mainPage.keyboard.press('ControlOrMeta+f')
+  await expect(noteFindInput).toHaveValue('checkpoint')
+  await expect(noteFindInput).toBeFocused()
+  await noteFindInput.fill('Vault')
   await expect(mainPage.locator('.quick-note-code-editor .cm-searchMatch')).toHaveCount(1)
   await editor.focus()
   await mainPage.keyboard.press('ControlOrMeta+End')
