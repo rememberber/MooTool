@@ -1251,6 +1251,75 @@
               "size": 116388496
             }
           ]
+        },
+        {
+          "version": "1.2.3",
+          "title": "MooTool Next Electron 1.2.3",
+          "notes": "## English\n\n> Product: MooTool Next Electron<br>\n> Version: 1.2.3<br>\n> This release is installed and updated independently from MooTool Java and does not overwrite the Java edition.\n\n### Fixes and improvements\n\n- Cron now matches the Java edition more closely: a visual field editor, common expressions, grouped favorites with ordering, natural-language descriptions, and the next run times.\n- Translation adds DeepL with an API key saved in Settings, identifier splitting, and copying short English names as camelCase, PascalCase, snake_case, UPPER_SNAKE_CASE, or kebab-case.\n- Image Assistant accepts the system paste shortcut while the tool is active.\n- Java, Node, Python, and similar runtimes are discovered from the login shell PATH, including Homebrew and version managers.\n- Expired cached macOS update installers are removed. A download in progress is kept.\n\n### Notes\n\n- Installers remain unsigned. On macOS, the app downloads and verifies the new DMG, then asks the user to open it and drag the app into Applications.\n- The Java product line continues to use `v*` tags and its existing update manifest.\n\n## 中文\n\n> 产品线：MooTool Next Electron<br>\n> 版本：1.2.3<br>\n> 本版本与 MooTool Java 独立安装、独立更新，不会覆盖 Java 版本。\n\n### 修复与改进\n\n- Cron 更接近 Java 版：可视化字段编辑、常用表达式、分组收藏与排序、自然语言描述，以及最近运行时间。\n- 翻译新增 DeepL（在设置中保存 API Key）、拆分标识符，以及把较短的英文结果复制为 camelCase、PascalCase、snake_case、UPPER_SNAKE_CASE 或 kebab-case。\n- 图片助手在当前工具激活时支持系统粘贴快捷键。\n- Java、Node、Python 等运行时会从登录 shell 的 PATH 中查找，包括 Homebrew 和版本管理器。\n- 过期的 macOS 更新安装包缓存会被清理，正在下载的文件会保留。\n\n### 说明\n\n- 安装包仍未签名。macOS 会下载并校验新版 DMG，随后提示用户打开 DMG 并将应用拖入“应用程序”。\n- Java 产品线继续使用 `v*` tag 和原有更新清单，不受本次发布影响。\n\n## 日本語\n\n> 製品ライン：MooTool Next Electron<br>\n> バージョン：1.2.3<br>\n> このリリースは MooTool Java とは独立してインストール・更新され、Java 版を上書きしません。\n\n### 修正と改善\n\n- Cron が Java 版により近くなりました。視覚的なフィールド編集、よく使う式、グループ付きお気に入りと並べ替え、自然言語の説明、次回実行時刻に対応します。\n- 翻訳に DeepL（設定で API キーを保存）、識別子の分割、短い英語名を camelCase、PascalCase、snake_case、UPPER_SNAKE_CASE、kebab-case でコピーする機能を追加しました。\n- 画像アシスタントは、ツールがアクティブなときにシステムの貼り付けショートカットを受け付けます。\n- Java、Node、Python などのランタイムをログインシェルの PATH から見つけます。Homebrew やバージョンマネージャーも対象です。\n- 期限切れの macOS 更新インストーラーキャッシュを削除します。ダウンロード中のファイルは残します。\n\n### 補足\n\n- インストーラーは引き続き未署名です。macOS では新しい DMG をダウンロードして検証し、その後 DMG を開いてアプリを「アプリケーション」へドラッグするよう案内します。\n- Java 製品ラインは引き続き `v*` タグと従来の更新マニフェストを使用し、このリリースの影響を受けません。",
+          "prerelease": false,
+          "releaseUrl": "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.3",
+          "assets": [
+            {
+              "platform": "darwin",
+              "architecture": "arm64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.2.3-mac-arm64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.3/MooTool-Next-Electron-1.2.3-mac-arm64.dmg",
+              "sha512": "/DOAd5OSseZGGaKlQ7sMgiWa1HZ2JAhXZD8OS4DV95XyW4kJUVKaXRWtXWTQ+3q2vktkoeSbMD0BlxY1FMwKvw==",
+              "size": 150927805
+            },
+            {
+              "platform": "darwin",
+              "architecture": "x64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.2.3-mac-x64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.3/MooTool-Next-Electron-1.2.3-mac-x64.dmg",
+              "sha512": "H/VVidokdsDOFJiCO/d6qWfgzvbT5jfakOLkUouUeKzkxAs8sETqRO6/Wdmt4wBZyUBWvU/lz+817FwzI7lJfQ==",
+              "size": 152709204
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "nsis",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.2.3-win-x64-setup.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.3/MooTool-Next-Electron-1.2.3-win-x64-setup.exe",
+              "sha512": "dx0Qe3I76727csCEN/DoYYefRcXZbqzArhkMc2QASFXANyJO3UPrQ2n7MpTop0tENTqTmUpaiiKENKct6cd3aQ==",
+              "size": 118905904
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "portable",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.2.3-win-x64-portable.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.3/MooTool-Next-Electron-1.2.3-win-x64-portable.exe",
+              "sha512": "5p2iRDrzztwDH5jf2O+oWtrtynxwHNKYhbQDlMvP3VRhyhJ2wvnqiTBqHUCw6IcmMs6F+nLW7NkyUvP+ENwG5g==",
+              "size": 118718696
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "appimage",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.2.3-linux-x64.AppImage",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.3/MooTool-Next-Electron-1.2.3-linux-x64.AppImage",
+              "sha512": "qoceAO7dykD8kDUIVpr0bZy++ytYBPGB62T/vw6fGa7hWGBxlxQY6Zsq+iHeRUtAz+rCZWqKPG9t3BnWArt+Bw==",
+              "size": 158546669
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "deb",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.2.3-linux-x64.deb",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.3/MooTool-Next-Electron-1.2.3-linux-x64.deb",
+              "sha512": "OJNVRoSd0TGUsnaVUpFf8e3P+vlMDfJAbiARV7dmY+T4Qe15zQkW0Y8g/IpbCmeDsjBTSRK/StBVaul0p5dWCw==",
+              "size": 116395984
+            }
+          ]
         }
       ]
     },
