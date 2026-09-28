@@ -27,7 +27,6 @@ import {
 } from 'electron'
 import Store from 'electron-store'
 import { autoUpdater } from 'electron-updater'
-import { execFile } from 'node:child_process'
 import { createHash, getHashes } from 'node:crypto'
 import { createReadStream, readFileSync, watch, type FSWatcher } from 'node:fs'
 import { chmod, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
@@ -40,7 +39,6 @@ import {
   type AppNavigationEvent,
   type AppPaths,
   type ExternalPageId,
-  type RuntimeId,
   type RuntimeStatus,
   type ToolId,
   type ToolWorkspaceBounds,
@@ -98,6 +96,7 @@ import { NetworkService, parseChromiumProxyDirective, type ProxyConfiguration } 
 import { P5Repository } from './p5Repository'
 import { QuickNoteVaultRepository } from './quickNoteVaultRepository'
 import { RuntimeExecutionService } from './runtimeExecutionService'
+import { detectRuntime, getRuntimeEnvironment } from './runtimeDiscovery'
 import {
   normalizeHostInput,
   normalizeDeleteEnvironmentVariableInput,
@@ -1507,27 +1506,13 @@ async function prepareGitAskPass(): Promise<string> {
 }
 
 async function detectRuntimes(settings: AppSettings): Promise<RuntimeStatus[]> {
-  const definitions: Array<{ id: RuntimeId; command: string; args: string[] }> = [
-    { id: 'java', command: settings.runtime.javaPath || 'java', args: ['-version'] },
-    { id: 'groovy', command: settings.runtime.groovyPath || 'groovy', args: ['--version'] },
-    { id: 'python', command: settings.runtime.pythonPath || (process.platform === 'win32' ? 'python' : 'python3'), args: ['--version'] },
-    { id: 'node', command: settings.runtime.nodePath || 'node', args: ['--version'] }
-  ]
-  return Promise.all(definitions.map((definition) => detectRuntime(definition.id, definition.command, definition.args)))
-}
-
-function detectRuntime(id: RuntimeId, command: string, args: string[]): Promise<RuntimeStatus> {
-  return new Promise((resolve) => {
-    execFile(command, args, { timeout: 3000, windowsHide: true }, (error, stdout, stderr) => {
-      const output = `${stdout}\n${stderr}`.trim().split(/\r?\n/)[0] ?? ''
-      resolve({
-        id,
-        available: !error,
-        command,
-        version: !error ? output : ''
-      })
-    })
-  })
+  const env = await getRuntimeEnvironment(true)
+  return Promise.all([
+    detectRuntime('java', settings.runtime.javaPath, env),
+    detectRuntime('groovy', settings.runtime.groovyPath, env),
+    detectRuntime('python', settings.runtime.pythonPath, env),
+    detectRuntime('node', settings.runtime.nodePath, env)
+  ])
 }
 
 function applySettings(settings: AppSettings): void {

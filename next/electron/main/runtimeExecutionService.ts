@@ -9,6 +9,8 @@ import type {
   RuntimeOutputEvent
 } from '../../src/shared/contracts/runtime'
 
+import { getRuntimeEnvironment, resolveRuntimeCommand } from './runtimeDiscovery'
+
 const maxCodeBytes = 1024 * 1024
 const maxOutputBytes = 2 * 1024 * 1024
 
@@ -32,9 +34,11 @@ export class RuntimeExecutionService {
   ): Promise<RuntimeExecutionResult> {
     validateExecutionInput(input)
     if (this.active.has(input.requestId)) throw new Error('Runtime request is already active')
+    const env = await getRuntimeEnvironment()
+    const command = await resolveRuntimeCommand(input.runtime, paths[input.runtime], env)
     await mkdir(this.tempRoot, { recursive: true })
     const directory = await mkdtemp(join(this.tempRoot, 'run-'))
-    const definition = runtimeDefinition(input.runtime, paths[input.runtime], directory, input.code)
+    const definition = runtimeDefinition(input.runtime, command, directory, input.code)
     await writeFile(definition.file, input.code, 'utf8')
     const workingDirectory = await resolveWorkingDirectory(input.workingDirectory, directory)
     const argumentsList = [...definition.args, ...(input.arguments ?? [])]
@@ -48,7 +52,7 @@ export class RuntimeExecutionService {
       return await new Promise<RuntimeExecutionResult>((resolve, reject) => {
         const child = spawn(definition.command, argumentsList, {
           cwd: workingDirectory,
-          env: runtimeEnvironment(),
+          env,
           windowsHide: true,
           detached: process.platform !== 'win32',
           stdio: ['pipe', 'pipe', 'pipe']
@@ -182,11 +186,6 @@ function displayArgument(value: string): string {
 function clampTimeout(value: number | undefined): number {
   if (!Number.isFinite(value)) return 30_000
   return Math.min(120_000, Math.max(1_000, Math.round(value!)))
-}
-
-function runtimeEnvironment(): NodeJS.ProcessEnv {
-  const allowed = ['PATH', 'HOME', 'USERPROFILE', 'TMPDIR', 'TMP', 'TEMP', 'SystemRoot', 'WINDIR', 'LANG', 'LC_ALL', 'JAVA_HOME', 'GROOVY_HOME']
-  return Object.fromEntries(allowed.flatMap((key) => process.env[key] === undefined ? [] : [[key, process.env[key]]]))
 }
 
 function killProcessTree(child: ChildProcessWithoutNullStreams, signal: NodeJS.Signals): void {
