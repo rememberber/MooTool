@@ -1,3 +1,4 @@
+import { deepLApiOrigin } from './translation/deepl'
 import {
   app,
   BaseWindow,
@@ -662,7 +663,9 @@ function registerIpc(): void {
   ipcMain.handle('network:cancel', (_event, requestId: unknown) => networkService.cancel(normalizeRequestId(requestId)))
   ipcMain.handle('translation:send', async (_event, value: unknown) => {
     const input = normalizeTranslationInput(value)
-    const result = await networkService.translate(input, await getTranslationProxyConfiguration())
+    const deeplApiKey = input.preferredProvider === 'deepl' ? readSecret('deeplApiKey') : undefined
+    const proxyUrl = input.preferredProvider === 'deepl' ? deepLApiOrigin(deeplApiKey ?? '') : undefined
+    const result = await networkService.translate(input, await getTranslationProxyConfiguration(proxyUrl), { deeplApiKey })
     // Return first; SQLite write should not delay the renderer.
     setImmediate(() => {
       try {
@@ -1471,11 +1474,11 @@ function getProxyConfiguration(): ProxyConfiguration {
 }
 
 /** Match Java: JVM picks up OS proxy; undici does not, so resolve Chromium/system proxy when app proxy is off. */
-async function getTranslationProxyConfiguration(): Promise<ProxyConfiguration> {
+async function getTranslationProxyConfiguration(url = 'https://translate.googleapis.com/'): Promise<ProxyConfiguration> {
   const configured = getProxyConfiguration()
   if (configured.enabled) return configured
   try {
-    const resolved = await session.defaultSession.resolveProxy('https://translate.googleapis.com/')
+    const resolved = await session.defaultSession.resolveProxy(url)
     const parsed = parseChromiumProxyDirective(resolved)
     if (!parsed) return configured
     return {
@@ -2197,7 +2200,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function normalizeSecretKey(value: unknown): SecretKey {
-  if (value === 'proxyPassword' || value === 'gitToken') {
+  if (value === 'proxyPassword' || value === 'gitToken' || value === 'deeplApiKey') {
     return value
   }
   throw new Error('Unsupported secret key')

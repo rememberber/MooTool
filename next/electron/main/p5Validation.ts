@@ -38,7 +38,7 @@ export function normalizeHttpResponse(value: unknown): HttpResponseResult {
 
 export function normalizeTranslationInput(value: unknown): TranslationInput {
   const record = objectValue(value, 'Invalid translation input')
-  const provider = record.preferredProvider === 'bing' ? 'bing' : 'google'
+  const provider = record.preferredProvider === 'deepl' ? 'deepl' : record.preferredProvider === 'bing' ? 'bing' : 'google'
   const languages = normalizeTranslationLanguagePair(record.sourceLang, record.targetLang)
   return {
     requestId: requestId(record.requestId),

@@ -9,7 +9,7 @@ export type ThemePreference = 'system' | 'light' | 'dark'
 export type InterfaceStyle = 'modern' | 'quiet' | 'hero' | 'smartisan' | 'miui-v5' | 'claude'
 export type CloseBehavior = 'ask' | 'hide' | 'quit'
 export type NavigationStyle = 'classic' | 'card' | 'grouped'
-export type SecretKey = 'proxyPassword' | 'gitToken'
+export type SecretKey = 'proxyPassword' | 'gitToken' | 'deeplApiKey'
 export type RuntimeSettingsId = 'java' | 'groovy' | 'python' | 'node'
 export type RuntimeRunOption = { arguments: string; workingDirectory: string }
 export type CustomToolGroup = { id: string; name: string; toolIds: ToolId[] }
@@ -96,7 +96,7 @@ export type AppSettings = {
     qrErrorCorrection: 'L' | 'M' | 'Q' | 'H'
     randomStringLength: number
     exportDirectory: string
-    translationProvider: 'google' | 'bing'
+    translationProvider: 'google' | 'bing' | 'deepl'
     translationSourceLang: string
     translationTargetLang: string
   }
@@ -239,7 +239,7 @@ export function normalizeSettings(value: AppSettings): AppSettings {
   const closeBehaviors: CloseBehavior[] = ['ask', 'hide', 'quit']
   const navigationStyles: NavigationStyle[] = ['classic', 'card', 'grouped']
   const corrections: AppSettings['tools']['qrErrorCorrection'][] = ['L', 'M', 'Q', 'H']
-  const translationProviders: AppSettings['tools']['translationProvider'][] = ['google', 'bing']
+  const translationProviders: AppSettings['tools']['translationProvider'][] = ['google', 'bing', 'deepl']
   const translationLanguages = normalizeTranslationLanguagePair(value.tools.translationSourceLang, value.tools.translationTargetLang)
 
   return {

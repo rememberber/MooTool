@@ -61,7 +61,7 @@ export type HttpRequestHistory = SavedHttpRequest & {
   costTime: number
 }
 
-export type TranslationProvider = 'google' | 'bing'
+export type TranslationProvider = 'google' | 'bing' | 'deepl'
 
 export const translationLanguageCodes = [
   'auto', 'zh-CN', 'en', 'yue', 'wyw', 'jp', 'kor', 'fra', 'spa', 'th', 'ara', 'ru', 'pt', 'de', 'it',

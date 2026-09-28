@@ -1,3 +1,8 @@
+import { createTranslationEngines } from './translation'
+import type { TranslationCredentials } from './translation/types'
+export { googleLanguage } from './translation/google'
+export { splitTranslationText } from './translation/text'
+export { bingLanguage } from './translation/bing'
 import { fetch, Agent, ProxyAgent, type Dispatcher } from 'undici'
 import type {
   HttpCookieEntry,
@@ -17,16 +22,7 @@ export type ProxyConfiguration = {
   password: string
 }
 
-type BingSession = {
-  ig: string
-  key: string
-  token: string
-  expiresAt: number
-  requestCount: number
-}
-
 const maxResponseBytes = 10 * 1024 * 1024
-const userAgent = 'Mozilla/5.0 (MooTool Next) AppleWebKit/537.36 Chrome/138 Safari/537.36'
 /** Align with Java GoogleTranslatorUtil connect timeout — fail fast when Google is unreachable. */
 const translationConnectTimeoutMs = 5_000
 const translationBodyTimeoutMs = 10_000
@@ -40,7 +36,7 @@ export class NetworkService {
   private readonly translationProxyDispatchers = new Map<string, Dispatcher>()
   private readonly providerCooldownUntil = new Map<TranslationProvider, number>()
   private readonly directTranslationAgent = createTranslationAgent()
-  private bingSession: BingSession | null = null
+  private readonly engines = createTranslationEngines()
 
   async sendHttp(input: HttpSendInput, proxy: ProxyConfiguration): Promise<HttpResponseResult> {
     const startedAt = Date.now()
@@ -90,7 +86,7 @@ export class NetworkService {
     }
   }
 
-  async translate(input: TranslationInput, proxy: ProxyConfiguration): Promise<TranslationResult> {
+  async translate(input: TranslationInput, proxy: ProxyConfiguration, credentials: TranslationCredentials = {}): Promise<TranslationResult> {
     const controller = this.begin(input.requestId, input.timeoutMs)
     try {
       const dispatcher = this.getTranslationDispatcher(proxy)
@@ -101,7 +97,7 @@ export class NetworkService {
       for (const provider of order) {
         if (controller.signal.aborted) break
         try {
-          const text = await this.translateWith(provider, input, controller.signal, dispatcher)
+          const text = await this.engines[provider].translate(input, { signal: controller.signal, dispatcher, credentials })
           this.markProviderSuccess(provider)
           return {
             requestId: input.requestId,
@@ -181,54 +177,6 @@ export class NetworkService {
     this.timers.delete(requestId)
     this.controllers.delete(requestId)
   }
-
-  private async translateWith(provider: TranslationProvider, input: TranslationInput, signal: AbortSignal, dispatcher?: Dispatcher): Promise<string> {
-    if (provider === 'google') return translateGoogle(input.text, input.sourceLang, input.targetLang, signal, dispatcher)
-    return this.translateBing(input.text, input.sourceLang, input.targetLang, signal, dispatcher)
-  }
-
-  private async translateBing(text: string, sourceLang: string, targetLang: string, signal: AbortSignal, dispatcher?: Dispatcher): Promise<string> {
-    // Align with Java: one POST for the full text (no client-side chunking).
-    const session = await this.getBingSession(signal, dispatcher)
-    session.requestCount += 2
-    const body = new URLSearchParams({
-      fromLang: bingLanguage(sourceLang, true),
-      to: bingLanguage(targetLang, false),
-      text,
-      token: session.token,
-      key: session.key,
-      tryFetchingGenderDebiasedTranslations: 'true'
-    })
-    const response = await fetch(`https://cn.bing.com/ttranslatev3?isVertical=1&IG=${encodeURIComponent(session.ig)}&IID=translator.5026.${session.requestCount}`, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/x-www-form-urlencoded',
-        origin: 'https://cn.bing.com',
-        referer: 'https://cn.bing.com/translator',
-        'user-agent': userAgent
-      },
-      body: body.toString(),
-      signal,
-      dispatcher
-    })
-    if (!response.ok) throw new Error(`Bing HTTP ${response.status}`)
-    const payload = await response.json() as Array<{ translations?: Array<{ text?: string }> }>
-    const translated = payload[0]?.translations?.[0]?.text
-    if (!translated) throw new Error('Bing returned no translation')
-    return translated
-  }
-
-  private async getBingSession(signal: AbortSignal, dispatcher?: Dispatcher): Promise<BingSession> {
-    if (this.bingSession && this.bingSession.expiresAt > Date.now()) return this.bingSession
-    const response = await fetch('https://cn.bing.com/translator', { headers: { 'user-agent': userAgent }, signal, dispatcher })
-    if (!response.ok) throw new Error(`Bing session HTTP ${response.status}`)
-    const html = await response.text()
-    const ig = html.match(/IG:"([A-F0-9]{32})"/)?.[1]
-    const abuse = html.match(/params_AbusePreventionHelper\s*=\s*\[(\d+),"([^"]+)",(\d+)\]/)
-    if (!ig || !abuse) throw new Error('Bing session token unavailable')
-    this.bingSession = { ig, key: abuse[1], token: abuse[2], expiresAt: Date.now() + Number(abuse[3]) - 60_000, requestCount: 0 }
-    return this.bingSession
-  }
 }
 
 export function buildRequestUrl(value: string, method: string, params: KeyValueEntry[]): string {
@@ -257,67 +205,6 @@ function buildRequestBody(method: string, body: string, bodyType: string, params
   if (!form.size) return undefined
   if (!hasHeader(headers, 'content-type')) headers['Content-Type'] = 'application/x-www-form-urlencoded'
   return form.toString()
-}
-
-const googleChunkConcurrency = 3
-
-async function translateGoogle(text: string, sourceLang: string, targetLang: string, signal: AbortSignal, dispatcher?: Dispatcher): Promise<string> {
-  const chunks = splitTranslationText(text, 1800)
-  if (chunks.length === 1) return translateGoogleChunk(chunks[0], sourceLang, targetLang, signal, dispatcher)
-  const results = await mapPool(chunks, googleChunkConcurrency, (chunk) => translateGoogleChunk(chunk, sourceLang, targetLang, signal, dispatcher))
-  return results.join('')
-}
-
-async function translateGoogleChunk(chunk: string, sourceLang: string, targetLang: string, signal: AbortSignal, dispatcher?: Dispatcher): Promise<string> {
-  const query = new URLSearchParams({ client: 'gtx', sl: googleLanguage(sourceLang), tl: googleLanguage(targetLang), dt: 't', q: chunk })
-  const response = await fetch(`https://translate.googleapis.com/translate_a/single?${query}`, { headers: { 'user-agent': userAgent }, signal, dispatcher })
-  if (!response.ok) throw new Error(`Google HTTP ${response.status}`)
-  const payload = await response.json() as [Array<[string]>]
-  const translated = payload[0]?.map((part) => part[0] || '').join('')
-  if (!translated) throw new Error('Google returned no translation')
-  return translated
-}
-
-async function mapPool<T, R>(items: T[], concurrency: number, mapper: (item: T, index: number) => Promise<R>): Promise<R[]> {
-  const results = new Array<R>(items.length)
-  let nextIndex = 0
-  async function worker(): Promise<void> {
-    while (nextIndex < items.length) {
-      const index = nextIndex
-      nextIndex += 1
-      results[index] = await mapper(items[index], index)
-    }
-  }
-  const workers = Math.min(Math.max(1, concurrency), items.length)
-  await Promise.all(Array.from({ length: workers }, () => worker()))
-  return results
-}
-
-export function splitTranslationText(text: string, maxLength: number): string[] {
-  if (!Number.isInteger(maxLength) || maxLength < 2) throw new Error('Invalid translation chunk size')
-  if (text.length <= maxLength) return [text]
-  const chunks: string[] = []
-  let offset = 0
-  while (offset < text.length) {
-    let end = Math.min(offset + maxLength, text.length)
-    if (end < text.length) {
-      const minimumNaturalBreak = offset + Math.floor(maxLength / 2)
-      for (let cursor = end; cursor > minimumNaturalBreak; cursor -= 1) {
-        if (/[\s.!?。！？,，;；:：]/u.test(text[cursor - 1])) {
-          end = cursor
-          break
-        }
-      }
-      const previousCodeUnit = text.charCodeAt(end - 1)
-      const nextCodeUnit = text.charCodeAt(end)
-      if (previousCodeUnit >= 0xD800 && previousCodeUnit <= 0xDBFF && nextCodeUnit >= 0xDC00 && nextCodeUnit <= 0xDFFF) {
-        end -= 1
-      }
-    }
-    chunks.push(text.slice(offset, end))
-    offset = end
-  }
-  return chunks
 }
 
 function enabledEntries(entries: KeyValueEntry[]): KeyValueEntry[] {
@@ -391,6 +278,7 @@ function buildProxyUri(proxy: ProxyConfiguration): URL {
 }
 
 export function translationProviderOrder(preferred: TranslationProvider, skipPreferred: boolean): TranslationProvider[] {
+  if (preferred === 'deepl') return ['deepl']
   const alternate: TranslationProvider = preferred === 'google' ? 'bing' : 'google'
   return skipPreferred ? [alternate, preferred] : [preferred, alternate]
 }
@@ -440,46 +328,4 @@ function classifyNetworkError(error: unknown, signal: AbortSignal): HttpResponse
 function errorMessage(error: unknown): string {
   if (error instanceof Error) return error.cause instanceof Error ? `${error.message}: ${error.cause.message}` : error.message
   return String(error)
-}
-
-export function googleLanguage(code: string): string {
-  return ({
-    wyw: 'lzh',
-    jp: 'ja',
-    kor: 'ko',
-    fra: 'fr',
-    spa: 'es',
-    ara: 'ar',
-    bul: 'bg',
-    est: 'et',
-    dan: 'da',
-    fin: 'fi',
-    rom: 'ro',
-    slo: 'sl',
-    swe: 'sv',
-    cht: 'zh-TW',
-    vie: 'vi'
-  } as Record<string, string>)[code] || code || 'auto'
-}
-
-export function bingLanguage(code: string, source: boolean): string {
-  if (!code || code === 'auto') return source ? 'auto-detect' : 'zh-Hans'
-  return ({
-    'zh-CN': 'zh-Hans',
-    cht: 'zh-Hant',
-    wyw: 'lzh',
-    jp: 'ja',
-    kor: 'ko',
-    fra: 'fr',
-    spa: 'es',
-    ara: 'ar',
-    bul: 'bg',
-    est: 'et',
-    dan: 'da',
-    fin: 'fi',
-    rom: 'ro',
-    slo: 'sl',
-    swe: 'sv',
-    vie: 'vi'
-  } as Record<string, string>)[code] || code
 }

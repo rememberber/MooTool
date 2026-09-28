@@ -22,6 +22,15 @@ npm run typecheck
 npm run build
 ```
 
+## Developer translation
+
+- **Split identifier** turns `getHTTPResponse` / `user_id` into words before translation.
+- For a short English translation, **Copy name** offers camelCase, PascalCase, snake_case, UPPER_SNAKE_CASE and kebab-case. The preview shows exactly what will be copied.
+- Google and Bing retain automatic translation and mutual fallback.
+- **DeepL** uses your own API key: save it in **Settings → Tool Defaults → DeepL API key settings**, select DeepL, then click **Translate**. The key is stored through Electron safeStorage and read only in the main process; it is not included in translation history or ordinary settings. A Free key ending in `:fx` selects the Free endpoint; other keys select Pro. DeepL requests are explicit and never automatically fall back to another engine. Long input is split into bounded requests, so retrying a partially failed translation may consume quota again.
+
+The engine registry and adapters live in `electron/main/translation/`; shared UI capabilities live in `src/shared/contracts/translationEngines.ts`. The implementation follows the [DeepL text API](https://developers.deepl.com/api-reference/translate/request-translation) and [authentication documentation](https://developers.deepl.com/docs/getting-started/auth). Developer naming interactions were inspired by [TranslationPlugin](https://github.com/YiiGuxing/TranslationPlugin).
+
 ## AI integration (MCP / Skill)
 
 Available since **1.2.0**, AI integration connects local clients to MooTool's bundled runtime. Tools work with the MooTool window closed and do not require a separate Node.js installation.

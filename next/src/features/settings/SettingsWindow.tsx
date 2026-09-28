@@ -32,6 +32,7 @@ import {
   type SettingsPatch
 } from '@/shared/contracts/settings'
 import type { AppPaths, RuntimeId, RuntimeStatus } from '@/shared/contracts/app'
+import { translationEngines, supportsTranslationLanguage } from '@/shared/contracts/translationEngines'
 import { translationLanguageCodes } from '@/shared/contracts/network'
 import type { BackupInfo, BackupKind, BackupLocation } from '@/shared/contracts/backup'
 import type { LegacyMigrationPreview, LegacyMigrationWarning } from '@/shared/contracts/migration'
@@ -649,18 +650,26 @@ function ToolDefaults({ settings, commit }: SettingsPanelProps) {
       <NumberSetting label={t('settings.randomStringLength')} value={settings.tools.randomStringLength} min={1} max={4096} onCommit={(value) => commit({ tools: { randomStringLength: value } })} />
       <DirectorySetting label={t('settings.exportDirectory')} value={settings.tools.exportDirectory} onCommit={(value) => commit({ tools: { exportDirectory: value } })} />
       <SettingRow label={t('settings.translationProvider')}>
-        <select value={settings.tools.translationProvider} onChange={(event) => commit({ tools: { translationProvider: event.target.value as AppSettings['tools']['translationProvider'] } })}>
-          <option value="google">Google</option><option value="bing">Bing</option>
+        <select value={settings.tools.translationProvider} onChange={(event) => {
+          const provider = event.target.value as AppSettings['tools']['translationProvider']
+          commit({ tools: { translationProvider: provider,
+            translationSourceLang: supportsTranslationLanguage(provider, settings.tools.translationSourceLang, true) ? settings.tools.translationSourceLang : 'auto',
+            translationTargetLang: supportsTranslationLanguage(provider, settings.tools.translationTargetLang, false) ? settings.tools.translationTargetLang : 'en'
+          } })
+        }}>
+          {Object.values(translationEngines).map((engine) => <option key={engine.id} value={engine.id}>{engine.name}</option>)}
         </select>
       </SettingRow>
+      <SecretSetting label={t('translation.configureDeepL')} secretKey="deeplApiKey" />
+      <p className="settings-description">{t('translation.deeplHint')}</p>
       <SettingRow label={t('settings.translationSource')}>
         <select value={settings.tools.translationSourceLang} onChange={(event) => commit({ tools: { translationSourceLang: event.target.value } })}>
-          {translationLanguageCodes.map((code) => <option key={code} value={code}>{t(`translation.lang.${code}` as MessageKey)}</option>)}
+          {translationLanguageCodes.map((code) => <option key={code} value={code} disabled={!supportsTranslationLanguage(settings.tools.translationProvider, code, true)}>{t(`translation.lang.${code}` as MessageKey)}</option>)}
         </select>
       </SettingRow>
       <SettingRow label={t('settings.translationTarget')}>
         <select value={settings.tools.translationTargetLang} onChange={(event) => commit({ tools: { translationTargetLang: event.target.value } })}>
-          {translationLanguageCodes.filter((code) => code !== 'auto').map((code) => <option key={code} value={code}>{t(`translation.lang.${code}` as MessageKey)}</option>)}
+          {translationLanguageCodes.filter((code) => code !== 'auto').map((code) => <option key={code} value={code} disabled={!supportsTranslationLanguage(settings.tools.translationProvider, code, false)}>{t(`translation.lang.${code}` as MessageKey)}</option>)}
         </select>
       </SettingRow>
     </SettingsGroup>

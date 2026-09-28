@@ -9,6 +9,8 @@ import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
+import { translationEngines, supportsTranslationLanguage } from '@/shared/contracts/translationEngines'
+import { splitIdentifiers, formatTranslationName, namingFormats, type NamingFormat } from './translationNaming'
 
 type TranslationTab = 'translate' | 'words' | 'history'
 
@@ -18,15 +20,18 @@ export function TranslationTool() {
   const actions = useToolActions('translation')
   const [tab, setTab] = useState<TranslationTab>('translate')
   const [source, setSource] = useState('')
+  const [namingFormat, setNamingFormat] = useState<NamingFormat>('camelCase')
+  const engine = translationEngines[settings.tools.translationProvider]
   const [target, setTarget] = useState('')
   const [providerUsed, setProviderUsed] = useState<TranslationProvider | null>(null)
   const [fallbackUsed, setFallbackUsed] = useState(false)
   const [translating, setTranslating] = useState(false)
+  const formattedName = settings.tools.translationTargetLang === 'en' && !translating ? formatTranslationName(target, namingFormat) : ''
   const requestId = useRef('')
   const requestSequence = useRef(0)
   const restoredSource = useRef<string | null>(null)
   const reportError = useRef(actions.reportError)
-  reportError.current = actions.reportError
+  reportError.current = (error) => actions.reportError(translationErrorMessage(error, t))
 
   const cancelActiveTranslation = useCallback(() => {
     requestSequence.current += 1
@@ -78,12 +83,22 @@ export function TranslationTool() {
 
   useEffect(() => {
     if (restoredSource.current === source) return
+    if (!engine.automatic) {
+      cancelActiveTranslation()
+      setTranslating(false)
+      setTarget('')
+      setProviderUsed(null)
+      setFallbackUsed(false)
+      return
+    }
     const timer = window.setTimeout(() => { void translate(source) }, 500)
     return () => {
       window.clearTimeout(timer)
       cancelActiveTranslation()
     }
-  }, [cancelActiveTranslation, source, translate])
+  }, [cancelActiveTranslation, source, translate, engine.automatic])
+
+  useEffect(() => () => cancelActiveTranslation(), [cancelActiveTranslation])
 
   async function saveWord(): Promise<void> {
     if (!source.trim()) return
@@ -97,6 +112,9 @@ export function TranslationTool() {
     restoredSource.current = null
     cancelActiveTranslation()
     setTranslating(false)
+    setTarget('')
+    setProviderUsed(null)
+    setFallbackUsed(false)
   }
 
   function changeSourceLanguage(value: string): void {
@@ -115,7 +133,10 @@ export function TranslationTool() {
 
   function changeProvider(value: TranslationProvider): void {
     prepareForRetranslation()
-    void updateSettings({ tools: { translationProvider: value } })
+    void updateSettings({ tools: { translationProvider: value,
+      translationSourceLang: supportsTranslationLanguage(value, settings.tools.translationSourceLang, true) ? settings.tools.translationSourceLang : 'auto',
+      translationTargetLang: supportsTranslationLanguage(value, settings.tools.translationTargetLang, false) ? settings.tools.translationTargetLang : 'en'
+    } })
   }
 
   function changeSource(value: string): void {
@@ -156,19 +177,27 @@ export function TranslationTool() {
       <div className="local-tool-shell translation-workspace">
         <ToolTabs tabs={(['translate', 'words', 'history'] as TranslationTab[]).map((id) => ({ id, label: t(`translation.tab.${id}` as 'translation.tab.translate') }))} active={tab} onChange={setTab} windowDrag />
         {tab === 'translate' && <div className="translation-main">
-          <div className="translation-toolbar"><LanguageSelect value={settings.tools.translationSourceLang} includeAuto onChange={changeSourceLanguage} /><button className="icon-button" type="button" aria-label={t('translation.exchange')} onClick={exchange}><ArrowLeftRight size={14} /></button><LanguageSelect value={settings.tools.translationTargetLang} onChange={changeTargetLanguage} /><WorkspaceDragZone className="p4-toolbar__spacer" /><label>{t('translation.provider')}<select value={settings.tools.translationProvider} onChange={(event) => changeProvider(event.target.value as TranslationProvider)}><option value="google">Google</option><option value="bing">Bing</option></select></label><button className="icon-button" type="button" aria-label={t('translation.copy')} disabled={!target} onClick={() => { void actions.copy(target) }}><Copy size={14} /></button><button className="icon-button" type="button" aria-label={t('translation.saveWord')} disabled={!source} onClick={() => { void saveWord() }}><Star size={14} /></button><button className="icon-button" type="button" aria-label={t('common.action.clear')} onClick={clear}><X size={14} /></button></div>
-          <ResizableColumns className="translation-editor-grid" columns={2} defaultSizes={[1, 1]} minPaneWidths={[280, 280]} storageKey="translation-editor"><TextCodeEditor className="translation-source-editor" testId="translation-source" ariaLabel={t('translation.sourcePlaceholder')} value={source} placeholder={t('translation.sourcePlaceholder')} onChange={changeSource} /><div className="translation-result"><TextCodeEditor className="translation-target-editor" testId="translation-result" ariaLabel={t('translation.targetPlaceholder')} value={translating ? t('translation.translating') : target} readOnly /><footer>{providerUsed && <span><Languages size={13} />{providerUsed === 'google' ? 'Google' : 'Bing'}{fallbackUsed ? ` · ${t('translation.fallback')}` : ''}</span>}<span>{source.length} / 50000</span></footer></div></ResizableColumns>
+          <div className="translation-toolbar"><LanguageSelect provider={engine.id} value={settings.tools.translationSourceLang} includeAuto onChange={changeSourceLanguage} /><button className="icon-button" type="button" aria-label={t('translation.exchange')} onClick={exchange}><ArrowLeftRight size={14} /></button><LanguageSelect provider={engine.id} value={settings.tools.translationTargetLang} onChange={changeTargetLanguage} /><WorkspaceDragZone className="p4-toolbar__spacer" /><label>{t('translation.provider')}<select value={settings.tools.translationProvider} onChange={(event) => changeProvider(event.target.value as TranslationProvider)}>{Object.values(translationEngines).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><button className="icon-button" type="button" aria-label={t('translation.copy')} disabled={!target || translating} onClick={() => { void actions.copy(target) }}><Copy size={14} /></button><button className="icon-button" type="button" aria-label={t('translation.saveWord')} disabled={!source} onClick={() => { void saveWord() }}><Star size={14} /></button><button className="icon-button" type="button" aria-label={t('common.action.clear')} onClick={clear}><X size={14} /></button></div>
+          <div className="translation-assist-toolbar">
+            <button className="toolbar-button" type="button" disabled={!source.trim() || splitIdentifiers(source) === source} onClick={() => changeSource(splitIdentifiers(source))}>{t('translation.splitIdentifiers')}</button>
+            {!engine.automatic && <button className="toolbar-button" type="button" disabled={!source.trim() || translating} onClick={() => { restoredSource.current = null; void translate(source) }}>{t('translation.translateNow')}</button>}
+            <label>{t('translation.namingFormat')}<select aria-label={t('translation.namingFormat')} value={namingFormat} onChange={(event) => setNamingFormat(event.target.value as NamingFormat)}>{namingFormats.map((format) => <option key={format}>{format}</option>)}</select></label>
+            <button className="toolbar-button" type="button" disabled={!formattedName} title={formattedName || t('translation.namingHint')} onClick={() => { void actions.copy(formattedName) }}><Copy size={13} />{t('translation.copyName')}</button>
+            {formattedName && <code className="translation-name-preview" title={formattedName}>{formattedName}</code>}
+          </div>
+          {engine.requiresApiKey && <div className="translation-engine-hint"><span>{t('translation.deeplHint')}</span><button className="toolbar-button" type="button" onClick={() => { void window.mootool.openSettings('tools') }}>{t('translation.configureDeepL')}</button></div>}
+          <ResizableColumns className="translation-editor-grid" columns={2} defaultSizes={[1, 1]} minPaneWidths={[280, 280]} storageKey="translation-editor"><TextCodeEditor className="translation-source-editor" testId="translation-source" ariaLabel={t('translation.sourcePlaceholder')} value={source} placeholder={t('translation.sourcePlaceholder')} onChange={changeSource} /><div className="translation-result"><TextCodeEditor className="translation-target-editor" testId="translation-result" ariaLabel={t('translation.targetPlaceholder')} value={translating ? t('translation.translating') : target} readOnly /><footer>{providerUsed && <span><Languages size={13} />{translationEngines[providerUsed].name}{fallbackUsed ? ` · ${t('translation.fallback')}` : ''}</span>}<span>{source.length} / 50000</span></footer></div></ResizableColumns>
         </div>}
-        {tab === 'words' && <WordBook onApply={(word) => { restore(word.sourceText, word.targetText); void updateSettings({ tools: { translationSourceLang: word.sourceLang, translationTargetLang: word.targetLang } }); setTab('translate') }} onRetranslate={(word) => translateWord(word, settings, actions.reportError)} />}
+        {tab === 'words' && <WordBook onApply={(word) => { restore(word.sourceText, word.targetText); void updateSettings({ tools: { translationSourceLang: word.sourceLang, translationTargetLang: word.targetLang } }); setTab('translate') }} onRetranslate={(word) => translateWord(word, settings, reportError.current)} />}
         {tab === 'history' && <TranslationHistoryPanel onApply={(item) => { restore(item.sourceText, item.targetText); void updateSettings({ tools: { translationSourceLang: item.sourceLang, translationTargetLang: item.targetLang } }); setTab('translate') }} />}
       </div>
     </section>
   )
 }
 
-function LanguageSelect({ value, includeAuto = false, onChange }: { value: string; includeAuto?: boolean; onChange: (value: string) => void }) {
+function LanguageSelect({ provider, value, includeAuto = false, onChange }: { provider: TranslationProvider; value: string; includeAuto?: boolean; onChange: (value: string) => void }) {
   const { t } = useI18n()
-  return <select aria-label={includeAuto ? t('translation.sourceLanguage') : t('translation.targetLanguage')} value={value} onChange={(event) => onChange(event.target.value)}>{translationLanguageCodes.map((code) => includeAuto || code !== 'auto' ? <option value={code} key={code}>{t(`translation.lang.${code}` as MessageKey)}</option> : null)}</select>
+  return <select aria-label={includeAuto ? t('translation.sourceLanguage') : t('translation.targetLanguage')} value={value} onChange={(event) => onChange(event.target.value)}>{translationLanguageCodes.map((code) => includeAuto || code !== 'auto' ? <option value={code} key={code} disabled={!supportsTranslationLanguage(provider, code, includeAuto)}>{t(`translation.lang.${code}` as MessageKey)}</option> : null)}</select>
 }
 
 function WordBook({ onApply, onRetranslate }: { onApply: (word: TranslationWord) => void; onRetranslate: (word: TranslationWord) => Promise<TranslationWord> }) {
@@ -213,4 +242,11 @@ function languageLabel(code: string, t: (key: MessageKey) => string): string {
 
 function alternateTargetLanguage(code: string): string {
   return code === 'zh-CN' ? 'en' : 'zh-CN'
+}
+
+function translationErrorMessage(error: unknown, t: (key: MessageKey) => string): string {
+  const message = error instanceof Error ? error.message : String(error)
+  const codes = ['DEEPL_KEY_REQUIRED', 'DEEPL_INVALID_KEY', 'DEEPL_QUOTA_EXCEEDED', 'DEEPL_RATE_LIMITED', 'DEEPL_UNSUPPORTED_LANGUAGE', 'DEEPL_EMPTY_RESPONSE'] as const
+  const code = codes.find((value) => message.includes(value))
+  return code ? t(`translation.error.${code}`) : message
 }

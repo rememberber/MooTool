@@ -12358,3 +12358,20 @@ textarea:focus {
 .ai-integration pre { max-height: 320px; overflow: auto; padding: 12px; font-size: 12px; line-height: 1.6; background: var(--surface-soft); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .ai-integration code { font-size: 12px; overflow-wrap: anywhere; }
 .ai-integration__path { display: block; margin: 8px 0; }
+
+.translation-assist-toolbar,
+.translation-engine-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.translation-assist-toolbar label { display: inline-flex; align-items: center; gap: 6px; }
+.translation-name-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+.translation-engine-hint span { flex: 1; }
+
+.settings-description { margin: 0; padding: 8px 0; color: var(--text-muted); font-size: 12px; line-height: 1.6; }
