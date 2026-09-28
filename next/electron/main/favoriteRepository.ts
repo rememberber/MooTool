@@ -32,6 +32,10 @@ export class FavoriteRepository {
       );
     `)
     this.ensureFavoriteSchema()
+    const columns = this.database.prepare('PRAGMA table_info(t_next_favorite)').all()
+    if (!columns.some(column => column.name === 'sort_order')) {
+      this.database.exec('ALTER TABLE t_next_favorite ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0')
+    }
     this.database.exec(`
       CREATE INDEX IF NOT EXISTS t_next_favorite_folder_kind_index
         ON t_next_favorite_folder (kind, id);
@@ -45,11 +49,11 @@ export class FavoriteRepository {
     const rows = folderId == null
       ? this.database.prepare(`
           SELECT id, kind, folder_id, name, value, description, create_time
-          FROM t_next_favorite WHERE kind = ? ORDER BY name COLLATE NOCASE, id
+          FROM t_next_favorite WHERE kind = ? ORDER BY sort_order, name COLLATE NOCASE, id
         `).all(kind)
       : this.database.prepare(`
           SELECT id, kind, folder_id, name, value, description, create_time
-          FROM t_next_favorite WHERE kind = ? AND folder_id = ? ORDER BY name COLLATE NOCASE, id
+          FROM t_next_favorite WHERE kind = ? AND folder_id = ? ORDER BY sort_order, name COLLATE NOCASE, id
         `).all(kind, folderId)
     return rows.map(mapFavorite)
   }
@@ -87,6 +91,12 @@ export class FavoriteRepository {
     const folderId = input.folderId ?? this.ensureDefaultFolder(input.kind).id
     const folder = this.getFolder(folderId)
     if (folder.kind !== input.kind) throw new Error('Favorite folder does not match favorite kind')
+    if (input.id != null) {
+      const result = this.database.prepare(`UPDATE t_next_favorite SET folder_id = ?, name = ?, value = ?, description = ? WHERE id = ? AND kind = ?`)
+        .run(folderId, input.name, input.value, input.description ?? '', input.id, input.kind)
+      if (!result.changes) throw new Error('Favorite was not found')
+      return mapFavorite(this.database.prepare('SELECT * FROM t_next_favorite WHERE id = ?').get(input.id)!)
+    }
     const createTime = formatSqliteDate(new Date())
     this.database.prepare(`
       INSERT INTO t_next_favorite (kind, folder_id, name, value, description, create_time)
@@ -102,6 +112,22 @@ export class FavoriteRepository {
     `).get(input.kind, folderId, input.name)
     if (!row) throw new Error('Favorite was not saved')
     return mapFavorite(row)
+  }
+
+  move(id: number, direction: -1 | 1): void {
+    const row = this.database.prepare('SELECT * FROM t_next_favorite WHERE id = ?').get(id)
+    if (!row) throw new Error('Favorite was not found')
+    const items = this.list(row.kind as FavoriteKind, Number(row.folder_id))
+    const index = items.findIndex(item => item.id === id)
+    const target = index + direction
+    if (target < 0 || target >= items.length) return
+    ;[items[index], items[target]] = [items[target], items[index]]
+    this.database.exec('BEGIN IMMEDIATE')
+    try {
+      const update = this.database.prepare('UPDATE t_next_favorite SET sort_order = ? WHERE id = ?')
+      items.forEach((item, position) => update.run(position, item.id))
+      this.database.exec('COMMIT')
+    } catch (error) { this.database.exec('ROLLBACK'); throw error }
   }
 
   delete(id: number): void {

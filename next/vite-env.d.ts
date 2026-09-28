@@ -57,6 +57,7 @@ declare global {
       clearHistory: (funcType: string) => Promise<void>
       listFavorites: (kind: FavoriteKind, folderId?: number) => Promise<FavoriteRecord[]>
       saveFavorite: (input: SaveFavoriteInput) => Promise<FavoriteRecord>
+      moveFavorite: (id: number, direction: -1 | 1) => Promise<void>
       deleteFavorite: (id: number) => Promise<void>
       listFavoriteFolders: (kind: FavoriteKind) => Promise<FavoriteFolderRecord[]>
       createFavoriteFolder: (input: SaveFavoriteFolderInput) => Promise<FavoriteFolderRecord>

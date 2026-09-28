@@ -20,6 +20,7 @@ export type FavoriteFolderRecord = {
 }
 
 export type SaveFavoriteInput = {
+  id?: number
   kind: FavoriteKind
   folderId?: number
   name: string

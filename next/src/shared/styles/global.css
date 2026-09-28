@@ -4134,7 +4134,7 @@ select:not([multiple]) {
 .common-pattern-list strong { font-size: 12px; }
 .common-pattern-list code { color: var(--text-muted); font-size: 10px; overflow-wrap: anywhere; }
 
-.cron-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: auto minmax(0, 1fr); overflow: auto; }
+.cron-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: auto max-content; align-content: start; overflow: auto; }
 .cron-builder { padding: 18px; border-right: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); }
 .cron-fields { display: grid; grid-template-columns: repeat(7, minmax(65px, 1fr)); gap: 7px; }
 .cron-fields label { display: flex; flex-direction: column; gap: 5px; }
@@ -4144,8 +4144,8 @@ select:not([multiple]) {
 .cron-expression-panel { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 8px; padding: 18px; background: var(--surface-soft); border-bottom: 1px solid var(--border-soft); }
 .cron-expression-panel output { display: flex; flex-direction: column; gap: 4px; padding: 9px 10px; color: var(--text-body); background: var(--surface); border: 1px solid var(--border-soft); border-radius: 6px; font-size: 10px; line-height: 1.45; }
 .cron-expression-panel output span { color: var(--text-faint); font-size: 9px; }
-.cron-runs { grid-column: 1 / -1; min-height: 0; padding: 18px; overflow: auto; }
-.cron-runs ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; padding: 0; margin: 0; background: var(--border-soft); counter-reset: cron; list-style: none; }
+.cron-runs { grid-column: 1 / -1; min-height: max-content; padding: 18px; overflow: visible; }
+.cron-runs ol { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; padding: 0; margin: 0; background: var(--border-soft); counter-reset: cron; list-style: none; }
 .cron-runs li { display: flex; align-items: center; min-height: 38px; padding: 0 12px; color: var(--text-body); background: var(--surface); font-family: ui-monospace, Menlo, monospace; font-size: 10px; counter-increment: cron; }
 .cron-runs li::before { width: 24px; color: var(--text-faint); content: counter(cron); }
 
@@ -8182,7 +8182,7 @@ select:not([multiple]) {
 
   .cron-workspace {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(180px, 1fr);
+    grid-template-rows: auto auto max-content;
   }
 
   .cron-builder {
@@ -8193,8 +8193,8 @@ select:not([multiple]) {
     grid-template-columns: repeat(4, minmax(65px, 1fr));
   }
 
-  .cron-runs {
-    grid-column: 1;
+  .cron-workspace.resizable-columns--enabled {
+    grid-template-rows: auto max-content;
   }
 
   .yaml-validate-layout {
@@ -12375,3 +12375,18 @@ textarea:focus {
 .translation-engine-hint span { flex: 1; }
 
 .settings-description { margin: 0; padding: 8px 0; color: var(--text-muted); font-size: 12px; line-height: 1.6; }
+
+/* Cron visual field builder and library. */
+.cron-field-tabs, .cron-mode-options, .cron-mode-values, .cron-favorite-toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0; }
+.cron-field-tabs button { padding: 6px 12px; border: 1px solid var(--border-control); border-radius: 5px; background: var(--surface); color: var(--text-body); }
+.cron-field-tabs button[aria-selected="true"] { background: var(--surface-soft); border-color: var(--text-body); }
+.cron-field-editor { min-height: 210px; color: var(--text-body); font-size: 12px; }
+.cron-mode-options label, .cron-mode-values label { display: flex; align-items: center; gap: 5px; }
+.cron-mode-values input[type="number"] { width: 80px; }
+.cron-mode-values input:not([type="checkbox"]), .cron-favorite-form input, .cron-favorite-toolbar select { padding: 7px; color: var(--text-body); background: var(--surface); border: 1px solid var(--border-control); border-radius: 5px; }
+.cron-value-grid { display: grid; grid-template-columns: repeat(10, minmax(35px, 1fr)); gap: 9px; width: 100%; }
+.cron-example-list { display: grid; gap: 6px; max-height: 65vh; overflow: auto; }
+.cron-example-list button { display: grid; gap: 6px; text-align: left; padding: 10px; color: var(--text-body); background: var(--surface); border: 1px solid var(--border-soft); border-radius: 5px; }
+.cron-example-list code { font-size: 13px; }
+.cron-favorite-form { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin: 12px 0; }
+.cron-favorite-form input { min-width: 0; }

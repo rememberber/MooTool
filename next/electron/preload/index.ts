@@ -64,6 +64,7 @@ contextBridge.exposeInMainWorld('mootool', {
   clearHistory: (funcType: string): Promise<void> => ipcRenderer.invoke('history:clear', funcType),
   listFavorites: (kind: FavoriteKind, folderId?: number): Promise<FavoriteRecord[]> => ipcRenderer.invoke('favorite:list', kind, folderId),
   saveFavorite: (input: SaveFavoriteInput): Promise<FavoriteRecord> => ipcRenderer.invoke('favorite:save', input),
+  moveFavorite: (id: number, direction: -1 | 1): Promise<void> => ipcRenderer.invoke('favorite:move', id, direction),
   deleteFavorite: (id: number): Promise<void> => ipcRenderer.invoke('favorite:delete', id),
   listFavoriteFolders: (kind: FavoriteKind): Promise<FavoriteFolderRecord[]> => ipcRenderer.invoke('favorite-folder:list', kind),
   createFavoriteFolder: (input: SaveFavoriteFolderInput): Promise<FavoriteFolderRecord> => ipcRenderer.invoke('favorite-folder:create', input),

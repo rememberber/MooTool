@@ -639,6 +639,10 @@ function registerIpc(): void {
   ipcMain.handle('history:clear', (_event, funcType: string) => historyRepository.clear(normalizeFuncType(funcType)))
   ipcMain.handle('favorite:list', (_event, kind: FavoriteKind, folderId?: unknown) => favoriteRepository.list(normalizeFavoriteKind(kind), normalizeOptionalPositiveId(folderId)))
   ipcMain.handle('favorite:save', (_event, input: SaveFavoriteInput) => favoriteRepository.save(normalizeFavoriteInput(input)))
+  ipcMain.handle('favorite:move', (_event, id: unknown, direction: unknown) => {
+    if (direction !== -1 && direction !== 1) throw new Error('Invalid direction')
+    favoriteRepository.move(normalizePositiveId(id), direction)
+  })
   ipcMain.handle('favorite:delete', (_event, id: number) => {
     if (!Number.isSafeInteger(id) || id <= 0) throw new Error('Invalid favorite id')
     favoriteRepository.delete(id)
@@ -2032,6 +2036,7 @@ function normalizeFavoriteInput(value: SaveFavoriteInput): SaveFavoriteInput {
   const favoriteValue = value.value.trim().slice(0, 100_000)
   if (!name || !favoriteValue) throw new Error('Favorite name and value are required')
   return {
+    id: normalizeOptionalPositiveId(value.id),
     kind: normalizeFavoriteKind(value.kind),
     folderId: normalizeOptionalPositiveId(value.folderId),
     name,
