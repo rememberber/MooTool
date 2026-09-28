@@ -117,6 +117,7 @@ import { SystemService } from './systemService'
 import { currentUpdateProductId, defaultReleaseUrl, UpdateService } from './updateService'
 import { UpdateManager, type UpdateAdapter } from './updateManager'
 import { downloadUpdateFile } from './updateDownloader'
+import { cleanupUpdateFiles, UPDATE_CLEANUP_INTERVAL } from './updateCleanup'
 import { VaultGitService } from './vaultGitService'
 import { VaultGitCheckpointScheduler } from './vaultGitCheckpointScheduler'
 import { ToolWindowManager } from './toolWindowManager'
@@ -205,6 +206,8 @@ let jsonVaultWatchTimer: NodeJS.Timeout | undefined
 let jsonVaultPullTimer: NodeJS.Timeout | undefined
 let jsonVaultWatcherGeneration = 0
 let jsonVaultEditorDirty = false
+let updateCleanupTimer: NodeJS.Timeout | undefined
+let updateCleanupRunning = false
 let updateStartupTimer: NodeJS.Timeout | undefined
 let updateIntervalTimer: NodeJS.Timeout | undefined
 let updateCheckPromise: Promise<UpdateCheckResult> | null = null
@@ -2256,7 +2259,27 @@ const binaryFileFilters: Record<SaveBinaryFileInput['kind'], { name: string; ext
 
 const vaultGitActions: VaultGitActionInput['action'][] = ['init', 'configure-remote', 'commit', 'fetch', 'pull', 'push', 'discard', 'abort-merge', 'resolve-conflict', 'continue-operation']
 
+async function cleanPendingUpdates(): Promise<void> {
+  if (updateCleanupRunning) return
+  updateCleanupRunning = true
+  try {
+    await cleanupUpdateFiles(join(app.getPath('userData'), 'pending-updates'), (fileName) => {
+      const state = updateManager.getState()
+      return state.status === 'downloading' || (state.status === 'ready' && state.fileName === fileName)
+    })
+  } catch (error) {
+    console.warn('Could not clean pending updates:', error)
+  } finally {
+    updateCleanupRunning = false
+  }
+}
+
 app.whenReady().then(async () => {
+  if (process.platform === 'darwin' && app.isPackaged && process.env.NODE_ENV !== 'test') {
+    await cleanPendingUpdates()
+    updateCleanupTimer = setInterval(() => { void cleanPendingUpdates() }, UPDATE_CLEANUP_INTERVAL)
+    updateCleanupTimer.unref()
+  }
   store = new Store<PersistedStore>({
     name: 'mootool-next',
     defaults: {
@@ -2332,6 +2355,7 @@ app.on('before-quit', () => {
   jsonVaultCheckpointScheduler.stop()
   clearTimeout(updateStartupTimer)
   clearInterval(updateIntervalTimer)
+  clearInterval(updateCleanupTimer)
   closeDataRepositories()
 })
 
