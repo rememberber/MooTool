@@ -2,6 +2,7 @@ import { ClipboardCopy, ClipboardPaste, Download, FileImage, FolderOpen, ImageDo
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ToolPageHeader, WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
+import { useToolActivity } from '@/shared/components/ToolActivity'
 import type { ImageAsset, ImageAssetSummary, ImageVectorizeOptions } from '@/shared/contracts/images'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
@@ -13,6 +14,7 @@ export function ImageTool() {
   const { t } = useI18n()
   const actions = useToolActions('image')
   const desktopDialog = useDesktopDialog()
+  const toolActive = useToolActivity()
   const [assets, setAssets] = useState<ImageAssetSummary[]>([])
   const [selectedNames, setSelectedNames] = useState<string[]>([])
   const [current, setCurrent] = useState<ImageAsset | null>(null)
@@ -144,7 +146,7 @@ export function ImageTool() {
     } catch (error) { actions.reportError(error) }
   }
 
-  async function importClipboard(): Promise<void> {
+  const importClipboard = useCallback(async (): Promise<void> => {
     try {
       const dataUrl = await window.mootool.readClipboardImage()
       if (!dataUrl) throw new Error(t('image.clipboardEmpty'))
@@ -152,7 +154,21 @@ export function ImageTool() {
       await loadAssets(saved.name)
       actions.toast.success(t('image.imported'))
     } catch (error) { actions.reportError(error) }
-  }
+  }, [actions, loadAssets, t])
+
+  useEffect(() => {
+    if (!toolActive || busy) return
+    const handlePaste = (event: ClipboardEvent) => {
+      if (event.defaultPrevented) return
+      const target = event.target
+      if (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select'))) return
+      if (document.querySelector('[role="dialog"], [role="menu"], [aria-modal="true"]')) return
+      event.preventDefault()
+      void importClipboard()
+    }
+    window.addEventListener('paste', handlePaste)
+    return () => window.removeEventListener('paste', handlePaste)
+  }, [busy, importClipboard, toolActive])
 
   async function capture(): Promise<void> {
     if (busy) return
