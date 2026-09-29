@@ -231,7 +231,20 @@ function AppearanceSettings({ settings, commit }: SettingsPanelProps) {
           onChange={(value) => commit({ appearance: { theme: value } })}
         />
       </SettingRow>
+      <SettingRow label={t('settings.windowMaterial')}>
+        <div>
+          <select aria-label={t('settings.windowMaterial')} value={settings.appearance.windowMaterial}
+            onChange={(event) => commit({ appearance: { windowMaterial: event.target.value as AppSettings['appearance']['windowMaterial'] } })}>
+            <option value="auto">{t('settings.windowMaterial.auto')}</option>
+            <option value="solid">{t('settings.windowMaterial.solid')}</option>
+            <option value="vibrancy">{t('settings.windowMaterial.vibrancy')}</option>
+            <option value="liquid-glass">Liquid Glass</option>
+          </select>
+          <p className="settings-description">{t('settings.windowMaterial.hint')}</p>
+        </div>
+      </SettingRow>
       <SettingRow label={t('settings.accentColor')}>
+
         <div className="color-swatches">
           {accentColorPresets.map((preset) => (
             <button

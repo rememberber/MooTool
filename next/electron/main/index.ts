@@ -1,3 +1,4 @@
+import { WindowMaterialController, loadNativeGlass } from './windowMaterial'
 import { runImageBatch } from '../../src/shared/imageBatch'
 import { vectorizeInWorker } from './imageVectorizationTask'
 import { registerHttpResponseWindows, closeHttpResponseWindow } from './httpResponseWindows'
@@ -186,6 +187,7 @@ const externalPages: Record<ExternalPageId, string> = {
 
 let store: Store<PersistedStore>
 let mainWindow: BrowserWindow | null = null
+let mainWindowMaterial: WindowMaterialController | null = null
 let toolWindowManager: ToolWindowManager
 let tray: Tray | null = null
 let isQuitting = false
@@ -332,10 +334,9 @@ function createMainWindow(): BrowserWindow {
     minHeight: 720,
     show: false,
     transparent: process.platform === 'darwin',
-    backgroundColor: process.platform === 'darwin' ? '#00000000' : dark ? '#171719' : '#f7f7f8',
+    backgroundColor: dark ? '#171719' : '#f7f7f8',
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 18, y: 18 },
-    vibrancy: process.platform === 'darwin' ? 'sidebar' : undefined,
     visualEffectState: process.platform === 'darwin' ? 'followWindow' : undefined,
     icon: app.isPackaged ? undefined : getDevelopmentIconPath(),
     webPreferences: {
@@ -347,6 +348,14 @@ function createMainWindow(): BrowserWindow {
   })
 
   mainWindow = window
+  const material = new WindowMaterialController(window, settings.appearance.windowMaterial, {
+    platform: process.platform,
+    systemVersion: process.getSystemVersion(),
+    dark: () => nativeTheme.shouldUseDarkColors,
+    highContrast: () => nativeTheme.shouldUseHighContrastColors,
+    loadGlass: loadNativeGlass
+  })
+  mainWindowMaterial = material
   installWindowStatePersistence(window)
 
   window.on('focus', () => {
@@ -356,7 +365,15 @@ function createMainWindow(): BrowserWindow {
   })
   window.on('blur', updateApplicationWindowActivity)
 
-  window.once('ready-to-show', () => {
+  window.once('ready-to-show', async () => {
+    let solidRequested = true
+    try {
+      solidRequested = await window.webContents.executeJavaScript(
+        `matchMedia('(prefers-reduced-transparency: reduce), (prefers-contrast: more), (forced-colors: active)').matches`
+      )
+    } catch { /* Use solid surfaces if accessibility detection fails. */ }
+    await material.initialize(solidRequested)
+    if (window.isDestroyed()) return
     if (settings.general.startMaximized || savedWindow.maximized) {
       window.maximize()
     }
@@ -386,6 +403,7 @@ function createMainWindow(): BrowserWindow {
 
   window.on('closed', () => {
     mainWindow = null
+    mainWindowMaterial = null
   })
 
   loadRenderer(window)
@@ -485,6 +503,11 @@ function registerIpc(): void {
     documents: app.getPath('documents'),
     downloads: app.getPath('downloads')
   }))
+  ipcMain.handle('window:material-get', () => mainWindowMaterial?.material ?? 'solid')
+  ipcMain.handle('window:material-accessibility', async (event, solid: unknown) => {
+    if (event.sender !== mainWindow?.webContents || typeof solid !== 'boolean') return
+    await mainWindowMaterial?.setAccessibility(solid)
+  })
   ipcMain.handle('theme:get-system', () => (nativeTheme.shouldUseDarkColors ? 'dark' : 'light'))
   ipcMain.handle('system:set-prevent-display-sleep', (event, enabled: unknown) => {
     assertToolWindowAccess(event.sender, 'messageBoard')
@@ -2355,10 +2378,10 @@ app.whenReady().then(async () => {
     const opaqueBackground = systemTheme === 'dark' ? '#171719' : '#f7f7f8'
     toolWindowManager.updateBackground(opaqueBackground)
     for (const browserWindow of BrowserWindow.getAllWindows()) {
-      const preserveMainWindowVibrancy = process.platform === 'darwin' && browserWindow === mainWindow
-      browserWindow.setBackgroundColor(preserveMainWindowVibrancy ? '#00000000' : opaqueBackground)
+      if (browserWindow !== mainWindow) browserWindow.setBackgroundColor(opaqueBackground)
       browserWindow.webContents.send('theme:system-changed', systemTheme)
     }
+    void mainWindowMaterial?.refresh()
     toolWindowManager.sendToAll('theme:system-changed', systemTheme)
   })
 

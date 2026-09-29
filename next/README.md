@@ -88,3 +88,13 @@ See the [AI integration guide](doc/mootool-ai-integration.md) for configuration 
 - `.github/workflows/next-build-installers.yml` validates the tag, package version, release notes, installers, and updater metadata before publishing.
 
 Tool pages live under `src/features/*`. Filesystem, storage, shell and OS capabilities are exposed through `electron/preload`; the independent MCP entry lives under `electron/mcp`.
+
+### 主窗口材质
+
+“设置 → 外观 → 窗口材质”提供自动、实色、毛玻璃和 Liquid Glass。
+自动模式在 macOS 26+ 尝试可选的 `electron-liquid-glass` 原生扩展，加载或挂载失败回退为 Electron vibrancy；较早 macOS 使用 vibrancy，Windows/Linux 使用实色。
+系统减少透明度、高对比度或强制颜色偏好优先使用实色，并在运行期间响应变化。
+
+材质选择在下次启动生效：原生扩展没有公开的移除接口，因此不为切换材质重建窗口，也不影响未保存编辑器和可拆卸工具视图。
+侧栏通过浅色 0.4 / 深色 0.5 的背景 alpha 与平滑明度渐变显露材质，正文和按钮不降低 opacity；工具内容区和辅助窗口保持实色。
+原生扩展作为 macOS 可选依赖安装，打包时解包其原生二进制。验证：`npm run check`，以及 `npx playwright test tests/electron/window-material.spec.ts tests/electron/tool-windows.spec.ts`。

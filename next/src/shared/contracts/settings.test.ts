@@ -71,7 +71,7 @@ describe('mergeSettings', () => {
       }
     })
 
-    expect(settings.schemaVersion).toBe(12)
+    expect(settings.schemaVersion).toBe(13)
     expect(settings.appearance.interfaceStyle).toBe('modern')
     expect(settings.runtime.javaPath).toBe('/opt/java')
     expect(settings.runtime.drafts).toEqual(defaultAppSettings.runtime.drafts)
@@ -209,4 +209,14 @@ describe('mergeSettings', () => {
     expect(settings.editor.jsonFontName).toBe('PingFang SC')
     expect(settings.editor.quickNoteFontName).toBe('ui-monospace')
   })
+})
+
+it('migrates and validates window material preferences', () => {
+  expect(mergeSettings(defaultAppSettings, { schemaVersion: 12, appearance: {} }).appearance.windowMaterial).toBe('auto')
+  for (const windowMaterial of ['auto', 'solid', 'vibrancy', 'liquid-glass'] as const) {
+    expect(mergeSettings(defaultAppSettings, { appearance: { windowMaterial } }).appearance.windowMaterial).toBe(windowMaterial)
+  }
+  expect(mergeSettings(defaultAppSettings, {
+    appearance: { windowMaterial: 'invalid' as 'auto' }
+  }).appearance.windowMaterial).toBe('auto')
 })

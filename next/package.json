@@ -164,6 +164,12 @@
     },
     "deb": {
       "artifactName": "MooTool-Next-Electron-${version}-linux-x64.${ext}"
-    }
+    },
+    "asarUnpack": [
+      "node_modules/electron-liquid-glass/**"
+    ]
+  },
+  "optionalDependencies": {
+    "electron-liquid-glass": "1.1.1"
   }
 }

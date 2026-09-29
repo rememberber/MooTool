@@ -2115,21 +2115,6 @@ select:not([multiple]) {
   overflow: hidden;
 }
 
-/* The BrowserWindow supplies the native NSVisualEffectView on macOS. Only the
- * main window and navigation column reveal it; content and auxiliary windows
- * keep their normal opaque surfaces. */
-:root[data-platform='darwin'][data-window='main'],
-:root[data-platform='darwin'][data-window='main'] body,
-:root[data-platform='darwin'][data-window='main'] #root,
-:root[data-platform='darwin'][data-window='main'] .app-shell {
-  background: transparent;
-}
-
-:root[data-platform='darwin'][data-window='main'] .sidebar {
-  background: var(--sidebar-vibrancy-tint);
-  border-right-color: var(--sidebar-vibrancy-border);
-}
-
 .sidebar-scroll {
   flex: 1;
   min-height: 0;
@@ -12424,3 +12409,50 @@ textarea:focus {
 .color-collection-hint, .color-collection-selection { color: var(--text-muted); font-size: 12px; }
 
 .color-collection-context-menu { z-index: 1100; max-height: calc(100vh - 16px); overflow-y: auto; }
+
+/* Native material is exposed only by the main navigation shell. Keep alpha on
+ * the paint, never on the sidebar container: text and controls stay opaque. */
+:root[data-platform='darwin'][data-window='main'] {
+  --window-glass-alpha: 0.4;
+  --window-glass-top: 97%;
+  --window-glass-range: 9%;
+}
+:root[data-platform='darwin'][data-window='main'][data-theme='dark'] {
+  --window-glass-alpha: 0.5;
+  --window-glass-top: 24%;
+}
+:root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']),
+:root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) body,
+:root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) #root,
+:root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) .app-shell {
+  background: transparent;
+}
+:root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) .sidebar {
+  background-color: transparent;
+  background-image: linear-gradient(180deg in oklab,
+    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0) / var(--window-glass-alpha)) 0%,
+    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0.043) / var(--window-glass-alpha)) 12.5%,
+    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0.156) / var(--window-glass-alpha)) 25%,
+    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0.316) / var(--window-glass-alpha)) 37.5%,
+    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0.5) / var(--window-glass-alpha)) 50%,
+    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0.684) / var(--window-glass-alpha)) 62.5%,
+    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0.844) / var(--window-glass-alpha)) 75%,
+    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0.957) / var(--window-glass-alpha)) 87.5%,
+    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 1) / var(--window-glass-alpha)) 100%
+  );
+  border-right-color: var(--sidebar-vibrancy-border);
+}
+:root[data-platform='darwin'][data-window='main'][data-window-material='solid'],
+:root[data-platform='darwin'][data-window='main'][data-window-material='solid'] body,
+:root[data-platform='darwin'][data-window='main'][data-window-material='solid'] #root,
+:root[data-platform='darwin'][data-window='main'][data-window-material='solid'] .app-shell {
+  background: var(--surface);
+}
+:root[data-platform='darwin'][data-window='main'][data-window-material='solid'] .sidebar { background: var(--sidebar); }
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more), (forced-colors: active) {
+  :root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']),
+  :root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) body,
+  :root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) #root,
+  :root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) .app-shell { background: var(--surface); }
+  :root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) .sidebar { background: var(--sidebar); }
+}

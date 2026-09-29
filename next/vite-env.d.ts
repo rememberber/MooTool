@@ -33,6 +33,9 @@ declare global {
       toolWindowsEnabled: boolean
       getAppVersion: () => Promise<string>
       getAppPaths: () => Promise<AppPaths>
+      getWindowMaterial: () => Promise<'solid' | 'vibrancy' | 'liquid-glass'>
+      setMaterialAccessibility: (solid: boolean) => Promise<void>
+      onWindowMaterialChange: (callback: (material: 'solid' | 'vibrancy' | 'liquid-glass') => void) => () => void
       getSystemTheme: () => Promise<'light' | 'dark'>
       setPreventDisplaySleep: (enabled: boolean) => Promise<boolean>
       getSettings: () => Promise<AppSettings>

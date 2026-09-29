@@ -2,9 +2,10 @@ import { normalizeTranslationLanguagePair } from './network'
 import { isToolId, type ToolId } from './app'
 import { isVaultTreeExpandMode, type VaultTreeExpandMode } from '../vaultTreeExpand'
 
-export const appSettingsSchemaVersion = 12
+export const appSettingsSchemaVersion = 13
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
+export type WindowMaterial = 'auto' | 'solid' | 'vibrancy' | 'liquid-glass'
 export type ThemePreference = 'system' | 'light' | 'dark'
 export type InterfaceStyle = 'modern' | 'quiet' | 'hero' | 'smartisan' | 'miui-v5' | 'claude'
 export type CloseBehavior = 'ask' | 'hide' | 'quit'
@@ -36,6 +37,7 @@ export type AppSettings = {
   appearance: {
     interfaceStyle: InterfaceStyle
     theme: ThemePreference
+    windowMaterial: WindowMaterial
     accentColor: string
     fontFamily: string
     fontSize: number
@@ -133,6 +135,7 @@ export const defaultAppSettings: AppSettings = {
   appearance: {
     interfaceStyle: 'modern',
     theme: 'system',
+    windowMaterial: 'auto',
     accentColor: 'blue',
     fontFamily: 'system-ui',
     fontSize: 13,
@@ -256,6 +259,8 @@ export function normalizeSettings(value: AppSettings): AppSettings {
       interfaceStyle: interfaceStyles.includes(value.appearance.interfaceStyle)
         ? value.appearance.interfaceStyle
         : defaultAppSettings.appearance.interfaceStyle,
+      windowMaterial: ['auto', 'solid', 'vibrancy', 'liquid-glass'].includes(value.appearance.windowMaterial)
+        ? value.appearance.windowMaterial : 'auto',
       theme: themes.includes(value.appearance.theme) ? value.appearance.theme : defaultAppSettings.appearance.theme,
       accentColor: accentColorPresets.some((preset) => preset.id === value.appearance.accentColor)
         ? value.appearance.accentColor
