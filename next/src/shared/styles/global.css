@@ -12456,3 +12456,54 @@ textarea:focus {
   :root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) .app-shell { background: var(--surface); }
   :root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) .sidebar { background: var(--sidebar); }
 }
+
+/* Navigation uses translucent neutral state layers over the sidebar material.
+ * Keep selection stable under the pointer, including the detached-window action. */
+:root {
+  --navigation-hover: rgb(0 0 0 / 4%);
+  --navigation-selected: rgb(0 0 0 / 9%);
+}
+:root[data-theme='dark'] {
+  --navigation-hover: rgb(255 255 255 / 6%);
+  --navigation-selected: rgb(255 255 255 / 14%);
+}
+:root[data-interface-style] .sidebar :is(.tool-button, .recent-item) {
+  color: var(--text-body);
+  background: transparent;
+  border-color: transparent;
+  border-radius: 7px;
+  box-shadow: none;
+  font-weight: 500;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+:root[data-interface-style] .sidebar .tool-button-row:hover > .tool-button,
+:root[data-interface-style] .sidebar :is(.tool-button, .recent-item):hover {
+  color: var(--text-strong);
+  background: var(--navigation-hover);
+}
+:root[data-interface-style] .sidebar .tool-button-row > .tool-button--active,
+:root[data-interface-style] .sidebar .tool-button-row:hover > .tool-button--active,
+:root[data-interface-style] .sidebar :is(.tool-button, .recent-item):active {
+  color: var(--text-strong);
+  background: var(--navigation-selected);
+  border-color: transparent;
+  box-shadow: none;
+}
+:root[data-interface-style] .sidebar .tool-button svg {
+  color: inherit;
+}
+:root[data-interface-style] .sidebar :is(.tool-button, .recent-item):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-interface-style] .sidebar :is(.tool-button, .recent-item) {
+    transition: none;
+  }
+}
+@media (forced-colors: active) {
+  :root[data-interface-style] .sidebar .tool-button-row > .tool-button--active {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
