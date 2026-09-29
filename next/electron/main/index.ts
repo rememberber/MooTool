@@ -1,3 +1,4 @@
+import { JavaRegexService } from './javaRegexService'
 import { deepLApiOrigin } from './translation/deepl'
 import {
   app,
@@ -729,6 +730,8 @@ function registerIpc(): void {
     })
   })
   ipcMain.handle('runtime:cancel', (_event, requestId: unknown) => runtimeExecutionService.cancel(normalizeRequestId(requestId)))
+  ipcMain.handle('regex:match', (event, input: unknown) => javaRegexService.match(event.sender.id, input, store.get('settings').runtime.javaPath))
+  ipcMain.handle('regex:cancel', event => javaRegexService.cancel(event.sender.id))
   ipcMain.handle('runtime:detect', () => detectRuntimes(store.get('settings')))
   ipcMain.handle('dialog:choose-directory', async (event, initialPath?: string) => {
     const owner = resolveOwnerWindow(event.sender) ?? mainWindow
@@ -2267,6 +2270,8 @@ async function cleanPendingUpdates(): Promise<void> {
   }
 }
 
+const javaRegexService = new JavaRegexService()
+
 app.whenReady().then(async () => {
   if (process.platform === 'darwin' && app.isPackaged && process.env.NODE_ENV !== 'test') {
     await cleanPendingUpdates()
@@ -2331,6 +2336,7 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', () => {
   isQuitting = true
+  javaRegexService.dispose()
   displaySleepService.dispose()
   displaySleepCleanupSenders.clear()
   finishScreenCapture(null, false)

@@ -19,23 +19,33 @@ export function symmetricEncrypt(algorithm: SymmetricAlgorithm, content: string,
     return String(sm4.encrypt(content, utf8KeyHex(key, 16), { mode: 'ecb', padding: 'pkcs#7' }))
   }
   const keySize = algorithm === 'DES' ? 8 : 16
-  const keyWords = CryptoJS.enc.Utf8.parse(normalizeKey(key, keySize))
+  const keyWords = algorithm === 'AES' ? aesKey(key) : CryptoJS.enc.Utf8.parse(normalizeKey(key, keySize))
   const encrypted = algorithm === 'DES'
     ? CryptoJS.DES.encrypt(CryptoJS.enc.Utf8.parse(content), keyWords, { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7 })
     : CryptoJS.AES.encrypt(CryptoJS.enc.Utf8.parse(content), keyWords, { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7 })
   return encrypted.ciphertext.toString(CryptoJS.enc.Hex)
 }
 
-export function symmetricDecrypt(algorithm: SymmetricAlgorithm, cipherHex: string, key: string): string {
+export function symmetricDecrypt(algorithm: SymmetricAlgorithm, cipherHex: string, key: string, legacyAes = false): string {
   if (algorithm === 'SM4') {
     return String(sm4.decrypt(cleanHex(cipherHex), utf8KeyHex(key, 16), { mode: 'ecb', padding: 'pkcs#7' }))
   }
   const keySize = algorithm === 'DES' ? 8 : 16
-  const keyWords = CryptoJS.enc.Utf8.parse(normalizeKey(key, keySize))
-  const params = CryptoJS.lib.CipherParams.create({ ciphertext: CryptoJS.enc.Hex.parse(cleanHex(cipherHex)) })
+  const keyWords = algorithm === 'AES' && !legacyAes ? aesKey(key) : CryptoJS.enc.Utf8.parse(normalizeKey(key, keySize))
+  const hex = cleanHex(cipherHex)
+  if (algorithm === 'AES' && (!hex || hex.length % 32 !== 0)) throw new Error('AES ciphertext must contain complete 16-byte blocks')
+  const params = CryptoJS.lib.CipherParams.create({ ciphertext: CryptoJS.enc.Hex.parse(hex) })
   const decrypted = algorithm === 'DES'
     ? CryptoJS.DES.decrypt(params, keyWords, { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7 })
-    : CryptoJS.AES.decrypt(params, keyWords, { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7 })
+    : CryptoJS.AES.decrypt(params, keyWords, { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.NoPadding })
+  if (algorithm === 'AES') {
+    const bytes = CryptoJS.enc.Hex.stringify(decrypted).match(/../g)?.map(value => parseInt(value, 16)) ?? []
+    const padding = bytes.at(-1) ?? 0
+    if (padding < 1 || padding > 16 || bytes.slice(-padding).some(byte => byte !== padding)) throw new Error('Invalid AES key or padding')
+    decrypted.sigBytes -= padding
+    decrypted.clamp()
+    return decrypted.toString(CryptoJS.enc.Utf8)
+  }
   const output = decrypted.toString(CryptoJS.enc.Utf8)
   if (!output && cipherHex.trim()) throw new Error('Unable to decrypt with the supplied key')
   return output
@@ -150,6 +160,12 @@ function readRsaPublicKey(value: string): forge.pki.rsa.PublicKey {
 function readRsaPrivateKey(value: string): forge.pki.rsa.PrivateKey {
   const asn1 = forge.asn1.fromDer(forge.util.decode64(cleanBase64(value)))
   return forge.pki.privateKeyFromAsn1(asn1)
+}
+
+function aesKey(key: string): CryptoJS.lib.WordArray {
+  const bytes = CryptoJS.enc.Utf8.parse(key)
+  if (![16, 24, 32].includes(bytes.sigBytes)) throw new Error('AES key must be exactly 16, 24 or 32 UTF-8 bytes')
+  return bytes
 }
 
 function normalizeKey(key: string, length: number): string {

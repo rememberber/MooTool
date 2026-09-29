@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+import type { RegexInput, RegexResult } from './src/shared/contracts/regex'
 
 import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, ToolId, ToolWindowSnapshot, ToolWindowStatus, ToolWorkspaceBounds, WorkspaceState } from './src/shared/contracts/app'
 import type { AppSettings, SecretKey, SecretStatus, SettingsPatch } from './src/shared/contracts/settings'
@@ -55,6 +56,8 @@ declare global {
       saveHistory: (input: SaveFuncHistoryInput) => Promise<void>
       deleteHistory: (id: number) => Promise<void>
       clearHistory: (funcType: string) => Promise<void>
+      matchJavaRegex: (input: RegexInput) => Promise<RegexResult>
+      cancelJavaRegex: () => Promise<void>
       listFavorites: (kind: FavoriteKind, folderId?: number) => Promise<FavoriteRecord[]>
       saveFavorite: (input: SaveFavoriteInput) => Promise<FavoriteRecord>
       moveFavorite: (id: number, direction: -1 | 1) => Promise<void>

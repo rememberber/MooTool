@@ -1,3 +1,4 @@
+import type { RegexInput, RegexResult } from '../../src/shared/contracts/regex'
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import type {
   AppNavigationEvent,
@@ -62,6 +63,8 @@ contextBridge.exposeInMainWorld('mootool', {
   saveHistory: (input: SaveFuncHistoryInput): Promise<void> => ipcRenderer.invoke('history:save', input),
   deleteHistory: (id: number): Promise<void> => ipcRenderer.invoke('history:delete', id),
   clearHistory: (funcType: string): Promise<void> => ipcRenderer.invoke('history:clear', funcType),
+  matchJavaRegex: (input: RegexInput): Promise<RegexResult> => ipcRenderer.invoke('regex:match', input),
+  cancelJavaRegex: (): Promise<void> => ipcRenderer.invoke('regex:cancel'),
   listFavorites: (kind: FavoriteKind, folderId?: number): Promise<FavoriteRecord[]> => ipcRenderer.invoke('favorite:list', kind, folderId),
   saveFavorite: (input: SaveFavoriteInput): Promise<FavoriteRecord> => ipcRenderer.invoke('favorite:save', input),
   moveFavorite: (id: number, direction: -1 | 1): Promise<void> => ipcRenderer.invoke('favorite:move', id, direction),

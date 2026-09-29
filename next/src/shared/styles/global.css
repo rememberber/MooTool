@@ -3854,7 +3854,7 @@ select:not([multiple]) {
 .tool-tab--active::after {
   position: absolute;
   right: 12px;
-  bottom: -1px;
+  bottom: 0;
   left: 12px;
   height: 2px;
   background: var(--accent-strong);
@@ -12390,3 +12390,10 @@ textarea:focus {
 .cron-example-list code { font-size: 13px; }
 .cron-favorite-form { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin: 12px 0; }
 .cron-favorite-form input { min-width: 0; }
+
+.regex-match-highlight { background: color-mix(in srgb, #e4b64c 35%, transparent); border-bottom: 1px solid #bd902f; }
+.regex-navigation, .regex-engine { display: flex; align-items: center; gap: 8px; }
+.regex-engine select { color: var(--text-body); background: var(--surface); border: 1px solid var(--border-control); border-radius: 5px; padding: 5px 8px; }
+.regex-results article[role="button"] { cursor: pointer; }
+.regex-results article[role="button"]:focus-visible { outline: 2px solid var(--text-body); outline-offset: -2px; }
+.crypto-legacy-option { display: flex; align-items: center; gap: 6px; padding: 8px 14px; color: var(--text-body); font-size: 12px; }

@@ -63,3 +63,35 @@ describe('crypto tools', () => {
     expect(verifySignature('SM2', 'moo', signature, pair.publicKey)).toBe(true)
   })
 })
+
+describe('Java-compatible AES keys', () => {
+  it('matches the Java AES-192 fixture and decrypts it', () => {
+    const key = '123456789012345678901234'
+    const cipher = 'a66c2ff48c6ded0ae657017c86bc4930'
+    expect(symmetricEncrypt('AES', 'MooTool parity', key)).toBe(cipher)
+    expect(symmetricDecrypt('AES', cipher, key)).toBe('MooTool parity')
+  })
+  it.each(['1234567890abcdef', '123456789012345678901234', '12345678901234567890123456789012', '中文密钥1234'])('preserves all UTF-8 key bytes: %s', async key => {
+    const { createCipheriv } = await import('node:crypto')
+    const bytes = Buffer.from(key, 'utf8')
+    const cipher = createCipheriv(`aes-${bytes.length * 8}-ecb`, bytes, null)
+    const expected = Buffer.concat([cipher.update('跨端 MooTool', 'utf8'), cipher.final()]).toString('hex')
+    expect(symmetricEncrypt('AES', '跨端 MooTool', key)).toBe(expected)
+    expect(symmetricDecrypt('AES', expected, key)).toBe('跨端 MooTool')
+  })
+  it('rejects invalid key byte lengths without silent padding', () => {
+    for (const key of ['', 'short', 'x'.repeat(17), '中'.repeat(16)]) expect(() => symmetricEncrypt('AES', 'text', key)).toThrow('UTF-8 bytes')
+  })
+  it('supports empty plaintext and rejects bad ciphertext padding', () => {
+    const key = '1234567890abcdef'
+    expect(symmetricDecrypt('AES', symmetricEncrypt('AES', '', key), key)).toBe('')
+    expect(() => symmetricDecrypt('AES', '00', key)).toThrow('blocks')
+    expect(() => symmetricDecrypt('AES', '00'.repeat(16), key)).toThrow('padding')
+  })
+  it('only reads old truncated-key ciphertext in explicit legacy mode', () => {
+    const cipher = '3f4916b141b6d3442df1017170f155e8'
+    const key = '123456789012345678901234'
+    expect(() => symmetricDecrypt('AES', cipher, key)).toThrow()
+    expect(symmetricDecrypt('AES', cipher, key, true)).toBe('MooTool parity')
+  })
+})

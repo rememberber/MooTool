@@ -1,5 +1,5 @@
-export type RegexOptions = { global: boolean; ignoreCase: boolean; multiline: boolean; dotAll: boolean }
-export type RegexMatch = { index: number; value: string; groups: string[] }
+import type { RegexMatch, RegexOptions } from '@/shared/contracts/regex'
+export type { RegexMatch, RegexOptions } from '@/shared/contracts/regex'
 
 export const commonRegexes = [
   { id: 'phone', labelKey: 'regex.common.phone', pattern: '1[3-9]\\d{9}' },
@@ -34,7 +34,7 @@ export function matchRegex(pattern: string, source: string, options: RegexOption
   }
   const matches: RegexMatch[] = []
   let match: RegExpExecArray | null
-  while ((match = expression.exec(source))) {
+  while (matches.length < 5000 && (match = expression.exec(source))) {
     matches.push({ index: match.index, value: match[0], groups: match.slice(1).map((item) => item ?? '') })
     if (match[0] === '') expression.lastIndex += 1
   }
