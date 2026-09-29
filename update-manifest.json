@@ -1320,6 +1320,75 @@
               "size": 116395984
             }
           ]
+        },
+        {
+          "version": "1.2.4",
+          "title": "MooTool Next Electron 1.2.4",
+          "notes": "## English\n\n> Product: MooTool Next Electron<br>\n> Version: 1.2.4<br>\n> This release is installed and updated independently from MooTool Java and does not overwrite the Java edition.\n\n### Fixes and improvements\n\n- AES now uses the raw UTF-8 key and accepts exactly 16, 24, or 32 bytes, matching Java. Ciphertext from the old Electron key handling can still be decrypted with an explicit option.\n- Regex defaults to the Java engine and requires JDK 11 or newer. JavaScript mode remains available. Matches update as you type, are highlighted in the source, and can be stepped through. Favorites support groups, editing, reordering, and batch delete.\n- JSON documents and Quick Notes support multi-select copy and export.\n- Color favorites can be edited, reordered, and deleted in batches, and show a larger color swatch.\n- Calculator and Regex restore the last draft after restart, including drafts migrated from MooTool Java.\n- Image compression, watermarking, and SVG conversion show per-file progress, continue after a failure, and can be cancelled.\n- HTTP can send a request into its own response window. An open window keeps that response snapshot.\n\n### Notes\n\n- Installers remain unsigned. On macOS, the app downloads and verifies the new DMG, then asks the user to open it and drag the app into Applications.\n- The Java product line continues to use `v*` tags and its existing update manifest.\n\n## 中文\n\n> 产品线：MooTool Next Electron<br>\n> 版本：1.2.4<br>\n> 本版本与 MooTool Java 独立安装、独立更新，不会覆盖 Java 版本。\n\n### 修复与改进\n\n- AES 使用原始 UTF-8 密钥，只接受 16、24 或 32 字节，与 Java 对齐。旧 Electron 密钥处理生成的密文，可勾选选项后解密。\n- 正则默认使用 Java 引擎，需要 JDK 11 或更新版本；仍可切换到 JavaScript。输入后自动匹配，在原文中高亮，并可前后定位。收藏支持分组、编辑、排序和批量删除。\n- JSON 文档和随手记支持多选复制、多选导出。\n- 调色板收藏可以编辑、排序和批量删除，并用更大的色块展示颜色。\n- 计算器和正则会在重启后恢复上次草稿，也包括从 MooTool Java 迁移来的草稿。\n- 图片压缩、水印和 SVG 转换会显示逐项进度，单项失败后继续处理，并可以取消。\n- HTTP 可以把请求发送到独立响应窗口。已打开的窗口保留当时的响应快照。\n\n### 说明\n\n- 安装包仍未签名。macOS 会下载并校验新版 DMG，随后提示用户打开 DMG 并将应用拖入“应用程序”。\n- Java 产品线继续使用 `v*` tag 和原有更新清单，不受本次发布影响。\n\n## 日本語\n\n> 製品ライン：MooTool Next Electron<br>\n> バージョン：1.2.4<br>\n> このリリースは MooTool Java とは独立してインストール・更新され、Java 版を上書きしません。\n\n### 修正と改善\n\n- AES は生の UTF-8 キーを使い、16、24、32 バイトのみを受け付け、Java と揃えます。旧 Electron のキー処理で作った暗号文は、明示的なオプションで復号できます。\n- 正規表現は既定で Java エンジンを使い、JDK 11 以降が必要です。JavaScript モードも残しています。入力に合わせて一致を更新し、原文で強調表示し、前後へ移動できます。お気に入りはグループ、編集、並べ替え、一括削除に対応します。\n- JSON ドキュメントとクイックノートで、複数選択のコピーとエクスポートができます。\n- カラーお気に入りは編集、並べ替え、一括削除ができ、より大きい色見本を表示します。\n- 電卓と正規表現は再起動後に前回の下書きを復元します。MooTool Java から移行した下書きも含みます。\n- 画像の圧縮、透かし、SVG 変換はファイルごとの進捗を表示し、1 件失敗しても続行でき、キャンセルできます。\n- HTTP はリクエストを独立した応答ウィンドウへ送信できます。開いたウィンドウはその応答のスナップショットを保持します。\n\n### 補足\n\n- インストーラーは引き続き未署名です。macOS では新しい DMG をダウンロードして検証し、その後 DMG を開いてアプリを「アプリケーション」へドラッグするよう案内します。\n- Java 製品ラインは引き続き `v*` タグと従来の更新マニフェストを使用し、このリリースの影響を受けません。",
+          "prerelease": false,
+          "releaseUrl": "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.4",
+          "assets": [
+            {
+              "platform": "darwin",
+              "architecture": "arm64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.2.4-mac-arm64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.4/MooTool-Next-Electron-1.2.4-mac-arm64.dmg",
+              "sha512": "6HEZXFE9UtqXXb0lY3I6b4GnLD+sgi2ZmvXF2sY2SyUxsJz26CvId7MBRGSgaJZ/vNtP9svMJ1uhXfeAoLT2uw==",
+              "size": 150953594
+            },
+            {
+              "platform": "darwin",
+              "architecture": "x64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.2.4-mac-x64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.4/MooTool-Next-Electron-1.2.4-mac-x64.dmg",
+              "sha512": "oYzMwTmWMiCF6oodbv9WibREcuLbZFSlHC96PhAZ3AlOySiSoL+VtJLygzVGfaAcXkEmk3lhBZSNT2DPEdJFWg==",
+              "size": 152726692
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "nsis",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.2.4-win-x64-setup.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.4/MooTool-Next-Electron-1.2.4-win-x64-setup.exe",
+              "sha512": "UpyogOtgoc0smLofLtAf6DzhGaf5tTq8Sqa97VE1BqlWiJHAhtsgz2YJELLipXw0ITjOC+IbkKeAmIscjm6t2g==",
+              "size": 118922416
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "portable",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.2.4-win-x64-portable.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.4/MooTool-Next-Electron-1.2.4-win-x64-portable.exe",
+              "sha512": "bFFMOA71a7NaVYmdcvh1HFakTdzBFzpgboxcFXrGjc0rE0m8uuim2Z2riu8NMASgTERhrOel3i/XgMZyI1EHvw==",
+              "size": 118735209
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "appimage",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.2.4-linux-x64.AppImage",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.4/MooTool-Next-Electron-1.2.4-linux-x64.AppImage",
+              "sha512": "7OJzmbNXYQ6zOMJvLZJw/KO86tlpN6L/fU9S5EeZzEGwgGHZPg+saFUfUlKZEo/QBcHjnyPBxsXGWjDMxOduKg==",
+              "size": 158554535
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "deb",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.2.4-linux-x64.deb",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.4/MooTool-Next-Electron-1.2.4-linux-x64.deb",
+              "sha512": "SWv1wJ32CqUR06feawotSOYnbqTBHCKWmZEes2/xXgxv6arGAzMFASr7hBvxizz+mzb9omzveem7umeeB8GK1Q==",
+              "size": 116411036
+            }
+          ]
         }
       ]
     },
