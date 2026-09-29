@@ -176,6 +176,7 @@ export function Workbench() {
             <ToolButton
               icon={toolById.get('mootool')!.icon}
               label={t('app.nav.home')}
+              tooltip={settings.layout.hideNavigationTitles ? t('app.nav.home') : undefined}
               active={!settingsPageOpen && activeToolId === 'mootool'}
               onClick={() => {
                 setSettingsCategory(null)
@@ -197,6 +198,7 @@ export function Workbench() {
                       key={tool.id}
                       icon={tool.icon}
                       label={t(tool.titleKey)}
+                      tooltip={settings.layout.hideNavigationTitles ? t(tool.titleKey) : undefined}
                       active={!settingsPageOpen && activeToolId === tool.id}
                       {...toolWindowButtonProps(tool.id as Exclude<ToolId, 'mootool'>, t(tool.titleKey))}
                       onClick={() => {
@@ -224,6 +226,7 @@ export function Workbench() {
                         key={tool.id}
                         icon={tool.icon}
                         label={t(tool.titleKey)}
+                        tooltip={settings.layout.hideNavigationTitles ? t(tool.titleKey) : undefined}
                         active={!settingsPageOpen && activeToolId === tool.id}
                         {...toolWindowButtonProps(tool.id as Exclude<ToolId, 'mootool'>, t(tool.titleKey))}
                         onClick={() => {

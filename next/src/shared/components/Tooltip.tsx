@@ -4,6 +4,7 @@ import {
   useEffect,
   useEffectEvent,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -21,11 +22,12 @@ type TooltipProps = {
   content: ReactNode
   side?: TooltipSide
   delay?: number
+  contain?: 'sidebar'
 }
 
 const tooltipGap = 8
 
-export function Tooltip({ children, content, side = 'top', delay = 400 }: TooltipProps) {
+export function Tooltip({ children, content, side = 'top', delay = 400, contain }: TooltipProps) {
   const toolActive = useToolActivity()
   const id = useId()
   const triggerRef = useRef<HTMLSpanElement>(null)
@@ -49,6 +51,21 @@ export function Tooltip({ children, content, side = 'top', delay = 400 }: Toolti
     const rect = trigger.getBoundingClientRect()
     const centerX = rect.left + rect.width / 2
     const centerY = rect.top + rect.height / 2
+    if (contain === 'sidebar') {
+      const sidebar = trigger.closest('.sidebar')?.getBoundingClientRect()
+      if (sidebar) {
+        setPosition({
+          left: sidebar.left + sidebar.width / 2,
+          top: centerY,
+          maxWidth: Math.max(48, sidebar.width - 16),
+          whiteSpace: 'normal',
+          textAlign: 'center',
+          overflowWrap: 'anywhere',
+          transform: 'translate(-50%, -50%)'
+        })
+        return
+      }
+    }
     const positions: Record<TooltipSide, CSSProperties> = {
       top: { left: centerX, top: rect.top - tooltipGap },
       right: { left: rect.right + tooltipGap, top: centerY },
@@ -56,7 +73,7 @@ export function Tooltip({ children, content, side = 'top', delay = 400 }: Toolti
       left: { left: rect.left - tooltipGap, top: centerY }
     }
     setPosition(positions[side])
-  }, [side])
+  }, [contain, side])
 
   function showTooltip(): void {
     if (!toolActive) return
@@ -80,6 +97,24 @@ export function Tooltip({ children, content, side = 'top', delay = 400 }: Toolti
   }, [clearTimer])
 
   const repositionTooltip = useEffectEvent(updatePosition)
+
+  useLayoutEffect(() => {
+    if (!open || contain !== 'sidebar') return
+    const tooltip = document.getElementById(id)
+    const trigger = triggerRef.current
+    const sidebar = trigger?.closest('.sidebar')?.getBoundingClientRect()
+    if (!tooltip || !sidebar) return
+    const tip = tooltip.getBoundingClientRect()
+    const margin = 8
+    const half = tip.height / 2
+    const minTop = Math.max(margin, sidebar.top + margin) + half
+    const maxTop = Math.min(window.innerHeight - margin, sidebar.bottom - margin) - half
+    const currentTop = typeof position.top === 'number' ? position.top : tip.top + half
+    const nextTop = maxTop >= minTop ? Math.min(Math.max(currentTop, minTop), maxTop) : currentTop
+    if (Math.abs(nextTop - currentTop) > 0.5) {
+      setPosition((current) => ({ ...current, top: nextTop }))
+    }
+  }, [contain, id, open, position.top])
 
   useEffect(() => {
     if (!open) {

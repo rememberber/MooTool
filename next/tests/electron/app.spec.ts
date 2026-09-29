@@ -124,6 +124,8 @@ test('matches the Java home content and persists sidebar collapse state', async 
   await expect(mainPage.locator('.app-shell')).toHaveClass(/app-shell--hide-nav-titles/)
   await expect.poll(() => mainPage.locator('.sidebar').evaluate((element) => element.getBoundingClientRect().width)).toBe(84)
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { hideNavigationTitles: true } })
+  await mainPage.getByRole('button', { name: 'MooTool', exact: true }).hover()
+  await expect(mainPage.getByRole('tooltip', { name: 'MooTool', exact: true })).toBeVisible()
 
   await mainPage.getByRole('button', { name: '展开导航栏' }).click()
   await expect(mainPage.locator('.app-shell')).not.toHaveClass(/app-shell--hide-nav-titles/)

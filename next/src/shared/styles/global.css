@@ -2572,6 +2572,11 @@ select:not([multiple]) {
   display: none;
 }
 
+.app-shell--hide-nav-titles .tool-button-row > .tooltip-trigger {
+  display: flex;
+  width: 100%;
+}
+
 .app-shell--hide-nav-titles .tool-button {
   justify-content: center;
   padding: 0;
@@ -12482,12 +12487,15 @@ textarea:focus {
   transition: background-color 120ms ease, color 120ms ease;
 }
 :root[data-interface-style] .sidebar .tool-button-row:hover > .tool-button,
+:root[data-interface-style] .sidebar .tool-button-row:hover > .tooltip-trigger > .tool-button,
 :root[data-interface-style] .sidebar :is(.tool-button, .recent-item):hover {
   color: var(--text-strong);
   background: var(--navigation-hover);
 }
 :root[data-interface-style] .sidebar .tool-button-row > .tool-button--active,
+:root[data-interface-style] .sidebar .tool-button-row > .tooltip-trigger > .tool-button--active,
 :root[data-interface-style] .sidebar .tool-button-row:hover > .tool-button--active,
+:root[data-interface-style] .sidebar .tool-button-row:hover > .tooltip-trigger > .tool-button--active,
 :root[data-interface-style] .sidebar :is(.tool-button, .recent-item):active {
   color: var(--text-strong);
   background: var(--navigation-selected);
@@ -12507,7 +12515,8 @@ textarea:focus {
   }
 }
 @media (forced-colors: active) {
-  :root[data-interface-style] .sidebar .tool-button-row > .tool-button--active {
+  :root[data-interface-style] .sidebar .tool-button-row > .tool-button--active,
+  :root[data-interface-style] .sidebar .tool-button-row > .tooltip-trigger > .tool-button--active {
     outline: 2px solid Highlight;
     outline-offset: -2px;
   }
