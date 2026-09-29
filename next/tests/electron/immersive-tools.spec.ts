@@ -30,7 +30,7 @@ test('renders every functional tool as an immersive workspace while leaving home
     '时间转换', '留言板', '翻译', '计算器', '调色板', '图片助手', 'PDF', '系统信息'
   ]
 
-  await mainPage.getByRole('button', { name: '主页', exact: true }).click()
+  await mainPage.getByRole('button', { name: 'MooTool', exact: true }).click()
   await expect(mainPage.locator('.home-page h1')).toBeVisible()
   await expect(mainPage.locator('.app-shell')).not.toHaveClass(/app-shell--immersive-tool/)
 
@@ -94,7 +94,7 @@ test('renders every functional tool as an immersive workspace while leaving home
     }
   }
 
-  await mainPage.getByRole('button', { name: '主页', exact: true }).click()
+  await mainPage.getByRole('button', { name: 'MooTool', exact: true }).click()
   await expect(mainPage.locator('.home-page h1')).toBeVisible()
   await expect(mainPage.locator('.app-shell')).not.toHaveClass(/app-shell--immersive-tool/)
 })

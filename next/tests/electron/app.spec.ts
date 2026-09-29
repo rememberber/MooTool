@@ -571,7 +571,7 @@ test('formats JSON and completes history and Vault workflows', async () => {
   await mainPage.mouse.move(secondDividerBounds!.x + secondDividerBounds!.width / 2 - 70, secondDividerBounds!.y + 80)
   await mainPage.mouse.up()
   await expect.poll(() => jsonInspector.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThan(initialInspectorWidth + 50)
-  await mainPage.getByRole('button', { name: '主页', exact: true }).click()
+  await mainPage.getByRole('button', { name: 'MooTool', exact: true }).click()
   await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
   await expect.poll(() => jsonVault.evaluate((element) => element.getBoundingClientRect().width)).toBeCloseTo(resizedVaultWidth, 0)
 
@@ -600,7 +600,7 @@ test('formats JSON and completes history and Vault workflows', async () => {
   await mainPage.keyboard.press('ControlOrMeta+End')
   await mainPage.keyboard.press('Shift+ArrowLeft')
 
-  await mainPage.getByRole('button', { name: '主页', exact: true }).click()
+  await mainPage.getByRole('button', { name: 'MooTool', exact: true }).click()
   await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
   await expect(findInput).toHaveValue('"a"')
   await editor.focus()
@@ -768,7 +768,7 @@ test('restores the JSON Vault expanded folder and selected file after switching 
   await mainPage.getByRole('button', { name: '创建', exact: true }).click()
   await expect(mainPage.locator('.vault-node--selected').filter({ hasText: 'selected.json' })).toBeVisible()
 
-  await mainPage.getByRole('button', { name: '主页', exact: true }).click()
+  await mainPage.getByRole('button', { name: 'MooTool', exact: true }).click()
   await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
 
   await expect(mainPage.locator('.vault-node--directory').filter({ hasText: 'session-state' })).toBeVisible()

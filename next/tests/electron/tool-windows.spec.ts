@@ -89,7 +89,7 @@ test('moves one live tool view into a separate window and restores it without lo
 })
 
 test('opens and returns an inactive tool from its navigation shortcut', async () => {
-  await mainPage.getByRole('button', { name: '主页', exact: true }).click()
+  await mainPage.getByRole('button', { name: 'MooTool', exact: true }).click()
 
   const qrButton = mainPage.getByRole('button', { name: '二维码', exact: true })
   const qrRow = qrButton.locator('..')
@@ -100,7 +100,7 @@ test('opens and returns an inactive tool from its navigation shortcut', async ()
   await detachShortcut.click()
 
   await expect.poll(() => getToolSnapshot('qrCode')).toMatchObject({ detached: true, ready: true })
-  await expect(mainPage.getByRole('button', { name: '主页', exact: true })).toHaveAttribute('aria-current', 'page')
+  await expect(mainPage.getByRole('button', { name: 'MooTool', exact: true })).toHaveAttribute('aria-current', 'page')
 
   const dockShortcut = qrRow.getByRole('button', { name: '将“二维码”收回到功能区', exact: true })
   await expect(dockShortcut).toHaveClass(/tool-button__window-action--detached/)
@@ -108,7 +108,7 @@ test('opens and returns an inactive tool from its navigation shortcut', async ()
   await dockShortcut.click()
 
   await expect.poll(() => getToolSnapshot('qrCode')).toMatchObject({ detached: false, ready: true })
-  await expect(mainPage.getByRole('button', { name: '主页', exact: true })).toHaveAttribute('aria-current', 'page')
+  await expect(mainPage.getByRole('button', { name: 'MooTool', exact: true })).toHaveAttribute('aria-current', 'page')
 })
 
 test('keeps multiple detached tools independent and returns each one to its dock', async () => {
@@ -188,7 +188,7 @@ test('keeps multiple detached tools independent and returns each one to its dock
   await expect(mainPage.getByRole('heading', { name: 'HTTP 请求 已在独立窗口中打开' })).toBeVisible()
   await expect.poll(() => getBaseWindowCount()).toBe(3)
 
-  await mainPage.getByRole('button', { name: '主页', exact: true }).click()
+  await mainPage.getByRole('button', { name: 'MooTool', exact: true }).click()
   await expect(mainPage.locator('.tool-button__window-action--detached')).toHaveCount(2)
 
   await closeAllDetachedBaseWindows()

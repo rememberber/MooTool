@@ -2122,8 +2122,13 @@ select:not([multiple]) {
   padding: 0 6px 18px;
   overflow-x: hidden;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-control) transparent;
+  scrollbar-width: none;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .toolbar-spacer {
