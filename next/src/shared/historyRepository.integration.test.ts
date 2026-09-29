@@ -34,6 +34,16 @@ describe('HistoryRepository', () => {
     repository.close()
   })
 
+  it('restores legacy drafts and keeps current drafts independent from history', () => {
+    const repository = createRepository()
+    repository.save({ funcType: 'Regex', inputText: 'Java text', outputText: '', extraData: JSON.stringify({ migratedFrom: 't_func_content' }) })
+    expect(JSON.parse(repository.getDraft('regex')!)).toEqual({ source: 'Java text' })
+    repository.saveDraft('regex', JSON.stringify({ pattern: '', source: '' }))
+    repository.clear('Regex')
+    expect(JSON.parse(repository.getDraft('regex')!)).toEqual({ pattern: '', source: '' })
+    repository.close()
+  })
+
   it('keeps only the latest 200 records per function type', () => {
     const repository = createRepository()
     for (let index = 0; index < 205; index++) {

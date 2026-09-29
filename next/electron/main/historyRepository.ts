@@ -14,6 +14,7 @@ export class HistoryRepository {
     this.database.exec(`
       PRAGMA journal_mode = WAL;
       PRAGMA busy_timeout = 3000;
+      CREATE TABLE IF NOT EXISTS t_tool_draft (kind TEXT PRIMARY KEY, value TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS t_func_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         func_type TEXT NOT NULL,
@@ -26,6 +27,19 @@ export class HistoryRepository {
       CREATE INDEX IF NOT EXISTS t_func_history_func_type_create_time_index
         ON t_func_history (func_type, create_time DESC);
     `)
+  }
+
+  getDraft(kind: string): string | null {
+    const row = this.database.prepare('SELECT value FROM t_tool_draft WHERE kind = ?').get(kind)
+    if (row) return String(row.value)
+    // Earlier migrations stored Java workspaces as history; recover those too.
+    const legacy = this.database.prepare("SELECT input_text FROM t_func_history WHERE lower(func_type) = ? AND extra_data LIKE '%t_func_content%' ORDER BY create_time DESC, id DESC LIMIT 1").get(kind)
+    return legacy ? JSON.stringify(kind === 'regex' ? { source: String(legacy.input_text) } : { log: [String(legacy.input_text)] }) : null
+  }
+
+  saveDraft(kind: string, value: string): void {
+    JSON.parse(value)
+    this.database.prepare('INSERT INTO t_tool_draft (kind, value) VALUES (?, ?) ON CONFLICT(kind) DO UPDATE SET value = excluded.value').run(kind, value)
   }
 
   list(query: HistoryQuery): FuncHistoryRecord[] {

@@ -1143,9 +1143,9 @@ test('runs P4 color favorites, image persistence and PDF workspace', async () =>
   await colorCode.press('Enter')
   await mainPage.getByRole('button', { name: '收藏夹', exact: true }).click()
   const colorFavorites = mainPage.getByRole('dialog', { name: '收藏夹' })
-  await colorFavorites.locator('.color-favorite-folder > button').filter({ hasText: 'E2E 收藏夹' }).click()
-  await expect(colorFavorites.locator('.favorite-item')).toContainText('E2E color')
-  await colorFavorites.locator('.favorite-item > button').first().click()
+  await colorFavorites.getByRole('combobox', { name: '收藏夹', exact: true }).selectOption({ label: 'E2E 收藏夹' })
+  await expect(colorFavorites.locator('.color-collection-card')).toContainText('E2E color')
+  await colorFavorites.locator('.color-collection-apply').first().click()
   await expect(mainPage.locator('.color-preview strong')).toHaveText('#123456')
 
   const imageName = await mainPage.evaluate(async () => {

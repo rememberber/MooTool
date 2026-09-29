@@ -1,3 +1,7 @@
+import { runImageBatch } from '../../src/shared/imageBatch'
+import { vectorizeInWorker } from './imageVectorizationTask'
+import { registerHttpResponseWindows, closeHttpResponseWindow } from './httpResponseWindows'
+import { exportVaultFiles } from './vaultExport'
 import { JavaRegexService } from './javaRegexService'
 import { deepLApiOrigin } from './translation/deepl'
 import {
@@ -90,7 +94,7 @@ import { BackupService } from './backupService'
 import { FavoriteRepository } from './favoriteRepository'
 import { HistoryRepository } from './historyRepository'
 import { ImageRepository } from './imageRepository'
-import { normalizeImageVectorizeOptions, vectorizePng } from './imageVectorizationService'
+import { normalizeImageVectorizeOptions } from './imageVectorizationService'
 import { JsonVaultRepository } from './jsonVaultRepository'
 import { LegacyMigrationService } from './legacyMigrationService'
 import { NetworkService, parseChromiumProxyDirective, type ProxyConfiguration } from './networkService'
@@ -529,6 +533,7 @@ function registerIpc(): void {
     openSettingsPage(typeof category === 'string' ? category : undefined)
   })
   ipcMain.handle('window:dismiss', (event) => {
+    if (closeHttpResponseWindow(event.sender.id)) return
     if (toolWindowManager.dismissOwner(event.sender)) return
 
     const window = BrowserWindow.fromWebContents(event.sender)
@@ -629,6 +634,14 @@ function registerIpc(): void {
     if (typeof title !== 'string') throw new Error('Invalid tool window title')
     toolWindowManager.setTitle(toolId, title)
   })
+  ipcMain.handle('draft:get', (_event, kind: string) => {
+    if (kind !== 'regex' && kind !== 'calculator') throw new Error('Invalid draft kind')
+    return historyRepository.getDraft(kind)
+  })
+  ipcMain.handle('draft:save', (_event, kind: string, value: string) => {
+    if ((kind !== 'regex' && kind !== 'calculator') || typeof value !== 'string') throw new Error('Invalid draft')
+    historyRepository.saveDraft(kind, value)
+  })
   ipcMain.handle('history:list', (_event, query: HistoryQuery) => historyRepository.list(normalizeHistoryQuery(query)))
   ipcMain.handle('history:save', (_event, input: SaveFuncHistoryInput) => {
     historyRepository.save(normalizeHistoryInput(input))
@@ -658,6 +671,7 @@ function registerIpc(): void {
   ipcMain.handle('http:history-list', (_event, keyword?: string) => p5Repository.listHttpHistory(normalizeKeyword(keyword)))
   ipcMain.handle('http:history-delete', (_event, id: unknown) => p5Repository.deleteHttpHistory(normalizePositiveId(id)))
   ipcMain.handle('http:history-clear', () => p5Repository.clearHttpHistory())
+  registerHttpResponseWindows()
   ipcMain.handle('http:send', async (_event, value: unknown) => {
     const input = normalizeHttpSendInput(value)
     const response = await networkService.sendHttp(input, getProxyConfiguration())
@@ -922,51 +936,60 @@ function registerIpc(): void {
     const error = await shell.openPath(createImageRepository().pathFor(normalizeImageName(name)))
     if (error) throw new Error(error)
   })
-  ipcMain.handle('images:vectorize-svg', async (event, names: string[], value: ImageVectorizeOptions): Promise<ImageVectorizeResult | null> => {
+  const imageTasks = new Map<number, AbortController>()
+  ipcMain.handle('images:cancel-batch', event => imageTasks.get(event.sender.id)?.abort())
+  ipcMain.handle('images:vectorize-svg', async (event, names: string[], value: ImageVectorizeOptions, jobId?: string): Promise<ImageVectorizeResult | null> => {
     const normalizedNames = normalizeImageNames(names)
     const vectorizeOptions = normalizeImageVectorizeOptions(value)
     const owner = resolveOwnerWindow(event.sender) ?? mainWindow
-    const targets: Array<{ name: string; path: string }> = []
-    let outputPath: string
-
-    if (normalizedNames.length === 1) {
-      const defaultName = `${parse(normalizedNames[0]).name}.svg`
-      const saveOptions = { defaultPath: join(app.getPath('desktop'), defaultName), filters: [svgFileFilter] }
-      const result = owner ? await dialog.showSaveDialog(owner, saveOptions) : await dialog.showSaveDialog(saveOptions)
-      if (result.canceled || !result.filePath) return null
-      outputPath = extname(result.filePath).toLowerCase() === '.svg' ? result.filePath : `${result.filePath}.svg`
-      targets.push({ name: normalizedNames[0], path: outputPath })
-    } else {
-      const result = owner
-        ? await dialog.showOpenDialog(owner, { properties: ['openDirectory', 'createDirectory'] })
-        : await dialog.showOpenDialog({ properties: ['openDirectory', 'createDirectory'] })
-      if (result.canceled || !result.filePaths[0]) return null
-      outputPath = result.filePaths[0]
-      const reserved = new Set<string>()
-      for (const name of normalizedNames) {
-        targets.push({ name, path: await availableSvgPath(outputPath, parse(name).name, reserved) })
-      }
-    }
-
-    const writtenPaths: string[] = []
+    if (imageTasks.has(event.sender.id)) throw new Error('Image batch is already running')
+    const controller = new AbortController()
+    imageTasks.set(event.sender.id, controller)
+    const abort = () => controller.abort()
+    event.sender.once('destroyed', abort)
     try {
-      const repository = createImageRepository()
-      for (const target of targets) {
-        const image = nativeImage.createFromPath(repository.pathFor(target.name))
-        if (image.isEmpty()) throw new Error(`Unable to read image: ${target.name}`)
-        const size = image.getSize()
-        if ((size.width * size.height) > MAX_VECTOR_PIXELS) {
-          throw new Error(`${target.name} exceeds the 16 megapixel vectorization limit`)
+      const targets: Array<{ name: string; path: string }> = []
+      let outputPath: string
+
+      if (normalizedNames.length === 1) {
+        const defaultName = `${parse(normalizedNames[0]).name}.svg`
+        const saveOptions = { defaultPath: join(app.getPath('desktop'), defaultName), filters: [svgFileFilter] }
+        const result = owner ? await dialog.showSaveDialog(owner, saveOptions) : await dialog.showSaveDialog(saveOptions)
+        if (result.canceled || !result.filePath) return null
+        outputPath = extname(result.filePath).toLowerCase() === '.svg' ? result.filePath : `${result.filePath}.svg`
+        targets.push({ name: normalizedNames[0], path: outputPath })
+      } else {
+        const result = owner
+          ? await dialog.showOpenDialog(owner, { properties: ['openDirectory', 'createDirectory'] })
+          : await dialog.showOpenDialog({ properties: ['openDirectory', 'createDirectory'] })
+        if (result.canceled || !result.filePaths[0]) return null
+        outputPath = result.filePaths[0]
+        const reserved = new Set<string>()
+        for (const name of normalizedNames) {
+          targets.push({ name, path: await availableSvgPath(outputPath, parse(name).name, reserved) })
         }
-        const svg = vectorizePng(image.toPNG(), vectorizeOptions)
+      }
+
+      const writtenPaths: string[] = []
+      controller.signal.throwIfAborted()
+      const repository = createImageRepository()
+      const progress = await runImageBatch(targets.map(target => target.name), async (name, signal) => {
+        const target = targets.find(item => item.name === name)!
+        const image = nativeImage.createFromPath(repository.pathFor(name))
+        if (image.isEmpty()) throw new Error(`Unable to read image: ${name}`)
+        const size = image.getSize()
+        if (size.width * size.height > MAX_VECTOR_PIXELS) throw new Error(`${name} exceeds the 16 megapixel vectorization limit`)
+        const svg = await vectorizeInWorker(image.toPNG(), vectorizeOptions, signal)
+        signal.throwIfAborted()
         await writeFile(target.path, svg, 'utf8')
         writtenPaths.push(target.path)
-        await new Promise<void>((resolve) => setImmediate(resolve))
-      }
-      return { outputPath, files: writtenPaths }
-    } catch (error) {
-      if (targets.length > 1) await Promise.all(writtenPaths.map((path) => rm(path, { force: true })))
-      throw error
+      }, controller.signal, progress => {
+        if (!event.sender.isDestroyed()) event.sender.send('images:batch-progress', { jobId, ...progress })
+      })
+      return { outputPath, files: writtenPaths, progress }
+    } finally {
+      event.sender.removeListener('destroyed', abort)
+      imageTasks.delete(event.sender.id)
     }
   })
   ipcMain.handle('pdf:choose-files', async (event) => {
@@ -1017,6 +1040,16 @@ function registerIpc(): void {
     const result = await createJsonVaultRepository().moveEntry(input)
     jsonVaultCheckpointScheduler.recordActivity('Move JSON Vault entry')
     return result
+  })
+  ipcMain.handle('vault:export-files', async (event, kind: unknown, paths: unknown) => {
+    if ((kind !== 'json' && kind !== 'quickNote') || !Array.isArray(paths) || !paths.length || paths.some(path => typeof path !== 'string')) throw new Error('Invalid vault export')
+    const repository = kind === 'json' ? createJsonVaultRepository() : createQuickNoteRepository()
+    const files = await Promise.all([...new Set(paths as string[])].map(path => repository.read(path)))
+    const owner = BrowserWindow.fromWebContents(event.sender)
+    const options: OpenDialogOptions = { properties: ['openDirectory', 'createDirectory'] }
+    const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
+    if (result.canceled || !result.filePaths[0]) return null
+    return exportVaultFiles(result.filePaths[0], files, kind)
   })
   ipcMain.handle('json-vault:duplicate', async (_event, relativePath: string) => {
     const result = await createJsonVaultRepository().duplicate(relativePath)

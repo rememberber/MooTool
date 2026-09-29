@@ -17,6 +17,16 @@ afterEach(async () => {
 })
 
 describe('LegacyMigrationService', () => {
+  it('does not replace an existing Electron draft during Java migration', async () => {
+    const source = await makeLegacySource()
+    const target = await makeTarget()
+    const repository = new HistoryRepository(target.databasePath)
+    repository.saveDraft('regex', JSON.stringify({ pattern: 'current', source: 'unsent text' }))
+    await new LegacyMigrationService(target).migrate({ sourceDirectory: source }, '/migration-backup')
+    expect(JSON.parse(repository.getDraft('regex')!)).toEqual({ pattern: 'current', source: 'unsent text' })
+    repository.close()
+  })
+
   it('previews and imports Java database, Vault and safe settings data without modifying the source', async () => {
     const source = await makeLegacySource()
     const target = await makeTarget()
@@ -62,6 +72,7 @@ describe('LegacyMigrationService', () => {
 
     const database = new DatabaseSync(target.databasePath, { readOnly: true })
     try {
+      expect(JSON.parse(String(database.prepare("SELECT value FROM t_tool_draft WHERE kind = 'regex'").get()?.value))).toEqual({ pattern: 'legacy-pattern', source: '^draft$', engine: 'java' })
       expect(database.prepare('SELECT COUNT(*) AS count FROM t_func_history').get()).toMatchObject({ count: 3 })
       expect(database.prepare('SELECT msg_name, url FROM t_msg_http').get()).toMatchObject({ msg_name: 'Legacy API', url: 'https://example.com' })
       expect(database.prepare('SELECT name, content FROM t_host').get()).toMatchObject({ name: 'Legacy Hosts', content: '127.0.0.1 localhost' })
@@ -213,6 +224,9 @@ qrCodeErrorCorrectionLevel = 高
 
 [func.crypto]
 randomStringDigit = 24
+
+[func.regex]
+regexText = legacy-pattern
 
 [func.translation]
 translatorType = BING

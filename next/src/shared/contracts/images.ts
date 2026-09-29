@@ -62,4 +62,5 @@ export type ImageVectorizeOptions = {
 export type ImageVectorizeResult = {
   outputPath: string
   files: string[]
+  progress: import('../imageBatch').ImageBatchProgress
 }

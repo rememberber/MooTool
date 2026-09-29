@@ -132,8 +132,15 @@ export class LegacyMigrationService {
         for (const favorite of favoriteTables) {
           migrateFavorites(legacy, destination, source.databasePath, favorite, imported, skipped)
         }
-        migrateToolDrafts(legacy, destination, source.databasePath, imported, skipped)
+        migrateToolDrafts(legacy, destination, source.databasePath, imported, skipped, source.config)
         migrateQrCodes(legacy, destination, source.databasePath, imported, skipped)
+      }
+
+      if (tableExists(destination, 't_tool_draft')) {
+        for (const kind of ['regex', 'calculator'] as const) {
+          const expression = settingValue(source.config, `func.${kind}`, kind === 'regex' ? 'regexText' : 'calculatorInputExpress')
+          if (expression) destination.prepare('INSERT OR IGNORE INTO t_tool_draft (kind, value) VALUES (?, ?)').run(kind, JSON.stringify(kind === 'regex' ? { pattern: expression, engine: 'java' } : { expression }))
+        }
       }
 
       await migrateVaultFiles(source.quickNoteVaultPath, this.target.quickNotePath, 'quickNote', destination, imported, skipped, createdFiles)
@@ -315,11 +322,19 @@ function migrateToolDrafts(
   destination: DatabaseSync,
   sourcePath: string,
   imported: LegacyMigrationCounts,
-  skipped: LegacyMigrationCounts
+  skipped: LegacyMigrationCounts,
+  config: LegacySetting
 ): void {
   if (!tableExists(source, 't_func_content') || !tableExists(destination, 't_func_history')) return
-  const rows = source.prepare('SELECT * FROM t_func_content ORDER BY id').all() as SqliteRow[]
+  const rows = source.prepare('SELECT * FROM t_func_content ORDER BY id DESC').all() as SqliteRow[]
   rows.forEach((row, index) => {
+    const kind = cleanText(row.func).toLowerCase()
+    if ((kind === 'regex' || kind === 'calculator') && tableExists(destination, 't_tool_draft')) {
+      const draft = kind === 'regex'
+        ? { pattern: settingValue(config, 'func.regex', 'regexText'), source: cleanText(row.content), engine: 'java' }
+        : { expression: settingValue(config, 'func.calculator', 'calculatorInputExpress'), log: [cleanText(row.content)] }
+      destination.prepare('INSERT OR IGNORE INTO t_tool_draft (kind, value) VALUES (?, ?)').run(kind, JSON.stringify(draft))
+    }
     const sourceId = rowIdentity(row, index)
     if (rowWasMigrated(destination, sourcePath, 't_func_content', sourceId)) {
       skipped.toolDrafts += 1

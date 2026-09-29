@@ -1,7 +1,9 @@
+import { useVaultSelection, type SelectionGesture } from '@/shared/vaultSelection'
 import {
   ChevronDown,
   ChevronRight,
   Copy,
+  Download,
   FileJson,
   FilePlus2,
   Folder,
@@ -110,6 +112,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   const latestSelectionRef = useRef({ selectedPath, content })
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
   const treeExpandModeRef = useRef(settings.vault.jsonTreeExpandMode)
+  const selection = useVaultSelection(nodes, expanded, selectedEntry?.path ?? '')
   const dirty = Boolean(selectedPath) && content !== savedContent
   latestSelectionRef.current = { selectedPath, content }
   treeExpandModeRef.current = settings.vault.jsonTreeExpandMode
@@ -248,7 +251,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
 
   useEffect(() => {
     if (!contextMenu || !toolActive) return
-    const focusFrame = window.requestAnimationFrame(() => contextMenuRef.current?.querySelector('button')?.focus())
+    const focusFrame = window.requestAnimationFrame(() => contextMenuRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus())
     const close = () => setContextMenu(null)
     const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') close() }
     document.addEventListener('pointerdown', close)
@@ -414,18 +417,32 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   }
 
   async function duplicateSelected(): Promise<void> {
-    if (selectedEntry?.kind !== 'file') return
-    try {
-      const file = await window.mootool.duplicateJsonVaultFile(selectedEntry.path)
-      setSelectedEntry({ path: file.relativePath, kind: 'file' })
-      setSelectedPath(file.relativePath)
-      setSavedContent(file.content)
-      onOpen(file.content)
-      toast.success(t('json.vault.duplicated'))
-      await load()
-    } catch (error) {
-      reportError(error)
+    const paths = selection.filePaths
+    if (!paths.length || (dirty && !await saveSelected(false))) return
+    const failures: string[] = []
+    let last: Awaited<ReturnType<typeof window.mootool.duplicateJsonVaultFile>> | null = null
+    for (const path of paths) {
+      try { last = await window.mootool.duplicateJsonVaultFile(path) }
+      catch (error) { failures.push(`${path}: ${error instanceof Error ? error.message : String(error)}`) }
     }
+    if (last) {
+      setSelectedEntry({ path: last.relativePath, kind: 'file' })
+      setSelectedPath(last.relativePath)
+      setSavedContent(last.content)
+      onOpen(last.content)
+      toast.success(t('json.vault.duplicated'))
+    }
+    await load()
+    if (failures.length) toast.error(failures.join('\n'))
+  }
+
+  async function exportSelected(): Promise<void> {
+    const paths = selection.filePaths
+    if (!paths.length || (dirty && !await saveSelected(false))) return
+    try {
+      const count = await window.mootool.exportVaultFiles('json', paths)
+      if (count !== null) toast.success(t('vault.batch.exported', { count: String(count) }))
+    } catch (error) { reportError(error) }
   }
 
   async function deleteEntry(entry = selectedEntry): Promise<void> {
@@ -501,9 +518,10 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
         <details ref={moreMenuRef} className="vault-more-menu">
           <summary aria-label={t('json.vault.more')} title={t('json.vault.more')}><MoreHorizontal size={14} /></summary>
           <div>
-            <MenuAction icon={Pencil} label={t('json.vault.rename')} disabled={!selectedEntry} onClick={() => runMoreAction(beginRename)} />
-            <MenuAction icon={Move} label={t('json.vault.move')} disabled={!selectedEntry} onClick={() => runMoreAction(beginMove)} />
-            <MenuAction icon={Copy} label={t('json.vault.duplicate')} disabled={selectedEntry?.kind !== 'file'} onClick={() => runMoreAction(() => { void duplicateSelected() })} />
+            <MenuAction icon={Pencil} label={t('json.vault.rename')} disabled={!selectedEntry || selection.paths.length > 1} onClick={() => runMoreAction(beginRename)} />
+            <MenuAction icon={Move} label={t('json.vault.move')} disabled={!selectedEntry || selection.paths.length > 1} onClick={() => runMoreAction(beginMove)} />
+            <MenuAction icon={Copy} label={t('json.vault.duplicate')} disabled={!selection.filePaths.length} onClick={() => runMoreAction(() => { void duplicateSelected() })} />
+            <MenuAction icon={Download} label={t('vault.batch.export')} disabled={!selection.filePaths.length} onClick={() => runMoreAction(() => { void exportSelected() })} />
             <MenuAction icon={RefreshCw} label={t('json.vault.refresh')} onClick={() => runMoreAction(() => { void load() })} />
             <MenuAction icon={FolderOpen} label={t('json.vault.openFolder')} onClick={() => runMoreAction(() => { void window.mootool.openJsonVault() })} />
           </div>
@@ -519,12 +537,14 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
           {settings.vault.jsonTreeExpandMode === 'expandAll' ? <FoldVertical size={14} /> : <UnfoldVertical size={14} />}
         </VaultAction>
         <VaultAction label={t('json.vault.save')} onClick={() => { void saveSelected() }}><Save size={14} /></VaultAction>
-        <VaultAction label={t('json.vault.delete')} disabled={!selectedEntry} onClick={() => { void deleteEntry() }}><Trash2 size={14} /></VaultAction>
+        <VaultAction label={t('json.vault.delete')} disabled={!selectedEntry || selection.paths.length > 1} onClick={() => { void deleteEntry() }}><Trash2 size={14} /></VaultAction>
         <VaultAction label={t('json.git.open')} badge={gitChangeCount} onClick={() => setGitDialogOpen(true)}><GitBranch size={14} /></VaultAction>
       </div>
       <div
         ref={treeRef}
         className="vault-tree"
+        role="tree"
+        aria-multiselectable="true"
         onScroll={(event) => { jsonVaultTreeScrollTop = event.currentTarget.scrollTop }}
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
@@ -539,15 +559,20 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
             node={node}
             depth={0}
             expanded={expanded}
-            selectedEntryPath={selectedEntry?.path ?? ''}
+            selectedPaths={selection.paths}
             activePath={selectedPath}
             dirty={dirty}
             onToggle={toggleDirectory}
-            onSelect={(entry) => setSelectedEntry({ path: entry.relativePath, kind: entry.kind })}
+            onSelect={(entry, gesture) => {
+              const open = selection.select(entry.relativePath, gesture)
+              if (open) setSelectedEntry({ path: entry.relativePath, kind: entry.kind })
+              return open
+            }}
             onOpen={(path) => { void openFile(path) }}
             onOpenContextMenu={(entry, left, top) => {
               const selected = { path: entry.relativePath, kind: entry.kind }
-              setSelectedEntry(selected)
+              selection.context(entry.relativePath)
+              if (!selection.paths.includes(entry.relativePath)) setSelectedEntry(selected)
               setContextMenu({ entry: selected, left, top })
             }}
             onDrop={(path, kind, target) => {
@@ -564,13 +589,16 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
           style={{ left: contextMenu.left, top: contextMenu.top }}
           onPointerDown={(event) => event.stopPropagation()}
         >
-          <button type="button" role="menuitem" onClick={() => { beginRename(contextMenu.entry); setContextMenu(null) }}>{t('json.vault.rename')}</button>
-          <button type="button" role="menuitem" onClick={() => { beginMove(contextMenu.entry); setContextMenu(null) }}>{t('json.vault.move')}</button>
-          <button type="button" role="menuitem" onClick={() => { void deleteEntry(contextMenu.entry); setContextMenu(null) }}>{t('json.vault.delete')}</button>
-          <button type="button" role="menuitem" onClick={() => { void window.mootool.revealJsonVaultEntry(contextMenu.entry.path).catch(reportError); setContextMenu(null) }}>{t('json.vault.revealInFinder')}</button>
+          <button type="button" role="menuitem" disabled={!selection.filePaths.length} onClick={() => { void duplicateSelected(); setContextMenu(null) }}>{t('json.vault.duplicate')}</button>
+          <button type="button" role="menuitem" disabled={!selection.filePaths.length} onClick={() => { void exportSelected(); setContextMenu(null) }}>{t('vault.batch.export')}</button>
+          <button type="button" role="menuitem" disabled={selection.paths.length > 1} onClick={() => { beginRename(contextMenu.entry); setContextMenu(null) }}>{t('json.vault.rename')}</button>
+          <button type="button" role="menuitem" disabled={selection.paths.length > 1} onClick={() => { beginMove(contextMenu.entry); setContextMenu(null) }}>{t('json.vault.move')}</button>
+          <button type="button" role="menuitem" disabled={selection.paths.length > 1} onClick={() => { void deleteEntry(contextMenu.entry); setContextMenu(null) }}>{t('json.vault.delete')}</button>
+          <button type="button" role="menuitem" disabled={selection.paths.length > 1} onClick={() => { void window.mootool.revealJsonVaultEntry(contextMenu.entry.path).catch(reportError); setContextMenu(null) }}>{t('json.vault.revealInFinder')}</button>
         </div>,
         document.body
       )}
+      {selection.paths.length > 1 && <div className="vault-panel__selection">{t('vault.batch.selected', { count: String(selection.paths.length) })}</div>}
       {selectedEntry && <footer className="vault-panel__selection" title={selectedEntry.path}>{selectedEntry.path === selectedPath && dirty ? '• ' : ''}{selectedEntry.path}</footer>}
       <Dialog
         title={actionTitle}
@@ -622,35 +650,38 @@ type VaultNodeProps = {
   node: JsonVaultNode
   depth: number
   expanded: Set<string>
-  selectedEntryPath: string
+  selectedPaths: string[]
   activePath: string
   dirty: boolean
   onToggle: (path: string) => void
-  onSelect: (node: JsonVaultNode) => void
+  onSelect: (node: JsonVaultNode, gesture: SelectionGesture) => boolean
   onOpen: (path: string) => void
   onOpenContextMenu: (node: JsonVaultNode, left: number, top: number) => void
   onDrop: (path: string, kind: JsonVaultNode['kind'], target: string) => void
 }
 
-function VaultNode({ node, depth, expanded, selectedEntryPath, activePath, dirty, onToggle, onSelect, onOpen, onOpenContextMenu, onDrop }: VaultNodeProps) {
+function VaultNode({ node, depth, expanded, selectedPaths, activePath, dirty, onToggle, onSelect, onOpen, onOpenContextMenu, onDrop }: VaultNodeProps) {
   const isDirectoryOpen = expanded.has(node.relativePath)
-  const selected = selectedEntryPath === node.relativePath
+  const selected = selectedPaths.includes(node.relativePath)
   return (
     <div>
       <button
         className={`${node.kind === 'directory' ? 'vault-node vault-node--directory' : 'vault-node'}${selected ? ' vault-node--selected' : ''}`}
         type="button"
-        draggable
+        draggable={selectedPaths.length <= 1}
+        role="treeitem"
+        aria-selected={selected}
+        aria-expanded={node.kind === 'directory' ? isDirectoryOpen : undefined}
         data-path={node.relativePath}
         style={{ paddingLeft: (node.kind === 'directory' ? 9 : 24) + depth * 14 }}
-        onClick={() => {
-          onSelect(node)
+        onClick={(event) => {
+          if (!onSelect(node, event)) return
           if (node.kind === 'directory') onToggle(node.relativePath)
           else onOpen(node.relativePath)
         }}
         onContextMenu={(event) => {
           event.preventDefault()
-          onOpenContextMenu(node, Math.min(event.clientX, window.innerWidth - 164), Math.min(event.clientY, window.innerHeight - 138))
+          onOpenContextMenu(node, Math.min(event.clientX, window.innerWidth - 164), Math.min(event.clientY, window.innerHeight - 210))
         }}
         onDragStart={(event) => {
           event.dataTransfer.effectAllowed = 'move'
@@ -673,7 +704,7 @@ function VaultNode({ node, depth, expanded, selectedEntryPath, activePath, dirty
         <span>{node.name}</span>{activePath === node.relativePath && dirty && <i />}
       </button>
       {node.kind === 'directory' && isDirectoryOpen && node.children?.map((child) => (
-        <VaultNode key={child.relativePath} node={child} depth={depth + 1} expanded={expanded} selectedEntryPath={selectedEntryPath} activePath={activePath} dirty={dirty} onToggle={onToggle} onSelect={onSelect} onOpen={onOpen} onOpenContextMenu={onOpenContextMenu} onDrop={onDrop} />
+        <VaultNode key={child.relativePath} node={child} depth={depth + 1} expanded={expanded} selectedPaths={selectedPaths} activePath={activePath} dirty={dirty} onToggle={onToggle} onSelect={onSelect} onOpen={onOpen} onOpenContextMenu={onOpenContextMenu} onDrop={onDrop} />
       ))}
     </div>
   )

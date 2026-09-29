@@ -1,3 +1,5 @@
+import { runImageBatch, type ImageBatchProgress } from '@/shared/imageBatch'
+import { Dialog } from '@/shared/components/Dialog'
 import { ClipboardCopy, ClipboardPaste, Download, FileImage, FolderOpen, ImageDown, ImagePlus, List, Maximize2, Minimize2, Minus, Pencil, Plus, Save, ScanLine, Shapes, Trash2, Type, Upload } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ToolPageHeader, WorkspaceDragZone } from '@/shared/components/ToolPage'
@@ -22,6 +24,26 @@ export function ImageTool() {
   const [zoom, setZoom] = useState(1)
   const [fit, setFit] = useState(true)
   const [busy, setBusy] = useState(false)
+  const [batch, setBatch] = useState<ImageBatchProgress | null>(null)
+  const [batchOutputPath, setBatchOutputPath] = useState('')
+  const [batchOpen, setBatchOpen] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const batchController = useRef<AbortController | null>(null)
+  const batchJobId = useRef('')
+  useEffect(() => window.mootool.onImageBatchProgress(progress => { if (progress.jobId === batchJobId.current) setBatch(progress) }), [])
+  useEffect(() => () => { batchController.current?.abort(); if (batchJobId.current) void window.mootool.cancelImageBatch() }, [])
+  function beginBatch() {
+    setBusy(true); setCancelling(false); setBatchOpen(true); setBatchOutputPath('')
+    setBatch({ total: processingNames.length, completed: 0, succeeded: 0, current: '', failures: [], cancelled: false })
+    batchController.current = new AbortController()
+    return batchController.current.signal
+  }
+  function cancelBatch() {
+    setCancelling(true)
+    batchController.current?.abort()
+    if (batchJobId.current) void window.mootool.cancelImageBatch().catch(actions.reportError)
+  }
+
   const [base64Mode, setBase64Mode] = useState<'import' | 'export' | null>(null)
   const [compressOpen, setCompressOpen] = useState(false)
   const [watermarkOpen, setWatermarkOpen] = useState(false)
@@ -235,30 +257,35 @@ export function ImageTool() {
 
   async function processSvg(options: ImageVectorizeOptions): Promise<void> {
     setSvgOpen(false)
-    if (!processingNames.length) return
-    setBusy(true)
+    if (!processingNames.length || busy) return
+    beginBatch()
+    batchJobId.current = crypto.randomUUID()
     try {
-      const result = await window.mootool.vectorizeImageAssets(processingNames, options)
-      if (result) actions.toast.success(t('image.svgComplete', { count: String(result.files.length), path: result.outputPath }))
-    } catch (error) { actions.reportError(error) } finally { setBusy(false) }
+      const result = await window.mootool.vectorizeImageAssets(processingNames, options, batchJobId.current)
+      if (result) { setBatch(result.progress); setBatchOutputPath(result.outputPath) }
+      else setBatchOpen(false)
+    } catch (error) { actions.reportError(error); setBatchOpen(false) }
+    finally { batchJobId.current = ''; setBusy(false) }
   }
 
   async function processImages(transform: (asset: ImageAsset) => Promise<string>, suffix: 'compressed' | 'watermarked', mode: ImageOutputMode, format: CompressImageOptions['format']): Promise<void> {
-    if (!processingNames.length) return
-    setBusy(true)
+    if (!processingNames.length || busy) return
+    const signal = beginBatch()
     let preferred = ''
     try {
-      for (const name of processingNames) {
+      await runImageBatch([...processingNames], async (name, signal) => {
         const asset = await window.mootool.readImageAsset(name)
+        signal.throwIfAborted()
         const dataUrl = await transform(asset)
+        signal.throwIfAborted()
         const outputName = mode === 'overwrite' ? overwriteName(asset.name, format) : processedImageName(asset.name, suffix, format)
         const saved = await window.mootool.saveImageAsset({ name: outputName, dataUrl })
         if (mode === 'overwrite' && saved.name !== asset.name) await window.mootool.deleteImageAssets([asset.name])
         preferred ||= saved.name
-      }
+      }, signal, setBatch)
       await loadAssets(preferred)
-      actions.toast.success(t('image.processComplete', { count: String(processingNames.length) }))
-    } catch (error) { actions.reportError(error) } finally { setBusy(false) }
+    } catch (error) { actions.reportError(error) }
+    finally { setBusy(false) }
   }
 
   return (
@@ -271,6 +298,15 @@ export function ImageTool() {
           <main className="image-canvas-panel" onDoubleClick={() => { if (current) void window.mootool.openImageAsset(current.name) }}><div ref={canvasRef} className={fit ? 'image-canvas image-canvas--fit' : 'image-canvas'}>{current ? <img src={current.dataUrl} alt={current.name} style={{ width: `${current.width * effectiveZoom}px`, height: `${current.height * effectiveZoom}px` }} /> : <div className="image-placeholder"><FileImage size={48} /><span>{t('image.emptyPreview')}</span></div>}</div><div className="image-zoom-toolbar" onDoubleClick={(event) => event.stopPropagation()}><button className="icon-button" type="button" aria-label={t('image.zoomIn')} disabled={!current} onClick={() => changeZoom(1.1)}><Plus size={14} /></button><button className="icon-button" type="button" aria-label={t('image.zoomOut')} disabled={!current} onClick={() => changeZoom(1 / 1.1)}><Minus size={14} /></button><button className="icon-button image-actual-size-button" type="button" aria-label={t('image.original')} aria-pressed={!fit && Math.abs(zoom - 1) < 0.001} title={t('image.original')} disabled={!current} onClick={showOriginalSize}>1:1</button><button className="icon-button" type="button" aria-label={t('image.fit')} aria-pressed={fit} title={t('image.fit')} disabled={!current} onClick={() => setFit(true)}><Maximize2 size={14} /></button><span>{current ? `${current.width} × ${current.height} · ${formatBytes(current.size)} · ${fit ? `${t('image.fit')} · ` : ''}${Math.round(effectiveZoom * 100)}%` : ''}</span></div></main>
         </ResizableColumns>
       </div>
+      <Dialog title={t('image.batch.title')} open={batchOpen} onClose={() => { if (busy) cancelBatch(); else setBatchOpen(false) }} footer={<button className="dialog-button" disabled={busy && cancelling} onClick={() => { if (busy) cancelBatch(); else setBatchOpen(false) }}>{busy ? cancelling ? t('image.batch.cancelling') : t('common.cancel') : t('common.close')}</button>}>
+        {batch && <div className="image-batch-progress" role="status">
+          {batchOutputPath && <p>{batchOutputPath}</p>}
+          <progress max={batch.total || 1} value={batch.completed} />
+          <p>{batch.current || (batch.cancelled ? t('image.batch.cancelled') : busy ? t('image.batch.working') : t('image.batch.finished'))}</p>
+          <p>{t('image.batch.summary', { completed: String(batch.completed), total: String(batch.total), succeeded: String(batch.succeeded), failed: String(batch.failures.length) })}</p>
+          {batch.failures.map(failure => <p key={failure.name} className="result-status--error">{failure.name}: {failure.message}</p>)}
+        </div>}
+      </Dialog>
       <ImageBase64Dialog open={base64Mode !== null} mode={base64Mode ?? 'import'} value={base64Mode === 'export' ? current?.dataUrl ?? '' : ''} onClose={() => setBase64Mode(null)} onImport={(value) => { void importBase64(value) }} />
       <ImageCompressDialog open={compressOpen} count={processingNames.length} onClose={() => setCompressOpen(false)} onConfirm={(options, mode) => { void processCompression(options, mode) }} />
       <ImageWatermarkDialog open={watermarkOpen} count={processingNames.length} onClose={() => setWatermarkOpen(false)} onConfirm={(options, mode) => { void processWatermark(options, mode) }} />

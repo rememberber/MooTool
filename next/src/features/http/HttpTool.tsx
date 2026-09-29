@@ -1,4 +1,4 @@
-import { Braces, Clock3, Code2, Copy, FileInput, History, Plus, Save, Search, Send, Square, Trash2, X } from 'lucide-react'
+import { ExternalLink, Braces, Clock3, Code2, Copy, FileInput, History, Plus, Save, Search, Send, Square, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Dialog } from '@/shared/components/Dialog'
 import { FindReplaceBar } from '@/shared/components/FindReplaceBar'
@@ -89,7 +89,7 @@ export function HttpTool() {
     setResponse({ requestId: 'saved', ok: true, status: 0, statusText: '', url: item.url, durationMs: 0, body: item.responseBody, headers: item.responseHeaders, cookies: item.responseCookies })
   }
 
-  async function sendRequest(): Promise<void> {
+  async function sendRequest(separateWindow = false): Promise<void> {
     if (!request.url.trim()) { actions.toast.error(t('http.urlRequired')); return }
     const nextTimeout = clampTimeout(timeoutMs)
     setTimeoutMs(nextTimeout)
@@ -101,6 +101,7 @@ export function HttpTool() {
       }
       const result = await window.mootool.sendHttpRequest({ requestId: activeRequestId.current, request, timeoutMs: nextTimeout })
       setResponse(result)
+      if (separateWindow) await window.mootool.openHttpResponseWindow(result)
       if (!result.ok) actions.toast.error(result.statusText || t(`http.error.${result.errorCode ?? 'NETWORK'}` as 'http.error.NETWORK'))
     } catch (error) { actions.reportError(error) } finally { setSending(false) }
   }
@@ -212,6 +213,7 @@ export function HttpTool() {
               <span>ms</span>
             </label>
             <WorkspaceDragZone className="http-window-drag-zone" />
+            <button className="toolbar-button toolbar-button--icon" aria-label={t('http.sendWindow')} title={t('http.sendWindow')} disabled={sending} onClick={() => void sendRequest(true)}><ExternalLink size={14} /></button>
             {sending ? <button className="toolbar-button" type="button" onClick={() => { void stopRequest() }}><Square size={13} />{t('common.stop')}</button> : <button className="primary-execution-button" data-testid="http-send" type="button" onClick={() => { void sendRequest() }}><Send size={13} />{t('http.send')}</button>}
           </div>
           <div className="http-request-pane"><ToolTabs tabs={(['params', 'headers', 'cookies', 'body'] as RequestTab[]).map((id) => ({ id, label: t(`http.tab.${id}` as 'http.tab.params') }))} active={requestTab} onChange={setRequestTab} />
@@ -228,6 +230,7 @@ export function HttpTool() {
                   <>
                     <span>{response.status || response.errorCode}</span>
                     <span>{response.durationMs} ms</span>
+                    <button className="icon-button" aria-label={t('http.openResponse')} title={t('http.openResponse')} onClick={() => void window.mootool.openHttpResponseWindow(response).catch(actions.reportError)}><ExternalLink size={13} /></button>
                     <button className="icon-button" type="button" aria-label={t('http.find')} onClick={() => { if (findVisible) closeFind(); else openFind() }}><Search size={13} /></button>
                     <button className="icon-button" type="button" aria-label={t('common.action.copy')} onClick={() => { void actions.copy(responseText || '') }}><Copy size={13} /></button>
                   </>

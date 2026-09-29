@@ -127,7 +127,7 @@ export function ColorBoardTool() {
         </ResizableColumns>
       </div>
       <SaveColorFavoriteDialog color={primaryHex} open={saveFavoriteOpen} onClose={() => setSaveFavoriteOpen(false)} />
-      <ColorFavoritesDialog open={favoritesOpen} onClose={() => setFavoritesOpen(false)} onApply={(value) => selectColor(value, false, t('color.favorites'))} />
+      <ColorFavoritesDialog currentValue={primaryHex} open={favoritesOpen} onClose={() => setFavoritesOpen(false)} onApply={(value) => selectColor(value, false, t('color.favorites'))} />
       <HistoryDialog funcType="colorBoard" open={historyOpen} onClose={() => setHistoryOpen(false)} onApply={(value) => selectColor(value)} onApplyRecord={(record) => {
         const color = (record.outputText || record.inputText).match(/#[0-9a-fA-F]{6}/)?.[0]
         if (color) selectColor(color, false, record.summary)

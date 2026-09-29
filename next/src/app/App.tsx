@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { SettingsProvider } from '@/features/settings/SettingsProvider'
 import { Workbench } from '@/features/workbench/Workbench'
 import { ToolWindow } from '@/features/workbench/ToolWindow'
@@ -8,6 +8,8 @@ import { ToastProvider, useToast } from '@/shared/feedback/ToastProvider'
 import { DesktopDialogProvider } from '@/shared/feedback/DesktopDialogProvider'
 import { I18nProvider, useI18n } from '@/shared/i18n/I18nProvider'
 import { useSystemTheme } from '@/shared/theme/useSystemTheme'
+
+const HttpResponseWindow = lazy(() => import('@/features/http/HttpResponseWindow').then(module => ({ default: module.HttpResponseWindow })))
 
 export function App() {
   return (
@@ -29,8 +31,8 @@ function ThemedApp() {
   return (
     <ToastProvider>
       <DesktopDialogProvider>
-        {windowType !== 'tool' && !isScreenOverlay && <UpdateNotifications />}
-        {windowType === 'capture' ? <ScreenCaptureOverlay /> : windowType === 'color-picker' ? <ScreenColorPickerOverlay /> : windowType === 'tool' ? <ToolWindow requestedToolId={params.get('toolId') ?? ''} /> : <Workbench />}
+        {windowType !== 'tool' && windowType !== 'http-response' && !isScreenOverlay && <UpdateNotifications />}
+        {windowType === 'http-response' ? <Suspense fallback={null}><HttpResponseWindow /></Suspense> : windowType === 'capture' ? <ScreenCaptureOverlay /> : windowType === 'color-picker' ? <ScreenColorPickerOverlay /> : windowType === 'tool' ? <ToolWindow requestedToolId={params.get('toolId') ?? ''} /> : <Workbench />}
       </DesktopDialogProvider>
     </ToastProvider>
   )

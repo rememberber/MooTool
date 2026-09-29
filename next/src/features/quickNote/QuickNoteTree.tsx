@@ -1,3 +1,4 @@
+import type { SelectionGesture } from '@/shared/vaultSelection'
 import { ChevronDown, ChevronRight, FileText, Folder, FolderOpen } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -7,8 +8,10 @@ import { useToolActivity } from '@/shared/components/ToolActivity'
 type QuickNoteTreeProps = {
   nodes: QuickNoteNode[]
   selectedPath: string
+  selectedPaths: string[]
+  onContextSelect: (path: string) => void
   expanded: ReadonlySet<string>
-  onSelect: (node: QuickNoteNode) => void
+  onSelect: (node: QuickNoteNode, gesture: SelectionGesture) => void
   onToggle: (relativePath: string) => void
   onMove: (node: Pick<QuickNoteNode, 'relativePath' | 'kind'>, targetDirectory: string) => void
   onRenameRequest: (node: QuickNoteNode) => void
@@ -32,14 +35,14 @@ type QuickNoteTreeProps = {
 const quickNotePathType = 'application/x-mootool-quick-note-path'
 const quickNoteKindType = 'application/x-mootool-quick-note-kind'
 
-export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggle, onMove, onRenameRequest, onMoveRequest, onDuplicateRequest, onExportRequest, onInfoRequest, onDeleteRequest, onRevealRequest, onGitRequest, renameLabel, moveLabel, duplicateLabel, exportLabel, infoLabel, deleteLabel, revealLabel, gitLabel }: QuickNoteTreeProps) {
+export function QuickNoteTree({ nodes, selectedPath, selectedPaths, onContextSelect, expanded, onSelect, onToggle, onMove, onRenameRequest, onMoveRequest, onDuplicateRequest, onExportRequest, onInfoRequest, onDeleteRequest, onRevealRequest, onGitRequest, renameLabel, moveLabel, duplicateLabel, exportLabel, infoLabel, deleteLabel, revealLabel, gitLabel }: QuickNoteTreeProps) {
   const toolActive = useToolActivity()
   const menuRef = useRef<HTMLDivElement>(null)
   const [contextMenu, setContextMenu] = useState<{ node: QuickNoteNode; left: number; top: number } | null>(null)
 
   useEffect(() => {
     if (!contextMenu || !toolActive) return
-    const focusFrame = window.requestAnimationFrame(() => menuRef.current?.querySelector('button')?.focus())
+    const focusFrame = window.requestAnimationFrame(() => menuRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus())
     const close = () => setContextMenu(null)
     const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') close() }
     document.addEventListener('pointerdown', close)
@@ -58,6 +61,7 @@ export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggl
       <div
         className="quick-note-tree"
         role="tree"
+        aria-multiselectable="true"
         tabIndex={0}
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
@@ -72,11 +76,13 @@ export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggl
             node={node}
             depth={0}
             selectedPath={selectedPath}
+          selectedPaths={selectedPaths}
             expanded={expanded}
             onSelect={onSelect}
             onToggle={onToggle}
             onMove={onMove}
             onOpenContextMenu={(menuNode, left, top) => {
+              onContextSelect(menuNode.relativePath)
               setContextMenu({ node: menuNode, left, top })
             }}
           />
@@ -90,18 +96,18 @@ export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggl
           style={{ left: contextMenu.left, top: contextMenu.top }}
           onPointerDown={(event) => event.stopPropagation()}
         >
-          <button type="button" role="menuitem" onClick={() => { onRenameRequest(contextMenu.node); setContextMenu(null) }}>{renameLabel}</button>
-          <button type="button" role="menuitem" onClick={() => { onMoveRequest(contextMenu.node); setContextMenu(null) }}>{moveLabel}</button>
+          <button type="button" role="menuitem" disabled={selectedPaths.length > 1} onClick={() => { onRenameRequest(contextMenu.node); setContextMenu(null) }}>{renameLabel}</button>
+          <button type="button" role="menuitem" disabled={selectedPaths.length > 1} onClick={() => { onMoveRequest(contextMenu.node); setContextMenu(null) }}>{moveLabel}</button>
           {contextMenu.node.kind === 'file' && (
             <>
               <button type="button" role="menuitem" onClick={() => { onDuplicateRequest(contextMenu.node); setContextMenu(null) }}>{duplicateLabel}</button>
               <button type="button" role="menuitem" onClick={() => { onExportRequest(contextMenu.node); setContextMenu(null) }}>{exportLabel}</button>
-              <button type="button" role="menuitem" onClick={() => { onInfoRequest(contextMenu.node); setContextMenu(null) }}>{infoLabel}</button>
+              <button type="button" role="menuitem" disabled={selectedPaths.length > 1} onClick={() => { onInfoRequest(contextMenu.node); setContextMenu(null) }}>{infoLabel}</button>
               <div className="quick-note-tree-menu__separator" role="separator" />
             </>
           )}
-          <button type="button" role="menuitem" onClick={() => { onDeleteRequest(contextMenu.node); setContextMenu(null) }}>{deleteLabel}</button>
-          <button type="button" role="menuitem" onClick={() => { onRevealRequest(contextMenu.node); setContextMenu(null) }}>{revealLabel}</button>
+          <button type="button" role="menuitem" disabled={selectedPaths.length > 1} onClick={() => { onDeleteRequest(contextMenu.node); setContextMenu(null) }}>{deleteLabel}</button>
+          <button type="button" role="menuitem" disabled={selectedPaths.length > 1} onClick={() => { onRevealRequest(contextMenu.node); setContextMenu(null) }}>{revealLabel}</button>
           <div className="quick-note-tree-menu__separator" role="separator" />
           <button type="button" role="menuitem" onClick={() => { onGitRequest(); setContextMenu(null) }}>{gitLabel}</button>
         </div>,
@@ -111,29 +117,29 @@ export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggl
   )
 }
 
-type NodeProps = Pick<QuickNoteTreeProps, 'selectedPath' | 'expanded' | 'onSelect' | 'onToggle' | 'onMove'> & {
+type NodeProps = Pick<QuickNoteTreeProps, 'selectedPath' | 'selectedPaths' | 'expanded' | 'onSelect' | 'onToggle' | 'onMove'> & {
   node: QuickNoteNode
   depth: number
   onOpenContextMenu: (node: QuickNoteNode, left: number, top: number) => void
 }
 
-function QuickNoteTreeNode({ node, depth, selectedPath, expanded, onSelect, onToggle, onMove, onOpenContextMenu }: NodeProps) {
+function QuickNoteTreeNode({ node, depth, selectedPath, selectedPaths, expanded, onSelect, onToggle, onMove, onOpenContextMenu }: NodeProps) {
   const open = node.kind === 'directory' && expanded.has(node.relativePath)
   const label = node.title || node.name.replace(/\.txt$/i, '')
   return (
     <div role="none">
       <button
-        className={selectedPath === node.relativePath ? 'quick-note-tree__row quick-note-tree__row--active' : 'quick-note-tree__row'}
+        className={selectedPaths.includes(node.relativePath) ? 'quick-note-tree__row quick-note-tree__row--active' : 'quick-note-tree__row'}
         type="button"
         role="treeitem"
-        draggable
+        draggable={selectedPaths.length <= 1}
         data-path={node.relativePath}
         aria-expanded={node.kind === 'directory' ? open : undefined}
-        aria-selected={selectedPath === node.relativePath}
+        aria-selected={selectedPaths.includes(node.relativePath)}
         style={{ paddingLeft: 7 + depth * 15 }}
-        onClick={() => {
-          if (node.kind === 'directory') onToggle(node.relativePath)
-          onSelect(node)
+        onClick={(event) => {
+          if (node.kind === 'directory' && !event.ctrlKey && !event.metaKey && !event.shiftKey) onToggle(node.relativePath)
+          onSelect(node, event)
         }}
         onContextMenu={(event) => {
           event.preventDefault()
@@ -175,6 +181,7 @@ function QuickNoteTreeNode({ node, depth, selectedPath, expanded, onSelect, onTo
           node={child}
           depth={depth + 1}
           selectedPath={selectedPath}
+          selectedPaths={selectedPaths}
           expanded={expanded}
           onSelect={onSelect}
           onToggle={onToggle}

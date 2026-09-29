@@ -1,3 +1,4 @@
+import { useToolDraft } from '@/shared/hooks/useToolDraft'
 import { History, Play, Star } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ManagedFavoritesDialog } from '@/features/favorites/ManagedFavoritesDialog'
@@ -20,15 +21,17 @@ export function RegexTool() {
   const worker = useRef<Worker | null>(null)
   const generation = useRef(0)
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const [engine, setEngine] = useState<RegexEngine>(() => readDraft().engine)
+  const { draft, setField } = useToolDraft('regex', readDraft())
+  const { engine, pattern, source, options } = draft
+  const setEngine = (value: RegexEngine) => setField('engine', value)
+  const setPattern = (value: string) => setField('pattern', value)
+  const setSource = (value: string) => setField('source', value)
+  const setOptions = (value: React.SetStateAction<RegexOptions>) => setField('options', value)
   const [busy, setBusy] = useState(false)
   const [limited, setLimited] = useState(false)
   const [selected, setSelected] = useState(-1)
   const actions = useToolActions('regex')
   const [tab, setTab] = useState<RegexTab>('test')
-  const [pattern, setPattern] = useState(() => readDraft().pattern)
-  const [source, setSource] = useState(() => readDraft().source)
-  const [options, setOptions] = useState<RegexOptions>(() => readDraft().options)
   const [matches, setMatches] = useState<RegexMatch[]>([])
   const [error, setError] = useState('')
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -76,7 +79,6 @@ export function RegexTool() {
 
   useEffect(() => {
     setMatches([]); setSelected(-1); setError(''); setLimited(false)
-    try { localStorage.setItem('mootool.regex.draft', JSON.stringify({ pattern, source, options, engine })) } catch { /* Storage may be full. */ }
     debounceTimer.current = setTimeout(() => { void run(false) }, 300)
     return () => {
       clearTimeout(debounceTimer.current); generation.current++; worker.current?.terminate()

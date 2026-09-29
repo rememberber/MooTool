@@ -52,6 +52,8 @@ declare global {
       dockToolWindow: (toolId: Exclude<ToolId, 'mootool'>) => Promise<ToolWindowStatus>
       focusToolWindow: (toolId: Exclude<ToolId, 'mootool'>) => Promise<boolean>
       setToolWindowTitle: (toolId: Exclude<ToolId, 'mootool'>, title: string) => Promise<void>
+      getToolDraft: (kind: 'regex' | 'calculator') => Promise<string | null>
+      saveToolDraft: (kind: 'regex' | 'calculator', value: string) => Promise<void>
       listHistory: (query: HistoryQuery) => Promise<FuncHistoryRecord[]>
       saveHistory: (input: SaveFuncHistoryInput) => Promise<void>
       deleteHistory: (id: number) => Promise<void>
@@ -72,6 +74,8 @@ declare global {
       listHttpHistory: (keyword?: string) => Promise<HttpRequestHistory[]>
       deleteHttpHistory: (id: number) => Promise<void>
       clearHttpHistory: () => Promise<void>
+      openHttpResponseWindow: (response: HttpResponseResult) => Promise<void>
+      getHttpResponseSnapshot: () => Promise<HttpResponseResult | null>
       sendHttpRequest: (input: HttpSendInput) => Promise<HttpResponseResult>
       cancelNetworkRequest: (requestId: string) => Promise<boolean>
       translate: (input: TranslationInput) => Promise<TranslationResult>
@@ -120,7 +124,9 @@ declare global {
       deleteImageAssets: (names: string[]) => Promise<void>
       exportImageAssets: (names: string[]) => Promise<string | null>
       openImageAsset: (name: string) => Promise<void>
-      vectorizeImageAssets: (names: string[], options: ImageVectorizeOptions) => Promise<ImageVectorizeResult | null>
+      cancelImageBatch: () => Promise<void>
+      onImageBatchProgress: (callback: (value: import('./src/shared/imageBatch').ImageBatchProgress & { jobId?: string }) => void) => () => void
+      vectorizeImageAssets: (names: string[], options: ImageVectorizeOptions, jobId?: string) => Promise<ImageVectorizeResult | null>
       choosePdfFiles: () => Promise<PdfFileInfo[]>
       mergePdfFiles: (sources: PdfMergeSource[]) => Promise<PdfOperationResult | null>
       splitPdfFiles: (tasks: PdfSplitTask[]) => Promise<PdfOperationResult>
@@ -130,6 +136,7 @@ declare global {
       createJsonVaultFolder: (relativePath: string) => Promise<string>
       renameJsonVaultEntry: (input: RenameJsonVaultEntryInput) => Promise<string>
       moveJsonVaultEntry: (input: MoveJsonVaultEntryInput) => Promise<string>
+      exportVaultFiles: (kind: 'json' | 'quickNote', paths: string[]) => Promise<number | null>
       duplicateJsonVaultFile: (relativePath: string) => Promise<JsonVaultFile>
       deleteJsonVaultFile: (relativePath: string) => Promise<void>
       openJsonVault: () => Promise<void>

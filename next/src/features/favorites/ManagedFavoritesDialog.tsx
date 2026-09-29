@@ -1,10 +1,11 @@
+import { parseColor } from '@/features/color/colorTools'
 import { useEffect, useState } from 'react'
 import { Dialog } from '@/shared/components/Dialog'
 import type { FavoriteFolderRecord, FavoriteRecord } from '@/shared/contracts/favorites'
 import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
-export function ManagedFavoritesDialog({ kind, open, currentValue, onClose, onApply }: { kind: 'cron' | 'regex'; open: boolean; currentValue: string; onClose: () => void; onApply: (value: string) => void }) {
+export function ManagedFavoritesDialog({ kind, open, currentValue, onClose, onApply }: { kind: 'cron' | 'regex' | 'color'; open: boolean; currentValue: string; onClose: () => void; onApply: (value: string) => void }) {
   const { t, language } = useI18n()
   const dialog = useDesktopDialog()
   const [folders, setFolders] = useState<FavoriteFolderRecord[]>([])
@@ -49,10 +50,10 @@ export function ManagedFavoritesDialog({ kind, open, currentValue, onClose, onAp
     </div>
     <div className="cron-favorite-form">
       <input aria-label={t('common.name')} placeholder={t('common.name')} value={name} onChange={event => setName(event.target.value)} />
-      <input aria-label={t(kind === 'cron' ? 'cron.expression' : 'regex.expression')} value={value} onChange={event => setValue(event.target.value)} />
+      <input aria-label={kind === 'color' ? 'HEX / RGB' : t(kind === 'cron' ? 'cron.expression' : 'regex.expression')} value={value} onChange={event => setValue(event.target.value)} />
       <input aria-label={words[3]} placeholder={words[3]} value={description} onChange={event => setDescription(event.target.value)} />
-      <button className="dialog-button" disabled={!name.trim() || !value.trim() || !folderId} onClick={() => void run(async () => { await window.mootool.saveFavorite({ id: editing, kind, folderId, name, value, description }); setEditing(undefined); setName(''); await load() })}>{words[4]}</button>
-      <button className="dialog-button" onClick={() => { setEditing(undefined); setName(''); setValue(currentValue); setDescription('') }}>{words[5]}</button>
+      <button className="dialog-button" disabled={!name.trim() || !value.trim() || !folderId} onClick={() => void run(async () => { if (kind === 'color') parseColor(value); await window.mootool.saveFavorite({ id: editing, kind, folderId, name, value, description }); setEditing(undefined); setName(''); await load() })}>{words[4]}</button>
+      <button className="dialog-button" onClick={() => { setEditing(undefined); setName(''); setValue(currentValue); setDescription('') }}>{kind === 'color' ? t('color.favorite') : words[5]}</button>
     </div>
     <div className="cron-favorite-toolbar">
       <label><input type="checkbox" aria-label={language === 'zh-CN' ? '全选' : language === 'ja-JP' ? 'すべて選択' : 'Select all'} checked={records.length > 0 && selected.length === records.length} onChange={event => setSelected(event.target.checked ? records.map(record => record.id) : [])} />{selected.length} / {records.length}</label>
@@ -71,7 +72,7 @@ export function ManagedFavoritesDialog({ kind, open, currentValue, onClose, onAp
     {error && <p role="alert" className="result-status--error">{error}</p>}
     <div className="favorite-list">{records.length === 0 ? <p>{t('favorite.empty')}</p> : records.map((record, index) => <article className="favorite-item" key={record.id}>
       <input type="checkbox" aria-label={record.name} checked={selected.includes(record.id)} onChange={event => setSelected(current => event.target.checked ? [...current, record.id] : current.filter(id => id !== record.id))} />
-      <button type="button" onClick={() => { onApply(record.value); onClose() }}><strong>{record.name}</strong><code>{record.value}</code><span>{record.description}</span></button>
+      <button type="button" onClick={() => { onApply(record.value); onClose() }}>{kind === 'color' && <span className="color-favorite-item__swatch" style={{ background: record.value }} />}<strong>{record.name}</strong><code>{record.value}</code><span>{record.description}</span></button>
       <button className="dialog-button" onClick={() => { setEditing(record.id); setName(record.name); setValue(record.value); setDescription(record.description) }}>{words[0]}</button>
       {([-1, 1] as const).map((direction, i) => <button className="dialog-button" key={direction} disabled={direction === -1 ? index === 0 : index === records.length - 1} onClick={() => void run(async () => { await window.mootool.moveFavorite(record.id, direction); await load() })}>{words[i + 1]}</button>)}
       <button className="dialog-button" onClick={() => void run(async () => { await window.mootool.deleteFavorite(record.id); if (editing === record.id) setEditing(undefined); await load() })}>{t('common.action.delete')}</button>

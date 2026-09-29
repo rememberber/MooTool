@@ -1,3 +1,4 @@
+import { useToolDraft } from '@/shared/hooks/useToolDraft'
 import { ArrowDown, ArrowUp, Equal, History } from 'lucide-react'
 import { useState } from 'react'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
@@ -10,20 +11,37 @@ import { combination, convertBase, evaluateExpression, gcd, lcm, permutation } f
 export function CalculatorTool() {
   const { t } = useI18n()
   const actions = useToolActions('calculator')
-  const [expression, setExpression] = useState('2 * (3 + 4)')
-  const [result, setResult] = useState('14')
-  const [decimal, setDecimal] = useState('255')
-  const [hex, setHex] = useState('ff')
-  const [binary, setBinary] = useState('11111111')
-  const [gcdFirst, setGcdFirst] = useState('54')
-  const [gcdSecond, setGcdSecond] = useState('24')
-  const [lcmFirst, setLcmFirst] = useState('54')
-  const [lcmSecond, setLcmSecond] = useState('24')
-  const [permutationN, setPermutationN] = useState('5')
-  const [permutationM, setPermutationM] = useState('2')
-  const [combinationN, setCombinationN] = useState('5')
-  const [combinationM, setCombinationM] = useState('2')
-  const [log, setLog] = useState<string[]>(['2 * (3 + 4) = 14'])
+  const { draft, setField } = useToolDraft('calculator', {
+    expression: '2 * (3 + 4)',
+    result: '14',
+    decimal: '255',
+    hex: 'ff',
+    binary: '11111111',
+    gcdFirst: '54',
+    gcdSecond: '24',
+    lcmFirst: '54',
+    lcmSecond: '24',
+    permutationN: '5',
+    permutationM: '2',
+    combinationN: '5',
+    combinationM: '2',
+    log: ['2 * (3 + 4) = 14']
+  })
+  const { expression, result, decimal, hex, binary, gcdFirst, gcdSecond, lcmFirst, lcmSecond, permutationN, permutationM, combinationN, combinationM, log } = draft
+  const setExpression = (value: React.SetStateAction<typeof draft.expression>) => setField('expression', value)
+  const setResult = (value: React.SetStateAction<typeof draft.result>) => setField('result', value)
+  const setDecimal = (value: React.SetStateAction<typeof draft.decimal>) => setField('decimal', value)
+  const setHex = (value: React.SetStateAction<typeof draft.hex>) => setField('hex', value)
+  const setBinary = (value: React.SetStateAction<typeof draft.binary>) => setField('binary', value)
+  const setGcdFirst = (value: React.SetStateAction<typeof draft.gcdFirst>) => setField('gcdFirst', value)
+  const setGcdSecond = (value: React.SetStateAction<typeof draft.gcdSecond>) => setField('gcdSecond', value)
+  const setLcmFirst = (value: React.SetStateAction<typeof draft.lcmFirst>) => setField('lcmFirst', value)
+  const setLcmSecond = (value: React.SetStateAction<typeof draft.lcmSecond>) => setField('lcmSecond', value)
+  const setPermutationN = (value: React.SetStateAction<typeof draft.permutationN>) => setField('permutationN', value)
+  const setPermutationM = (value: React.SetStateAction<typeof draft.permutationM>) => setField('permutationM', value)
+  const setCombinationN = (value: React.SetStateAction<typeof draft.combinationN>) => setField('combinationN', value)
+  const setCombinationM = (value: React.SetStateAction<typeof draft.combinationM>) => setField('combinationM', value)
+  const setLog = (value: React.SetStateAction<typeof draft.log>) => setField('log', value)
   const [historyOpen, setHistoryOpen] = useState(false)
 
   function run(summary: string, input: string, calculate: () => string): void {

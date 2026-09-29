@@ -9,6 +9,7 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'electron/main/index.ts'),
+          imageVectorizationWorker: resolve(__dirname, 'electron/main/imageVectorizationWorker.ts'),
           mcp: resolve(__dirname, 'electron/mcp/index.ts')
         }
       }
