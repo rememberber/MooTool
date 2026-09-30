@@ -1458,6 +1458,75 @@
               "size": 116413572
             }
           ]
+        },
+        {
+          "version": "1.2.6",
+          "title": "MooTool Next Electron 1.2.6",
+          "notes": "## English\n\n> Product: MooTool Next Electron<br>\n> Version: 1.2.6<br>\n> This release is installed and updated independently from MooTool Java and does not overwrite the Java edition.\n\n### Fixes and improvements\n\n- Window material now also applies to detached tool windows. Settings show the material actually in use, why it was reduced, and whether a restart is still required.\n- Detached windows keep the immersive tool header and native traffic lights. Floating controls such as detach, dock, and view switching use a glass style when a translucent material is active.\n- A collapsed sidebar shows tool names. The sidebar scrollbar is hidden, and the first navigation item is named MooTool.\n- The JSON options panel starts collapsed.\n- Code and text editors use a slightly heavier default weight, and the active-line highlight meets the line-number gutter without a gap.\n\n### Notes\n\n- Installers remain unsigned. On macOS, the app downloads and verifies the new DMG, then asks the user to open it and drag the app into Applications.\n- The Java product line continues to use `v*` tags and its existing update manifest.\n\n## 中文\n\n> 产品线：MooTool Next Electron<br>\n> 版本：1.2.6<br>\n> 本版本与 MooTool Java 独立安装、独立更新，不会覆盖 Java 版本。\n\n### 修复与改进\n\n- 窗口材质也会应用到独立工具窗口。设置中会显示当前实际材质、降级原因，以及是否仍需重启。\n- 独立窗口保留沉浸式工具顶栏和原生红绿灯。拆出、收回、视图切换等浮动控件，在半透明材质下使用玻璃样式。\n- 收起侧栏后仍显示工具名称。侧栏滚动条不再常驻，导航第一项改名为 MooTool。\n- JSON 选项面板默认收起。\n- 代码和文本编辑器的默认字重略微加粗，当前行高亮与行号栏之间不再留缝。\n\n### 说明\n\n- 安装包仍未签名。macOS 会下载并校验新版 DMG，随后提示用户打开 DMG 并将应用拖入“应用程序”。\n- Java 产品线继续使用 `v*` tag 和原有更新清单，不受本次发布影响。\n\n## 日本語\n\n> 製品ライン：MooTool Next Electron<br>\n> バージョン：1.2.6<br>\n> このリリースは MooTool Java とは独立してインストール・更新され、Java 版を上書きしません。\n\n### 修正と改善\n\n- ウィンドウの質感を、分離したツールウィンドウにも適用します。設定には実際の質感、簡略化された理由、再起動がまだ必要かを表示します。\n- 分離ウィンドウは没入型のツール上部とネイティブの信号ボタンを維持します。分離、収納、表示切替などの浮遊コントロールは、半透明の質感ではガラス風になります。\n- サイドバーを折りたたんでもツール名を表示します。サイドバーのスクロールバーは常時表示せず、先頭の項目名は MooTool です。\n- JSON のオプションパネルは初期状態で折りたたまれます。\n- コードとテキストのエディターは、既定の字重をわずかに太くし、現在行の強調と行番号の背景のすき間をなくしました。\n\n### 補足\n\n- インストーラーは引き続き未署名です。macOS では新しい DMG をダウンロードして検証し、その後 DMG を開いてアプリを「アプリケーション」へドラッグするよう案内します。\n- Java 製品ラインは引き続き `v*` タグと従来の更新マニフェストを使用し、このリリースの影響を受けません。",
+          "prerelease": false,
+          "releaseUrl": "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.6",
+          "assets": [
+            {
+              "platform": "darwin",
+              "architecture": "arm64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.2.6-mac-arm64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.6/MooTool-Next-Electron-1.2.6-mac-arm64.dmg",
+              "sha512": "4rhkAK6Gk1dtNe/AEapmS1hdRAqZ6k+Hqdvif0y0IIJeSOZX8dcmd7f+fFSk3hhwvmzQsKsxVjhoI5/sklIuJg==",
+              "size": 151039296
+            },
+            {
+              "platform": "darwin",
+              "architecture": "x64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.2.6-mac-x64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.6/MooTool-Next-Electron-1.2.6-mac-x64.dmg",
+              "sha512": "1X8n+HkYD9x4FMVoyI4T3+r03rtKRN2xpUoeabVQUd2SIpHvXAwOfhH9FJx1cHhLnZikF3TGntWyeWg/hpTsBg==",
+              "size": 152851236
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "nsis",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.2.6-win-x64-setup.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.6/MooTool-Next-Electron-1.2.6-win-x64-setup.exe",
+              "sha512": "RCo8IRlVQWaCIyVOTgqIO8TjkaB0xHm75h0bw2DWqyDZX/n3KEtW5KYkSqMPIoSE7s5MJaJhUyuB3EBAe3Karw==",
+              "size": 118923219
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "portable",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.2.6-win-x64-portable.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.6/MooTool-Next-Electron-1.2.6-win-x64-portable.exe",
+              "sha512": "URUDvFRebu5xeZn/2B+k/L4n1uITe8DUtqDQXMnYAxmTxfxMSLZ6s9fLru06ErMoexHgGQv5Q9c2FFDOg6rPJg==",
+              "size": 118736010
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "appimage",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.2.6-linux-x64.AppImage",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.6/MooTool-Next-Electron-1.2.6-linux-x64.AppImage",
+              "sha512": "DvqNeSMdssSW+dVJKtAxXPOtk60AC7BDdgWIyFhcl3dOJdz4xbQ5EA8K/5BLGKYbkVT23p7B0VI/3qP3tuTSgg==",
+              "size": 158562745
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "deb",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.2.6-linux-x64.deb",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.2.6/MooTool-Next-Electron-1.2.6-linux-x64.deb",
+              "sha512": "HjiyonVbw/arpAi8OU9i8c2TpJgrCWHNRPCrW4jABI8TGI8IQ7lw853qhiocP0QM7jOt/2oCe8lp54ZD9qNsoA==",
+              "size": 116414916
+            }
+          ]
         }
       ]
     },
