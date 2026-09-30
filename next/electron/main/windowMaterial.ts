@@ -1,7 +1,9 @@
-import type { BrowserWindow } from 'electron'
+import type { BaseWindow, BrowserWindow } from 'electron'
+import type { MaterialReason, WindowMaterialStatus } from '../../src/shared/contracts/windowMaterial'
+export type { ResolvedMaterial } from '../../src/shared/contracts/windowMaterial'
+import type { ResolvedMaterial } from '../../src/shared/contracts/windowMaterial'
 import type { WindowMaterial } from '../../src/shared/contracts/settings'
 
-export type ResolvedMaterial = Exclude<WindowMaterial, 'auto'>
 export interface MaterialEnvironment {
   platform: string
   systemVersion: string
@@ -9,7 +11,7 @@ export interface MaterialEnvironment {
   glassAvailable: boolean
 }
 
-/** Auxiliary windows always remain opaque; this policy applies to the main shell. */
+/** Shared policy for the main shell and detached tool windows. */
 export function resolveWindowMaterial(mode: WindowMaterial, env: MaterialEnvironment): ResolvedMaterial {
   if (mode === 'solid' || env.solidRequested || env.platform !== 'darwin') return 'solid'
   if (mode !== 'vibrancy' && Number(env.systemVersion.split('.')[0]) >= 26 && env.glassAvailable) return 'liquid-glass'
@@ -19,7 +21,7 @@ export function resolveWindowMaterial(mode: WindowMaterial, env: MaterialEnviron
 interface GlassModule {
   addView(handle: Buffer, options: { cornerRadius: number }): number
 }
-interface MaterialDependencies {
+export interface MaterialDependencies {
   platform: string
   systemVersion: string
   dark: () => boolean
@@ -42,9 +44,28 @@ export class WindowMaterialController {
   private glassFailed = false
   private glass: Promise<GlassModule> | undefined
   private queue: Promise<void> = Promise.resolve()
+  private nativeFailed = false
   private effective: ResolvedMaterial = 'solid'
 
-  constructor(private win: BrowserWindow, private mode: WindowMaterial, private deps: MaterialDependencies) {}
+  constructor(
+    private win: BaseWindow,
+    readonly mode: WindowMaterial,
+    private deps: MaterialDependencies,
+    private onChange: (material: ResolvedMaterial) => void = (material) => {
+      (win as BrowserWindow).webContents.send('window:material-changed', material)
+    }
+  ) {}
+
+  status(savedMode: WindowMaterial): WindowMaterialStatus {
+    let reason: MaterialReason = 'selected'
+    if (!this.initialized) reason = 'initializing'
+    else if (this.solidRequested || this.deps.highContrast()) reason = 'accessibility'
+    else if (this.mode !== 'solid' && this.deps.platform !== 'darwin') reason = 'platform'
+    else if (this.nativeFailed) reason = 'native-failure'
+    else if (this.glassFailed) reason = 'extension'
+    else if (this.mode === 'liquid-glass' && Number(this.deps.systemVersion.split('.')[0]) < 26) reason = 'system-version'
+    return { requested: this.mode, effective: this.effective, reason, pendingRestart: savedMode !== this.mode }
+  }
 
   get material(): ResolvedMaterial { return this.effective }
 
@@ -62,6 +83,7 @@ export class WindowMaterialController {
     if (!this.initialized) return Promise.resolve()
     this.queue = this.queue.then(() => this.apply()).catch((error) => {
       console.warn('Window material unavailable; using solid background', error)
+      this.nativeFailed = true
       if (!this.win.isDestroyed()) this.publish('solid')
     })
     return this.queue
@@ -103,6 +125,7 @@ export class WindowMaterialController {
       try {
         this.win.setVibrancy(material === 'vibrancy' ? 'sidebar' : null)
       } catch {
+        this.nativeFailed = true
         material = 'solid'
       }
     }
@@ -114,6 +137,6 @@ export class WindowMaterialController {
     this.win.setBackgroundColor(material === 'solid'
       ? this.deps.dark() ? '#171719' : '#f7f7f8'
       : '#00000000')
-    this.win.webContents.send('window:material-changed', material)
+    this.onChange(material)
   }
 }

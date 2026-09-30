@@ -1,3 +1,4 @@
+import type { WindowMaterialStatus } from '../../src/shared/contracts/windowMaterial'
 import type { RegexInput, RegexResult } from '../../src/shared/contracts/regex'
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import type {
@@ -40,6 +41,9 @@ contextBridge.exposeInMainWorld('mootool', {
   toolWindowsEnabled: process.env.NODE_ENV !== 'test' || process.env.MOOTOOL_TOOL_VIEWS === '1',
   getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version'),
   getAppPaths: (): Promise<AppPaths> => ipcRenderer.invoke('app:get-paths'),
+  getWindowMaterialStatus: (): Promise<WindowMaterialStatus | null> => ipcRenderer.invoke('window:material-status'),
+  getWindowFullscreen: (): Promise<boolean> => ipcRenderer.invoke('window:fullscreen-get'),
+  onWindowFullscreenChange: (callback: (fullscreen: boolean) => void) => subscribe('window:fullscreen-changed', callback),
   getWindowMaterial: (): Promise<'solid' | 'vibrancy' | 'liquid-glass'> => ipcRenderer.invoke('window:material-get'),
   setMaterialAccessibility: (solid: boolean): Promise<void> => ipcRenderer.invoke('window:material-accessibility', solid),
   onWindowMaterialChange: (callback: (material: 'solid' | 'vibrancy' | 'liquid-glass') => void) => subscribe('window:material-changed', callback),
@@ -198,7 +202,6 @@ contextBridge.exposeInMainWorld('mootool', {
   onToolWindowSnapshotChange: (callback: (snapshot: ToolWindowSnapshot) => void) => subscribe('tool-window:snapshot-changed', callback),
   onToolWindowStateChange: (callback: (state: ToolWindowStatus) => void) => subscribe('tool-window:state-changed', callback),
   onToolWindowActivityChange: (callback: (active: boolean) => void) => subscribe('tool-window:activity-changed', callback),
-  onToolWindowControlsVisibilityChange: (callback: (visible: boolean) => void) => subscribe('tool-window:controls-visibility-changed', callback),
   onJsonVaultChange: (callback: (relativePath: string) => void) => subscribe('json-vault:changed', callback),
   onQuickNoteVaultChange: (callback: (relativePath: string) => void) => subscribe('quick-note:vault-changed', callback),
   onRuntimeOutput: (callback: (event: RuntimeOutputEvent) => void) => subscribe('runtime:output', callback),

@@ -55,7 +55,6 @@
   --shadow: rgba(20, 20, 20, 0.06);
   --shadow-soft: rgba(20, 20, 20, 0.045);
   --pattern-dot: #d6d6da;
-  --sidebar-vibrancy-tint: rgba(241, 242, 244, 0.38);
   --sidebar-vibrancy-border: rgba(80, 80, 86, 0.16);
   --window-drag-height: 52px;
   --app-font-size: 13px;
@@ -442,10 +441,6 @@
   gap: 8px;
 }
 
-.tool-view-shell--detached.tool-view-shell--macos .message-board-stage__header > span {
-  margin-left: 72px;
-}
-
 .message-board-stage__drag-zone {
   min-width: 32px;
 }
@@ -563,7 +558,6 @@
   background: color-mix(in srgb, var(--board-bg) 74%, transparent);
   border: 1px solid var(--board-line);
   border-radius: 9px;
-  backdrop-filter: blur(14px);
   cursor: pointer;
   font-size: 11px;
   opacity: 0;
@@ -691,7 +685,6 @@
   --shadow: rgba(0, 0, 0, 0.32);
   --shadow-soft: rgba(0, 0, 0, 0.22);
   --pattern-dot: #34353a;
-  --sidebar-vibrancy-tint: rgba(32, 33, 36, 0.42);
   --sidebar-vibrancy-border: rgba(255, 255, 255, 0.1);
 }
 
@@ -995,14 +988,6 @@
   min-width: 32px;
   min-height: 32px;
   flex: 1 1 56px;
-}
-
-.tool-view-shell--detached.tool-view-shell--macos .quick-note-search {
-  margin-left: 82px;
-}
-
-.tool-view-shell--detached.tool-view-shell--macos .vault-panel__search {
-  padding-left: 82px;
 }
 
 .quick-note-icon-button {
@@ -1640,10 +1625,6 @@
   min-width: 32px;
 }
 
-.tool-view-shell--detached.tool-view-shell--macos .runtime-tabs {
-  padding-left: 90px;
-}
-
 .runtime-tab {
   position: relative;
   height: 35px;
@@ -2063,10 +2044,6 @@ select:not([multiple]) {
   gap: 6px;
 }
 
-.tool-view-shell--detached.tool-view-shell--macos .embedded-tool-heading {
-  padding-left: 72px;
-}
-
 .app-shell {
   --navigation-width: 248px;
   position: relative;
@@ -2239,22 +2216,6 @@ select:not([multiple]) {
   font-weight: 600;
 }
 
-.tool-button,
-.recent-item {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  width: 100%;
-  min-height: 36px;
-  padding: 0 10px;
-  color: var(--text-body);
-  background: transparent;
-  border-radius: 8px;
-  text-align: left;
-  cursor: pointer;
-  font-size: var(--app-font-size);
-}
-
 .tool-button-row {
   position: relative;
   min-width: 0;
@@ -2262,16 +2223,6 @@ select:not([multiple]) {
 
 .tool-button-row--window-action > .tool-button {
   padding-right: 38px;
-}
-
-.tool-button:hover,
-.recent-item:hover {
-  background: var(--control-hover-soft);
-}
-
-.tool-button--active {
-  background: var(--control-active);
-  color: var(--text-strong);
 }
 
 .tool-button__window-action {
@@ -2543,12 +2494,6 @@ select:not([multiple]) {
   border: 1px solid transparent;
 }
 
-.app-shell--nav-card .tool-button--active {
-  background: var(--surface-elevated);
-  border-color: var(--border-control);
-  box-shadow: 0 3px 10px var(--shadow-soft);
-}
-
 .app-shell--hide-nav-titles {
   --navigation-width: 84px;
 }
@@ -2661,40 +2606,8 @@ select:not([multiple]) {
   padding-right: 64px;
 }
 
-.tool-view-shell--detached .tool-page {
-  padding-top: 18px;
-}
-
-.tool-view-shell--detached .tool-page__header {
-  padding-left: 34px;
-  transition: padding-left 150ms ease;
-}
-
-.tool-view-shell--detached.tool-view-shell--macos.tool-view-shell--window-controls-visible .tool-page__header {
-  padding-left: 102px;
-}
-
 .tool-view-shell > .window-drag-region {
   right: 64px;
-}
-
-.tool-window-brand-zone {
-  position: fixed;
-  z-index: 210;
-  top: 18px;
-  left: 20px;
-  display: inline-flex;
-  align-items: center;
-  width: min(420px, calc(100% - 360px));
-  height: 32px;
-  padding: 0 12px 0 0;
-  user-select: none;
-  -webkit-app-region: drag;
-  transition: padding-left 150ms ease;
-}
-
-.tool-window-brand-zone--controls-visible {
-  padding-left: 68px;
 }
 
 .tool-window-toggle-slot {
@@ -3820,10 +3733,6 @@ select:not([multiple]) {
   gap: 6px;
 }
 
-.tool-view-shell--detached.tool-view-shell--macos .tool-tabs--window-drag {
-  padding-left: 90px;
-}
-
 .tool-tab {
   position: relative;
   height: 37px;
@@ -4174,9 +4083,6 @@ select:not([multiple]) {
   min-width: 32px;
 }
 
-.tool-view-shell--detached.tool-view-shell--macos .diff-toolbar {
-  padding-left: 90px;
-}
 .diff-toolbar button,
 .diff-toolbar label,
 .diff-toolbar select,
@@ -4302,10 +4208,6 @@ select:not([multiple]) {
   flex: 0 0 auto;
   align-items: center;
   gap: 7px;
-}
-
-.tool-view-shell--detached.tool-view-shell--macos .time-current-band {
-  padding-left: 90px;
 }
 
 .time-current-band h2 {
@@ -6371,10 +6273,6 @@ select:not([multiple]) {
 .color-toolbar {
   flex-wrap: wrap;
   overflow: visible;
-}
-
-.tool-view-shell--detached.tool-view-shell--macos .color-toolbar {
-  padding-left: 90px;
 }
 
 .color-native-input input {
@@ -9486,15 +9384,10 @@ select:not([multiple]) {
   color: var(--text-muted);
   font-weight: 500;
 }
-
-:root[data-interface-style='modern'] .tool-button,
-:root[data-interface-style='modern'] .recent-item,
 :root[data-interface-style='modern'] .settings-nav__item {
   border-radius: 7px;
   font-weight: 500;
 }
-
-:root[data-interface-style='modern'] .tool-button--active,
 :root[data-interface-style='modern'] .settings-nav__item--active {
   color: var(--text-strong);
   font-weight: 600;
@@ -10214,11 +10107,8 @@ select {
   font-weight: var(--desktop-font-weight-medium);
   letter-spacing: 0.01em;
 }
-
 .setting-row > label,
-.settings-nav__item,
-.tool-button,
-.recent-item {
+.settings-nav__item {
   line-height: 1.35;
 }
 
@@ -10604,7 +10494,6 @@ textarea:focus {
   --shadow-soft: rgba(24, 24, 27, 0.08);
   --shadow-popover: 0 18px 48px rgba(24, 24, 27, 0.18);
   --pattern-dot: #d4d4d8;
-  --sidebar-vibrancy-tint: rgba(250, 250, 250, 0.56);
   --sidebar-vibrancy-border: rgba(113, 113, 122, 0.18);
   --desktop-control-height: 36px;
   --desktop-control-radius: 12px;
@@ -10659,7 +10548,6 @@ textarea:focus {
   --shadow-soft: rgba(0, 0, 0, 0.3);
   --shadow-popover: 0 20px 54px rgba(0, 0, 0, 0.52);
   --pattern-dot: #3f3f46;
-  --sidebar-vibrancy-tint: rgba(17, 17, 19, 0.64);
   --sidebar-vibrancy-border: rgba(244, 244, 245, 0.12);
   --desktop-control-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   --desktop-control-shadow-hover: 0 4px 14px rgba(0, 0, 0, 0.4);
@@ -10681,31 +10569,19 @@ textarea:focus {
 :root[data-interface-style='hero'] .settings-nav {
   border-color: var(--border-soft);
 }
-
-:root[data-interface-style='hero'] .tool-button,
-:root[data-interface-style='hero'] .recent-item,
 :root[data-interface-style='hero'] .settings-nav__item,
 :root[data-interface-style='hero'] .command-result {
   border-radius: 10px;
 }
-
-:root[data-interface-style='hero'] .tool-button--active,
 :root[data-interface-style='hero'] .settings-nav__item--active,
 :root[data-interface-style='hero'] .command-result--selected {
   color: var(--accent-strong);
   background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
-
-:root[data-interface-style='hero'][data-theme='dark'] .tool-button--active,
 :root[data-interface-style='hero'][data-theme='dark'] .settings-nav__item--active,
 :root[data-interface-style='hero'][data-theme='dark'] .command-result--selected {
   color: color-mix(in srgb, var(--accent) 78%, #fff);
   background: color-mix(in srgb, var(--accent) 22%, transparent);
-}
-
-:root[data-interface-style='hero'] .app-shell--nav-card .tool-button--active {
-  border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
-  box-shadow: 0 5px 16px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 :root[data-interface-style='hero'] .tool-page h1,
@@ -10922,7 +10798,6 @@ textarea:focus {
   --shadow-soft: rgba(64, 57, 49, 0.13);
   --shadow-popover: 0 18px 42px rgba(52, 46, 40, 0.28);
   --pattern-dot: #bdb8af;
-  --sidebar-vibrancy-tint: rgba(233, 231, 226, 0.58);
   --sidebar-vibrancy-border: rgba(91, 83, 74, 0.2);
   --smartisan-red: #9f403c;
   --smartisan-red-soft: #ead8d5;
@@ -10990,7 +10865,6 @@ textarea:focus {
   --shadow-soft: rgba(0, 0, 0, 0.32);
   --shadow-popover: 0 20px 48px rgba(0, 0, 0, 0.58);
   --pattern-dot: #484641;
-  --sidebar-vibrancy-tint: rgba(34, 33, 31, 0.66);
   --sidebar-vibrancy-border: rgba(242, 240, 235, 0.11);
   --smartisan-red: #b75953;
   --smartisan-red-soft: #442b29;
@@ -11044,26 +10918,18 @@ textarea:focus {
   border-color: var(--border);
   box-shadow: inset 0 1px 0 var(--smartisan-highlight);
 }
-
-:root[data-interface-style='smartisan'] .tool-button,
-:root[data-interface-style='smartisan'] .recent-item,
 :root[data-interface-style='smartisan'] .settings-nav__item,
 :root[data-interface-style='smartisan'] .command-result {
   position: relative;
   border: 1px solid transparent;
   border-radius: 7px;
 }
-
-:root[data-interface-style='smartisan'] .tool-button:hover,
-:root[data-interface-style='smartisan'] .recent-item:hover,
 :root[data-interface-style='smartisan'] .settings-nav__item:hover,
 :root[data-interface-style='smartisan'] .command-result:hover {
   background: linear-gradient(to bottom, color-mix(in srgb, var(--smartisan-raised-top) 70%, transparent), var(--smartisan-raised-bottom));
   border-color: color-mix(in srgb, var(--border) 72%, transparent);
   box-shadow: inset 0 1px 0 var(--smartisan-highlight);
 }
-
-:root[data-interface-style='smartisan'] .tool-button--active,
 :root[data-interface-style='smartisan'] .settings-nav__item--active,
 :root[data-interface-style='smartisan'] .command-result--selected {
   color: var(--text-strong);
@@ -11074,8 +10940,6 @@ textarea:focus {
     inset 0 1px 0 var(--smartisan-highlight),
     0 1px 3px var(--smartisan-lowlight);
 }
-
-:root[data-interface-style='smartisan'] .tool-button--active svg,
 :root[data-interface-style='smartisan'] .settings-nav__item--active svg {
   color: var(--smartisan-red);
 }
@@ -11384,7 +11248,6 @@ textarea:focus {
   --shadow-soft: rgba(0, 0, 0, 0.09);
   --shadow-popover: 0 14px 38px rgba(0, 0, 0, 0.24);
   --pattern-dot: #c8c8c8;
-  --sidebar-vibrancy-tint: rgba(242, 242, 242, 0.62);
   --sidebar-vibrancy-border: rgba(80, 80, 80, 0.18);
   --miui-orange: #f36c21;
   --miui-orange-strong: #d95312;
@@ -11453,7 +11316,6 @@ textarea:focus {
   --shadow-soft: rgba(0, 0, 0, 0.34);
   --shadow-popover: 0 18px 44px rgba(0, 0, 0, 0.6);
   --pattern-dot: #484848;
-  --sidebar-vibrancy-tint: rgba(32, 32, 32, 0.68);
   --sidebar-vibrancy-border: rgba(255, 255, 255, 0.11);
   --miui-orange: #ff7a2d;
   --miui-orange-strong: #e85d12;
@@ -11501,25 +11363,17 @@ textarea:focus {
     inset 0 1px 0 var(--miui-highlight),
     inset 0 -2px 0 color-mix(in srgb, var(--miui-orange) 72%, transparent);
 }
-
-:root[data-interface-style='miui-v5'] .tool-button,
-:root[data-interface-style='miui-v5'] .recent-item,
 :root[data-interface-style='miui-v5'] .settings-nav__item,
 :root[data-interface-style='miui-v5'] .command-result {
   position: relative;
   border: 1px solid transparent;
   border-radius: 4px;
 }
-
-:root[data-interface-style='miui-v5'] .tool-button:hover,
-:root[data-interface-style='miui-v5'] .recent-item:hover,
 :root[data-interface-style='miui-v5'] .settings-nav__item:hover,
 :root[data-interface-style='miui-v5'] .command-result:hover {
   background: var(--surface-card);
   border-color: var(--border-soft);
 }
-
-:root[data-interface-style='miui-v5'] .tool-button--active,
 :root[data-interface-style='miui-v5'] .settings-nav__item--active,
 :root[data-interface-style='miui-v5'] .command-result--selected {
   color: var(--miui-orange-strong);
@@ -11529,14 +11383,10 @@ textarea:focus {
     inset 3px 0 0 var(--miui-orange),
     0 1px 3px var(--shadow-soft);
 }
-
-:root[data-interface-style='miui-v5'][data-theme='dark'] .tool-button--active,
 :root[data-interface-style='miui-v5'][data-theme='dark'] .settings-nav__item--active,
 :root[data-interface-style='miui-v5'][data-theme='dark'] .command-result--selected {
   color: var(--miui-orange);
 }
-
-:root[data-interface-style='miui-v5'] .tool-button--active svg,
 :root[data-interface-style='miui-v5'] .settings-nav__item--active svg {
   color: var(--miui-orange);
 }
@@ -11841,7 +11691,6 @@ textarea:focus {
   --shadow-soft: rgba(67, 55, 47, 0.075);
   --shadow-popover: 0 18px 48px rgba(62, 50, 42, 0.2);
   --pattern-dot: #d8d2c8;
-  --sidebar-vibrancy-tint: rgba(238, 236, 229, 0.72);
   --sidebar-vibrancy-border: rgba(91, 78, 68, 0.14);
   --claude-accent: #d97757;
   --claude-accent-strong: #bd6348;
@@ -11899,7 +11748,6 @@ textarea:focus {
   --shadow-soft: rgba(0, 0, 0, 0.27);
   --shadow-popover: 0 20px 52px rgba(0, 0, 0, 0.58);
   --pattern-dot: #4a443d;
-  --sidebar-vibrancy-tint: rgba(37, 34, 30, 0.76);
   --sidebar-vibrancy-border: rgba(255, 244, 232, 0.1);
   --claude-accent: #e78a6c;
   --claude-accent-strong: #d57457;
@@ -11939,24 +11787,16 @@ textarea:focus {
   color: var(--text-muted);
   font-weight: 500;
 }
-
-:root[data-interface-style='claude'] .tool-button,
-:root[data-interface-style='claude'] .recent-item,
 :root[data-interface-style='claude'] .settings-nav__item,
 :root[data-interface-style='claude'] .command-result {
   border: 1px solid transparent;
   border-radius: 9px;
   font-weight: 450;
 }
-
-:root[data-interface-style='claude'] .tool-button:hover,
-:root[data-interface-style='claude'] .recent-item:hover,
 :root[data-interface-style='claude'] .settings-nav__item:hover,
 :root[data-interface-style='claude'] .command-result:hover {
   background: var(--control-hover);
 }
-
-:root[data-interface-style='claude'] .tool-button--active,
 :root[data-interface-style='claude'] .settings-nav__item--active,
 :root[data-interface-style='claude'] .command-result--selected {
   color: var(--claude-accent-strong);
@@ -11964,14 +11804,10 @@ textarea:focus {
   border-color: color-mix(in srgb, var(--claude-accent) 16%, transparent);
   font-weight: 550;
 }
-
-:root[data-interface-style='claude'][data-theme='dark'] .tool-button--active,
 :root[data-interface-style='claude'][data-theme='dark'] .settings-nav__item--active,
 :root[data-interface-style='claude'][data-theme='dark'] .command-result--selected {
   color: #f2a087;
 }
-
-:root[data-interface-style='claude'] .tool-button--active svg,
 :root[data-interface-style='claude'] .settings-nav__item--active svg {
   color: var(--claude-accent);
 }
@@ -12216,14 +12052,7 @@ textarea:focus {
   transform: translateX(0) scale(1);
 }
 
-:root .tool-view-shell--immersive .tool-window-toggle {
-  color: var(--text-body);
-  background: color-mix(in srgb, var(--surface-elevated) 88%, transparent);
-  border: 1px solid var(--border-control);
-  border-radius: 9px;
-  box-shadow: var(--shadow-popover);
-  backdrop-filter: blur(14px);
-}
+
 
 @media (prefers-reduced-motion: reduce) {
   .tool-view-shell--immersive .tool-window-toggle-slot,
@@ -12419,105 +12248,3 @@ textarea:focus {
 .color-collection-hint, .color-collection-selection { color: var(--text-muted); font-size: 12px; }
 
 .color-collection-context-menu { z-index: 1100; max-height: calc(100vh - 16px); overflow-y: auto; }
-
-/* Native material is exposed only by the main navigation shell. Keep alpha on
- * the paint, never on the sidebar container: text and controls stay opaque. */
-:root[data-platform='darwin'][data-window='main'] {
-  --window-glass-alpha: 0.4;
-  --window-glass-top: 97%;
-  --window-glass-range: 9%;
-}
-:root[data-platform='darwin'][data-window='main'][data-theme='dark'] {
-  --window-glass-alpha: 0.5;
-  --window-glass-top: 24%;
-}
-:root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']),
-:root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) body,
-:root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) #root,
-:root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) .app-shell {
-  background: transparent;
-}
-:root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) .sidebar {
-  background-color: transparent;
-  background-image: linear-gradient(180deg in oklab,
-    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0) / var(--window-glass-alpha)) 0%,
-    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0.043) / var(--window-glass-alpha)) 12.5%,
-    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0.156) / var(--window-glass-alpha)) 25%,
-    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0.316) / var(--window-glass-alpha)) 37.5%,
-    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0.5) / var(--window-glass-alpha)) 50%,
-    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0.684) / var(--window-glass-alpha)) 62.5%,
-    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0.844) / var(--window-glass-alpha)) 75%,
-    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 0.957) / var(--window-glass-alpha)) 87.5%,
-    hsl(from var(--sidebar) h s calc(var(--window-glass-top) - var(--window-glass-range) * 1) / var(--window-glass-alpha)) 100%
-  );
-  border-right-color: var(--sidebar-vibrancy-border);
-}
-:root[data-platform='darwin'][data-window='main'][data-window-material='solid'],
-:root[data-platform='darwin'][data-window='main'][data-window-material='solid'] body,
-:root[data-platform='darwin'][data-window='main'][data-window-material='solid'] #root,
-:root[data-platform='darwin'][data-window='main'][data-window-material='solid'] .app-shell {
-  background: var(--surface);
-}
-:root[data-platform='darwin'][data-window='main'][data-window-material='solid'] .sidebar { background: var(--sidebar); }
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more), (forced-colors: active) {
-  :root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']),
-  :root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) body,
-  :root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) #root,
-  :root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) .app-shell { background: var(--surface); }
-  :root[data-platform='darwin'][data-window='main']:is([data-window-material='vibrancy'], [data-window-material='liquid-glass']) .sidebar { background: var(--sidebar); }
-}
-
-/* Navigation uses translucent neutral state layers over the sidebar material.
- * Keep selection stable under the pointer, including the detached-window action. */
-:root {
-  --navigation-hover: rgb(0 0 0 / 4%);
-  --navigation-selected: rgb(0 0 0 / 9%);
-}
-:root[data-theme='dark'] {
-  --navigation-hover: rgb(255 255 255 / 6%);
-  --navigation-selected: rgb(255 255 255 / 14%);
-}
-:root[data-interface-style] .sidebar :is(.tool-button, .recent-item) {
-  color: var(--text-body);
-  background: transparent;
-  border-color: transparent;
-  border-radius: 7px;
-  box-shadow: none;
-  font-weight: 500;
-  transition: background-color 120ms ease, color 120ms ease;
-}
-:root[data-interface-style] .sidebar .tool-button-row:hover > .tool-button,
-:root[data-interface-style] .sidebar .tool-button-row:hover > .tooltip-trigger > .tool-button,
-:root[data-interface-style] .sidebar :is(.tool-button, .recent-item):hover {
-  color: var(--text-strong);
-  background: var(--navigation-hover);
-}
-:root[data-interface-style] .sidebar .tool-button-row > .tool-button--active,
-:root[data-interface-style] .sidebar .tool-button-row > .tooltip-trigger > .tool-button--active,
-:root[data-interface-style] .sidebar .tool-button-row:hover > .tool-button--active,
-:root[data-interface-style] .sidebar .tool-button-row:hover > .tooltip-trigger > .tool-button--active,
-:root[data-interface-style] .sidebar :is(.tool-button, .recent-item):active {
-  color: var(--text-strong);
-  background: var(--navigation-selected);
-  border-color: transparent;
-  box-shadow: none;
-}
-:root[data-interface-style] .sidebar .tool-button svg {
-  color: inherit;
-}
-:root[data-interface-style] .sidebar :is(.tool-button, .recent-item):focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-}
-@media (prefers-reduced-motion: reduce) {
-  :root[data-interface-style] .sidebar :is(.tool-button, .recent-item) {
-    transition: none;
-  }
-}
-@media (forced-colors: active) {
-  :root[data-interface-style] .sidebar .tool-button-row > .tool-button--active,
-  :root[data-interface-style] .sidebar .tool-button-row > .tooltip-trigger > .tool-button--active {
-    outline: 2px solid Highlight;
-    outline-offset: -2px;
-  }
-}

@@ -1,0 +1,83 @@
+/* Single owner of navigation state paints. Themes customize tokens, never
+ * override :hover/:active selectors. Selected + hover remains selected. */
+:root {
+  --navigation-hover: rgb(0 0 0 / 4%);
+  --navigation-selected: rgb(0 0 0 / 9%);
+  --navigation-radius: 7px;
+  --navigation-weight: 500;
+  --navigation-selected-text: var(--text-strong);
+}
+:root[data-theme='dark'] {
+  --navigation-hover: rgb(255 255 255 / 6%);
+  --navigation-selected: rgb(255 255 255 / 14%);
+}
+:root[data-interface-style='claude'] {
+  --navigation-radius: 9px;
+  --navigation-weight: 450;
+  --navigation-selected: color-mix(in srgb, var(--claude-accent) 13%, transparent);
+  --navigation-selected-text: var(--claude-accent-strong);
+}
+:root[data-interface-style='claude'][data-theme='dark'] {
+  --navigation-selected: color-mix(in srgb, var(--claude-accent) 20%, transparent);
+  --navigation-selected-text: #f2a087;
+}
+:root[data-interface-style='miui-v5'] {
+  --navigation-radius: 4px;
+  --navigation-selected: color-mix(in srgb, var(--miui-orange) 14%, transparent);
+  --navigation-selected-text: var(--text-strong);
+}
+:root[data-interface-style='smartisan'] {
+  --navigation-radius: 6px;
+  --navigation-weight: 550;
+}
+:root[data-interface-style='hero'] {
+  --navigation-radius: 10px;
+}
+.tool-button,
+.recent-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  color: var(--text-body);
+  background: transparent;
+  border-color: transparent;
+  border-radius: var(--navigation-radius);
+  box-shadow: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: var(--app-font-size);
+  font-weight: var(--navigation-weight);
+  line-height: 1.35;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.tool-button-row:hover > .tool-button,
+.tool-button:hover,
+.recent-item:hover {
+  color: var(--text-strong);
+  background: var(--navigation-hover);
+}
+.tool-button-row > .tool-button--active,
+.tool-button-row:hover > .tool-button--active,
+.tool-button:active,
+.recent-item:active {
+  color: var(--navigation-selected-text);
+  background: var(--navigation-selected);
+}
+.tool-button svg { color: inherit; }
+.tool-button:focus-visible,
+.recent-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tool-button, .recent-item { transition: none; }
+}
+@media (forced-colors: active) {
+  .tool-button-row > .tool-button--active {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}

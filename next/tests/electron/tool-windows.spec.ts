@@ -10,7 +10,8 @@ let userDataDirectory: string
 test.beforeAll(async () => {
   userDataDirectory = await mkdtemp(join(tmpdir(), 'mootool-tool-windows-e2e-'))
   electronApp = await electron.launch({
-    args: ['.', `--user-data-dir=${userDataDirectory}`],
+    executablePath: process.env.MOOTOOL_E2E_EXECUTABLE,
+    args: [...(process.env.MOOTOOL_E2E_EXECUTABLE ? [] : ['.']), `--user-data-dir=${userDataDirectory}`],
     cwd: process.cwd(),
     env: { ...process.env, NODE_ENV: 'test', MOOTOOL_TOOL_VIEWS: '1' }
   })
@@ -247,23 +248,17 @@ test('keeps a custom-header tool immersive while preserving its view controls', 
     edgeSlotWidth: 7
   })
 
-  await sendToolWindowControlsVisibility('quickNote', true)
   await expect.poll(async () => (await evaluateTool('quickNote', `(() => {
     return {
-      controlsClass: document.querySelector('.tool-view-shell').classList.contains('tool-view-shell--window-controls-visible'),
-      brandCount: document.querySelectorAll('.tool-window-brand-zone').length,
+      chromeCount: document.querySelectorAll('.window-chrome').length,
       toolbarTop: Math.round(document.querySelector('.quick-note-toolbar').getBoundingClientRect().top),
       searchInset: Math.round(document.querySelector('.quick-note-search').getBoundingClientRect().left - document.querySelector('.quick-note-sidebar').getBoundingClientRect().left)
     }
   })()`)).value).toEqual({
-    controlsClass: true,
-    brandCount: 0,
+    chromeCount: 0,
     toolbarTop: 0,
     searchInset: process.platform === 'darwin' ? 82 : 8
   })
-
-  await sendToolWindowControlsVisibility('quickNote', false)
-  await expect.poll(async () => (await evaluateTool('quickNote', `document.querySelector('.tool-view-shell').classList.contains('tool-view-shell--window-controls-visible')`)).value).toBe(false)
 
   await closeDetachedBaseWindow()
   await expect.poll(() => getToolSnapshot('quickNote')).toMatchObject({ detached: false, ready: true })
@@ -511,17 +506,6 @@ async function typeInToolTextEditor(toolId: string, text: string): Promise<void>
     for (const character of input.text) contents.sendInputEvent({ type: 'char', keyCode: character })
     await new Promise((resolve) => setTimeout(resolve, 50))
   }, { toolId, text })
-}
-
-async function sendToolWindowControlsVisibility(toolId: string, visible: boolean): Promise<void> {
-  await electronApp.evaluate(({ webContents }, input) => {
-    const contents = webContents.getAllWebContents().find((item) => {
-      const url = new URL(item.getURL())
-      return url.searchParams.get('window') === 'tool' && url.searchParams.get('toolId') === input.toolId
-    })
-    if (!contents) throw new Error(`Tool webContents not found: ${input.toolId}`)
-    contents.send('tool-window:controls-visibility-changed', input.visible)
-  }, { toolId, visible })
 }
 
 async function getToolSnapshot(toolId: string): Promise<unknown> {

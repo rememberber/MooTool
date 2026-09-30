@@ -1001,7 +1001,7 @@ export function QuickNoteTool() {
           <section className="quick-note-editor-shell">
             <div className="quick-note-toolbar">
               <IconButton label={state.treeOpen ? t('quickNote.openVault') : t('quickNote.newNote')} icon={state.treeOpen ? PanelLeftClose : PanelLeftOpen} onClick={() => update({ treeOpen: !state.treeOpen })} />
-              <div className="quick-note-view-switch segmented" role="tablist" aria-label={t('quickNote.title')}>
+              <div className="quick-note-view-switch segmented glass-control" role="tablist" aria-label={t('quickNote.title')}>
                 {([
                   { id: 'editor', icon: FilePenLine },
                   { id: 'split', icon: Columns2 },

@@ -254,7 +254,7 @@ export function MessageBoardTool() {
             <i />
           </footer>
           {presenting && (
-            <button className="message-board-stage__exit" type="button" onClick={() => setPresenting(false)}>
+            <button className="message-board-stage__exit glass-control" type="button" onClick={() => setPresenting(false)}>
               <Minimize2 size={15} />{t('messageBoard.exitHint')}
             </button>
           )}

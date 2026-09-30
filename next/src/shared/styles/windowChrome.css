@@ -1,0 +1,46 @@
+/* Preserve each tool's immersive toolbar; only reserve horizontal native-control space. */
+:root:not([data-fullscreen='true']) .tool-view-shell--detached.tool-view-shell--macos .message-board-stage__header > span {
+  margin-left: 72px;
+}
+
+:root:not([data-fullscreen='true']) .tool-view-shell--detached.tool-view-shell--macos .quick-note-search {
+  margin-left: 82px;
+}
+
+:root:not([data-fullscreen='true']) .tool-view-shell--detached.tool-view-shell--macos .vault-panel__search {
+  padding-left: 82px;
+}
+
+:root:not([data-fullscreen='true']) .tool-view-shell--detached.tool-view-shell--macos .runtime-tabs {
+  padding-left: 90px;
+}
+
+:root:not([data-fullscreen='true']) .tool-view-shell--detached.tool-view-shell--macos .embedded-tool-heading {
+  padding-left: 72px;
+}
+
+:root:not([data-fullscreen='true']) .tool-view-shell--detached.tool-view-shell--macos .tool-tabs--window-drag {
+  padding-left: 90px;
+}
+
+:root:not([data-fullscreen='true']) .tool-view-shell--detached.tool-view-shell--macos .diff-toolbar {
+  padding-left: 90px;
+}
+
+:root:not([data-fullscreen='true']) .tool-view-shell--detached.tool-view-shell--macos .time-current-band {
+  padding-left: 90px;
+}
+
+:root:not([data-fullscreen='true']) .tool-view-shell--detached.tool-view-shell--macos .color-toolbar {
+  padding-left: 90px;
+}
+.tool-view-shell--detached:not(.tool-view-shell--immersive) .tool-page { padding-top: 18px; }
+:root:not([data-fullscreen='true']) .tool-view-shell--detached.tool-view-shell--macos:not(.tool-view-shell--immersive) .tool-page__header { padding-left: 102px; }
+.window-material-status {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.window-material-status strong { color: var(--accent-strong); font-weight: 500; }

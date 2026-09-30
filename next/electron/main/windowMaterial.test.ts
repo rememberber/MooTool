@@ -84,3 +84,28 @@ it('does not touch a destroyed window after asynchronous loading', async () => {
   expect(addView).not.toHaveBeenCalled()
   expect(win.webContents.send).not.toHaveBeenCalled()
 })
+
+it('reports actual material, fallback reason and restart state independently of the saved selection', async () => {
+  const { controller } = fixture(vi.fn(async () => ({ addView: vi.fn(() => -1) })))
+  expect(controller.status('auto').reason).toBe('initializing')
+  await controller.initialize(false)
+  expect(controller.status('solid')).toEqual({ requested: 'auto', effective: 'vibrancy', reason: 'extension', pendingRestart: true })
+  await controller.setAccessibility(true)
+  expect(controller.status('auto')).toEqual({ requested: 'auto', effective: 'solid', reason: 'accessibility', pendingRestart: false })
+})
+
+it('publishes material for a BaseWindow without accessing browser webContents', async () => {
+  const { win } = fixture()
+  const { webContents: _unused, ...baseWindow } = win
+  const onChange = vi.fn()
+  const controller = new WindowMaterialController(baseWindow as unknown as BrowserWindow, 'vibrancy', {
+    ...environment, dark: () => true, highContrast: () => false,
+    loadGlass: vi.fn(async () => { throw new Error('Must not load glass for vibrancy') })
+  }, onChange)
+  await controller.initialize(false)
+  expect(onChange).toHaveBeenLastCalledWith('vibrancy')
+  baseWindow.setVibrancy.mockImplementation(() => { throw new Error('Native effect failed') })
+  await controller.refresh()
+  expect(controller.status('vibrancy').reason).toBe('native-failure')
+  expect(onChange).toHaveBeenLastCalledWith('solid')
+})

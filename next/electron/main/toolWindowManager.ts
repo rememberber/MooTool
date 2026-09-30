@@ -1,7 +1,6 @@
 import {
   BaseWindow,
   BrowserWindow,
-  screen,
   WebContentsView,
   type WebContents
 } from 'electron'
@@ -12,7 +11,9 @@ import type {
   ToolWorkspaceBounds,
   WindowState
 } from '../../src/shared/contracts/app'
-import { isWindowControlsHoverTarget } from './windowControlsHover'
+import { WindowMaterialController, type MaterialDependencies } from './windowMaterial'
+import { windowChromeOptions, trackWindowChrome } from './windowChrome'
+import type { WindowMaterial } from '../../src/shared/contracts/settings'
 
 type DetachableToolId = Exclude<ToolId, 'mootool'>
 type ToolViewHost = 'none' | 'main' | 'detached'
@@ -24,7 +25,8 @@ type ToolViewRecord = {
   window: BaseWindow | null
   ready: boolean
   title: string
-  windowControlsVisible: boolean
+  material: WindowMaterialController | null
+  solidRequested: boolean
   saveTimer?: NodeJS.Timeout
 }
 
@@ -38,6 +40,8 @@ type ToolWindowManagerOptions = {
   backgroundColor: () => string
   icon: () => string | undefined
   onWindowFocusChanged: () => void
+  materialMode: () => WindowMaterial
+  materialDependencies: MaterialDependencies
 }
 
 const defaultDetachedWindow: WindowState = {
@@ -45,13 +49,10 @@ const defaultDetachedWindow: WindowState = {
   maximized: false
 }
 
-const windowControlsPollInterval = 80
-
 export class ToolWindowManager {
   private readonly records = new Map<DetachableToolId, ToolViewRecord>()
   private activeToolId: ToolId = 'mootool'
   private workspaceBounds: ToolWorkspaceBounds | null = null
-  private windowControlsTimer?: NodeJS.Timeout
   private quitting = false
 
   constructor(private readonly options: ToolWindowManagerOptions) {}
@@ -88,7 +89,6 @@ export class ToolWindowManager {
     if (record.window && !record.window.isDestroyed()) {
       record.window.show()
       record.window.focus()
-      this.ensureWindowControlsTracking()
       return this.status(record)
     }
 
@@ -100,17 +100,22 @@ export class ToolWindowManager {
       minHeight: 560,
       show: false,
       title: record.title,
-      titleBarStyle: 'hiddenInset',
-      trafficLightPosition: { x: 18, y: 18 },
+      ...windowChromeOptions(),
       backgroundColor: this.options.backgroundColor(),
       icon: this.options.icon()
     })
-    if (process.platform === 'darwin') window.setWindowButtonVisibility(false)
-    record.windowControlsVisible = false
+    if (process.platform === 'darwin') window.setWindowButtonVisibility(true)
+    trackWindowChrome(window, record.view.webContents)
     record.window = window
     record.host = 'detached'
     window.contentView.addChildView(record.view)
     this.resizeDetached(record)
+    record.material = new WindowMaterialController(window, this.options.materialMode(), this.options.materialDependencies, (material) => {
+      if (record.window !== window || record.view.webContents.isDestroyed()) return
+      record.view.setBackgroundColor(material === 'solid' ? this.options.backgroundColor() : '#00000000')
+      record.view.webContents.send('window:material-changed', material)
+    })
+    const materialReady = record.material.initialize(record.solidRequested)
 
     const saveState = () => this.scheduleWindowStateSave(record)
     window.on('resize', () => {
@@ -132,8 +137,7 @@ export class ToolWindowManager {
       if (record.window === window) {
         record.window = null
         record.host = 'none'
-        this.updateWindowControls(record, false)
-        this.stopWindowControlsTrackingIfIdle()
+        this.resetMaterial(record)
         if (!this.quitting) {
           this.syncMainHost()
           this.notify()
@@ -143,9 +147,11 @@ export class ToolWindowManager {
     })
 
     if (saved.maximized) window.maximize()
-    window.show()
-    window.focus()
-    this.ensureWindowControlsTracking()
+    void materialReady.then(() => {
+      if (window.isDestroyed() || record.window !== window) return
+      window.show()
+      window.focus()
+    })
     this.sendActivity(record)
     this.notify()
     return this.status(record)
@@ -155,7 +161,7 @@ export class ToolWindowManager {
     if (!this.options.enabled) throw new Error('Tool windows are disabled')
     const record = this.getOrCreate(toolId)
     const window = record.window
-    this.updateWindowControls(record, false)
+    this.resetMaterial(record)
     if (window && !window.isDestroyed()) {
       this.saveWindowState(record)
       window.contentView.removeChildView(record.view)
@@ -163,7 +169,6 @@ export class ToolWindowManager {
     record.window = null
     record.host = 'none'
     if (window && !window.isDestroyed()) window.destroy()
-    this.stopWindowControlsTrackingIfIdle()
     this.syncMainHost()
     this.sendActivity(record)
     this.notify()
@@ -207,6 +212,17 @@ export class ToolWindowManager {
     return record?.window ?? (record ? this.options.getMainWindow() : null)
   }
 
+  materialFor(sender: WebContents): WindowMaterialController | null {
+    return [...this.records.values()].find(record => record.view.webContents.id === sender.id)?.material ?? null
+  }
+
+  async setMaterialAccessibility(sender: WebContents, solid: boolean): Promise<void> {
+    const record = [...this.records.values()].find(record => record.view.webContents.id === sender.id)
+    if (!record) return
+    record.solidRequested = solid
+    await record.material?.setAccessibility(solid)
+  }
+
   dismissOwner(sender: WebContents): boolean {
     const record = [...this.records.values()].find((item) => item.view.webContents.id === sender.id)
     if (!record?.window || record.window.isDestroyed()) return false
@@ -222,15 +238,13 @@ export class ToolWindowManager {
 
   updateBackground(color: string): void {
     for (const record of this.records.values()) {
-      record.view.setBackgroundColor(color)
-      record.window?.setBackgroundColor(color)
+      if (record.material) void record.material.refresh()
+      else record.view.setBackgroundColor(color)
     }
   }
 
   dispose(): void {
     this.quitting = true
-    clearInterval(this.windowControlsTimer)
-    this.windowControlsTimer = undefined
     for (const record of this.records.values()) {
       clearTimeout(record.saveTimer)
       this.saveWindowState(record)
@@ -261,7 +275,8 @@ export class ToolWindowManager {
       window: null,
       ready: false,
       title: `MooTool — ${toolId}`,
-      windowControlsVisible: false
+      material: null,
+      solidRequested: false
     }
     this.records.set(toolId, record)
     view.setBackgroundColor(this.options.backgroundColor())
@@ -333,38 +348,12 @@ export class ToolWindowManager {
     })
   }
 
-  private ensureWindowControlsTracking(): void {
-    if (process.platform !== 'darwin' || this.windowControlsTimer) return
-    this.windowControlsTimer = setInterval(() => this.syncWindowControlsWithCursor(), windowControlsPollInterval)
-    this.windowControlsTimer.unref()
-    this.syncWindowControlsWithCursor()
-  }
-
-  private stopWindowControlsTrackingIfIdle(): void {
-    if ([...this.records.values()].some((record) => record.window && !record.window.isDestroyed())) return
-    clearInterval(this.windowControlsTimer)
-    this.windowControlsTimer = undefined
-  }
-
-  private syncWindowControlsWithCursor(): void {
-    if (process.platform !== 'darwin') return
-    const cursor = screen.getCursorScreenPoint()
-    for (const record of this.records.values()) {
-      const window = record.window
-      if (!window || window.isDestroyed()) continue
-      const bounds = window.getBounds()
-      const hovered = window.isVisible() && isWindowControlsHoverTarget(cursor, bounds)
-      this.updateWindowControls(record, hovered)
-    }
-  }
-
-  private updateWindowControls(record: ToolViewRecord, visible: boolean): void {
-    if (process.platform !== 'darwin' || record.windowControlsVisible === visible) return
-    record.windowControlsVisible = visible
-    if (record.window && !record.window.isDestroyed()) record.window.setWindowButtonVisibility(visible)
-    if (!record.view.webContents.isDestroyed()) {
-      record.view.webContents.send('tool-window:controls-visibility-changed', visible)
-    }
+  private resetMaterial(record: ToolViewRecord): void {
+    record.material = null
+    if (record.view.webContents.isDestroyed()) return
+    record.view.setBackgroundColor(this.options.backgroundColor())
+    record.view.webContents.send('window:material-changed', 'solid')
+    record.view.webContents.send('window:fullscreen-changed', false)
   }
 
   private status(record: ToolViewRecord): ToolWindowStatus {

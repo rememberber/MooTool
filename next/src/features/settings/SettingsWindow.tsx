@@ -1,3 +1,4 @@
+import type { WindowMaterialStatus } from '@/shared/contracts/windowMaterial'
 import {
   ArrowLeft,
   ArchiveRestore,
@@ -204,6 +205,20 @@ function GeneralSettings({ settings, commit }: SettingsPanelProps) {
 
 function AppearanceSettings({ settings, commit }: SettingsPanelProps) {
   const { t } = useI18n()
+  const [materialStatus, setMaterialStatus] = useState<WindowMaterialStatus | null>(null)
+  useEffect(() => {
+    let disposed = false
+    let revision = 0
+    const refresh = () => {
+      const current = ++revision
+      void window.mootool.getWindowMaterialStatus().then(status => {
+        if (!disposed && current === revision) setMaterialStatus(status)
+      }).catch(() => {})
+    }
+    const stop = window.mootool.onWindowMaterialChange(refresh)
+    refresh()
+    return () => { disposed = true; stop() }
+  }, [settings.appearance.windowMaterial])
   return (
     <SettingsGroup title={t('settings.group.theme')}>
       <SettingRow label={t('settings.interfaceStyle')}>
@@ -241,6 +256,12 @@ function AppearanceSettings({ settings, commit }: SettingsPanelProps) {
             <option value="liquid-glass">Liquid Glass</option>
           </select>
           <p className="settings-description">{t('settings.windowMaterial.hint')}</p>
+          {materialStatus && <div className="window-material-status" role="status">
+            <span>{t('settings.windowMaterial.current')}: {materialStatus.effective === 'liquid-glass'
+              ? 'Liquid Glass' : t(`settings.windowMaterial.${materialStatus.effective}`)}</span>
+            {materialStatus.reason !== 'selected' && <span>{t(`settings.windowMaterial.reason.${materialStatus.reason}`)}</span>}
+            {materialStatus.pendingRestart && <strong>{t('settings.windowMaterial.pending')}</strong>}
+          </div>}
         </div>
       </SettingRow>
       <SettingRow label={t('settings.accentColor')}>

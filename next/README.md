@@ -89,12 +89,16 @@ See the [AI integration guide](doc/mootool-ai-integration.md) for configuration 
 
 Tool pages live under `src/features/*`. Filesystem, storage, shell and OS capabilities are exposed through `electron/preload`; the independent MCP entry lives under `electron/mcp`.
 
-### 主窗口材质
+### 窗口材质与顶部操作栏
 
 “设置 → 外观 → 窗口材质”提供自动、实色、毛玻璃和 Liquid Glass。
 自动模式在 macOS 26+ 尝试可选的 `electron-liquid-glass` 原生扩展，加载或挂载失败回退为 Electron vibrancy；较早 macOS 使用 vibrancy，Windows/Linux 使用实色。
 系统减少透明度、高对比度或强制颜色偏好优先使用实色，并在运行期间响应变化。
 
 材质选择在下次启动生效：原生扩展没有公开的移除接口，因此不为切换材质重建窗口，也不影响未保存编辑器和可拆卸工具视图。
-侧栏通过浅色 0.4 / 深色 0.5 的背景 alpha 与平滑明度渐变显露材质，正文和按钮不降低 opacity；工具内容区和辅助窗口保持实色。
+侧栏通过浅色 0.4 / 深色 0.5 的背景 alpha 与平滑明度渐变显露材质，正文和按钮不降低 opacity；工具内容区和辅助窗口保持实色。主窗口和独立工具窗口保留各工具的沉浸式顶部，不额外增加标题栏；独立窗口默认显示原生红绿灯，仅在现有工具栏左侧预留安全区，关闭仍收回工具。
+设置页显示当前实际材质、降级原因与待重启提示。侧栏状态规则集中在 `src/shared/styles/sidebar.css`，主题通过变量定制，避免重复覆盖。
+
 原生扩展作为 macOS 可选依赖安装，打包时解包其原生二进制。验证：`npm run check`，以及 `npx playwright test tests/electron/window-material.spec.ts tests/electron/tool-windows.spec.ts`。
+
+实现说明与打包验证见 [窗口材质与窗口布局](doc/window-material-and-chrome.md)。

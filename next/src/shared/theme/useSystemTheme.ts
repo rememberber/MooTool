@@ -52,5 +52,11 @@ export function useSystemTheme(): ResolvedTheme {
     document.documentElement.style.setProperty('--app-font-family', settings.appearance.fontFamily)
   }, [settings.appearance.accentColor, settings.appearance.fontFamily, settings.appearance.fontSize, settings.appearance.interfaceStyle, theme])
 
+  // Web control glass also works in opaque docked child views. Native window
+  // material keeps its separate startup/fallback policy.
+  useEffect(() => {
+    document.documentElement.dataset.controlMaterial = settings.appearance.windowMaterial === 'solid' ? 'solid' : 'glass'
+  }, [settings.appearance.windowMaterial])
+
   return theme
 }

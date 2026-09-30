@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+import type { WindowMaterialStatus } from './src/shared/contracts/windowMaterial'
 import type { RegexInput, RegexResult } from './src/shared/contracts/regex'
 
 import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, ToolId, ToolWindowSnapshot, ToolWindowStatus, ToolWorkspaceBounds, WorkspaceState } from './src/shared/contracts/app'
@@ -33,6 +34,9 @@ declare global {
       toolWindowsEnabled: boolean
       getAppVersion: () => Promise<string>
       getAppPaths: () => Promise<AppPaths>
+      getWindowMaterialStatus: () => Promise<WindowMaterialStatus | null>
+      getWindowFullscreen: () => Promise<boolean>
+      onWindowFullscreenChange: (callback: (fullscreen: boolean) => void) => () => void
       getWindowMaterial: () => Promise<'solid' | 'vibrancy' | 'liquid-glass'>
       setMaterialAccessibility: (solid: boolean) => Promise<void>
       onWindowMaterialChange: (callback: (material: 'solid' | 'vibrancy' | 'liquid-glass') => void) => () => void
@@ -191,7 +195,6 @@ declare global {
       onToolWindowSnapshotChange: (callback: (snapshot: ToolWindowSnapshot) => void) => () => void
       onToolWindowStateChange: (callback: (state: ToolWindowStatus) => void) => () => void
       onToolWindowActivityChange: (callback: (active: boolean) => void) => () => void
-      onToolWindowControlsVisibilityChange: (callback: (visible: boolean) => void) => () => void
       onJsonVaultChange: (callback: (relativePath: string) => void) => () => void
       onQuickNoteVaultChange: (callback: (relativePath: string) => void) => () => void
       onRuntimeOutput: (callback: (event: RuntimeOutputEvent) => void) => () => void

@@ -1,3 +1,4 @@
+import { windowChromeOptions, trackWindowChrome } from './windowChrome'
 import { WindowMaterialController, loadNativeGlass } from './windowMaterial'
 import { runImageBatch } from '../../src/shared/imageBatch'
 import { vectorizeInWorker } from './imageVectorizationTask'
@@ -333,11 +334,8 @@ function createMainWindow(): BrowserWindow {
     minWidth: 1080,
     minHeight: 720,
     show: false,
-    transparent: process.platform === 'darwin',
+    ...windowChromeOptions(),
     backgroundColor: dark ? '#171719' : '#f7f7f8',
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 18, y: 18 },
-    visualEffectState: process.platform === 'darwin' ? 'followWindow' : undefined,
     icon: app.isPackaged ? undefined : getDevelopmentIconPath(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -356,6 +354,7 @@ function createMainWindow(): BrowserWindow {
     loadGlass: loadNativeGlass
   })
   mainWindowMaterial = material
+  trackWindowChrome(window, window.webContents)
   installWindowStatePersistence(window)
 
   window.on('focus', () => {
@@ -503,10 +502,14 @@ function registerIpc(): void {
     documents: app.getPath('documents'),
     downloads: app.getPath('downloads')
   }))
-  ipcMain.handle('window:material-get', () => mainWindowMaterial?.material ?? 'solid')
+  ipcMain.handle('window:material-get', (event) =>
+    (event.sender === mainWindow?.webContents ? mainWindowMaterial : toolWindowManager.materialFor(event.sender))?.material ?? 'solid')
+  ipcMain.handle('window:material-status', () => mainWindowMaterial?.status(store.get('settings').appearance.windowMaterial) ?? null)
+  ipcMain.handle('window:fullscreen-get', (event) => resolveOwnerWindow(event.sender)?.isFullScreen() ?? false)
   ipcMain.handle('window:material-accessibility', async (event, solid: unknown) => {
-    if (event.sender !== mainWindow?.webContents || typeof solid !== 'boolean') return
-    await mainWindowMaterial?.setAccessibility(solid)
+    if (typeof solid !== 'boolean') return
+    if (event.sender === mainWindow?.webContents) await mainWindowMaterial?.setAccessibility(solid)
+    else await toolWindowManager.setMaterialAccessibility(event.sender, solid)
   })
   ipcMain.handle('theme:get-system', () => (nativeTheme.shouldUseDarkColors ? 'dark' : 'light'))
   ipcMain.handle('system:set-prevent-display-sleep', (event, enabled: unknown) => {
@@ -2363,7 +2366,15 @@ app.whenReady().then(async () => {
     },
     backgroundColor: () => nativeTheme.shouldUseDarkColors ? '#171719' : '#f7f7f8',
     icon: () => app.isPackaged ? undefined : getDevelopmentIconPath(),
-    onWindowFocusChanged: updateApplicationWindowActivity
+    onWindowFocusChanged: updateApplicationWindowActivity,
+    materialMode: () => mainWindowMaterial?.mode ?? store.get('settings').appearance.windowMaterial,
+    materialDependencies: {
+      platform: process.platform,
+      systemVersion: process.getSystemVersion(),
+      dark: () => nativeTheme.shouldUseDarkColors,
+      highContrast: () => nativeTheme.shouldUseHighContrastColors,
+      loadGlass: loadNativeGlass
+    }
   })
 
   if (process.platform === 'darwin' && !app.isPackaged) {
