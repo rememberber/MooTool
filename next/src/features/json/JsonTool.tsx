@@ -93,7 +93,7 @@ function createJsonState(wrap: boolean): JsonUiState {
     wrap,
     copyState: 'idle',
     notice: '',
-    inspectorOpen: window.matchMedia('(min-width: 1321px)').matches,
+    inspectorOpen: false,
     findOpen: false,
     findQuery: '',
     replaceText: '',
@@ -164,7 +164,9 @@ export function JsonTool() {
 
   useEffect(() => {
     const desktopLayout = window.matchMedia('(min-width: 1321px)')
-    const syncInspector = () => update({ inspectorOpen: desktopLayout.matches })
+    const syncInspector = () => {
+      if (!desktopLayout.matches) update({ inspectorOpen: false })
+    }
     desktopLayout.addEventListener('change', syncInspector)
     return () => desktopLayout.removeEventListener('change', syncInspector)
   }, [])
