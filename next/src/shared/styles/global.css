@@ -32,6 +32,7 @@
   --text-soft: #a3a3a8;
   --text-faint: #999a9f;
   --editor-text: #232428;
+  --editor-font-weight: 550;
   --syntax-property: #4e6480;
   --syntax-string: #3f755d;
   --syntax-number: #a05f27;
@@ -59,6 +60,12 @@
   --window-drag-height: 52px;
   --app-font-size: 13px;
   --app-font-family: system-ui;
+}
+
+/* Shared default for code editors and multiline text editors across themes. */
+:root .cm-editor,
+:root textarea {
+  font-weight: var(--editor-font-weight);
 }
 
 /* Message Board */
