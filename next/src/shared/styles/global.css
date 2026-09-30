@@ -1250,11 +1250,13 @@
 .text-code-editor .cm-content {
   min-height: 100%;
   padding: var(--text-code-editor-padding, 14px);
+  padding-inline: 0;
   caret-color: var(--text-strong);
 }
 
 .text-code-editor .cm-line {
-  padding: 0;
+  padding: var(--text-code-editor-padding, 14px);
+  padding-block: 0;
 }
 
 .text-code-editor .cm-gutters {
@@ -1374,11 +1376,12 @@
 .quick-note-code-editor .cm-content {
   min-height: 100%;
   padding: 16px 18px 24px 12px;
+  padding-inline: 0;
   caret-color: var(--text-strong);
 }
 
 .quick-note-code-editor .cm-line {
-  padding: 0;
+  padding: 0 18px 0 12px;
 }
 
 .quick-note-code-editor .cm-gutters {
@@ -3492,11 +3495,12 @@ select:not([multiple]) {
 .json-editor .cm-content {
   min-height: 100%;
   padding: 20px 22px 20px 14px;
+  padding-inline: 0;
   caret-color: var(--text-strong);
 }
 
 .json-editor .cm-line {
-  padding: 0;
+  padding: 0 22px 0 14px;
 }
 
 .json-editor .cm-gutters {
@@ -4122,7 +4126,9 @@ select:not([multiple]) {
 .diff-unified-pane > span { color: var(--text-muted); font-size: 11px; font-weight: 600; }
 .unified-diff { flex: 1; padding: 0; font-size: 12px; line-height: inherit; white-space: normal; }
 .diff-editor .cm-content,
-.unified-diff .cm-content { padding: 8px 10px 18px; }
+.unified-diff .cm-content { padding: 8px 0 18px; }
+.diff-editor .cm-line,
+.unified-diff .cm-line { padding: 0 10px; }
 .diff-editor .cm-line.cm-diff-line-removed,
 .unified-diff .cm-line.cm-diff-line-removed { background: color-mix(in srgb, var(--error-bg) 74%, transparent); }
 .diff-editor .cm-line.cm-diff-line-added,
