@@ -983,6 +983,9 @@ export function QuickNoteTool() {
               <div className="quick-note-tree-actions">
                 <IconButton label={t('quickNote.newNote')} icon={FilePlus2} onClick={() => openAction('createNote')} />
                 <IconButton label={t('quickNote.newFolder')} icon={FolderPlus} onClick={() => openAction('createFolder')} />
+                <IconButton label={t('quickNote.save')} icon={Save} disabled={!state.note || state.busy} active={dirty} onClick={() => { void saveCurrent() }} />
+                <IconButton label={t('quickNote.delete')} icon={Trash2} disabled={!state.selectedPath || selection.paths.length > 1} onClick={() => openAction('delete')} />
+                <IconButton label={t('quickNote.git')} icon={GitBranch} badge={state.gitChangeCount} onClick={() => update({ gitOpen: true })} />
                 <IconButton
                   label={settings.vault.quickNoteTreeExpandMode === 'expandAll' ? t('quickNote.collapseAll') : t('quickNote.expandAll')}
                   icon={settings.vault.quickNoteTreeExpandMode === 'expandAll' ? FoldVertical : UnfoldVertical}
@@ -1045,12 +1048,9 @@ export function QuickNoteTool() {
               <IconButton label={t('quickNote.numberedList')} icon={ListOrdered} disabled={!state.note} onClick={() => prefixSelectedLines('numbered')} />
               <WorkspaceDragZone className="quick-note-toolbar__drag-zone" />
               <IconButton label={t('quickNote.find')} icon={Search} disabled={!state.note} active={state.findOpen} onClick={() => { if (state.findOpen) update({ findOpen: false }); else openFindReplace() }} />
-              <IconButton label={t('quickNote.save')} icon={Save} disabled={!state.note || state.busy} active={dirty} onClick={() => { void saveCurrent() }} />
               <IconButton label={t('quickNote.attachment')} icon={ImagePlus} disabled={!state.note} onClick={() => { void importAttachment() }} />
               <IconButton label={t('quickNote.quickReplace')} icon={Replace} active={state.quickReplaceOpen} onClick={() => update({ quickReplaceOpen: !state.quickReplaceOpen })} />
-              <IconButton label={t('quickNote.git')} icon={GitBranch} badge={state.gitChangeCount} onClick={() => update({ gitOpen: true })} />
               <IconButton label={t('quickNote.openVault')} icon={FolderOpen} onClick={() => { void window.mootool.openQuickNoteVault() }} />
-              <IconButton label={t('quickNote.delete')} icon={Trash2} disabled={!state.selectedPath || selection.paths.length > 1} onClick={() => openAction('delete')} />
             </div>
 
             {state.findOpen && (
