@@ -3593,6 +3593,29 @@ select:not([multiple]) {
   font-weight: 600;
 }
 
+.json-inspector-format-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.json-inspector-format-header button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.json-inspector-format-header button:hover {
+  background: var(--control-hover);
+}
+
 .inspector-section--result {
   min-height: 72px;
 }

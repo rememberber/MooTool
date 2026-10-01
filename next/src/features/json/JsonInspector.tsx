@@ -31,12 +31,11 @@ export function JsonInspector(props: JsonInspectorProps) {
   const { formatOptions } = props
   return (
     <aside className="inspector-panel">
-      <header className="inspector-mobile-header">
-        <strong>{t('json.action.more')}</strong>
-        <button type="button" aria-label={t('common.close')} onClick={props.onClose}><X size={14} /></button>
-      </header>
       <section className="inspector-section">
-        <h2>{t('json.panel.format')}</h2>
+        <header className="json-inspector-format-header">
+          <h2>{t('json.panel.format')}</h2>
+          <button type="button" aria-label={t('common.close')} title={t('common.close')} onClick={props.onClose}><X size={14} /></button>
+        </header>
         <label className="option-row option-row--select">
           <span>{t('json.format.indent')}</span>
           <select value={formatOptions.spaces} onChange={(event) => props.onFormatOptionsChange({ ...formatOptions, spaces: Number(event.target.value) })}>
