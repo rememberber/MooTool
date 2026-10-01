@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -123,7 +124,8 @@ class Workbench extends StatelessWidget {
               child: CompactButton(
                 label: collapsed ? '' : controller.t('app.nav.search'),
                 icon: Icons.search,
-                tooltip: '${controller.t('app.nav.search')} ⌘K',
+                tooltip:
+                    '${controller.t('app.nav.search')} ${defaultTargetPlatform == TargetPlatform.macOS ? '⌘K' : 'Ctrl+K'}',
                 onPressed: controller.openSearch,
               ),
             ),

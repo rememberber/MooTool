@@ -97,7 +97,7 @@
                       </grid>
                     </constraints>
                     <properties>
-                      <toolTipText value="输入16位字符"/>
+                      <toolTipText value="输入密钥，所需字节长度取决于所选算法"/>
                     </properties>
                   </component>
                   <component id="c4288" class="javax.swing.JComboBox" binding="symTypeComboBox">

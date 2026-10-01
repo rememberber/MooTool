@@ -83,7 +83,7 @@ export function JsonToolbar({
           labels={{ 'ui-monospace': t('quickNote.font.mono') }}
           onChange={onFontNameChange}
         />
-        <IconAction label={wrap ? t('json.action.wrap') : t('json.action.nowrap')} onClick={onToggleWrap}><WrapText size={14} /></IconAction>
+        <IconAction label={wrap ? t('json.action.nowrap') : t('json.action.wrap')} onClick={onToggleWrap}><WrapText size={14} /></IconAction>
         <IconAction label={copied ? t('json.action.copied') : t('json.action.copy')} onClick={onCopy}><Copy size={14} /></IconAction>
         <WorkspaceDragZone className="workspace-drag-zone--editor-toolbar" />
         <span className="toolbar-divider" />

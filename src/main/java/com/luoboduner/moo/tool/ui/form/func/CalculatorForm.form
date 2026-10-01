@@ -132,7 +132,7 @@
                         </constraints>
                         <properties>
                           <font/>
-                          <toolTipText value="输入四则运算表达式"/>
+                          <toolTipText value="十六进制"/>
                         </properties>
                       </component>
                       <component id="3bb0f" class="javax.swing.JTextField" binding="decTextField">
@@ -144,7 +144,7 @@
                         <properties>
                           <editable value="true"/>
                           <font/>
-                          <toolTipText value="计算结果"/>
+                          <toolTipText value="十进制"/>
                         </properties>
                       </component>
                       <component id="f7b85" class="javax.swing.JTextField" binding="binaryTextField">
@@ -156,7 +156,7 @@
                         <properties>
                           <editable value="true"/>
                           <font/>
-                          <toolTipText value="计算结果"/>
+                          <toolTipText value="二进制"/>
                         </properties>
                       </component>
                       <grid id="49e35" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">

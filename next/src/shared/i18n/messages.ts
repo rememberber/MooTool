@@ -346,8 +346,8 @@ export const messages = {
     'json.action.format': '格式化',
     'json.action.compress': '压缩',
     'json.font': '字体',
-    'json.action.wrap': '换行',
-    'json.action.nowrap': '单行',
+    'json.action.wrap': '开启自动换行',
+    'json.action.nowrap': '关闭自动换行',
     'json.action.copy': '复制',
     'json.action.copied': '已复制',
     'json.action.clear': '清空',
@@ -1201,6 +1201,8 @@ export const messages = {
     ,'quickNote.fontSize': '字号'
     ,'quickNote.lineSpacing': '行间距'
     ,'quickNote.wrap': '自动换行'
+    ,'quickNote.hideSidebar': '隐藏笔记侧栏'
+    ,'quickNote.showSidebar': '显示笔记侧栏'
     ,'quickNote.bulletList': '无序列表'
     ,'quickNote.numberedList': '有序列表'
     ,'quickNote.color': '笔记颜色'
@@ -1668,8 +1670,8 @@ export const messages = {
     'json.action.format': 'Format',
     'json.action.compress': 'Minify',
     'json.font': 'Font',
-    'json.action.wrap': 'Wrap',
-    'json.action.nowrap': 'No wrap',
+    'json.action.wrap': 'Enable soft wrap',
+    'json.action.nowrap': 'Disable soft wrap',
     'json.action.copy': 'Copy',
     'json.action.copied': 'Copied',
     'json.action.clear': 'Clear',
@@ -2523,6 +2525,8 @@ export const messages = {
     ,'quickNote.fontSize': 'Font size'
     ,'quickNote.lineSpacing': 'Line spacing'
     ,'quickNote.wrap': 'Soft wrap'
+    ,'quickNote.hideSidebar': 'Hide notes sidebar'
+    ,'quickNote.showSidebar': 'Show notes sidebar'
     ,'quickNote.bulletList': 'Bulleted list'
     ,'quickNote.numberedList': 'Numbered list'
     ,'quickNote.color': 'Note color'
@@ -2990,8 +2994,8 @@ export const messages = {
     'json.action.format': '整形',
     'json.action.compress': '圧縮',
     'json.font': 'フォント',
-    'json.action.wrap': '折返し',
-    'json.action.nowrap': '一行',
+    'json.action.wrap': '自動折り返しを有効にする',
+    'json.action.nowrap': '自動折り返しを無効にする',
     'json.action.copy': 'コピー',
     'json.action.copied': 'コピー済み',
     'json.action.clear': 'クリア',
@@ -3845,6 +3849,8 @@ export const messages = {
     ,'quickNote.fontSize': '文字サイズ'
     ,'quickNote.lineSpacing': '行間隔'
     ,'quickNote.wrap': '自動折り返し'
+    ,'quickNote.hideSidebar': 'ノートのサイドバーを非表示'
+    ,'quickNote.showSidebar': 'ノートのサイドバーを表示'
     ,'quickNote.bulletList': '箇条書き'
     ,'quickNote.numberedList': '番号付きリスト'
     ,'quickNote.color': 'ノートの色'

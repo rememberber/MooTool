@@ -81,7 +81,7 @@ export function CronTool() {
           <div className="embedded-tool-heading">
             <h2>{t('cron.builder')}</h2>
             <WorkspaceDragZone />
-            <button className="toolbar-button" type="button" onClick={() => setFavoritesOpen(true)} title={t('favorite.add')}><Star size={14} />{t('favorite.title')}</button>
+            <button className="toolbar-button" type="button" onClick={() => setFavoritesOpen(true)} title={t('favorite.title')}><Star size={14} />{t('favorite.title')}</button>
             <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>
           </div>
           <div className="cron-fields">{fieldEntries.map(([key, label]) => <label key={key}><span>{label}</span><input value={fields[key]} onChange={(event) => updateField(key, event.target.value)} /></label>)}</div>

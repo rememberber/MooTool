@@ -1003,7 +1003,7 @@ export function QuickNoteTool() {
 
           <section className="quick-note-editor-shell">
             <div className="quick-note-toolbar">
-              <IconButton label={state.treeOpen ? t('quickNote.openVault') : t('quickNote.newNote')} icon={state.treeOpen ? PanelLeftClose : PanelLeftOpen} onClick={() => update({ treeOpen: !state.treeOpen })} />
+              <IconButton label={state.treeOpen ? t('quickNote.hideSidebar') : t('quickNote.showSidebar')} icon={state.treeOpen ? PanelLeftClose : PanelLeftOpen} onClick={() => update({ treeOpen: !state.treeOpen })} />
               <div className="quick-note-view-switch segmented glass-control" role="tablist" aria-label={t('quickNote.title')}>
                 {([
                   { id: 'editor', icon: FilePenLine },
@@ -1042,7 +1042,7 @@ export function QuickNoteTool() {
               <select className="quick-note-line-spacing" aria-label={t('quickNote.lineSpacing')} title={t('quickNote.lineSpacing')} disabled={!state.note} value={state.note?.metadata.lineSpacing ?? 1} onChange={(event) => patchMetadata({ lineSpacing: Number(event.target.value) })}>
                 {lineSpacingOptions.map((value) => <option value={value} key={value}>{value.toFixed(1)}×</option>)}
               </select>
-              <IconButton label={t('quickNote.wrap')} icon={WrapText} active={state.note?.metadata.lineWrap} disabled={!state.note} onClick={() => patchMetadata({ lineWrap: !state.note?.metadata.lineWrap })} />
+              <IconButton label={t(state.note?.metadata.lineWrap ? 'json.action.nowrap' : 'json.action.wrap')} icon={WrapText} active={state.note?.metadata.lineWrap} disabled={!state.note} onClick={() => patchMetadata({ lineWrap: !state.note?.metadata.lineWrap })} />
               <IconButton label={t('common.action.format')} icon={WandSparkles} disabled={!state.note || !state.content.trim()} onClick={() => { void formatCurrent() }} />
               <IconButton label={t('quickNote.bulletList')} icon={List} disabled={!state.note} onClick={() => prefixSelectedLines('bullet')} />
               <IconButton label={t('quickNote.numberedList')} icon={ListOrdered} disabled={!state.note} onClick={() => prefixSelectedLines('numbered')} />

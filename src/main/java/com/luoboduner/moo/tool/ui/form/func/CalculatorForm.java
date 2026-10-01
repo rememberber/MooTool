@@ -107,8 +107,9 @@ public class CalculatorForm {
     private void applyI18n() {
         I18nUiUtil.setToolTip(resultTextField, "calc.result");
         I18nUiUtil.setToolTip(inputExpressTextField, "calc.inputExpression");
-        I18nUiUtil.setToolTip(decTextField, "calc.result");
-        I18nUiUtil.setToolTip(binaryTextField, "calc.result");
+        I18nUiUtil.setToolTip(hexTextField, "calc.hex");
+        I18nUiUtil.setToolTip(decTextField, "calc.decimal");
+        I18nUiUtil.setToolTip(binaryTextField, "calc.binary");
         I18nUiUtil.setText(hexToDecButton, "common.convert");
         I18nUiUtil.setText(decToHexButton, "common.convert");
         I18nUiUtil.setText(decToBinaryButton, "common.convert");
@@ -246,19 +247,19 @@ public class CalculatorForm {
         hexTextField = new JTextField();
         Font hexTextFieldFont = this.$$$getFont$$$(null, -1, -1, hexTextField.getFont());
         if (hexTextFieldFont != null) hexTextField.setFont(hexTextFieldFont);
-        hexTextField.setToolTipText("输入四则运算表达式");
+        hexTextField.setToolTipText("十六进制");
         panel5.add(hexTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         decTextField = new JTextField();
         decTextField.setEditable(true);
         Font decTextFieldFont = this.$$$getFont$$$(null, -1, -1, decTextField.getFont());
         if (decTextFieldFont != null) decTextField.setFont(decTextFieldFont);
-        decTextField.setToolTipText("计算结果");
+        decTextField.setToolTipText("十进制");
         panel5.add(decTextField, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         binaryTextField = new JTextField();
         binaryTextField.setEditable(true);
         Font binaryTextFieldFont = this.$$$getFont$$$(null, -1, -1, binaryTextField.getFont());
         if (binaryTextFieldFont != null) binaryTextField.setFont(binaryTextFieldFont);
-        binaryTextField.setToolTipText("计算结果");
+        binaryTextField.setToolTipText("二进制");
         panel5.add(binaryTextField, new GridConstraints(4, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         final JPanel panel6 = new JPanel();
         panel6.setLayout(new GridLayoutManager(1, 4, new Insets(0, 0, 0, 0), -1, -1));

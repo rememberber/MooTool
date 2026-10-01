@@ -159,7 +159,7 @@ export function Workbench() {
               {settings.layout.hideNavigationTitles ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
             </button>
           </Tooltip>
-          <Tooltip content={`${t('app.nav.search')} · ⌘K`} side="bottom">
+          <Tooltip content={`${t('app.nav.search')} · ${window.mootool.platform === 'darwin' ? '⌘K' : 'Ctrl+K'}`} side="bottom">
             <button className="icon-ghost" type="button" aria-label={t('app.nav.search')} onClick={() => setSearchOpen(true)}>
               <Search size={17} />
             </button>
