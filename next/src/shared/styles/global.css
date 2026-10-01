@@ -1286,6 +1286,12 @@
   color: var(--text-body);
 }
 
+.text-code-editor .cm-foldGutter .cm-gutterElement > span {
+  font-size: 1.15em;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .text-code-editor .cm-matchingBracket {
   color: var(--text-strong);
   background: color-mix(in srgb, var(--accent) 18%, transparent);
@@ -12261,3 +12267,135 @@ textarea:focus {
 .color-collection-hint, .color-collection-selection { color: var(--text-muted); font-size: 12px; }
 
 .color-collection-context-menu { z-index: 1100; max-height: calc(100vh - 16px); overflow-y: auto; }
+
+/* IntelliJ New UI Light / Dark editor palettes, independent of app accent colors.
+ * Source: JetBrains/intellij-community platform/platform-resources/src/themes/expUI
+ * Missing values inherit from DefaultColorSchemesManager.xml, as in IntelliJ.
+ */
+:root .text-code-editor,
+:root textarea {
+  --editor-text: #080808;
+  --editor-background: #ffffff;
+  --editor-gutter-background: #ffffff;
+  --editor-line-number: #aeb3c2;
+  --editor-active-line-number: #767a8a;
+  --editor-active-line: #f5f8fe;
+  --editor-active-line-overlay: rgba(235, 241, 253, 0.5);
+  --editor-selection: #a6d2ff;
+  --editor-selection-inactive: #b5b7bd;
+  --editor-caret: #000000;
+  --editor-matching-bracket: #93d9d9;
+  --editor-invalid-bracket: #ff0000;
+  --editor-search-background: #fcd47e;
+  --editor-search-text: #000000;
+  --syntax-property: #871094;
+  --syntax-string: #067d17;
+  --syntax-number: #1750eb;
+  --syntax-literal: #0033b3;
+  --syntax-keyword: #0033b3;
+  --syntax-type: #080808;
+  --syntax-function: #00627a;
+  --syntax-comment: #8c8c8c;
+  --syntax-operator: #080808;
+}
+
+:root[data-theme='dark'] .text-code-editor,
+:root[data-theme='dark'] textarea {
+  --editor-text: #bcbec4;
+  --editor-background: #1e1f22;
+  --editor-gutter-background: #313335;
+  --editor-line-number: #4b5059;
+  --editor-active-line-number: #a1a3ab;
+  --editor-active-line: #26282e;
+  --editor-active-line-overlay: rgba(46, 49, 58, 0.5);
+  --editor-selection: #214283;
+  --editor-selection-inactive: #4c4f56;
+  --editor-caret: #ced0d6;
+  --editor-matching-bracket: #43454a;
+  --editor-invalid-bracket: #f75464;
+  --editor-search-background: #114957;
+  --editor-search-text: #bcbec4;
+  --syntax-property: #c77dbb;
+  --syntax-string: #6aab73;
+  --syntax-number: #2aacb8;
+  --syntax-literal: #cf8e6d;
+  --syntax-keyword: #cf8e6d;
+  --syntax-type: #bcbec4;
+  --syntax-function: #56a8f5;
+  --syntax-comment: #7a7e85;
+  --syntax-operator: #bcbec4;
+}
+
+:root .text-code-editor,
+:root .text-code-editor .cm-editor,
+:root textarea {
+  color: var(--editor-text);
+  background: var(--editor-background);
+}
+
+:root textarea::selection,
+:root .text-code-editor .cm-content ::selection {
+  background: var(--editor-selection);
+}
+
+:root .text-code-editor .cm-gutters {
+  color: var(--editor-line-number);
+  background: var(--editor-gutter-background);
+  border-right-color: var(--editor-gutter-background);
+}
+
+:root .text-code-editor .cm-activeLine {
+  /* CodeMirror draws selections beneath the text: keep this layer translucent.
+   * Over the editor background it resolves to IntelliJ's caret-row color. */
+  background: var(--editor-active-line-overlay) !important;
+}
+
+:root .text-code-editor .cm-activeLineGutter {
+  background: var(--editor-active-line) !important;
+}
+
+:root .text-code-editor .cm-activeLineGutter {
+  color: var(--editor-active-line-number);
+}
+
+:root .text-code-editor .cm-foldGutter .cm-gutterElement {
+  color: var(--editor-line-number);
+}
+
+:root .text-code-editor .cm-foldGutter .cm-gutterElement:hover {
+  color: var(--editor-active-line-number);
+}
+
+:root .text-code-editor .cm-cursor,
+:root .text-code-editor .cm-dropCursor {
+  border-left-color: var(--editor-caret);
+}
+
+:root .text-code-editor .cm-selectionBackground {
+  background: var(--editor-selection-inactive) !important;
+}
+
+:root .text-code-editor .cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
+  background: var(--editor-selection) !important;
+}
+
+:root .text-code-editor .cm-matchingBracket {
+  color: inherit;
+  background: var(--editor-matching-bracket);
+  outline: none;
+  border-radius: 0;
+}
+
+:root .text-code-editor .cm-nonmatchingBracket {
+  color: var(--editor-invalid-bracket);
+  background: transparent;
+  outline: none;
+  border-radius: 0;
+}
+
+:root .text-code-editor .cm-searchMatch {
+  color: var(--editor-search-text);
+  background: var(--editor-search-background);
+  border-bottom: 0;
+  border-radius: 0;
+}
