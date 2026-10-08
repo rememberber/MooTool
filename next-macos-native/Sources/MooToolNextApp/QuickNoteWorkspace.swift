@@ -8,6 +8,7 @@ struct QuickNoteWorkspace: View {
     @Environment(AppStore.self) private var store
     @Environment(\.appLanguage) private var language
     @State private var editor = NativeEditorBridge()
+    @State private var workspaceWidth: CGFloat = 800
     private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
     private func locf(_ key: String, _ arguments: CVarArg...) -> String {
         String(format: AppLocalization.string(key, language: language), arguments: arguments)
@@ -61,9 +62,15 @@ struct QuickNoteWorkspace: View {
                     noteColumn(width: geometry.size.width)
                 }
             }
+            .onChange(of: geometry.size.width, initial: true) { _, width in workspaceWidth = width }
             .onChange(of: geometry.size.width) { _, width in if width < 650 && workspace.quickReplaceOpen { quickPopover = true } }
         }
         .background(Color(nsColor: .textBackgroundColor))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) { modes }
+            ToolbarItemGroup(placement: .primaryAction) { findButton; saveButton; attachmentButton }
+            ToolbarItemGroup(placement: .primaryAction) { quickButton(workspaceWidth); deleteButton }
+        }
         .popover(isPresented: $quickPopover) { quickPanel.frame(width: 240, height: 600) }
         .task(id: findKey) {
             guard workspace.findOpen && !workspace.findQuery.isEmpty else { editor.highlight([]); matchCount = 0; findError = nil; return }
@@ -80,17 +87,19 @@ struct QuickNoteWorkspace: View {
         .onDisappear { cancelOwnOperation(); attachments.cancel() }
     }
     private var findKey: String { [draft.input, workspace.findQuery, String(workspace.findOpen), String(workspace.matchCase), String(workspace.wholeWord), String(workspace.regex), draft.documentID?.uuidString ?? ""].joined(separator: "\u{0}") }
-    private func toolbar(width: CGFloat) -> some View {
+    private var formattingBar: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 7) {
-                modes; Divider().frame(height: 18); colors; syntaxPicker; fontPicker; sizeField; spacingPicker
-                wrapButton; formatButton; listButtons; Spacer(minLength: 12); findButton; saveButton; attachmentButton; quickButton(width); deleteButton
-            }.fixedSize(horizontal: true, vertical: false)
-            VStack(spacing: 8) {
-                HStack(spacing: 7) { modes; colors; syntaxPicker; Spacer(minLength: 0); findButton; saveButton; attachmentButton; quickButton(width); deleteButton }
-                HStack(spacing: 7) { fontPicker; sizeField; spacingPicker; wrapButton; formatButton; listButtons; Spacer(minLength: 0) }
+            HStack(spacing: 8) {
+                colors; syntaxPicker; fontPicker; sizeField; spacingPicker
+                Divider().frame(height: 18); wrapButton; formatButton; listButtons
+                Spacer(minLength: 0)
             }
-        }.controlSize(.small).padding(.horizontal, 10).padding(.vertical, 9).frame(maxWidth: .infinity, alignment: .leading).background(.bar)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) { colors; syntaxPicker; fontPicker; Spacer(minLength: 0) }
+                HStack(spacing: 8) { sizeField; spacingPicker; wrapButton; formatButton; listButtons; Spacer(minLength: 0) }
+            }
+        }.controlSize(.small).padding(.horizontal, 12).padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading).background(.bar)
     }
     private var modes: some View {
         Picker(loc("quickNote.viewMode"), selection: viewBinding) {
@@ -132,12 +141,12 @@ struct QuickNoteWorkspace: View {
     private var saveButton: some View { icon(loc("tool.save"), "square.and.arrow.down", action: onSave).keyboardShortcut("s", modifiers: .command) }
     private var attachmentButton: some View { icon(loc("quickNote.attachment"), "photo.badge.plus", action: importAttachment).disabled(draft.documentID == nil || draft.busy).jsonAcceptanceControl("note.attachment") }
     private var deleteButton: some View { icon(loc("tool.delete"), "trash", action: onDelete).disabled(draft.documentID == nil) }
-    private func quickButton(_ width: CGFloat) -> some View { icon(loc("quickNote.quickReplace"), "arrow.left.arrow.right", active: workspace.quickReplaceOpen) {
+    private func quickButton(_ width: CGFloat) -> some View { icon(loc("quickNote.quickReplace"), "arrow.left.arrow.right", active: width < 650 ? quickPopover : workspace.quickReplaceOpen) {
         if width < 650 { quickPopover.toggle(); setting(\.quickReplaceOpen).wrappedValue = quickPopover }
         else { setting(\.quickReplaceOpen).wrappedValue.toggle() }
     }.jsonAcceptanceControl("note.quickPanel") }
-    private func icon(_ title: String, _ image: String, active: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) { Image(systemName: image).frame(width: 18, height: 20).foregroundStyle(active ? Color.accentColor : .secondary) }.buttonStyle(.borderless).help(title).accessibilityLabel(title)
+    private func icon(_ title: String, _ image: String, active: Bool? = nil, action: @escaping () -> Void) -> some View {
+        NativeToolbarButton(title: title, symbol: image, active: active, action: action)
     }
     private var findBar: some View {
         VStack(spacing: 7) {
@@ -181,7 +190,7 @@ struct QuickNoteWorkspace: View {
     }
     private func noteColumn(width: CGFloat) -> some View {
         VStack(spacing: 0) {
-            toolbar(width: width)
+            formattingBar
             if workspace.findOpen { findBar }
             Divider()
             NoteEditorSplit(mode: viewMode) {
@@ -205,7 +214,7 @@ struct QuickNoteWorkspace: View {
             Text(draft.error ?? draft.status).lineLimit(2).foregroundStyle(draft.error == nil ? Color.secondary : .red)
             if draft.busy { ProgressView().controlSize(.mini); Button(loc("common.cancel")) { draft.noteTask?.cancel(); attachments.cancel() } }
             Text(options.syntax.title).foregroundStyle(.tertiary).fixedSize()
-        }.font(.system(size: 10)).padding(.horizontal, 12).frame(minHeight: 31)
+        }.font(NativeVisualStyle.auxiliary).padding(.horizontal, NativeVisualStyle.workspaceInset).frame(minHeight: NativeVisualStyle.statusHeight)
     }
     private var editorText: String {
         if viewMode != .preview, let live = editor.view?.string { return live }

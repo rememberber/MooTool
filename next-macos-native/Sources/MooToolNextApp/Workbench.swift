@@ -7,18 +7,26 @@ struct Workbench: View {
     @Environment(\.openWindow) private var openWindow
     @State private var visibility: NavigationSplitViewVisibility = .all
     @State private var query = ""
+    @State private var selectedNavigationEntry: String?
     var body: some View {
         @Bindable var store = store
         NavigationSplitView(columnVisibility: $visibility) {
-            List(selection: Binding(get: { store.selected }, set: { store.select($0) })) {
+            List(selection: Binding<String?>(get: {
+                if let entry = selectedNavigationEntry, entry.hasSuffix("|" + store.selected) { return entry }
+                return "catalog|" + store.selected
+            }, set: { entry in
+                guard let entry, let id = entry.split(separator: "|").last else { return }
+                selectedNavigationEntry = entry
+                store.select(String(id))
+            })) {
                 row(Catalog.localizedTool(Catalog.tools[0].id, language: language))
                 if !store.pinned.isEmpty {
-                    Section(AppLocalization.string("workbench.pinned", language: language)) { ForEach(store.pinned.filter { navigationVisible($0) && Catalog.tool($0).matches(query) }, id: \.self) { row(Catalog.localizedTool($0, language: language)) } }
+                    Section(AppLocalization.string("workbench.pinned", language: language)) { ForEach(store.pinned.filter { navigationVisible($0) && Catalog.tool($0).matches(query) }, id: \.self) { row(Catalog.localizedTool($0, language: language), section: "pinned") } }
                 }
                 ForEach(store.customGroups) { custom in
                     let tools = custom.toolIds.compactMap { id in Catalog.tools.first { $0.id == id } }.filter { navigationVisible($0.id) && $0.matches(query) }.map { $0.localized(in: language) }
                     if !tools.isEmpty {
-                        Section(custom.name) { ForEach(tools) { row($0) } }
+                        Section(custom.name) { ForEach(tools) { row($0, section: "custom:\(custom.id)") } }
                             .listSectionSeparator(store.showNavigationSeparators ? .visible : .hidden)
                     }
                 }
@@ -27,37 +35,33 @@ struct Workbench: View {
                     if !tools.isEmpty { Section(AppLocalization.groupTitle(group, language: language)) { ForEach(tools) { row($0) } } }
                 }
                 if store.showRecent && !store.recent.isEmpty && query.isEmpty {
-                    Section(AppLocalization.string("app.nav.recent", language: language)) { ForEach(store.recent.filter { navigationVisible($0) }.prefix(5), id: \.self) { row(Catalog.localizedTool($0, language: language)) } }
+                    Section(AppLocalization.string("app.nav.recent", language: language)) { ForEach(store.recent.filter { navigationVisible($0) }.prefix(5), id: \.self) { row(Catalog.localizedTool($0, language: language), section: "recent") } }
                 }
             }.listStyle(.sidebar)
                 .navigationSplitViewColumnWidth(
                     min: store.hideNavigationTitles ? 58 : 185,
                     ideal: store.hideNavigationTitles ? 64 : store.sidebarWidth,
                     max: store.hideNavigationTitles ? 88 : 300)
-                .overlay(alignment: .trailing) {
-                    if !store.hideNavigationTitles {
-                        PaneResizeDivider(
-                            vertical: true,
-                            current: CGFloat(store.sidebarWidth),
-                            min: 185,
-                            max: 300,
-                            onResize: { store.sidebarWidth = Double($0); store.scheduleSave() },
-                            onReset: { store.sidebarWidth = 215; store.scheduleSave() })
+                .background {
+                    GeometryReader { geometry in
+                        Color.clear.onChange(of: geometry.size.width) { _, width in
+                            guard !store.hideNavigationTitles, width >= 185, width <= 300,
+                                  abs(width - store.sidebarWidth) > 0.5 else { return }
+                            store.sidebarWidth = Double(width); store.scheduleSave()
+                        }
                     }
                 }
                 .searchable(text: $query, placement: .sidebar, prompt: AppLocalization.string("app.search.placeholder", language: language))
                 .safeAreaInset(edge: .bottom) {
                     HStack(spacing: 9) {
-                        Image(nsImage: NSImage(contentsOf: AppResources.bundle.url(forResource: "Brand", withExtension: "png")!)!).resizable().frame(width: 24, height: 24)
-                        VStack(alignment: .leading, spacing: 2) { Text("MooTool").font(.system(size: 12, weight: .semibold)); Text("Next Native").font(.system(size: 10)).foregroundStyle(.secondary) }
                         Spacer()
                         Button {
                             store.hideNavigationTitles.toggle(); store.scheduleSave()
                         } label: {
                             Image(systemName: store.hideNavigationTitles ? "sidebar.left" : "sidebar.right")
-                        }.buttonStyle(.plain).help(store.hideNavigationTitles ? AppLocalization.string("workbench.sidebar.expand", language: language) : AppLocalization.string("workbench.sidebar.iconsOnly", language: language))
-                        SettingsLink { Image(systemName: "gearshape") }.buttonStyle(.plain).help(AppLocalization.string("workbench.settingsHelp", language: language))
-                    }.padding(14).background(.bar)
+                        }.buttonStyle(.borderless).help(store.hideNavigationTitles ? AppLocalization.string("workbench.sidebar.expand", language: language) : AppLocalization.string("workbench.sidebar.iconsOnly", language: language))
+                        SettingsLink { Label(AppLocalization.string("workbench.settingsHelp", language: language), systemImage: "gearshape") }.labelStyle(.iconOnly).buttonStyle(.borderless).help(AppLocalization.string("workbench.settingsHelp", language: language))
+                    }.controlSize(.regular).padding(.horizontal, 12).padding(.vertical, 8)
                 }
         } detail: {
             ToolRouter(id: store.selected)
@@ -67,7 +71,9 @@ struct Workbench: View {
                         Button { store.searchPresented = true } label: { Label(AppLocalization.string("workbench.search", language: language), systemImage: "magnifyingglass") }.help("\(AppLocalization.string("workbench.search", language: language)) · ⌘K")
                         if store.selected != "mootool" {
                             Button { store.togglePin(store.selected) } label: { Label(AppLocalization.string("workbench.pinned", language: language), systemImage: store.pinned.contains(store.selected) ? "star.fill" : "star") }.help(AppLocalization.string("workbench.pinHelp", language: language))
-                            Button { store.historyPresented = true } label: { Label(AppLocalization.string("workbench.history", language: language), systemImage: "clock.arrow.circlepath") }
+                            if !["json", "reformat", "textDiff"].contains(store.selected) {
+                                Button { store.historyPresented = true } label: { Label(AppLocalization.string("workbench.history", language: language), systemImage: "clock.arrow.circlepath") }
+                            }
                             Button { openWindow(id: "tool", value: store.selected) } label: { Label(AppLocalization.string("workbench.detach", language: language), systemImage: "rectangle.on.rectangle") }
                         }
                     }
@@ -80,7 +86,7 @@ struct Workbench: View {
     private func navigationVisible(_ id: String) -> Bool {
         id == "mootool" || !store.hiddenNavigationToolIds.contains(id)
     }
-    private func row(_ tool: Tool) -> some View {
+    private func row(_ tool: Tool, section: String = "catalog") -> some View {
         Group {
             if store.hideNavigationTitles {
                 Label(tool.title, systemImage: tool.symbol).labelStyle(.iconOnly)
@@ -88,7 +94,7 @@ struct Workbench: View {
                 Label(tool.title, systemImage: tool.symbol)
             }
         }
-        .font(.system(size: 12.5)).tag(tool.id)
+        .font(.body).padding(.vertical, 2).tag(section + "|" + tool.id)
         .help(store.hideNavigationTitles ? tool.title : "")
             .contextMenu {
                 Button(store.pinned.contains(tool.id) ? AppLocalization.string("workbench.pinRemove", language: language) : AppLocalization.string("workbench.pinAdd", language: language)) { store.togglePin(tool.id) }

@@ -31,14 +31,6 @@ struct TextDiffWorkspace: View {
     }
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Text(Catalog.localizedTool("textDiff", language: language).title).font(.system(size: 23, weight: .semibold))
-                Spacer()
-                Button { historyOpen = true } label: {
-                    Label(AppLocalization.string("workbench.history", language: language), systemImage: "clock.arrow.circlepath")
-                }.buttonStyle(.borderless)
-            }.padding(.horizontal, 18).frame(height: 54)
-            Divider()
             toolbar
             Divider()
             if options.display == .side {
@@ -55,6 +47,13 @@ struct TextDiffWorkspace: View {
             statusBar
         }
         .background(Color(nsColor: .textBackgroundColor))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { historyOpen = true } label: {
+                    Label(AppLocalization.string("workbench.history", language: language), systemImage: "clock.arrow.circlepath")
+                }
+            }
+        }
         .onAppear {
             if status.isEmpty { status = loc("textDiff.status.ready") }
             if draft.textDiff == nil {
@@ -81,7 +80,7 @@ struct TextDiffWorkspace: View {
                 HStack(spacing: 7) { commands; Spacer(minLength: 0) }
                 HStack(spacing: 10) { navigationButtons; Divider().frame(height: 19); choices; Spacer(minLength: 0) }
             }
-        }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 9)
+        }.controlSize(.small).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, NativeVisualStyle.workspaceInset).padding(.vertical, 9)
             .background(Color(nsColor: .windowBackgroundColor))
     }
     private var commands: some View {
@@ -134,7 +133,7 @@ struct TextDiffWorkspace: View {
                 Text(title).font(.system(size: 12, weight: .semibold))
                 Spacer()
                 Text(locf("textDiff.charCount", text.wrappedValue.count)).font(.system(size: 10, design: .monospaced)).foregroundStyle(.tertiary)
-            }.padding(.horizontal, 14).frame(height: 36).background(.quaternary.opacity(0.2))
+            }.padding(.horizontal, 14).frame(height: NativeVisualStyle.paneHeaderHeight).background(.quaternary.opacity(0.2))
             Divider()
             CodeEditor(text: text, editable: editable, persistence: persistence, bridge: bridge,
                        softWrap: false, diffHighlights: highlights)
@@ -204,7 +203,7 @@ struct TextDiffWorkspace: View {
             Spacer()
             Text(locf("textDiff.stats", comparison.added, comparison.removed, comparison.changed))
                 .foregroundStyle(.secondary)
-        }.font(.system(size: 11)).padding(.horizontal, 16).frame(height: 31)
+        }.font(.system(size: 11)).padding(.horizontal, NativeVisualStyle.workspaceInset).frame(minHeight: NativeVisualStyle.statusHeight)
             .background(Color(nsColor: .windowBackgroundColor))
     }
     private func calculate(recordHistory: Bool) async {

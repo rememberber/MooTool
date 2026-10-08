@@ -45,20 +45,12 @@ struct ReformatWorkspace: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(Catalog.localizedTool("reformat", language: language).title).font(.system(size: 23, weight: .semibold))
-                Spacer()
-                Button { historyOpen = true } label: {
-                    Label(AppLocalization.string("workbench.history", language: language), systemImage: "clock.arrow.circlepath")
-                }.buttonStyle(.borderless)
-            }.padding(.horizontal, 18).frame(height: 52)
-            Divider()
-            HStack {
                 Picker(loc("reformat.mode"), selection: option(\.tab)) {
                     Text(loc("reformat.tab.text")).tag(ReformatTab.text)
                     Text(loc("reformat.tab.file")).tag(ReformatTab.file)
                 }.pickerStyle(.segmented).labelsHidden().frame(width: 240)
                 Spacer()
-            }.padding(.horizontal, 18).frame(height: 48)
+            }.padding(.horizontal, NativeVisualStyle.workspaceInset).frame(height: NativeVisualStyle.toolbarHeight)
             Divider()
             toolbar
             Divider()
@@ -73,6 +65,13 @@ struct ReformatWorkspace: View {
             statusBar
         }
         .background(Color(nsColor: .textBackgroundColor))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { historyOpen = true } label: {
+                    Label(AppLocalization.string("workbench.history", language: language), systemImage: "clock.arrow.circlepath")
+                }
+            }
+        }
         .onAppear {
             if draft.reformat == nil {
                 let fresh = draft.mode.isEmpty && draft.input.isEmpty
@@ -91,7 +90,7 @@ struct ReformatWorkspace: View {
             primaryControls
             Spacer(minLength: 0)
             secondaryControls
-        }.padding(.horizontal, 16).frame(height: 54)
+        }.padding(.horizontal, NativeVisualStyle.workspaceInset).controlSize(.small).frame(height: NativeVisualStyle.toolbarHeight)
             .background(Color(nsColor: .windowBackgroundColor))
     }
     private var primaryControls: some View {
@@ -128,7 +127,7 @@ struct ReformatWorkspace: View {
                         .font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
                     Spacer(minLength: 0)
                     if !options.fileResult.isEmpty { Button(loc("reformat.exportResult")) { export() } }
-                }.padding(.horizontal, 18).frame(height: 48)
+                }.padding(.horizontal, NativeVisualStyle.workspaceInset).frame(height: NativeVisualStyle.toolbarHeight)
                 Divider()
                 Group {
                     if geometry.size.width >= 630 {
@@ -154,7 +153,7 @@ struct ReformatWorkspace: View {
                 Spacer()
                 Text(locf("textDiff.charCount", (result ? options.fileResult : options.fileSource).count))
                     .font(.system(size: 10, design: .monospaced)).foregroundStyle(.tertiary)
-            }.padding(.horizontal, 14).frame(height: 35).background(.quaternary.opacity(0.2))
+            }.padding(.horizontal, 14).frame(height: NativeVisualStyle.paneHeaderHeight).background(.quaternary.opacity(0.2))
             Divider()
             CodeEditor(text: result ? option(\.fileResult) : fileSource, editable: !result,
                        syntax: options.type != .nginx,
@@ -183,7 +182,7 @@ struct ReformatWorkspace: View {
             Text(options.type.title).foregroundStyle(.secondary)
             Text("·").foregroundStyle(.tertiary)
             Text(locf("textDiff.charCount", chosenText.count)).foregroundStyle(.secondary)
-        }.font(.system(size: 11)).padding(.horizontal, 16).frame(height: 30)
+        }.font(.system(size: 11)).padding(.horizontal, NativeVisualStyle.workspaceInset).frame(minHeight: NativeVisualStyle.statusHeight)
             .background(Color(nsColor: .windowBackgroundColor))
     }
 

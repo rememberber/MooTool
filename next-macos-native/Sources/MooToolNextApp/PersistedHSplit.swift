@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import MooToolNextCore
 
 struct PersistedHSplit<Leading: View, Trailing: View>: View {
@@ -8,19 +9,30 @@ struct PersistedHSplit<Leading: View, Trailing: View>: View {
     var defaultLeading: CGFloat
     var minLeading: CGFloat
     var maxLeading: CGFloat
+    var minTrailing: CGFloat? = nil
+    var persistsTrailing = false
     @ViewBuilder var leading: () -> Leading
     @ViewBuilder var trailing: () -> Trailing
 
     var body: some View {
         GeometryReader { geometry in
-            let width = store.paneWidth(toolID: toolID, index: paneIndex, default: defaultLeading, min: minLeading, max: min(maxLeading, geometry.size.width - minLeading))
+            // Geometry can briefly be zero while restoring a window. Also reserve
+            // the divider before sharing a narrow container between both panes.
+            let available = max(0, geometry.size.width - 6)
+            let minimum = min(minLeading, available / 2)
+            let trailingMinimum = min(minTrailing ?? minLeading, available - minimum)
+            let maximum = max(minimum, min(maxLeading, available - trailingMinimum))
+            let width = persistsTrailing
+                ? available - store.paneWidth(toolID: toolID, index: paneIndex, default: available - defaultLeading, min: available - maximum, max: available - minimum)
+                : store.paneWidth(toolID: toolID, index: paneIndex, default: defaultLeading, min: minimum, max: maximum)
             HStack(spacing: 0) {
                 leading().frame(width: width)
-                PaneResizeDivider(vertical: true, current: width, min: minLeading, max: min(maxLeading, geometry.size.width - minLeading)) { next in
-                    store.setPaneWidth(toolID: toolID, index: paneIndex, value: next, slots: 2)
+                PaneResizeDivider(vertical: true, current: width, min: minimum, max: maximum) { next in
+                    store.setPaneWidth(toolID: toolID, index: paneIndex, value: persistsTrailing ? available - next : next, slots: 2)
                 } onReset: {
-                    store.setPaneWidth(toolID: toolID, index: paneIndex, value: defaultLeading, slots: 2)
+                    store.setPaneWidth(toolID: toolID, index: paneIndex, value: persistsTrailing ? available - defaultLeading : defaultLeading, slots: 2)
                 }
+                .jsonAcceptanceControl(toolID == "json" && paneIndex == 1 ? "json.inspector.divider" : "split.\(toolID).\(paneIndex)")
                 trailing().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -29,27 +41,41 @@ struct PersistedHSplit<Leading: View, Trailing: View>: View {
 
 struct PaneResizeDivider: View {
     var vertical = true
+    @Environment(\.appLanguage) private var language
     let current: CGFloat
     let min: CGFloat
     let max: CGFloat
     let onResize: (CGFloat) -> Void
     let onReset: () -> Void
-    @State private var dragging = false
     @State private var origin: CGFloat?
 
     var body: some View {
-        Rectangle()
-            .fill(Color(nsColor: .separatorColor).opacity(dragging ? 0.9 : 0.35))
+        Color.clear
             .frame(width: vertical ? 6 : nil, height: vertical ? nil : 6)
+            .overlay {
+                Rectangle().fill(Color(nsColor: .separatorColor))
+                    .frame(width: vertical ? 1 : nil, height: vertical ? nil : 1)
+            }
             .contentShape(Rectangle())
             .onTapGesture(count: 2, perform: onReset)
             .gesture(DragGesture(minimumDistance: 1).onChanged { value in
-                dragging = true
                 if origin == nil { origin = current }
                 let delta = vertical ? value.translation.width : value.translation.height
                 onResize((origin! + delta).clamped(to: min...max))
-            }.onEnded { _ in dragging = false; origin = nil })
-            .help("拖动调整分栏 · 双击恢复默认宽度")
+            }.onEnded { _ in origin = nil })
+            .onHover { hovering in
+                if hovering { (vertical ? NSCursor.resizeLeftRight : NSCursor.resizeUpDown).push() }
+                else { NSCursor.pop() }
+            }
+            .accessibilityElement()
+            .accessibilityLabel(AppLocalization.string("layout.resizePane", language: language))
+            .accessibilityValue("\(Int(current.rounded()))")
+            .accessibilityAdjustableAction { direction in
+                let delta: CGFloat = direction == .increment ? 24 : -24
+                onResize((current + delta).clamped(to: min...max))
+            }
+            .accessibilityAction(named: Text(AppLocalization.string("layout.resetPane", language: language)), onReset)
+            .help(AppLocalization.string("layout.resizeHint", language: language))
     }
 }
 

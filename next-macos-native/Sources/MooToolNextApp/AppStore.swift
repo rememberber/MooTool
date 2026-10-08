@@ -25,8 +25,17 @@ final class ToolDraft {
     var outputEditor: EditorViewState? { didSet { changed?() } }
     var editorRevision = 0
     var busy = false
-    var status = ""
-    var error: String?
+    var status = "" {
+        didSet { feedback = status.isEmpty ? nil : NativeFeedbackItem(message: status, tone: .success) }
+    }
+    var error: String? {
+        didSet {
+            if let error, !error.isEmpty { feedback = NativeFeedbackItem(message: error, tone: .error) }
+            else if feedback?.tone == .error { feedback = nil }
+        }
+    }
+    // Transient feedback never enters DraftRecord or the saved workspace.
+    var feedback: NativeFeedbackItem?
     @ObservationIgnored var changed: (() -> Void)?
     @ObservationIgnored var documentChanged: (() -> Void)?
     @ObservationIgnored var httpTask: Task<Void, Never>?

@@ -26,7 +26,9 @@ struct ToolRouter: View {
             case "crypto": CryptoToolView(draft: store.draft(id))
             default: TextTool(id: id, draft: store.draft(id))
             }
-        }.id(id)
+        }
+        .modifier(NativeToolFeedback(draft: store.draft(id)))
+        .id(id)
     }
 }
 

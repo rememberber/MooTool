@@ -57,14 +57,16 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        PersistedHSplit(toolID: "settings-page", defaultLeading: 220, minLeading: 180, maxLeading: 360) {
+        NavigationSplitView {
             List(SettingsCategory.allCases, selection: $category) { item in
                 Label(item.title(language: language), systemImage: item.symbol).tag(item)
-            }.listStyle(.sidebar).frame(minWidth: 160)
-        } trailing: {
+            }.listStyle(.sidebar)
+                .navigationSplitViewColumnWidth(min: 180, ideal: 210, max: 260)
+        } detail: {
             Form { detail }.formStyle(.grouped).frame(minWidth: 420)
+                .navigationTitle(category.title(language: language))
         }
-        .frame(width: 820, height: 580)
+        .frame(minWidth: 680, idealWidth: 820, minHeight: 500, idealHeight: 580)
         .sheet(isPresented: $customGroupsOpen) { CustomGroupsSettings().environment(store).environment(\.appLanguage, language) }
         .sheet(isPresented: $navigationToolsOpen) { NavigationToolVisibilitySettings().environment(store).environment(\.appLanguage, language) }
         .sheet(isPresented: $migrationOpen) { MigrationSettingsPanel().environment(store).environment(\.appLanguage, language) }

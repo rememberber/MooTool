@@ -11,6 +11,12 @@ import MooToolNextCore
         do {
             let output = URL(fileURLWithPath: directory)
             try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+            if CommandLine.arguments.contains("--feedback-only") {
+                try await NativeFeedbackAcceptance.run(store: store, output: output)
+                try finish(store: store, reports: [], output: output)
+                print("PASS: native feedback actions, material fallbacks, layouts and persistence")
+                NSApp.terminate(nil); return
+            }
             store.draft("json").input = "{\"name\":\"MooTool\",\"native\":true,\"tools\":[\"JSON\",\"HTTP\",\"随手记\"]}"
             store.draft("json").input = try await JSONEngine.execute(JSONEngineRequest("format", input: store.draft("json").input), timeout: 10).value ?? store.draft("json").input
             store.draft("json").output = try TextServices.json(store.draft("json").input)
@@ -38,10 +44,17 @@ import MooToolNextCore
             var reports: [[String: Any]] = []
             guard let window = NSApp.windows.first(where: { $0.isVisible && $0.frame.width > 700 }), let hosting = window.contentView else { throw ToolError("找不到主窗口。") }
             window.center()
+            if CommandLine.arguments.contains("--chrome-only") {
+                reports += try await NativeChromeAcceptance.run(store: store, window: window, output: output)
+                try finish(store: store, reports: reports, output: output)
+                print("PASS: native toolbar actions, search field, independent JSON pane widths and \(reports.count) chrome layouts.")
+                NSApp.terminate(nil); return
+            }
+            let visualOnly = CommandLine.arguments.contains("--visual-only")
             let noteLayoutsOnly = CommandLine.arguments.contains("--note-layouts-only")
             let formatOnly = CommandLine.arguments.contains("--format-only")
             let diffOnly = CommandLine.arguments.contains("--diff-only")
-            if !noteLayoutsOnly && !formatOnly && !diffOnly {
+            if !visualOnly && !noteLayoutsOnly && !formatOnly && !diffOnly {
                 try await NativeAttachmentAcceptance.run(store: store, window: window)
                 try await NativeNoteAcceptance.run(store: store, window: window)
             }
@@ -52,18 +65,18 @@ import MooToolNextCore
                 try WorkspaceRepository.encode(store.snapshot()).write(to: store.repository.directory.appendingPathComponent("restart-expectation.json"), options: .atomic)
                 print("PASS: focused native note and attachment acceptance"); NSApp.terminate(nil); return
             }
-            if !noteLayoutsOnly && !formatOnly && !diffOnly {
+            if !visualOnly && !noteLayoutsOnly && !formatOnly && !diffOnly {
                 try await NativeJSONAcceptance.run(store: store, window: window)
                 try await NativeVaultAcceptance.run(store: store, window: window)
             }
-            if !noteLayoutsOnly && !diffOnly { try await NativeReformatAcceptance.run(store: store, window: window) }
+            if !visualOnly && !noteLayoutsOnly && !diffOnly { try await NativeReformatAcceptance.run(store: store, window: window) }
             if formatOnly {
                 reports += try await captureReformatVariants(store: store, window: window, hosting: hosting, output: output)
                 try finish(store: store, reports: reports, output: output)
                 print("PASS: \(reports.count) reformat captures, actual editor actions and restart persistence.")
                 NSApp.terminate(nil); return
             }
-            if !noteLayoutsOnly { try await NativeDiffAcceptance.run(store: store, window: window) }
+            if !visualOnly && !noteLayoutsOnly { try await NativeDiffAcceptance.run(store: store, window: window) }
             if diffOnly {
                 reports += try await captureDiffVariants(store: store, window: window, hosting: hosting, output: output)
                 try finish(store: store, reports: reports, output: output)
@@ -165,6 +178,7 @@ import MooToolNextCore
             try JSONSerialization.data(withJSONObject: reports, options: [.prettyPrinted, .sortedKeys]).write(to: output.appendingPathComponent("report.json"))
             try WorkspaceRepository.encode(store.snapshot()).write(to: store.repository.directory.appendingPathComponent("restart-expectation.json"), options: .atomic)
             if noteLayoutsOnly { print("PASS: \(reports.count) note layout captures, image split widths and persistence round trip.") }
+            else if visualOnly { print("PASS: \(reports.count) visual captures and persistence round trip (action acceptance not run).") }
             else { print("PASS: \(reports.count) view captures, document vault interactions, JSON tree, compact layouts, extended persistence round trip.") }
             NSApp.terminate(nil)
         } catch { fputs("Smoke test failed: \(error)\n", stderr); exit(1) }

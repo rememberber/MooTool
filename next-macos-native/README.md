@@ -117,6 +117,8 @@ dist/{arch}/build-info.json
 swift test                       # 安装并配置完整 Xcode 后可用
 ./scripts/smoke.sh                # 需要登录桌面；86 个界面/主题渲染及实际编辑、重启恢复
 ./scripts/smoke.sh --window-capture # 完整窗口截图，包含系统工具栏和材质层
+./scripts/smoke.sh --chrome-only   # 系统工具栏动作、搜索控件、分栏宽度和 12 种窗口布局
+./scripts/smoke.sh --feedback-only # 浮动提示关闭/超时、材质回退、双主题/窄窗口及重启恢复
 ./scripts/smoke.sh --notes-only   # 仅随手记、附件交互及新进程恢复
 ./scripts/smoke.sh --window-capture --format-only # 仅格式化交互、5 种布局和重启恢复
 ./scripts/smoke.sh --window-capture --diff-only # 仅文本对比交互、5 种布局和重启恢复
@@ -133,3 +135,7 @@ python3 scripts/verify-package.py # 构建 Universal DMG 后校验签名、资�
 这些检查不等价于所有菜单、拖放及系统对话框的端到端测试。CI 独立构建原生版并上传产物，不使用仓库全局 Latest，也不影响其他产品发布。
 
 目录说明：`Sources/MooToolNextCore` 为可测试逻辑；`Sources/MooToolNextApp` 为原生界面与系统集成；`Tests` 为核心测试；`scripts` 为构建、运行和验收入口。
+
+## 浮动反馈材质
+
+工具操作结果与错误在右下角显示可关闭的提示卡片，最多四条，默认 3.2 秒消失。macOS 26+ 使用 SwiftUI 原生 Liquid Glass；macOS 14–25 使用系统毛玻璃。减少透明度或提高对比度时使用实色卡片，减少动态效果时只保留淡入淡出。文字与状态图标保持独立前景色。提示不写入工作区，切换工具/文档与重开后不重放旧提示。范围与验收限制见 [功能对齐记录](docs/parity.md)。

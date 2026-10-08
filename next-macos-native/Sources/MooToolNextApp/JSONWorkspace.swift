@@ -6,6 +6,7 @@ struct JSONWorkspace: View {
     @Environment(AppStore.self) private var store
     @Environment(\.appLanguage) private var language
     @State private var editor = NativeEditorBridge()
+    @State private var workspaceWidth: CGFloat = 800
     @State private var operation: Task<Void, Never>?
     @State private var operationID: UUID?
     @State private var validation = ""
@@ -44,7 +45,6 @@ struct JSONWorkspace: View {
         GeometryReader { geometry in
             let expanded = options.inspectorOpen ?? (geometry.size.width >= 720)
             let editorColumn = VStack(spacing: 0) {
-                toolbar(compact: expanded && geometry.size.width >= 660, availableWidth: geometry.size.width)
                 if options.findOpen { findBar }
                 Divider()
                 CodeEditor(text: $draft.input, syntax: true, persistence: store.editorPersistence("json"), bridge: editor,
@@ -54,7 +54,7 @@ struct JSONWorkspace: View {
             }
             Group {
                 if expanded && geometry.size.width >= 660 {
-                    PersistedHSplit(toolID: "json", paneIndex: 0, defaultLeading: 520, minLeading: 350, maxLeading: 900) {
+                    PersistedHSplit(toolID: "json", paneIndex: 1, defaultLeading: geometry.size.width - 286, minLeading: 350, maxLeading: 1200, minTrailing: 240, persistsTrailing: true) {
                         editorColumn
                     } trailing: {
                         inspector
@@ -63,9 +63,18 @@ struct JSONWorkspace: View {
                     editorColumn.frame(minWidth: 350)
                 }
             }
+            .onChange(of: geometry.size.width, initial: true) { _, width in workspaceWidth = width }
             .onChange(of: expanded) { _, value in if value && geometry.size.width < 660 { inspectorPopup = true } }
         }
         .background(Color(nsColor: .textBackgroundColor))
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) { primaryActions.disabled(draft.busy) }
+            ToolbarItemGroup(placement: .primaryAction) {
+                findButton.disabled(draft.busy)
+                inspectorButton(workspaceWidth)
+            }
+            ToolbarItem(placement: .primaryAction) { editingMenu.disabled(draft.busy) }
+        }
         .popover(isPresented: $inspectorPopup) { inspector.frame(width: 300, height: 660) }
         .sheet(item: $dialog, onDismiss: { var next = options; next.showsTree = false; draft.json = next }) { sheet($0) }
         .sheet(isPresented: $historyOpen) { JSONHistorySheet(draft: draft, editor: editor).environment(store).environment(\.appLanguage, language) }
@@ -95,39 +104,31 @@ struct JSONWorkspace: View {
         .onDisappear { cancelOwnOperation() }
     }
     private var findKey: String { [draft.input,options.findQuery,options.replacement,String(options.findOpen),String(options.matchCase),String(options.wholeWord),String(options.regex),draft.documentID?.uuidString ?? ""].joined(separator: "\u{0}") }
-    private func toolbar(compact: Bool, availableWidth: CGFloat) -> some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) { primaryActions; fontPicker; wrapButton; copyButton; Divider().frame(height: 17); findButton; importButton; exportButton; historyButton; inspectorButton(availableWidth); clearButton }.fixedSize(horizontal: true, vertical: false)
-            HStack(spacing: 7) {
-                primaryActions; wrapButton; findButton
-                Menu {
-                    Picker(loc("json.font"), selection: option(\.fontName)) { fontChoices }
-                    Button(loc("json.workspace.copyBody"), action: copy)
-                    Button(loc("json.workspace.importFile"), action: importFile)
-                    Button(loc("json.workspace.exportFile"), action: exportFile)
-                    Button(loc("workbench.history")) { historyOpen = true }
-                    Button(loc("json.workspace.viewLastResult"), action: showLastResult).disabled(draft.output.isEmpty)
-                    Button(loc("json.workspace.clearBody")) { replaceImmediately("", actionKey: "json.workspace.clearBody") }
-                } label: { Image(systemName: "ellipsis.circle") }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().help(loc("json.workspace.moreEdit"))
-                Spacer(minLength: 0); inspectorButton(availableWidth)
-            }
-        }.controlSize(.small).padding(.horizontal, 12).frame(maxWidth: .infinity, alignment: .leading).frame(height: 43).background(.bar).disabled(draft.busy)
+    private var editingMenu: some View {
+        Menu {
+            Picker(loc("json.font"), selection: option(\.fontName)) { fontChoices }
+            Toggle(loc("json.workspace.wrapAuto"), isOn: Binding(get: {
+                options.wrapLines ?? nativeDefaults.object(forKey: "wrapLines") as? Bool ?? true
+            }, set: { value in var next = options; next.wrapLines = value; draft.json = next }))
+            Divider()
+            Button(loc("json.workspace.copyBody"), systemImage: "doc.on.doc", action: copy)
+            Button(loc("json.action.importFile"), systemImage: "folder", action: importFile)
+            Button(loc("json.workspace.exportFile"), systemImage: "square.and.arrow.up", action: exportFile)
+            Button(loc("workbench.history"), systemImage: "clock.arrow.circlepath") { historyOpen = true }
+            Button(loc("json.workspace.viewLastResult"), action: showLastResult).disabled(draft.output.isEmpty)
+            Divider()
+            Button(loc("json.workspace.clearBody"), systemImage: "eraser") { replaceImmediately("", actionKey: "json.workspace.clearBody") }
+        } label: { Label(loc("json.workspace.moreEdit"), systemImage: "ellipsis.circle") }
+        .help(loc("json.workspace.moreEdit"))
     }
     @ViewBuilder private var primaryActions: some View {
-        Button { perform("format", titleKey: "json.action.format") } label: { Label(loc("json.action.format"), systemImage: "sparkles") }.buttonStyle(.borderedProminent).keyboardShortcut(.return, modifiers: .command).accessibilityIdentifier("json.format")
+        Button { perform("format", titleKey: "json.action.format") } label: { Label(loc("json.action.format"), systemImage: "sparkles") }.buttonStyle(.borderedProminent).keyboardShortcut(.return, modifiers: .command).accessibilityIdentifier("json.format").jsonAcceptanceControl("json.format")
         Button(loc("json.action.compress")) { perform("compress", titleKey: "json.action.compress") }.accessibilityIdentifier("json.compress")
     }
-    private var fontPicker: some View { Picker(loc("json.font"), selection: option(\.fontName)) { fontChoices }.labelsHidden().frame(width: 95) }
     @ViewBuilder private var fontChoices: some View { ForEach(["Menlo", "Monaco", "SFMono-Regular", "CourierNewPSMT"], id: \.self) { Text($0 == "SFMono-Regular" ? "SF Mono" : $0 == "CourierNewPSMT" ? "Courier New" : $0).tag($0) } }
-    private var wrapButton: some View { icon(loc("json.workspace.wrapAuto"), "arrow.turn.down.left") { var next = options; next.wrapLines = !(next.wrapLines ?? nativeDefaults.object(forKey: "wrapLines") as? Bool ?? true); draft.json = next } }
-    private var copyButton: some View { icon(loc("json.workspace.copyBody"), "doc.on.doc", action: copy) }
-    private var findButton: some View { icon(loc("json.workspace.findReplace"), "magnifyingglass", action: openFind).keyboardShortcut("f", modifiers: .command).accessibilityIdentifier("json.find") }
-    private var importButton: some View { icon(loc("json.action.importFile"), "folder", action: importFile) }
-    private var exportButton: some View { icon(loc("json.workspace.exportFile"), "square.and.arrow.up", action: exportFile) }
-    private var historyButton: some View { icon(loc("workbench.history"), "clock.arrow.circlepath") { historyOpen = true } }
-    private var clearButton: some View { icon(loc("json.workspace.clearBody"), "eraser") { replaceImmediately("", actionKey: "json.workspace.clearBody") } }
-    private func inspectorButton(_ width: CGFloat) -> some View { icon(loc("json.workspace.showInspector"), "sidebar.right") { if width < 660 { inspectorPopup.toggle() } else { var next = options; next.inspectorOpen = !(next.inspectorOpen ?? (width >= 720)); draft.json = next } }.accessibilityIdentifier("json.inspector") }
-    private func icon(_ title: String, _ symbol: String, action: @escaping () -> Void) -> some View { Button(action: action) { Image(systemName: symbol).frame(width: 17, height: 20) }.buttonStyle(.borderless).help(title).accessibilityLabel(title) }
+    private var findButton: some View { icon(loc("json.workspace.findReplace"), "magnifyingglass", active: options.findOpen, action: openFind).keyboardShortcut("f", modifiers: .command).accessibilityIdentifier("json.find").jsonAcceptanceControl("json.find") }
+    private func inspectorButton(_ width: CGFloat) -> some View { icon(loc("json.workspace.showInspector"), "sidebar.right", active: width < 660 ? inspectorPopup : (options.inspectorOpen ?? (width >= 720))) { if width < 660 { inspectorPopup.toggle() } else { var next = options; next.inspectorOpen = !(next.inspectorOpen ?? (width >= 720)); draft.json = next } }.accessibilityIdentifier("json.inspector") }
+    private func icon(_ title: String, _ symbol: String, active: Bool? = nil, action: @escaping () -> Void) -> some View { NativeToolbarButton(title: title, symbol: symbol, active: active, action: action) }
     private var findBar: some View {
         VStack(spacing: 7) {
             HStack(spacing: 6) {
@@ -155,7 +156,7 @@ struct JSONWorkspace: View {
             Spacer(minLength: 0)
             if draft.busy { ProgressView().controlSize(.mini); Button(loc("common.cancel")) { draft.jsonTask?.cancel() } }
             Text("\(draft.input.count) \(loc("editor.chars"))").foregroundStyle(.tertiary).fixedSize()
-        }.font(.system(size: 10)).padding(.horizontal, 12).frame(minHeight: 31)
+        }.font(NativeVisualStyle.auxiliary).padding(.horizontal, NativeVisualStyle.workspaceInset).frame(minHeight: NativeVisualStyle.statusHeight)
     }
     private var inspector: some View {
         ScrollView {
@@ -165,20 +166,20 @@ struct JSONWorkspace: View {
                     Toggle(loc("json.format.sortKeys"), isOn: option(\.sortKeys))
                     Toggle(loc("json.format.ignoreCase"), isOn: option(\.ignoreCase))
                     Toggle(loc("json.format.duplicateKeys"), isOn: option(\.checkDuplicateKeys))
-                    Button { perform("advanced", titleKey: "json.format.apply") } label: { Label(loc("json.format.apply"), systemImage: "sparkles").frame(maxWidth: .infinity) }.buttonStyle(.borderedProminent)
+                    Button { perform("advanced", titleKey: "json.format.apply") } label: { Label(loc("json.format.apply"), systemImage: "sparkles").frame(maxWidth: .infinity) }.buttonStyle(.bordered)
                 }
                 section(loc("json.panel.convert")) {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 7) {
                         conversionButton("json.action.jsonToXml", "jsonToXml", acceptance: "JSON → XML", output: true)
-                        Button { showInput("xmlToJson", titleKey: "json.action.xmlToJson") } label: { Text(loc("json.action.xmlToJson")).lineLimit(1).minimumScaleFactor(0.8) }.help(loc("json.action.xmlToJson")).jsonAcceptanceControl("XML → JSON")
-                        Button { showInput("beanToJson", titleKey: "json.action.beanToJson") } label: { Text(loc("json.action.beanToJson")).lineLimit(1).minimumScaleFactor(0.8) }.help(loc("json.action.beanToJson"))
+                        Button { showInput("xmlToJson", titleKey: "json.action.xmlToJson") } label: { conversionLabel(loc("json.action.xmlToJson")) }.help(loc("json.action.xmlToJson")).jsonAcceptanceControl("XML → JSON")
+                        Button { showInput("beanToJson", titleKey: "json.action.beanToJson") } label: { conversionLabel(loc("json.action.beanToJson")) }.help(loc("json.action.beanToJson"))
                         conversionButton("json.action.jsonToBean", "jsonToBean", acceptance: "JSON → JavaBean", output: true)
                         conversionButton("json.action.swap", "swap", acceptance: "键值互换")
                         conversionButton("json.action.escape", "escape", acceptance: "JSON 转义")
                         conversionButton("json.action.unescape", "unescape", acceptance: "JSON 反转义")
                         conversionButton("json.action.escapeText", "escapeText", acceptance: "文本转义")
                         conversionButton("json.action.unescapeText", "unescapeText", acceptance: "文本反转义")
-                    }.buttonStyle(.bordered).font(.system(size: 10))
+                    }.buttonStyle(.bordered).font(NativeVisualStyle.auxiliary)
                     Text(loc("json.className.label")).foregroundStyle(.secondary)
                     TextField("Root", text: option(\.className)).textFieldStyle(.roundedBorder)
                 }
@@ -199,7 +200,11 @@ struct JSONWorkspace: View {
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View { VStack(alignment: .leading, spacing: 10) { Text(title).font(.system(size: 12, weight: .semibold)); content() }.padding(15).frame(maxWidth: .infinity, alignment: .leading).overlay(alignment: .bottom) { Divider() } }
     private func conversionButton(_ titleKey: String, _ action: String, acceptance: String, output: Bool = false) -> some View {
         let title = loc(titleKey)
-        return Button { perform(action, titleKey: titleKey, output: output) } label: { Text(title).lineLimit(1).minimumScaleFactor(0.8) }.jsonAcceptanceControl(acceptance).frame(maxWidth: .infinity).help(title)
+        return Button { perform(action, titleKey: titleKey, output: output) } label: { conversionLabel(title) }.jsonAcceptanceControl(acceptance).frame(maxWidth: .infinity).help(title)
+    }
+    private func conversionLabel(_ title: String) -> some View {
+        Text(title).lineLimit(2).multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, minHeight: 30)
     }
     private func request(_ action: String, input: String? = nil) -> JSONEngineRequest {
         var r = JSONEngineRequest(action, input: input ?? draft.input)
@@ -258,6 +263,7 @@ struct JSONWorkspace: View {
         } catch { if draft.documentID == id { findError = error.localizedDescription } } }
     }
     private func openFind() {
+        if options.findOpen { var next = options; next.findOpen = false; draft.json = next; return }
         var next = options; next.findOpen = true
         let range = editor.selection
         if range.length > 0, NSMaxRange(range) <= (draft.input as NSString).length { next.findQuery = (draft.input as NSString).substring(with: range) }

@@ -18,14 +18,14 @@ enum NativeNoteStyle {
         let number = #"\b(?:true|false|null|None|True|False|-?\d+(?:\.\d+)?)\b"#
         switch language {
         case .plain: return []
-        case .markdown: return [(#"(?m)^#{1,6}\s.*$"#, .systemBlue), (#"`[^`\n]+`|\*\*[^*\n]+\*\*"#, .systemPurple), (#"\[[^\]\n]+\]\([^\)\n]*\)"#, .systemTeal)]
-        case .json: return [(number, .systemOrange), (quoted, .systemGreen), (#"\"(?:[^\"\\]|\\.)*\"(?=\s*:)"#, .systemBlue)]
-        case .xml: return [(#"</?[\w:.-]+|/?>"#, .systemBlue), (quoted, .systemGreen), (#"<!--[\s\S]*?-->"#, .secondaryLabelColor)]
-        case .yaml: return [(number, .systemOrange), (quoted, .systemGreen), (#"(?m)^\s*[^\s:#][^:\n]*(?=:)"#, .systemBlue), (#"(?m)#.*$"#, .secondaryLabelColor)]
-        case .sql: return [(#"(?i)\b(SELECT|FROM|WHERE|JOIN|ON|AS|GROUP|ORDER|BY|AND|OR|NOT|NULL|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|LIMIT|DISTINCT)\b"#, .systemPurple), (number, .systemOrange), (quoted, .systemGreen), (#"(?m)--.*$"#, .secondaryLabelColor)]
+        case .markdown: return [(#"(?m)^#{1,6}\s.*$"#, NativeSyntaxPalette.key), (#"`[^`\n]+`|\*\*[^*\n]+\*\*"#, NativeSyntaxPalette.keyword), (#"\[[^\]\n]+\]\([^\)\n]*\)"#, NativeSyntaxPalette.link)]
+        case .json: return [(number, NativeSyntaxPalette.literal), (quoted, NativeSyntaxPalette.string), (#"\"(?:[^\"\\]|\\.)*\"(?=\s*:)"#, NativeSyntaxPalette.key)]
+        case .xml: return [(#"</?[\w:.-]+|/?>"#, NativeSyntaxPalette.key), (quoted, NativeSyntaxPalette.string), (#"<!--[\s\S]*?-->"#, NativeSyntaxPalette.comment)]
+        case .yaml: return [(number, NativeSyntaxPalette.literal), (quoted, NativeSyntaxPalette.string), (#"(?m)^\s*[^\s:#][^:\n]*(?=:)"#, NativeSyntaxPalette.key), (#"(?m)#.*$"#, NativeSyntaxPalette.comment)]
+        case .sql: return [(#"(?i)\b(SELECT|FROM|WHERE|JOIN|ON|AS|GROUP|ORDER|BY|AND|OR|NOT|NULL|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|LIMIT|DISTINCT)\b"#, NativeSyntaxPalette.keyword), (number, NativeSyntaxPalette.literal), (quoted, NativeSyntaxPalette.string), (#"(?m)--.*$"#, NativeSyntaxPalette.comment)]
         default:
             let keywords = language == .python ? "def|class|import|from|return|if|elif|else|for|while|in|is|not|and|or|try|except|with|as|pass|yield|async|await|lambda" : "class|interface|public|private|protected|static|final|void|int|long|double|boolean|new|return|if|else|for|while|try|catch|throw|throws|import|package|extends|implements|function|const|let|var|export|default|async|await|type"
-            return [("\\b(" + keywords + ")\\b", .systemPurple), (number, .systemOrange), (quoted, .systemGreen), (language == .python ? #"(?m)#.*$"# : #"(?m)//.*$|/\*[\s\S]*?\*/"#, .secondaryLabelColor)]
+            return [("\\b(" + keywords + ")\\b", NativeSyntaxPalette.keyword), (number, NativeSyntaxPalette.literal), (quoted, NativeSyntaxPalette.string), (language == .python ? #"(?m)#.*$"# : #"(?m)//.*$|/\*[\s\S]*?\*/"#, NativeSyntaxPalette.comment)]
         }
     }
 }

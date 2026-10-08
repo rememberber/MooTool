@@ -200,7 +200,7 @@ struct CodeEditor: NSViewRepresentable {
                 return
             }
             guard parent.syntax, storage.length < 150_000 else { return }
-            for (pattern, color) in [(#"\"(?:[^\"\\]|\\.)*\""#, NSColor.systemGreen), (#"\b(?:true|false|null|-?\d+(?:\.\d+)?)\b"#, NSColor.systemOrange), (#"\"(?:[^\"\\]|\\.)*\"(?=\s*:)"#, NSColor.systemBlue)] {
+            for (pattern, color) in NativeNoteStyle.patterns(.json) {
                 guard let expression = try? NSRegularExpression(pattern: pattern) else { continue }
                 for match in expression.matches(in: view.string, range: range) { storage.addAttribute(.foregroundColor, value: color, range: match.range) }
             }
@@ -218,21 +218,21 @@ struct EditorPane: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                Text(title).font(.system(size: 12, weight: .medium)).lineLimit(1).layoutPriority(1); Spacer(minLength: 0)
+                Text(title).font(NativeVisualStyle.panelTitle).lineLimit(1).layoutPriority(1); Spacer(minLength: 0)
                 Text("\(text.count) \(AppLocalization.string("editor.chars", language: language))").font(.system(size: 10, design: .monospaced)).foregroundStyle(.tertiary).lineLimit(1)
                 if editable {
-                    Button { if let value = NSPasteboard.general.string(forType: .string) { text = value } } label: { Image(systemName: "doc.on.clipboard") }.help(AppLocalization.string("editor.paste", language: language))
-                    Button { FilePanels.readText { text = $0 } } label: { Image(systemName: "folder") }.help(AppLocalization.string("editor.openFile", language: language))
+                    NativeToolbarButton(title: AppLocalization.string("editor.paste", language: language), symbol: "doc.on.clipboard") { if let value = NSPasteboard.general.string(forType: .string) { text = value } }
+                    NativeToolbarButton(title: AppLocalization.string("editor.openFile", language: language), symbol: "folder") { FilePanels.readText { text = $0 } }
                 }
-                Button { FilePanels.copy(text) } label: { Image(systemName: "doc.on.doc") }.help(AppLocalization.string("editor.copy", language: language))
-                Button { FilePanels.saveText(text) } label: { Image(systemName: "square.and.arrow.up") }.help(AppLocalization.string("editor.export", language: language))
-            }.buttonStyle(.borderless).padding(.horizontal, 14).frame(height: 37).background(.quaternary.opacity(0.25))
+                NativeToolbarButton(title: AppLocalization.string("editor.copy", language: language), symbol: "doc.on.doc") { FilePanels.copy(text) }
+                NativeToolbarButton(title: AppLocalization.string("editor.export", language: language), symbol: "square.and.arrow.up") { FilePanels.saveText(text) }
+            }.buttonStyle(.borderless).padding(.horizontal, 14).frame(height: NativeVisualStyle.paneHeaderHeight).background(.quaternary.opacity(0.25))
             Divider()
             CodeEditor(text: $text, editable: editable, syntax: syntax, persistence: persistence)
         }.frame(minWidth: 180, minHeight: 100)
             .background(Color(nsColor: .textBackgroundColor))
-            .clipShape(RoundedRectangle(cornerRadius: 9))
-            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(.quaternary))
+            .clipShape(RoundedRectangle(cornerRadius: NativeVisualStyle.panelRadius))
+            .overlay(RoundedRectangle(cornerRadius: NativeVisualStyle.panelRadius).strokeBorder(.quaternary))
     }
 }
 struct ToolPage<Controls: View, Content: View>: View {
@@ -244,12 +244,10 @@ struct ToolPage<Controls: View, Content: View>: View {
     @ViewBuilder var content: () -> Content
     private var displayTool: Tool { tool.localized(in: language) }
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: NativeVisualStyle.contentSpacing) {
             if showsHeading { HStack {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(displayTool.title).font(.system(size: 23, weight: .semibold))
-                    Text(displayTool.subtitle).font(.system(size: 12)).foregroundStyle(.secondary)
-                }
+                Text(displayTool.subtitle).font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer()
                 if draft.busy { ProgressView().controlSize(.small) }
             }.padding(.bottom, 3) }
@@ -264,8 +262,8 @@ struct ToolPage<Controls: View, Content: View>: View {
                 Text(draft.error ?? (draft.status.isEmpty ? AppLocalization.string("tool.ready", language: language) : draft.status))
                     .foregroundStyle(draft.error == nil ? Color.secondary : .red).lineLimit(3).textSelection(.enabled)
                 Spacer()
-            }.font(.system(size: 11)).frame(minHeight: 18)
-        }.padding(22).background(Color(nsColor: .windowBackgroundColor))
+            }.font(NativeVisualStyle.auxiliary).frame(minHeight: 20)
+        }.padding(NativeVisualStyle.pageInset).background(Color(nsColor: .windowBackgroundColor))
     }
 }
 struct PrimaryButton: View {

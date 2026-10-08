@@ -19,6 +19,7 @@ struct DocumentsTool: View {
         }
     }
     @State private var documentPicker = false
+    @State private var compactWindow = false
     @State private var action: VaultAction?
     @State private var importing = false
     @State private var exporting = false
@@ -46,30 +47,42 @@ struct DocumentsTool: View {
                     editorColumn
                 }
             }
+            .onChange(of: geometry.size.width, initial: true) { _, width in compactWindow = width < 800 }
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigation) {
+                iconButton(loc("vault.toggleTree"), "sidebar.left") {
+                    if compactWindow { documentPicker.toggle() }
+                    else { store.updateVaultPreference(id) { $0.treeVisible.toggle() } }
+                }
+            }
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 2) {
+                    Text(activeDocument?.title ?? loc("vault.unnamedDraft")).font(.headline).lineLimit(1)
+                    Text(store.persistenceBlocked ? loc("vault.savePaused") : store.savePending ? loc("vault.saving") : loc("vault.saved"))
+                        .font(.caption2).foregroundStyle(store.persistenceBlocked ? Color.red : .secondary)
+                }.help(activeDocument.map { store.vault.path(of: $0.id) } ?? loc("vault.draft"))
+            }
+            if id == "json" {
+                ToolbarItem(placement: .primaryAction) {
+                    iconButton(loc("tool.save"), "square.and.arrow.down", action: save).keyboardShortcut("s", modifiers: .command)
+                }
+            }
         }
         .popover(isPresented: $documentPicker) { library.frame(width: 270, height: 480) }
         .sheet(item: $action) { VaultActionSheet(toolID: id, action: $0).environment(store).environment(\.appLanguage, language) }
         .sheet(isPresented: $gitOpen) { VaultGitDialog(toolID: id).environment(store).environment(\.appLanguage, language) }
     }
-    private var editorColumn: some View {
-        GeometryReader { geometry in
-            VStack(spacing: 0) {
-                editorToolbar(compact: geometry.size.width < 800)
-                Divider()
-                if id == "json" { JSONWorkspace(draft: draft) }
-                else { QuickNoteWorkspace(draft: draft, onSave: save, onDelete: {
-                    if let documentID = draft.documentID { action = VaultAction(kind: .delete, entryID: documentID) }
-                }) }
-            }
-        }
+    @ViewBuilder private var editorColumn: some View {
+        if id == "json" { JSONWorkspace(draft: draft) }
+        else { QuickNoteWorkspace(draft: draft, onSave: save, onDelete: {
+            if let documentID = draft.documentID { action = VaultAction(kind: .delete, entryID: documentID) }
+        }) }
     }
     private var library: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 7) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField(id == "json" ? loc("vault.search.json") : loc("vault.search.note"), text: preference(\.query)).textFieldStyle(.plain)
-                if !preferences.query.isEmpty { Button { store.updateVaultPreference(id) { $0.query = "" } } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(.borderless).help(loc("vault.clearSearch")) }
-            }.padding(8).background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 8)).padding(.horizontal, 11).padding(.top, 12)
+            NativeSearchField(text: preference(\.query), prompt: id == "json" ? loc("vault.search.json") : loc("vault.search.note"))
+                .frame(height: 26).padding(.horizontal, 12).padding(.top, 12)
             HStack(spacing: 6) {
                 Toggle(loc("vault.searchContent"), isOn: preference(\.includeContent)).toggleStyle(.checkbox).fixedSize()
                 Spacer(minLength: 0)
@@ -78,7 +91,7 @@ struct DocumentsTool: View {
                 }.labelsHidden().frame(width: 82)
                 moreMenu
             }.font(.system(size: 11)).controlSize(.small).padding(.horizontal, 12).padding(.vertical, 9)
-            HStack(spacing: 14) {
+            HStack(spacing: 4) {
                 iconButton(loc("vault.newDocument"), "doc.badge.plus") { begin(.file) }
                 iconButton(loc("vault.newFolder"), "folder.badge.plus") { begin(.folder) }
                 iconButton(allExpanded ? loc("vault.collapseAll") : loc("vault.expandAll"), allExpanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right") {
@@ -88,7 +101,7 @@ struct DocumentsTool: View {
                 iconButton("Git", "arrow.triangle.branch") { gitOpen = true }
                 Spacer(minLength: 0)
                 if importing { ProgressView().controlSize(.mini) }
-            }.buttonStyle(.borderless).padding(.horizontal, 15).padding(.bottom, 12)
+            }.buttonStyle(.borderless).padding(.horizontal, 10).padding(.bottom, 8)
             Divider()
             tree
             Divider()
@@ -98,7 +111,7 @@ struct DocumentsTool: View {
                 if draft.documentID == nil { Text(loc("vault.draft")).foregroundStyle(.tertiary) }
             }.font(.system(size: 10)).foregroundStyle(.secondary).padding(12).help(selectedID.map { store.vault.path(of: $0) } ?? loc("vault.root"))
                 .dropDestination(for: String.self) { values, _ in drop(values, into: nil) }
-        }.background(Color(nsColor: .controlBackgroundColor))
+        }
     }
     private var tree: some View {
         let rows = store.vault.rows(toolID: id, preferences: preferences)
@@ -113,7 +126,7 @@ struct DocumentsTool: View {
                         Text(row.node.title).lineLimit(1).truncationMode(.middle)
                         Spacer(minLength: 0)
                         if row.id == draft.documentID { Circle().fill(Color.accentColor).frame(width: 5, height: 5) }
-                    }.font(.system(size: 12)).padding(.leading, CGFloat(row.depth) * 13).padding(.vertical, 3).contentShape(Rectangle()).tag(row.id).id(row.id)
+                    }.font(.body).padding(.leading, CGFloat(row.depth) * 13).padding(.vertical, 3).contentShape(Rectangle()).tag(row.id).id(row.id)
                     .onTapGesture { select(row.id); if row.node.isFolder { toggleFolder(row.id) } }
                     .accessibilityAction { select(row.id); if row.node.isFolder { toggleFolder(row.id) } }
                     .contextMenu { entryMenu(row.node) }
@@ -127,15 +140,6 @@ struct DocumentsTool: View {
             .onAppear { if let selectedID { proxy.scrollTo(selectedID, anchor: .center) } }
             .onChange(of: draft.documentID) { _, value in if let value { proxy.scrollTo(value) } }
         }
-    }
-    private func editorToolbar(compact: Bool) -> some View {
-        HStack(spacing: 10) {
-            iconButton(loc("vault.toggleTree"), "sidebar.left") { if compact { documentPicker.toggle() } else { store.updateVaultPreference(id) { $0.treeVisible.toggle() } } }
-            Text(activeDocument?.title ?? loc("vault.unnamedDraft")).font(.system(size: 12, weight: .medium)).lineLimit(1).help(activeDocument.map { store.vault.path(of: $0.id) } ?? loc("vault.draft"))
-            Spacer(minLength: 0)
-            Text(store.persistenceBlocked ? loc("vault.savePaused") : store.savePending ? loc("vault.saving") : loc("vault.saved")).font(.system(size: 10)).foregroundStyle(store.persistenceBlocked ? Color.red : .secondary)
-            if id == "json" { iconButton(loc("tool.save"), "square.and.arrow.down", action: save).keyboardShortcut("s", modifiers: .command) }
-        }.buttonStyle(.borderless).padding(.horizontal, 16).frame(height: 43).background(.bar)
     }
     private var moreMenu: some View {
         Menu {
@@ -214,7 +218,7 @@ struct DocumentsTool: View {
     private func reveal(_ entryID: UUID) {
         do { try store.revealVaultEntry(entryID) } catch { draft.error = error.localizedDescription; FilePanels.error(error) }
     }
-    private func iconButton(_ title: String, _ symbol: String, action: @escaping () -> Void) -> some View { Button(action: action) { Image(systemName: symbol) }.help(title).accessibilityLabel(title) }
+    private func iconButton(_ title: String, _ symbol: String, action: @escaping () -> Void) -> some View { NativeToolbarButton(title: title, symbol: symbol, action: action) }
     private func perform(_ operation: () throws -> Void) { do { try operation(); draft.error = nil } catch { draft.error = error.localizedDescription; FilePanels.error(error) } }
     private func drop(_ values: [String], into parent: UUID?) -> Bool {
         guard values.count == 1, values[0].hasPrefix("\(Product.id):\(id):"), let entry = UUID(uuidString: String(values[0].split(separator: ":").last ?? "")), store.vault.tool(of: entry) == id else { return false }

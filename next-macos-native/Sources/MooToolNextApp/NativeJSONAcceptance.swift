@@ -72,7 +72,7 @@ import MooToolNextCore
             return nil
         }
         var roots: [NSView] = []
-        if let root = window.contentView { roots.append(root) }
+        if let root = window.contentView { roots.append(root.superview ?? root) }
         if let attached = window.attachedSheet?.contentView { roots.append(attached) }
         for root in roots { if let found = search(root) { return found } }
         return nil
@@ -81,12 +81,12 @@ import MooToolNextCore
         var windows = [window]
         if let attached = window.attachedSheet { windows.append(attached) }
         for candidate in NSApp.windows where candidate !== window && candidate.sheetParent == window { windows.append(candidate) }
-        var pending = windows.compactMap(\.contentView), result: [NSView] = []
+        var pending = windows.compactMap { $0.contentView.map { $0.superview ?? $0 } }, result: [NSView] = []
         while let view = pending.popLast() { result.append(view); pending.append(contentsOf: view.subviews) }
         return result
     }
     static func allVisibleViews() -> [NSView] {
-        var pending = NSApp.windows.filter(\.isVisible).compactMap(\.contentView), result: [NSView] = []
+        var pending = NSApp.windows.filter(\.isVisible).compactMap { $0.contentView.map { $0.superview ?? $0 } }, result: [NSView] = []
         while let view = pending.popLast() { result.append(view); pending.append(contentsOf: view.subviews) }
         return result
     }
@@ -104,7 +104,8 @@ import MooToolNextCore
         let marker = "json.acceptance." + title
         let matches = allViews(window).filter { $0.identifier?.rawValue == marker }
         guard let anchor = matches.first(where: { $0.window === window }) ?? matches.first,
-              let root = anchor.window?.contentView else { throw ToolError("找不到 JSON 控件定位标记：\(title)") }
+              let contentRoot = anchor.window?.contentView else { throw ToolError("找不到 JSON 控件定位标记：\(title)") }
+        let root = contentRoot.superview ?? contentRoot
         let point = anchor.convert(NSPoint(x: anchor.bounds.midX, y: anchor.bounds.midY), to: root)
         var target = root.hitTest(point)
         while let view = target {
