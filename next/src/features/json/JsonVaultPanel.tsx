@@ -43,6 +43,7 @@ import { VaultGitDialog } from './VaultGitDialog'
 type JsonVaultPanelProps = {
   content: string
   onOpen: (content: string, relativePath: string) => void
+  onDirtyChange: (dirty: boolean) => void
 }
 
 type SelectedEntry = { path: string; kind: JsonVaultNode['kind'] }
@@ -86,7 +87,7 @@ let jsonVaultSessionState: JsonVaultSessionState = {
 let jsonVaultTreeScrollTop = 0
 let jsonVaultNeedsExpandPreference = true
 
-export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
+export function JsonVaultPanel({ content, onOpen, onDirtyChange }: JsonVaultPanelProps) {
   const toolActive = useToolActivity()
   const { t } = useI18n()
   const desktopDialog = useDesktopDialog()
@@ -119,6 +120,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   const treeExpandModeRef = useRef(settings.vault.jsonTreeExpandMode)
   const selection = useVaultSelection(nodes, expanded, selectedEntry?.path ?? '')
   const dirty = Boolean(selectedPath) && content !== savedContent
+  useEffect(() => { onDirtyChange(dirty) }, [dirty, onDirtyChange])
   latestSelectionRef.current = { selectedPath, content, rootKey: vaultRootKey }
   treeExpandModeRef.current = settings.vault.jsonTreeExpandMode
   const directories = useMemo(() => ['', ...collectDirectoryPaths(nodes)], [nodes])
@@ -670,7 +672,6 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
         document.body
       )}
       {selection.paths.length > 1 && <div className="vault-panel__selection">{t('vault.batch.selected', { count: String(selection.paths.length) })}</div>}
-      {selectedEntry && <footer className="vault-panel__selection" title={selectedEntry.path}>{selectedEntry.path === selectedPath && dirty ? '• ' : ''}{selectedEntry.path}</footer>}
       <Dialog
         title={actionTitle}
         open={textAction !== null}
@@ -772,7 +773,7 @@ function VaultNode({ node, depth, expanded, selectedPaths, activePath, dirty, on
         } : undefined}
       >
         {node.kind === 'directory' && <>{isDirectoryOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}<Folder size={13} /></>}
-        <span>{node.name}</span>{activePath === node.relativePath && dirty && <i />}
+        <span>{node.kind === 'file' ? node.name.replace(/\.json$/i, '') : node.name}</span>{activePath === node.relativePath && dirty && <i />}
       </button>
       {node.kind === 'directory' && isDirectoryOpen && node.children?.map((child) => (
         <VaultNode key={child.relativePath} node={child} depth={depth + 1} expanded={expanded} selectedPaths={selectedPaths} activePath={activePath} dirty={dirty} onToggle={onToggle} onSelect={onSelect} onOpen={onOpen} onOpenContextMenu={onOpenContextMenu} onDrop={onDrop} />

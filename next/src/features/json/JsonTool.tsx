@@ -1,5 +1,5 @@
 import { CheckCircle2, FileJson, XCircle } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import type { CodeEditorViewState } from '@/shared/components/codeEditorViewState'
@@ -125,6 +125,7 @@ export function JsonTool() {
   const editorRef = useRef<JsonCodeEditorHandle>(null)
   const findIndexRef = useRef(jsonFindIndex)
   const [state, update] = useReducer(updateJsonState, settings.editor.softWrap, createJsonState)
+  const [dirty, setDirty] = useState(false)
   const status = useMemo(() => validateJson(state.content, t), [state.content, t])
   const findMatches = useMemo(
     () => findAllMatches(state.content, state.findQuery, state.findOptions),
@@ -318,7 +319,7 @@ export function JsonTool() {
         minimumWidth={state.inspectorOpen ? 1100 : 720}
         storageKey={state.inspectorOpen ? 'json-three-pane' : 'json-two-pane'}
       >
-        <JsonVaultPanel content={state.content} onOpen={openVaultContent} />
+        <JsonVaultPanel content={state.content} onOpen={openVaultContent} onDirtyChange={setDirty} />
         <div className="editor-shell" inert={!state.filePath}>
           <JsonToolbar
             wrap={state.wrap}
@@ -371,10 +372,13 @@ export function JsonTool() {
             }}
             onViewStateChange={(viewState) => { jsonEditorViewState = viewState }}
           />
-          <div className={status.kind === 'valid' ? 'json-statusbar json-statusbar--valid' : status.kind === 'error' ? 'json-statusbar json-statusbar--error' : 'json-statusbar'}>
-            {status.kind === 'valid' ? <CheckCircle2 size={12} /> : status.kind === 'error' ? <XCircle size={12} /> : <FileJson size={12} />}
-            <span>{status.message}</span>
-          </div>
+          <footer className="json-statusbar">
+            <span title={state.filePath}>{dirty ? '• ' : ''}{state.filePath}</span>
+            <span className={status.kind === 'valid' ? 'json-statusbar__validation json-statusbar--valid' : status.kind === 'error' ? 'json-statusbar__validation json-statusbar--error' : 'json-statusbar__validation'}>
+              {status.kind === 'valid' ? <CheckCircle2 size={12} /> : status.kind === 'error' ? <XCircle size={12} /> : <FileJson size={12} />}
+              <span>{status.message}</span>
+            </span>
+          </footer>
         </div>
 
         {state.inspectorOpen && (
