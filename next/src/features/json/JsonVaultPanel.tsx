@@ -4,7 +4,6 @@ import {
   ChevronRight,
   Copy,
   Download,
-  FileJson,
   FilePlus2,
   Folder,
   FolderOpen,
@@ -722,7 +721,7 @@ function VaultNode({ node, depth, expanded, selectedPaths, activePath, dirty, on
           if (draggedEntry && canMoveJsonVaultEntry(draggedEntry.path, node.relativePath)) onDrop(draggedEntry.path, draggedEntry.kind, node.relativePath)
         } : undefined}
       >
-        {node.kind === 'directory' ? <>{isDirectoryOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}<Folder size={13} /></> : <FileJson size={13} />}
+        {node.kind === 'directory' && <>{isDirectoryOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}<Folder size={13} /></>}
         <span>{node.name}</span>{activePath === node.relativePath && dirty && <i />}
       </button>
       {node.kind === 'directory' && isDirectoryOpen && node.children?.map((child) => (

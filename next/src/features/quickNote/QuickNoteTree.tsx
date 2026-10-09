@@ -1,5 +1,5 @@
 import type { SelectionGesture } from '@/shared/vaultSelection'
-import { ChevronDown, ChevronRight, FileText, Folder, FolderOpen } from 'lucide-react'
+import { ChevronDown, ChevronRight, Folder, FolderOpen } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { QuickNoteNode } from '@/shared/contracts/quickNote'
@@ -129,7 +129,7 @@ function QuickNoteTreeNode({ node, depth, selectedPath, selectedPaths, expanded,
   return (
     <div role="none">
       <button
-        className={selectedPaths.includes(node.relativePath) ? 'quick-note-tree__row quick-note-tree__row--active' : 'quick-note-tree__row'}
+        className={`quick-note-tree__row${node.kind === 'file' ? ' quick-note-tree__row--file' : ''}${selectedPaths.includes(node.relativePath) ? ' quick-note-tree__row--active' : ''}`}
         type="button"
         role="treeitem"
         draggable={selectedPaths.length <= 1}
@@ -170,10 +170,8 @@ function QuickNoteTreeNode({ node, depth, selectedPath, selectedPaths, expanded,
         <span className="quick-note-tree__chevron">
           {node.kind === 'directory' ? open ? <ChevronDown size={12} /> : <ChevronRight size={12} /> : null}
         </span>
-        {node.kind === 'directory'
-          ? open ? <FolderOpen size={14} /> : <Folder size={14} />
-          : <FileText size={14} style={{ color: noteColor(node.color) }} />}
-        <span>{label}</span>
+        {node.kind === 'directory' && (open ? <FolderOpen size={14} /> : <Folder size={14} />)}
+        <span style={node.kind === 'file' ? { color: noteColor(node.color) } : undefined}>{label}</span>
       </button>
       {node.kind === 'directory' && open && node.children?.map((child) => (
         <QuickNoteTreeNode
