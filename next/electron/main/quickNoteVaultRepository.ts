@@ -26,7 +26,6 @@ export class QuickNoteVaultRepository {
 
   async list(input: QuickNoteListInput = {}): Promise<QuickNoteNode[]> {
     const root = await this.ensureRoot()
-    await this.seedWelcomeNote(root)
     const matcher = input.hideIgnored ? await this.loadIgnoreMatcher(root) : null
     const keyword = input.keyword?.trim().toLocaleLowerCase() ?? ''
     return this.listDirectory(root, root, 0, { value: 0 }, matcher, {
@@ -241,37 +240,6 @@ export class QuickNoteVaultRepository {
   private async ensureRoot(): Promise<string> {
     await mkdir(this.rootDirectory, { recursive: true })
     return realpath(this.rootDirectory)
-  }
-
-  private async seedWelcomeNote(root: string): Promise<void> {
-    const entries = await readdir(root, { withFileTypes: true })
-    if (entries.some((entry) => entry.isFile() && isNoteFile(entry.name))) return
-    const nested = await this.containsNote(root, 0)
-    if (nested) return
-    const now = new Date().toISOString()
-    const metadata: QuickNoteMetadata = {
-      title: 'Welcome to MooTool',
-      style: '',
-      syntax: 'text/markdown',
-      fontName: 'ui-monospace',
-      fontSize: 14,
-      lineSpacing: 1,
-      color: 'default',
-      lineWrap: true,
-      createdAt: now,
-      modifiedAt: now
-    }
-    await writeFile(resolve(root, 'Welcome to MooTool.txt'), serializeNote(metadata, '# MooTool Quick Note\n\nYour notes are plain text files and can be managed with Git.'), 'utf8')
-  }
-
-  private async containsNote(directory: string, depth: number): Promise<boolean> {
-    if (depth > maxDepth) return false
-    for (const entry of await readdir(directory, { withFileTypes: true })) {
-      if (entry.name.startsWith('.') || entry.name === 'attachments' || entry.isSymbolicLink()) continue
-      if (entry.isFile() && isNoteFile(entry.name)) return true
-      if (entry.isDirectory() && await this.containsNote(resolve(directory, entry.name), depth + 1)) return true
-    }
-    return false
   }
 
   private async listDirectory(

@@ -10,6 +10,7 @@ export type JsonCodeEditorHandle = TextCodeEditorHandle
 
 type JsonCodeEditorProps = {
   value: string
+  readOnly?: boolean
   wrap: boolean
   fontSize: number
   fontFamily?: string
@@ -23,7 +24,7 @@ type JsonCodeEditorProps = {
 }
 
 export const JsonCodeEditor = forwardRef<JsonCodeEditorHandle, JsonCodeEditorProps>(function JsonCodeEditor(
-  { value, wrap, fontSize, fontFamily, searchQuery, searchOptions = defaultFindReplaceOptions, ariaLabel, initialViewState, onChange, onKeyDown, onViewStateChange },
+  { value, readOnly, wrap, fontSize, fontFamily, searchQuery, searchOptions = defaultFindReplaceOptions, ariaLabel, initialViewState, onChange, onKeyDown, onViewStateChange },
   ref
 ) {
   return (
@@ -32,6 +33,7 @@ export const JsonCodeEditor = forwardRef<JsonCodeEditorHandle, JsonCodeEditorPro
       className="json-editor"
       language="json"
       value={value}
+      readOnly={readOnly}
       wrap={wrap}
       fontSize={fontSize}
       fontFamily={fontFamily}

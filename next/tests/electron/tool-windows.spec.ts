@@ -267,6 +267,12 @@ test('keeps a custom-header tool immersive while preserving its view controls', 
 test('keeps double-clicked Quick Note split-preview text selected after auto-save', async () => {
   await mainPage.locator('.tool-button').filter({ hasText: '随手记' }).click()
   await waitForToolSelector('quickNote', '.quick-note-tool')
+  await mainPage.evaluate(async () => {
+    const note = await window.mootool.createQuickNote({ title: 'Preview fixture' })
+    await window.mootool.saveQuickNote({ ...note, content: '# MooTool\n\nPreview fixture.', metadata: { ...note.metadata, syntax: 'text/markdown' } })
+  })
+  await waitForToolSelector('quickNote', '.quick-note-tree [data-path="Preview fixture.md"]')
+  await evaluateTool('quickNote', `document.querySelector('.quick-note-tree [data-path="Preview fixture.md"]').click()`)
   await evaluateTool('quickNote', `(() => {
     const split = [...document.querySelectorAll('[role="tab"]')].find((tab) => tab.getAttribute('aria-label') === '分栏')
     if (!split) throw new Error('Quick Note split tab not found')

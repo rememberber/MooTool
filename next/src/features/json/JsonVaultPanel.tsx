@@ -31,6 +31,7 @@ import type { VaultGitAction } from '@/shared/contracts/vaultGit'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import { useVaultWorkspace } from '@/shared/hooks/useVaultWorkspace'
 import {
   collectDirectoryPaths,
   ensureAncestorsExpanded,
@@ -41,7 +42,7 @@ import { VaultGitDialog } from './VaultGitDialog'
 
 type JsonVaultPanelProps = {
   content: string
-  onOpen: (content: string) => void
+  onOpen: (content: string, relativePath: string) => void
 }
 
 type SelectedEntry = { path: string; kind: JsonVaultNode['kind'] }
@@ -63,6 +64,7 @@ type JsonVaultSessionState = {
   query: string
   includeContent: boolean
   sort: 'name' | 'modified'
+  vaultRootKey: string
 }
 
 let jsonVaultSessionState: JsonVaultSessionState = {
@@ -78,7 +80,8 @@ let jsonVaultSessionState: JsonVaultSessionState = {
   contextMenu: null,
   query: '',
   includeContent: true,
-  sort: 'name'
+  sort: 'name',
+  vaultRootKey: ''
 }
 let jsonVaultTreeScrollTop = 0
 let jsonVaultNeedsExpandPreference = true
@@ -110,14 +113,37 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   const treeRef = useRef<HTMLDivElement>(null)
   const [locatePath, setLocatePath] = useState('')
   const [sort, setSort] = useState<'name' | 'modified'>(jsonVaultSessionState.sort)
-  const latestSelectionRef = useRef({ selectedPath, content })
+  const [vaultRootKey, setVaultRootKey] = useState(jsonVaultSessionState.vaultRootKey)
+  const latestSelectionRef = useRef({ selectedPath, content, rootKey: vaultRootKey })
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
   const treeExpandModeRef = useRef(settings.vault.jsonTreeExpandMode)
   const selection = useVaultSelection(nodes, expanded, selectedEntry?.path ?? '')
   const dirty = Boolean(selectedPath) && content !== savedContent
-  latestSelectionRef.current = { selectedPath, content }
+  latestSelectionRef.current = { selectedPath, content, rootKey: vaultRootKey }
   treeExpandModeRef.current = settings.vault.jsonTreeExpandMode
   const directories = useMemo(() => ['', ...collectDirectoryPaths(nodes)], [nodes])
+  const { ready: workspaceReady } = useVaultWorkspace('json', window.mootool.openJsonVaultWorkspace, selectedPath,
+    (rootKey) => {
+      if (vaultRootKey === rootKey) return
+      setSelectedPath('')
+      setSelectedEntry(null)
+      setSavedContent('')
+      setNodes([])
+      setQuery('')
+      onOpen('', '')
+      jsonVaultNeedsExpandPreference = true
+    },
+    ({ file }, rootKey) => {
+      setSelectedEntry({ path: file.relativePath, kind: 'file' })
+      setQuery('')
+      if (vaultRootKey !== rootKey || selectedPath !== file.relativePath) {
+        setSelectedPath(file.relativePath)
+        setSavedContent(file.content)
+        onOpen(file.content, file.relativePath)
+      }
+      setVaultRootKey(rootKey)
+      setExpanded((current) => ensureAncestorsExpanded(current, file.relativePath))
+    })
 
   const scrollSelectedIntoView = useCallback((path = latestSelectionRef.current.selectedPath) => {
     if (!path || !treeRef.current) return
@@ -144,9 +170,10 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
       contextMenu,
       query,
       includeContent,
-      sort
+      sort,
+      vaultRootKey
     }
-  }, [contextMenu, expanded, gitDialogOpen, includeContent, moveOpen, moveTarget, nodes, query, savedContent, selectedEntry, selectedPath, sort, textAction])
+  }, [contextMenu, expanded, gitDialogOpen, includeContent, moveOpen, moveTarget, nodes, query, savedContent, selectedEntry, selectedPath, sort, textAction, vaultRootKey])
 
   useLayoutEffect(() => {
     if (treeRef.current) treeRef.current.scrollTop = jsonVaultTreeScrollTop
@@ -170,19 +197,28 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
 
   const reloadSelectedFromDisk = useCallback(async () => {
     if (!selectedPath) return
+    const snapshot = latestSelectionRef.current.content
+    const rootKey = latestSelectionRef.current.rootKey
     try {
       const file = await window.mootool.readJsonVaultFile(selectedPath)
+      if (latestSelectionRef.current.rootKey !== rootKey || latestSelectionRef.current.selectedPath !== selectedPath || latestSelectionRef.current.content !== snapshot) return
       setSelectedEntry({ path: file.relativePath, kind: 'file' })
       setSavedContent(file.content)
       setExpanded((current) => ensureAncestorsExpanded(current, file.relativePath))
-      onOpen(file.content)
+      onOpen(file.content, file.relativePath)
     } catch {
-      setSelectedEntry(null)
-      setSelectedPath('')
-      setSavedContent('')
-      onOpen('')
+      if (latestSelectionRef.current.rootKey !== rootKey || latestSelectionRef.current.selectedPath !== selectedPath || latestSelectionRef.current.content !== snapshot) return
+      try {
+        const { file } = await window.mootool.openJsonVaultWorkspace()
+        if (latestSelectionRef.current.rootKey !== rootKey || latestSelectionRef.current.selectedPath !== selectedPath || latestSelectionRef.current.content !== snapshot) return
+        setSelectedEntry({ path: file.relativePath, kind: 'file' })
+        setSelectedPath(file.relativePath)
+        setSavedContent(file.content)
+        setExpanded((current) => ensureAncestorsExpanded(current, file.relativePath))
+        onOpen(file.content, file.relativePath)
+      } catch (error) { toast.error(error instanceof Error ? error.message : String(error)) }
     }
-  }, [onOpen, selectedPath])
+  }, [onOpen, selectedPath, toast])
 
   const refreshGitChangeCount = useCallback(async () => {
     try {
@@ -193,7 +229,12 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
     }
   }, [])
 
+  const reloadAfterTreeLoad = useEffectEvent(async () => {
+    if (!dirty) await reloadSelectedFromDisk()
+  })
+
   useEffect(() => {
+    if (!workspaceReady) return
     let cancelled = false
     void load().then((nextNodes) => {
       if (cancelled) return
@@ -204,11 +245,11 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
       } else if (path) {
         setExpanded((current) => ensureAncestorsExpanded(current, path))
       }
-      if (!dirty) void reloadSelectedFromDisk()
-      window.requestAnimationFrame(() => scrollSelectedIntoView(path))
+      void reloadAfterTreeLoad()
+      window.requestAnimationFrame(() => scrollSelectedIntoView())
     })
     return () => { cancelled = true }
-  }, [applyTreeExpandMode, dirty, load, reloadSelectedFromDisk, scrollSelectedIntoView, settings.vault.jsonPath])
+  }, [applyTreeExpandMode, load, scrollSelectedIntoView, workspaceReady])
 
   useEffect(() => {
     if (!toolActive || !selectedPath) return
@@ -233,10 +274,11 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   }, [expanded, locatePath, nodes, query, scrollSelectedIntoView, selectedPath])
 
   useEffect(() => window.mootool.onJsonVaultChange(() => {
+    if (!workspaceReady) return
     void load()
     if (!dirty) void reloadSelectedFromDisk()
     void refreshGitChangeCount()
-  }), [dirty, load, refreshGitChangeCount, reloadSelectedFromDisk])
+  }), [dirty, load, refreshGitChangeCount, reloadSelectedFromDisk, workspaceReady])
 
   useEffect(() => {
     if (!toolActive) return
@@ -254,12 +296,12 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   })
 
   useEffect(() => {
-    if (!dirty || !selectedPath) return
+    if (!workspaceReady || !dirty || !selectedPath) return
     const path = selectedPath
     const snapshot = content
     const timer = window.setTimeout(() => persistSelectedOnIdle(path, snapshot), 250)
     return () => window.clearTimeout(timer)
-  }, [content, dirty, selectedPath])
+  }, [content, dirty, selectedPath, workspaceReady])
 
   useEffect(() => {
     if (!contextMenu || !toolActive) return
@@ -313,7 +355,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
       setSelectedPath(file.relativePath)
       setSavedContent(file.content)
       setExpanded((current) => ensureAncestorsExpanded(current, file.relativePath))
-      onOpen(file.content)
+      onOpen(file.content, file.relativePath)
     } catch (error) {
       reportError(error)
     }
@@ -383,7 +425,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
         setSelectedEntry({ path: file.relativePath, kind: 'file' })
         setSelectedPath(file.relativePath)
         setSavedContent(file.content)
-        onOpen(file.content)
+        onOpen(file.content, file.relativePath)
         toast.success(t('json.vault.created'))
       } else if (textAction.type === 'folder') {
         const path = await window.mootool.createJsonVaultFolder(textAction.value)
@@ -441,7 +483,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
       setSelectedEntry({ path: last.relativePath, kind: 'file' })
       setSelectedPath(last.relativePath)
       setSavedContent(last.content)
-      onOpen(last.content)
+      onOpen(last.content, last.relativePath)
       toast.success(t('json.vault.duplicated'))
     }
     await load()
@@ -461,11 +503,19 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
     if (!entry || !await desktopDialog.confirm(t('json.vault.confirmDelete', { name: entry.path }), { confirmLabel: t('common.action.delete'), danger: true })) return
     try {
       await window.mootool.deleteJsonVaultFile(entry.path)
-      if (entry.path === selectedPath) {
+      const affectsOpenFile = entry.path === selectedPath || (entry.kind === 'directory' && selectedPath.startsWith(`${entry.path}/`))
+      setSelectedEntry(null)
+      if (affectsOpenFile) {
         setSelectedPath('')
         setSavedContent('')
+        onOpen('', '')
+        const { file } = await window.mootool.openJsonVaultWorkspace()
+        setSelectedEntry({ path: file.relativePath, kind: 'file' })
+        setSelectedPath(file.relativePath)
+        setSavedContent(file.content)
+        setQuery('')
+        onOpen(file.content, file.relativePath)
       }
-      setSelectedEntry(null)
       toast.success(t('json.vault.deleted'))
       await load()
     } catch (error) {

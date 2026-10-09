@@ -41,19 +41,11 @@ import {
   type JsonFormatOptions
 } from './jsonTools'
 
-const sampleJson = `{
-  "name": "MooTool Next",
-  "stack": ["Electron", "Vite", "React", "TypeScript"],
-  "desktop": {
-    "style": "quiet macOS workspace",
-    "theme": "light"
-  }
-}`
-
 type CopyState = 'idle' | 'copied' | 'failed'
 
 type JsonUiState = {
   content: string
+  filePath: string
   wrap: boolean
   copyState: CopyState
   notice: string
@@ -89,7 +81,8 @@ function createJsonState(wrap: boolean): JsonUiState {
     }
   }
   return {
-    content: sampleJson,
+    content: '',
+    filePath: '',
     wrap,
     copyState: 'idle',
     notice: '',
@@ -137,11 +130,12 @@ export function JsonTool() {
     () => findAllMatches(state.content, state.findQuery, state.findOptions),
     [state.content, state.findOptions, state.findQuery]
   )
-  const openVaultContent = useCallback((content: string) => update({ content, notice: '' }), [])
+  const openVaultContent = useCallback((content: string, filePath: string) => update({ content, filePath, notice: '' }), [])
 
   useFocusOnWindowActivate(
     () => editorRef.current?.focus(),
     toolActive
+      && Boolean(state.filePath)
       && !state.findOpen
       && !state.historyOpen
       && !state.pathPickerOpen
@@ -325,7 +319,7 @@ export function JsonTool() {
         storageKey={state.inspectorOpen ? 'json-three-pane' : 'json-two-pane'}
       >
         <JsonVaultPanel content={state.content} onOpen={openVaultContent} />
-        <div className="editor-shell">
+        <div className="editor-shell" inert={!state.filePath}>
           <JsonToolbar
             wrap={state.wrap}
             copied={state.copyState === 'copied'}
@@ -360,6 +354,7 @@ export function JsonTool() {
           <JsonCodeEditor
             ref={editorRef}
             value={state.content}
+            readOnly={!state.filePath}
             wrap={state.wrap}
             fontSize={settings.editor.jsonFontSize}
             fontFamily={cssFontFamily(settings.editor.jsonFontName)}

@@ -98,6 +98,8 @@ import { HistoryRepository } from './historyRepository'
 import { ImageRepository } from './imageRepository'
 import { normalizeImageVectorizeOptions } from './imageVectorizationService'
 import { JsonVaultRepository } from './jsonVaultRepository'
+import { VaultWorkspaceService } from './vaultWorkspaceService'
+import type { RememberVaultFileInput } from '../../src/shared/contracts/vaultWorkspace'
 import { LegacyMigrationService } from './legacyMigrationService'
 import { NetworkService, parseChromiumProxyDirective, type ProxyConfiguration } from './networkService'
 import { P5Repository } from './p5Repository'
@@ -139,6 +141,7 @@ type PersistedStore = {
   toolWindows: Partial<Record<string, WindowState>>
   secrets: Partial<Record<SecretKey, string>>
   activeHostId: number | null
+  vaultActiveFiles: Record<string, string>
 }
 
 type ScreenCaptureOverlayRecord = {
@@ -187,6 +190,10 @@ const externalPages: Record<ExternalPageId, string> = {
 }
 
 let store: Store<PersistedStore>
+const vaultWorkspaceService = new VaultWorkspaceService({
+  get: () => store.get('vaultActiveFiles'),
+  set: (paths) => store.set('vaultActiveFiles', paths)
+})
 let mainWindow: BrowserWindow | null = null
 let mainWindowMaterial: WindowMaterialController | null = null
 let toolWindowManager: ToolWindowManager
@@ -1041,6 +1048,23 @@ function registerIpc(): void {
   })
   ipcMain.handle('pdf:split', (_event, tasks: PdfSplitTask[]) => splitPdfs(normalizePdfSplitTasks(tasks)))
   ipcMain.handle('json-vault:list', (_event, input?: JsonVaultListInput) => createJsonVaultRepository().list(normalizeJsonVaultListInput(input)))
+  ipcMain.handle('json-vault:workspace', () => {
+    const root = getJsonVaultRoot()
+    const repository = new JsonVaultRepository(root)
+    return vaultWorkspaceService.open('json', root, repository, async () => {
+      const file = await repository.createDefault()
+      jsonVaultCheckpointScheduler.recordActivity('Create JSON snippet')
+      return file
+    })
+  })
+  ipcMain.handle('vault:remember-file', (_event, input: RememberVaultFileInput) => {
+    if (!isRecord(input) || (input.kind !== 'json' && input.kind !== 'quickNote') || typeof input.rootDirectory !== 'string' || typeof input.relativePath !== 'string') throw new Error('Invalid vault selection')
+    // Ignore selection updates from a renderer still showing a previous vault.
+    const root = input.kind === 'json' ? getJsonVaultRoot() : getQuickNoteRoot()
+    if (root !== input.rootDirectory) return
+    const repository = input.kind === 'json' ? new JsonVaultRepository(root) : new QuickNoteVaultRepository(root)
+    return vaultWorkspaceService.remember(input, repository)
+  })
   ipcMain.handle('json-vault:read', (_event, relativePath: string) => createJsonVaultRepository().read(relativePath))
   ipcMain.handle('json-vault:save', async (_event, input: SaveJsonVaultFileInput) => {
     if (!isRecord(input) || typeof input.relativePath !== 'string' || typeof input.content !== 'string') {
@@ -1057,13 +1081,17 @@ function registerIpc(): void {
   })
   ipcMain.handle('json-vault:rename', async (_event, input: RenameJsonVaultEntryInput) => {
     if (!isRecord(input) || typeof input.relativePath !== 'string' || typeof input.name !== 'string') throw new Error('Invalid JSON Vault rename')
-    const result = await createJsonVaultRepository().renameEntry(input)
+    const root = getJsonVaultRoot()
+    const result = await new JsonVaultRepository(root).renameEntry(input)
+    vaultWorkspaceService.relocate('json', root, input.relativePath, result)
     jsonVaultCheckpointScheduler.recordActivity('Rename JSON Vault entry')
     return result
   })
   ipcMain.handle('json-vault:move', async (_event, input: MoveJsonVaultEntryInput) => {
     if (!isRecord(input) || typeof input.relativePath !== 'string' || typeof input.targetDirectory !== 'string') throw new Error('Invalid JSON Vault move')
-    const result = await createJsonVaultRepository().moveEntry(input)
+    const root = getJsonVaultRoot()
+    const result = await new JsonVaultRepository(root).moveEntry(input)
+    vaultWorkspaceService.relocate('json', root, input.relativePath, result)
     jsonVaultCheckpointScheduler.recordActivity('Move JSON Vault entry')
     return result
   })
@@ -1120,6 +1148,16 @@ function registerIpc(): void {
     })
   })
   ipcMain.handle('quick-note:list', (_event, input?: QuickNoteListInput) => createQuickNoteRepository().list(normalizeQuickNoteListInput(input)))
+  ipcMain.handle('quick-note:workspace', () => {
+    const root = getQuickNoteRoot()
+    const repository = new QuickNoteVaultRepository(root)
+    const { editor } = store.get('settings')
+    return vaultWorkspaceService.open('quickNote', root, repository, async () => {
+      const file = await repository.create({ title: 'Untitled', fontName: editor.quickNoteFontName, fontSize: editor.quickNoteFontSize, lineWrap: editor.softWrap })
+      quickNoteCheckpointScheduler.recordActivity('Create Quick Note')
+      return file
+    })
+  })
   ipcMain.handle('quick-note:read', (_event, relativePath: string) => createQuickNoteRepository().read(relativePath))
   ipcMain.handle('quick-note:create', async (_event, input: CreateQuickNoteInput) => {
     if (!isRecord(input)) throw new Error('Invalid Quick Note input')
@@ -1148,13 +1186,17 @@ function registerIpc(): void {
   })
   ipcMain.handle('quick-note:rename', async (_event, input: RenameQuickNoteEntryInput) => {
     if (!isRecord(input) || typeof input.relativePath !== 'string' || typeof input.name !== 'string') throw new Error('Invalid Quick Note rename')
-    const result = await createQuickNoteRepository().renameEntry(input)
+    const root = getQuickNoteRoot()
+    const result = await new QuickNoteVaultRepository(root).renameEntry(input)
+    vaultWorkspaceService.relocate('quickNote', root, input.relativePath, result)
     quickNoteCheckpointScheduler.recordActivity('Rename Quick Note entry')
     return result
   })
   ipcMain.handle('quick-note:move', async (_event, input: MoveQuickNoteEntryInput) => {
     if (!isRecord(input) || typeof input.relativePath !== 'string' || typeof input.targetDirectory !== 'string') throw new Error('Invalid Quick Note move')
-    const result = await createQuickNoteRepository().moveEntry(input)
+    const root = getQuickNoteRoot()
+    const result = await new QuickNoteVaultRepository(root).moveEntry(input)
+    vaultWorkspaceService.relocate('quickNote', root, input.relativePath, result)
     quickNoteCheckpointScheduler.recordActivity('Move Quick Note entry')
     return result
   })
@@ -2347,7 +2389,8 @@ app.whenReady().then(async () => {
       window: defaultWindowState,
       toolWindows: {},
       secrets: {},
-      activeHostId: null
+      activeHostId: null,
+      vaultActiveFiles: {}
     }
   })
   store.set('settings', mergeSettings(defaultAppSettings, store.get('settings') as SettingsPatch))

@@ -10,6 +10,7 @@ import type { ImageAsset, ImageAssetSummary, ImageVectorizeOptions, ImageVectori
 import type { DigestAlgorithmId, DigestFileResult, ImageFilePayload, SaveBinaryFileInput } from './src/shared/contracts/nativeFiles'
 import type { PdfFileInfo, PdfMergeSource, PdfOperationResult, PdfSplitTask } from './src/shared/contracts/pdf'
 import type { JsonVaultFile, JsonVaultListInput, JsonVaultNode, MoveJsonVaultEntryInput, RenameJsonVaultEntryInput, SaveJsonVaultFileInput } from './src/shared/contracts/jsonVault'
+import type { RememberVaultFileInput, VaultWorkspace } from './src/shared/contracts/vaultWorkspace'
 import type { CreateQuickNoteInput, MoveQuickNoteEntryInput, QuickNoteAttachment, QuickNoteFile, QuickNoteListInput, QuickNoteNode, RenameQuickNoteEntryInput, SaveQuickNoteInput } from './src/shared/contracts/quickNote'
 import type { VaultGitActionInput, VaultGitActionResult, VaultGitCommit, VaultGitDiffInput, VaultGitDiffResult, VaultGitStatus } from './src/shared/contracts/vaultGit'
 import type { FavoriteFolderRecord, FavoriteKind, FavoriteRecord, RenameFavoriteFolderInput, SaveFavoriteFolderInput, SaveFavoriteInput } from './src/shared/contracts/favorites'
@@ -139,6 +140,8 @@ declare global {
       splitPdfFiles: (tasks: PdfSplitTask[]) => Promise<PdfOperationResult>
       listJsonVault: (input?: JsonVaultListInput) => Promise<JsonVaultNode[]>
       readJsonVaultFile: (relativePath: string) => Promise<JsonVaultFile>
+      openJsonVaultWorkspace: () => Promise<VaultWorkspace<JsonVaultFile>>
+      rememberVaultFile: (input: RememberVaultFileInput) => Promise<void>
       saveJsonVaultFile: (input: SaveJsonVaultFileInput) => Promise<JsonVaultFile>
       createJsonVaultFolder: (relativePath: string) => Promise<string>
       renameJsonVaultEntry: (input: RenameJsonVaultEntryInput) => Promise<string>
@@ -155,6 +158,7 @@ declare global {
       runVaultGitAction: (input: VaultGitActionInput) => Promise<VaultGitActionResult>
       listQuickNotes: (input?: QuickNoteListInput) => Promise<QuickNoteNode[]>
       readQuickNote: (relativePath: string) => Promise<QuickNoteFile>
+      openQuickNoteWorkspace: () => Promise<VaultWorkspace<QuickNoteFile>>
       createQuickNote: (input: CreateQuickNoteInput) => Promise<QuickNoteFile>
       saveQuickNote: (input: SaveQuickNoteInput) => Promise<QuickNoteFile>
       createQuickNoteFolder: (relativePath: string) => Promise<string>

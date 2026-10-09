@@ -19,6 +19,7 @@ import type { ImageAsset, ImageAssetSummary, ImageVectorizeOptions, ImageVectori
 import type { DigestAlgorithmId, DigestFileResult, ImageFilePayload, SaveBinaryFileInput } from '../../src/shared/contracts/nativeFiles'
 import type { PdfFileInfo, PdfMergeSource, PdfOperationResult, PdfSplitTask } from '../../src/shared/contracts/pdf'
 import type { JsonVaultFile, JsonVaultListInput, JsonVaultNode, MoveJsonVaultEntryInput, RenameJsonVaultEntryInput, SaveJsonVaultFileInput } from '../../src/shared/contracts/jsonVault'
+import type { RememberVaultFileInput, VaultWorkspace } from '../../src/shared/contracts/vaultWorkspace'
 import type { CreateQuickNoteInput, MoveQuickNoteEntryInput, QuickNoteAttachment, QuickNoteFile, QuickNoteListInput, QuickNoteNode, RenameQuickNoteEntryInput, SaveQuickNoteInput } from '../../src/shared/contracts/quickNote'
 import type { VaultGitActionInput, VaultGitActionResult, VaultGitCommit, VaultGitDiffInput, VaultGitDiffResult, VaultGitStatus } from '../../src/shared/contracts/vaultGit'
 import type { FavoriteFolderRecord, FavoriteKind, FavoriteRecord, RenameFavoriteFolderInput, SaveFavoriteFolderInput, SaveFavoriteInput } from '../../src/shared/contracts/favorites'
@@ -145,6 +146,8 @@ contextBridge.exposeInMainWorld('mootool', {
   mergePdfFiles: (sources: PdfMergeSource[]): Promise<PdfOperationResult | null> => ipcRenderer.invoke('pdf:merge', sources),
   splitPdfFiles: (tasks: PdfSplitTask[]): Promise<PdfOperationResult> => ipcRenderer.invoke('pdf:split', tasks),
   listJsonVault: (input?: JsonVaultListInput): Promise<JsonVaultNode[]> => ipcRenderer.invoke('json-vault:list', input),
+  openJsonVaultWorkspace: (): Promise<VaultWorkspace<JsonVaultFile>> => ipcRenderer.invoke('json-vault:workspace'),
+  rememberVaultFile: (input: RememberVaultFileInput): Promise<void> => ipcRenderer.invoke('vault:remember-file', input),
   readJsonVaultFile: (relativePath: string): Promise<JsonVaultFile> => ipcRenderer.invoke('json-vault:read', relativePath),
   saveJsonVaultFile: (input: SaveJsonVaultFileInput): Promise<JsonVaultFile> => ipcRenderer.invoke('json-vault:save', input),
   createJsonVaultFolder: (relativePath: string): Promise<string> => ipcRenderer.invoke('json-vault:create-folder', relativePath),
@@ -161,6 +164,7 @@ contextBridge.exposeInMainWorld('mootool', {
   getVaultGitDiff: (input: VaultGitDiffInput): Promise<VaultGitDiffResult> => ipcRenderer.invoke('vault-git:diff', input),
   runVaultGitAction: (input: VaultGitActionInput): Promise<VaultGitActionResult> => ipcRenderer.invoke('vault-git:action', input),
   listQuickNotes: (input?: QuickNoteListInput): Promise<QuickNoteNode[]> => ipcRenderer.invoke('quick-note:list', input),
+  openQuickNoteWorkspace: (): Promise<VaultWorkspace<QuickNoteFile>> => ipcRenderer.invoke('quick-note:workspace'),
   readQuickNote: (relativePath: string): Promise<QuickNoteFile> => ipcRenderer.invoke('quick-note:read', relativePath),
   createQuickNote: (input: CreateQuickNoteInput): Promise<QuickNoteFile> => ipcRenderer.invoke('quick-note:create', input),
   saveQuickNote: (input: SaveQuickNoteInput): Promise<QuickNoteFile> => ipcRenderer.invoke('quick-note:save', input),

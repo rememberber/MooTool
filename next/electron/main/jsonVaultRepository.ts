@@ -72,6 +72,13 @@ export class JsonVaultRepository {
     return normalized
   }
 
+  async createDefault(): Promise<JsonVaultFile> {
+    const root = await this.ensureRoot()
+    const relativePath = await this.uniqueJsonPath(root, '', 'snippet')
+    await writeFile(resolve(root, relativePath), '{}', { encoding: 'utf8', flag: 'wx' })
+    return this.read(relativePath)
+  }
+
   async renameEntry(input: RenameJsonVaultEntryInput): Promise<string> {
     const root = await this.ensureRoot()
     const sourcePath = normalizeEntryPath(input.relativePath)

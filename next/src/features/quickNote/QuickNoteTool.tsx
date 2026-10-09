@@ -54,6 +54,7 @@ import type { QuickNoteAttachment, QuickNoteFile, QuickNoteMetadata, QuickNoteNo
 import type { VaultGitAction } from '@/shared/contracts/vaultGit'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useFocusOnWindowActivate } from '@/shared/hooks/useFocusOnWindowActivate'
+import { useVaultWorkspace } from '@/shared/hooks/useVaultWorkspace'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
 import { isFormatShortcut } from '@/shared/utils/formatShortcut'
@@ -82,6 +83,7 @@ type EntryKind = '' | 'file' | 'directory'
 type ActionDialogMode = 'createNote' | 'createFolder' | 'rename' | 'move' | 'delete' | null
 
 type QuickNoteState = {
+  vaultRootKey: string
   nodes: QuickNoteNode[]
   selectedPath: string
   selectedKind: EntryKind
@@ -115,6 +117,7 @@ type QueuedAttachmentInsertion = {
 }
 
 const initialState: QuickNoteState = {
+  vaultRootKey: '',
   nodes: [],
   selectedPath: '',
   selectedKind: '',
@@ -316,6 +319,18 @@ export function QuickNoteTool() {
   treeExpandModeRef.current = settings.vault.quickNoteTreeExpandMode
   const selection = useVaultSelection(state.nodes, state.expanded, state.selectedPath)
   const selectedNotePath = state.note?.relativePath ?? ''
+  const { ready: workspaceReady } = useVaultWorkspace('quickNote', window.mootool.openQuickNoteWorkspace, selectedNotePath,
+    (rootKey) => {
+      if (state.vaultRootKey === rootKey) return
+      update({ nodes: [], selectedPath: '', selectedKind: '', note: null, content: '', query: '', metadataDirty: false, busy: true })
+      quickNoteNeedsExpandPreference = true
+    },
+    ({ file: note }, rootKey) => {
+      if (state.vaultRootKey !== rootKey || state.note?.relativePath !== note.relativePath) {
+        update({ vaultRootKey: rootKey, selectedPath: note.relativePath, selectedKind: 'file', note, content: note.content, metadataDirty: false, busy: false, query: '',
+          expanded: ensureAncestorsExpanded(state.expanded, note.relativePath) })
+      } else update({ vaultRootKey: rootKey, busy: false, query: '' })
+    })
   const metadataSignature = JSON.stringify(state.note?.metadata ?? {})
   const directories = useMemo(() => collectDirectoryPaths(state.nodes), [state.nodes])
   const stats = useMemo(() => documentStats(state.content), [state.content])
@@ -382,7 +397,12 @@ export function QuickNoteTool() {
       })
     } catch {
       if (selectedNotePathRef.current !== path || documentRevisionRef.current !== revisionBeforeRead) return
-      update({ selectedPath: '', selectedKind: '', note: null, content: '', metadataDirty: false })
+      try {
+        const { file: note } = await window.mootool.openQuickNoteWorkspace()
+        if (selectedNotePathRef.current !== path || documentRevisionRef.current !== revisionBeforeRead) return
+        update({ selectedPath: note.relativePath, selectedKind: 'file', note, content: note.content, metadataDirty: false,
+          expanded: ensureAncestorsExpanded(latestStateRef.current.expanded, note.relativePath) })
+      } catch (error) { toast.error(errorMessage(error)) }
     }
   }, [state.note?.relativePath])
 
@@ -395,28 +415,19 @@ export function QuickNoteTool() {
     }
   }, [])
 
+  const reloadAfterTreeLoad = useEffectEvent(async () => {
+    if (!dirty) await reloadCurrentNoteFromDisk()
+  })
+
   useEffect(() => {
+    if (!workspaceReady) return
     let cancelled = false
-    const selectionPathBeforeLoad = selectedNotePathRef.current
     void loadTree().then(async (nodes) => {
       if (cancelled) return
       let selectedPath = latestStateRef.current.selectedPath
       if (selectedPath) {
-        if (!dirty) await reloadCurrentNoteFromDisk()
+        await reloadAfterTreeLoad()
         selectedPath = latestStateRef.current.selectedPath
-      } else {
-        const first = firstFile(nodes)
-        if (!first) {
-          if (quickNoteNeedsExpandPreference) {
-            quickNoteNeedsExpandPreference = false
-            update({ expanded: applyTreeExpandMode(treeExpandModeRef.current, nodes, '') })
-          }
-          return
-        }
-        const note = await window.mootool.readQuickNote(first.relativePath)
-        if (cancelled || selectedNotePathRef.current !== selectionPathBeforeLoad) return
-        selectedPath = note.relativePath
-        update({ selectedPath: note.relativePath, selectedKind: 'file', note, content: note.content, metadataDirty: false })
       }
       if (cancelled) return
       if (quickNoteNeedsExpandPreference) {
@@ -429,10 +440,10 @@ export function QuickNoteTool() {
           update({ expanded: nextExpanded })
         }
       }
-      window.requestAnimationFrame(() => scrollSelectedIntoView(selectedPath))
+      window.requestAnimationFrame(() => scrollSelectedIntoView())
     }).catch((error) => toast.error(errorMessage(error)))
     return () => { cancelled = true }
-  }, [applyTreeExpandMode, dirty, loadTree, reloadCurrentNoteFromDisk, scrollSelectedIntoView, toast])
+  }, [applyTreeExpandMode, loadTree, scrollSelectedIntoView, toast, workspaceReady])
 
   useEffect(() => {
     if (!toolActive || !state.treeOpen || !state.selectedPath) return
@@ -457,10 +468,11 @@ export function QuickNoteTool() {
   }, [locatePath, scrollSelectedIntoView, selectedNotePath, state.expanded, state.nodes, state.query])
 
   useEffect(() => window.mootool.onQuickNoteVaultChange(() => {
+    if (!workspaceReady) return
     void loadTree()
     if (!dirty) void reloadCurrentNoteFromDisk()
     void refreshGitChangeCount()
-  }), [dirty, loadTree, refreshGitChangeCount, reloadCurrentNoteFromDisk])
+  }), [dirty, loadTree, refreshGitChangeCount, reloadCurrentNoteFromDisk, workspaceReady])
 
   useEffect(() => {
     if (!toolActive) return
@@ -478,7 +490,7 @@ export function QuickNoteTool() {
   })
 
   useEffect(() => {
-    if (!dirty || !selectedNotePath) return
+    if (!workspaceReady || !dirty || !selectedNotePath) return
     const snapshot = {
       relativePath: selectedNotePath,
       content: state.content,
@@ -487,7 +499,7 @@ export function QuickNoteTool() {
     }
     const timer = window.setTimeout(() => persistSnapshotOnIdle(snapshot), 250)
     return () => window.clearTimeout(timer)
-  }, [dirty, metadataSignature, selectedNotePath, state.content])
+  }, [dirty, metadataSignature, selectedNotePath, state.content, workspaceReady])
 
   useEffect(() => {
     if (!attachmentKey) return
@@ -698,14 +710,9 @@ export function QuickNoteTool() {
         return
       }
       await window.mootool.deleteQuickNoteEntry(state.selectedPath)
-      const nodes = await loadTree()
-      const first = firstFile(nodes)
-      if (first) {
-        const note = await window.mootool.readQuickNote(first.relativePath)
-        update({ actionMode: null, selectedPath: note.relativePath, selectedKind: 'file', note, content: note.content, busy: false, metadataDirty: false })
-      } else {
-        update({ actionMode: null, selectedPath: '', selectedKind: '', note: null, content: '', busy: false, metadataDirty: false })
-      }
+      const { file: note } = await window.mootool.openQuickNoteWorkspace()
+      update({ actionMode: null, selectedPath: note.relativePath, selectedKind: 'file', note, content: note.content, busy: false, metadataDirty: false, query: '' })
+      await loadTree()
     } catch (error) {
       update({ busy: false })
       toast.error(errorMessage(error))
@@ -1291,15 +1298,6 @@ function DocumentInfoDialog({ open, note, stats, onClose }: { open: boolean; not
       <dl className="quick-note-info">{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
     </Dialog>
   )
-}
-
-function firstFile(nodes: QuickNoteNode[]): QuickNoteNode | null {
-  for (const node of nodes) {
-    if (node.kind === 'file') return node
-    const nested = firstFile(node.children ?? [])
-    if (nested) return nested
-  }
-  return null
 }
 
 function selectedDirectory(path: string, kind: EntryKind): string {
