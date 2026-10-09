@@ -11,6 +11,7 @@ import {
   FolderPlus,
   FoldVertical,
   GitBranch,
+  LocateFixed,
   MoreHorizontal,
   Move,
   Pencil,
@@ -108,6 +109,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   const contextMenuRef = useRef<HTMLDivElement>(null)
   const moreMenuRef = useRef<HTMLDetailsElement>(null)
   const treeRef = useRef<HTMLDivElement>(null)
+  const [locatePath, setLocatePath] = useState('')
   const [sort, setSort] = useState<'name' | 'modified'>(jsonVaultSessionState.sort)
   const latestSelectionRef = useRef({ selectedPath, content })
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
@@ -219,6 +221,17 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
     const frame = window.requestAnimationFrame(() => scrollSelectedIntoView(selectedPath))
     return () => window.cancelAnimationFrame(frame)
   }, [scrollSelectedIntoView, selectedPath, toolActive])
+
+  useEffect(() => {
+    if (!locatePath || query) return
+    if (locatePath !== selectedPath) { setLocatePath(''); return }
+    const row = treeRef.current?.querySelector<HTMLButtonElement>(`[data-path="${CSS.escape(locatePath)}"]`)
+    if (!row) return
+    selection.select(locatePath, { ctrlKey: false, metaKey: false, shiftKey: false })
+    row.focus({ preventScroll: true })
+    scrollSelectedIntoView(locatePath)
+    setLocatePath('')
+  }, [expanded, locatePath, nodes, query, scrollSelectedIntoView, selectedPath])
 
   useEffect(() => window.mootool.onJsonVaultChange(() => {
     void load()
@@ -491,6 +504,14 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
     toast.error(error instanceof Error ? error.message : t('json.notice.failed'))
   }
 
+  function locateCurrentFile(): void {
+    if (!selectedPath) return
+    setQuery('')
+    setSelectedEntry({ path: selectedPath, kind: 'file' })
+    setExpanded((current) => ensureAncestorsExpanded(current, selectedPath))
+    setLocatePath(selectedPath)
+  }
+
   const actionTitle = textAction?.type === 'folder'
     ? t('json.vault.newFolder')
     : textAction?.type === 'rename' ? t('json.vault.rename') : t('json.vault.new')
@@ -530,15 +551,16 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
       <div className="vault-panel__actions">
         <VaultAction label={t('json.vault.new')} onClick={beginCreateFile}><FilePlus2 size={14} /></VaultAction>
         <VaultAction label={t('json.vault.newFolder')} onClick={beginCreateFolder}><FolderPlus size={14} /></VaultAction>
+        <VaultAction label={t('json.vault.save')} onClick={() => { void saveSelected() }}><Save size={14} /></VaultAction>
+        <VaultAction label={t('json.vault.delete')} disabled={!selectedEntry || selection.paths.length > 1} onClick={() => { void deleteEntry() }}><Trash2 size={14} /></VaultAction>
+        <VaultAction label={t('json.git.open')} badge={gitChangeCount} onClick={() => setGitDialogOpen(true)}><GitBranch size={14} /></VaultAction>
         <VaultAction
           label={settings.vault.jsonTreeExpandMode === 'expandAll' ? t('json.vault.collapseAll') : t('json.vault.expandAll')}
           onClick={() => setTreeExpandMode(settings.vault.jsonTreeExpandMode === 'expandAll' ? 'collapseAll' : 'expandAll')}
         >
           {settings.vault.jsonTreeExpandMode === 'expandAll' ? <FoldVertical size={14} /> : <UnfoldVertical size={14} />}
         </VaultAction>
-        <VaultAction label={t('json.vault.save')} onClick={() => { void saveSelected() }}><Save size={14} /></VaultAction>
-        <VaultAction label={t('json.vault.delete')} disabled={!selectedEntry || selection.paths.length > 1} onClick={() => { void deleteEntry() }}><Trash2 size={14} /></VaultAction>
-        <VaultAction label={t('json.git.open')} badge={gitChangeCount} onClick={() => setGitDialogOpen(true)}><GitBranch size={14} /></VaultAction>
+        <VaultAction label={t('json.vault.locateCurrent')} disabled={!selectedPath} onClick={locateCurrentFile}><LocateFixed size={14} /></VaultAction>
       </div>
       <div
         ref={treeRef}

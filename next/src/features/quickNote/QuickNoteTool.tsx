@@ -14,6 +14,7 @@ import {
   ImagePlus,
   List,
   ListOrdered,
+  LocateFixed,
   PanelLeftClose,
   PanelLeftOpen,
   Replace,
@@ -294,6 +295,7 @@ export function QuickNoteTool() {
   const toast = useToast()
   const editorRef = useRef<QuickNoteCodeEditorHandle>(null)
   const treeScrollRef = useRef<HTMLDivElement>(null)
+  const [locatePath, setLocatePath] = useState('')
   const findIndexRef = useRef(quickNoteFindIndex)
   const [findFocusRequest, requestFindFocus] = useReducer((value: number) => value + 1, 0)
   const [state, dispatch] = useReducer(updateState, undefined, createQuickNoteState)
@@ -442,6 +444,17 @@ export function QuickNoteTool() {
     const frame = window.requestAnimationFrame(() => scrollSelectedIntoView(state.selectedPath))
     return () => window.cancelAnimationFrame(frame)
   }, [scrollSelectedIntoView, state.selectedPath, state.treeOpen, toolActive])
+
+  useEffect(() => {
+    if (!locatePath || state.query) return
+    if (locatePath !== selectedNotePath) { setLocatePath(''); return }
+    const row = treeScrollRef.current?.querySelector<HTMLButtonElement>(`[data-path="${CSS.escape(locatePath)}"]`)
+    if (!row) return
+    selection.select(locatePath, { ctrlKey: false, metaKey: false, shiftKey: false })
+    row.focus({ preventScroll: true })
+    scrollSelectedIntoView(locatePath)
+    setLocatePath('')
+  }, [locatePath, scrollSelectedIntoView, selectedNotePath, state.expanded, state.nodes, state.query])
 
   useEffect(() => window.mootool.onQuickNoteVaultChange(() => {
     void loadTree()
@@ -991,6 +1004,11 @@ export function QuickNoteTool() {
                   icon={settings.vault.quickNoteTreeExpandMode === 'expandAll' ? FoldVertical : UnfoldVertical}
                   onClick={() => setTreeExpandMode(settings.vault.quickNoteTreeExpandMode === 'expandAll' ? 'collapseAll' : 'expandAll')}
                 />
+                <IconButton label={t('quickNote.locateCurrent')} icon={LocateFixed} disabled={!state.note} onClick={() => {
+                  if (!selectedNotePath) return
+                  update({ query: '', selectedPath: selectedNotePath, selectedKind: 'file', expanded: ensureAncestorsExpanded(state.expanded, selectedNotePath) })
+                  setLocatePath(selectedNotePath)
+                }} />
               </div>
               {selection.paths.length > 1 && <div className="vault-panel__selection">{t('vault.batch.selected', { count: String(selection.paths.length) })}</div>}
               <div ref={treeScrollRef} className="quick-note-tree-scroll" onScroll={(event) => { quickNoteTreeScrollTop = event.currentTarget.scrollTop }}>

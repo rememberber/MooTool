@@ -3118,8 +3118,9 @@ select:not([multiple]) {
 }
 
 .vault-panel__actions {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 1px;
   width: 100%;
   min-height: 35px;
@@ -9988,13 +9989,14 @@ select:not([multiple]) {
 
 /* JSON Vault */
 .vault-panel__actions {
-  gap: 2px;
+  gap: 3px;
   min-height: 40px;
   padding: 3px 7px;
 }
 
 .vault-panel__actions button {
-  width: 100%;
+  width: 32px;
+  flex-shrink: 0;
   max-width: 32px;
   height: 32px;
 }
