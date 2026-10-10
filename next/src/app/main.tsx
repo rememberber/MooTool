@@ -6,6 +6,7 @@ import '@/shared/styles/sidebar.css'
 import '@/shared/styles/windowMaterial.css'
 import '@/shared/styles/windowChrome.css'
 import '@/shared/styles/glassControls.css'
+import '@/shared/styles/functionArea.css'
 
 const rendererParams = new URLSearchParams(window.location.search)
 document.documentElement.dataset.platform = window.mootool.platform

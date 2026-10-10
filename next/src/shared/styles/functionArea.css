@@ -1,0 +1,49 @@
+/* Islands Dark surfaces belong to the functional workspace, including docked
+ * and detached tool views. The application sidebar keeps its theme/material.
+ * Palette: JetBrains themes/islands/ManyIslandsDark.theme.json.
+ */
+:root[data-theme='dark'] :is(.workspace, .tool-view-shell, .http-response-window) {
+  --workspace: #191a1c;
+  --surface: #191a1c;
+  --sidebar: #212326;
+  --surface-soft: #212326;
+  --surface-card: #212326;
+  --surface-card-hover: #26282c;
+  --surface-elevated: rgb(38 40 44 / 97%);
+  --surface-command: rgb(38 40 44 / 96%);
+  --toolbar: #191a1c;
+  --control: #26282c;
+  --control-active: #33353b;
+  --border: #33353b;
+  --border-soft: #26282c;
+  --border-control: #33353b;
+  --border-control-hover: #40434a;
+  --pattern-dot: #33353b;
+  --smartisan-toolbar-top: #212326;
+  --smartisan-toolbar-bottom: #191a1c;
+  --smartisan-raised-top: #26282c;
+  --smartisan-raised-bottom: #212326;
+  --smartisan-inset: #191a1c;
+  --miui-toolbar-top: #212326;
+  --miui-toolbar-bottom: #191a1c;
+  --miui-raised-top: #26282c;
+  --miui-raised-bottom: #212326;
+  --miui-inset: #191a1c;
+  --desktop-control-bg: var(--surface);
+  --desktop-control-border: color-mix(in srgb, var(--border-control) 92%, transparent);
+  --desktop-control-border-hover: color-mix(in srgb, var(--border-control-hover) 94%, transparent);
+  --desktop-button-hover: color-mix(in srgb, var(--surface) 86%, var(--control));
+  --desktop-button-pressed: color-mix(in srgb, var(--surface) 72%, var(--control-active));
+  --desktop-danger-bg: color-mix(in srgb, var(--error-bg) 82%, var(--surface));
+  --desktop-danger-border: color-mix(in srgb, var(--error-text) 20%, var(--border-control));
+}
+
+/* Islands editor and gutter share the same canvas; syntax colors stay intact.
+ * Caret row: JetBrains themes/islands/IslandSchemeDark.xml.
+ */
+:root[data-theme='dark'] :is(.workspace, .tool-view-shell, .http-response-window) :is(.text-code-editor, textarea) {
+  --editor-background: #191a1c;
+  --editor-gutter-background: #191a1c;
+  --editor-active-line: #1f2024;
+  --editor-active-line-overlay: rgb(37 38 44 / 50%);
+}
