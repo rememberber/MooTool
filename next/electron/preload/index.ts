@@ -1,4 +1,5 @@
 import type { WindowMaterialStatus } from '../../src/shared/contracts/windowMaterial'
+import type { GlobalShortcutStatus } from '../../src/shared/contracts/shortcuts'
 import type { RegexInput, RegexResult } from '../../src/shared/contracts/regex'
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import type {
@@ -51,6 +52,9 @@ contextBridge.exposeInMainWorld('mootool', {
   getSystemTheme: (): Promise<'light' | 'dark'> => ipcRenderer.invoke('theme:get-system'),
   setPreventDisplaySleep: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('system:set-prevent-display-sleep', enabled),
   getSettings: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),
+  getGlobalShortcutStatus: (): Promise<GlobalShortcutStatus> => ipcRenderer.invoke('shortcuts:global-status'),
+  retryGlobalShortcut: (): Promise<GlobalShortcutStatus> => ipcRenderer.invoke('shortcuts:global-retry'),
+  onGlobalShortcutStatusChange: (callback: (status: GlobalShortcutStatus) => void) => subscribe('shortcuts:global-status-changed', callback),
   updateSettings: (patch: SettingsPatch): Promise<AppSettings> => ipcRenderer.invoke('settings:update', patch),
   openSettings: (category?: string): Promise<void> => ipcRenderer.invoke('settings:open', category),
   dismissWindow: (): Promise<void> => ipcRenderer.invoke('window:dismiss'),

@@ -2,7 +2,7 @@ import { normalizeTranslationLanguagePair } from './network'
 import { isToolId, type ToolId } from './app'
 import { isVaultTreeExpandMode, type VaultTreeExpandMode } from '../vaultTreeExpand'
 
-export const appSettingsSchemaVersion = 13
+export const appSettingsSchemaVersion = 14
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type WindowMaterial = 'auto' | 'solid' | 'vibrancy' | 'liquid-glass'
@@ -105,6 +105,8 @@ export type AppSettings = {
   shortcuts: {
     search: string
     settings: string
+    globalSearchEnabled: boolean
+    globalSearch: string
   }
 }
 
@@ -207,7 +209,9 @@ export const defaultAppSettings: AppSettings = {
   },
   shortcuts: {
     search: 'CommandOrControl+K',
-    settings: 'CommandOrControl+,'
+    settings: 'CommandOrControl+,',
+    globalSearchEnabled: false,
+    globalSearch: 'CommandOrControl+Shift+Space'
   }
 }
 
@@ -304,6 +308,12 @@ export function normalizeSettings(value: AppSettings): AppSettings {
       jsonTreeExpandMode: isVaultTreeExpandMode(value.vault.jsonTreeExpandMode)
         ? value.vault.jsonTreeExpandMode
         : defaultAppSettings.vault.jsonTreeExpandMode
+    },
+    shortcuts: {
+      ...value.shortcuts,
+      globalSearchEnabled: value.shortcuts.globalSearchEnabled === true,
+      globalSearch: typeof value.shortcuts.globalSearch === 'string'
+        ? value.shortcuts.globalSearch.trim().slice(0, 160) : defaultAppSettings.shortcuts.globalSearch
     },
     tools: {
       ...value.tools,

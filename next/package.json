@@ -1,5 +1,6 @@
 {
   "name": "mootool-next",
+  "desktopName": "com.rememberber.mootool.next.electron.desktop",
   "version": "1.3.0",
   "private": true,
   "description": "MooTool rewritten with Electron, Vite, React, and TypeScript.",
@@ -152,6 +153,7 @@
       "artifactName": "MooTool-Next-Electron-${version}-win-${arch}-portable.${ext}"
     },
     "linux": {
+      "syncDesktopName": true,
       "icon": "resources/icon.png",
       "category": "Utility;Development",
       "target": [

@@ -39,7 +39,17 @@ Actions preview their result before copying. Enter on **Copy result** or click t
 
 Text actions accept up to 100,000 characters. Invalid JSON, duplicate JSON keys, malformed Base64, invalid UTF-8 Base64 output, and malformed URL percent escapes show errors without modifying the clipboard. The input and output are kept only for the current palette session. The palette runs locally and does not send text to an AI service.
 
-Action metadata and execution live in `src/app/actionRegistry.ts`, separately from page navigation in `toolRegistry.ts`. Implementations load on demand and reuse the existing JSON, time, encoding and Quick Note transformation functions. This first version uses the existing in-app shortcut; it does not register a system-wide shortcut.
+Action metadata and execution live in `src/app/actionRegistry.ts`, separately from page navigation in `toolRegistry.ts`. Implementations load on demand and reuse the existing JSON, time, encoding and Quick Note transformation functions.
+
+### Global shortcut and tray access
+
+Open **Settings → Keyboard Shortcuts → Global command palette** to enable a system-wide shortcut. It is **off by default**, including when upgrading existing installations. The default combination is **Cmd+Shift+Space** on macOS and **Ctrl+Shift+Space** on Windows/Linux. Enter a custom combination such as `Ctrl+Alt+Space`, then save; enabling, disabling and changing the combination take effect immediately. The settings page reports registration status, rejects invalid combinations and conflicts with built-in search/settings/editor shortcuts, and offers retry when the operating system rejects registration.
+
+The shortcut works while MooTool runs in the background. It restores a hidden or minimized main window and opens the same command palette above any docked tool. The tray menu also provides **Command Palette…**. Disabling the shortcut, changing the combination, or quitting releases only the shortcut owned by this feature. It does not alter other apps or register a clipboard watcher.
+
+Linux packages set `desktopName` and `linux.syncDesktopName` to align the installed desktop entry with the Electron app identity used by the Wayland global-shortcut portal. Wayland availability depends on the desktop portal and installation of that desktop entry; some desktops may show their own consent dialog. See the [Electron globalShortcut documentation](https://www.electronjs.org/docs/latest/api/global-shortcut#usage-on-linux). Windows and Linux runtime acceptance remain to be performed; the desktop tests run on macOS.
+
+Implementation: `electron/main/globalCommandShortcut.ts` owns registration and cleanup; `src/shared/contracts/shortcuts.ts` validates combinations consistently in the renderer and main process. `tests/electron/global-shortcut.spec.ts` covers actual registration, simulated callback dispatch to restore hidden/minimized windows, registration failure/retry, persistence after restart and release on disable.
 
 Validation: `npm run check`; `npx playwright test tests/electron/command-palette.spec.ts` covers keyboard navigation, preview/copy, clipboard isolation, invalid input, stale async results, compact layout, and light/dark themes.
 

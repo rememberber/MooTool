@@ -3,6 +3,7 @@ import type { HostProfile } from '../../src/shared/contracts/system'
 
 export type TrayMenuLabels = {
   open: string
+  commandPalette: string
   settings: string
   colorPicker: string
   screenshot: string
@@ -12,6 +13,7 @@ export type TrayMenuLabels = {
 
 export type TrayMenuActions = {
   openApp: () => void
+  openCommandPalette: () => void
   openSettings: () => void
   openColorPicker: () => void
   captureScreen: () => void
@@ -28,6 +30,7 @@ export function buildTrayMenuTemplate(
 ): MenuItemConstructorOptions[] {
   return [
     { label: labels.open, click: actions.openApp },
+    { label: labels.commandPalette, click: actions.openCommandPalette },
     { label: labels.settings, click: actions.openSettings },
     { type: 'separator' },
     { label: labels.colorPicker, click: actions.openColorPicker },

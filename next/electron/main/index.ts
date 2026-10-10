@@ -1,4 +1,5 @@
 import { windowChromeOptions, trackWindowChrome } from './windowChrome'
+import { GlobalCommandShortcut } from './globalCommandShortcut'
 import { WindowMaterialController, loadNativeGlass } from './windowMaterial'
 import { runImageBatch } from '../../src/shared/imageBatch'
 import { vectorizeInWorker } from './imageVectorizationTask'
@@ -13,6 +14,7 @@ import {
   clipboard,
   desktopCapturer,
   dialog,
+  globalShortcut,
   ipcMain,
   Menu,
   nativeImage,
@@ -196,6 +198,7 @@ const vaultWorkspaceService = new VaultWorkspaceService({
 })
 let mainWindow: BrowserWindow | null = null
 let mainWindowMaterial: WindowMaterialController | null = null
+const commandShortcut = new GlobalCommandShortcut(globalShortcut, () => navigateMainWindow('focus-search'), process.platform)
 let toolWindowManager: ToolWindowManager
 let tray: Tray | null = null
 let isQuitting = false
@@ -534,6 +537,17 @@ function registerIpc(): void {
     return displaySleepService.set(senderId, enabled)
   })
   ipcMain.handle('settings:get', () => store.get('settings'))
+  ipcMain.handle('shortcuts:global-status', (event) => {
+    assertMainRenderer(event.sender)
+    return commandShortcut.getStatus()
+  })
+  ipcMain.handle('shortcuts:global-retry', (event) => {
+    assertMainRenderer(event.sender)
+    const { globalSearchEnabled, globalSearch } = store.get('settings').shortcuts
+    const status = commandShortcut.apply(globalSearchEnabled, globalSearch)
+    broadcast('shortcuts:global-status-changed', status)
+    return status
+  })
   // Vault changes await access revocation; serialize patches to avoid lost settings.
   let settingsUpdates: Promise<unknown> = Promise.resolve()
   ipcMain.handle('settings:update', (_event, patch: SettingsPatch) => {
@@ -1624,6 +1638,8 @@ async function detectRuntimes(settings: AppSettings): Promise<RuntimeStatus[]> {
 }
 
 function applySettings(settings: AppSettings): void {
+  const shortcutStatus = commandShortcut.apply(settings.shortcuts.globalSearchEnabled, settings.shortcuts.globalSearch)
+  broadcast('shortcuts:global-status-changed', shortcutStatus)
   nativeTheme.themeSource = settings.appearance.theme
   rebuildApplicationMenu(settings.general.language)
   updateTray(settings)
@@ -1985,6 +2001,7 @@ function updateTray(settings: AppSettings): void {
   if (activeHostId !== store.get('activeHostId')) store.set('activeHostId', null)
   tray.setContextMenu(Menu.buildFromTemplate(buildTrayMenuTemplate(labels, profiles, activeHostId, {
     openApp: showMainWindow,
+    openCommandPalette: () => navigateMainWindow('focus-search'),
     openSettings: () => openSettingsPage(),
     openColorPicker: () => { void pickScreenColorFromTray() },
     captureScreen: () => { void captureScreenFromTray() },
@@ -2016,6 +2033,7 @@ async function switchHostFromTray(hostId: number): Promise<void> {
 
 function showMainWindow(): BrowserWindow {
   const window = mainWindow ?? createMainWindow()
+  if (window.isMinimized()) window.restore()
   window.show()
   window.focus()
   return window
@@ -2303,10 +2321,11 @@ function normalizeSecretKey(value: unknown): SecretKey {
 type MenuLabels = Record<'file' | 'edit' | 'view' | 'window' | 'tools' | 'search' | 'settings' | 'checkUpdates' | 'open' | 'quit' |
   'about' | 'backup' | 'shortcuts' | 'appearance' | 'layout' | 'runtime' | 'toolDefaults' | 'undo' | 'redo' | 'cut' | 'copy' |
   'paste' | 'selectAll' | 'actualSize' | 'zoomIn' | 'zoomOut' | 'fullscreen' | 'minimize' | 'zoom' | 'bringAllToFront' |
-  'hide' | 'hideOthers' | 'showAll' | 'colorPicker' | 'screenshot' | 'translation' | 'hostSwitched' | 'hostSwitchFailed', string>
+  'hide' | 'hideOthers' | 'showAll' | 'colorPicker' | 'screenshot' | 'translation' | 'hostSwitched' | 'hostSwitchFailed' | 'commandPalette', string>
 
 const menuLabels: Record<AppLanguage, MenuLabels> = {
   'zh-CN': {
+    commandPalette: '命令面板…',
     file: '文件', edit: '编辑', view: '显示', window: '窗口', tools: '工具', search: '搜索工具', settings: '设置…', checkUpdates: '检查更新…',
     open: '打开 MooTool', quit: '退出 MooTool', about: '关于 MooTool', backup: '同步与备份…', shortcuts: '快捷键…', appearance: '外观…',
     layout: '布局与习惯…', runtime: '运行环境…', toolDefaults: '工具默认值…', undo: '撤销', redo: '重做', cut: '剪切', copy: '复制',
@@ -2315,6 +2334,7 @@ const menuLabels: Record<AppLanguage, MenuLabels> = {
     colorPicker: '取色器', screenshot: '截图', translation: '翻译', hostSwitched: 'Host 已切换：{name}', hostSwitchFailed: 'Host 切换失败'
   },
   'en-US': {
+    commandPalette: 'Command Palette…',
     file: 'File', edit: 'Edit', view: 'View', window: 'Window', tools: 'Tools', search: 'Search Tools', settings: 'Settings…', checkUpdates: 'Check for Updates…',
     open: 'Open MooTool', quit: 'Quit MooTool', about: 'About MooTool', backup: 'Sync and Backup…', shortcuts: 'Keyboard Shortcuts…', appearance: 'Appearance…',
     layout: 'Layout and Behavior…', runtime: 'Runtimes…', toolDefaults: 'Tool Defaults…', undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy',
@@ -2323,6 +2343,7 @@ const menuLabels: Record<AppLanguage, MenuLabels> = {
     colorPicker: 'Color Picker', screenshot: 'Capture', translation: 'Translation', hostSwitched: 'Host switched: {name}', hostSwitchFailed: 'Host switch failed'
   },
   'ja-JP': {
+    commandPalette: 'コマンドパレット…',
     file: 'ファイル', edit: '編集', view: '表示', window: 'ウインドウ', tools: 'ツール', search: 'ツールを検索', settings: '設定…', checkUpdates: 'アップデートを確認…',
     open: 'MooTool を開く', quit: 'MooTool を終了', about: 'MooTool について', backup: '同期とバックアップ…', shortcuts: 'キーボードショートカット…', appearance: '外観…',
     layout: 'レイアウトと操作…', runtime: '実行環境…', toolDefaults: 'ツールのデフォルト…', undo: '取り消す', redo: 'やり直す', cut: 'カット', copy: 'コピー',
@@ -2446,6 +2467,7 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', () => {
   isQuitting = true
+  commandShortcut.dispose()
   javaRegexService.dispose()
   displaySleepService.dispose()
   displaySleepCleanupSenders.clear()

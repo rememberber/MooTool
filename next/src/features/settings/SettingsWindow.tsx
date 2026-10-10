@@ -46,6 +46,7 @@ import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
 import { useSettings } from './SettingsProvider'
 import { AiIntegrationSettings } from './AiIntegrationSettings'
+import { GlobalShortcutSettings } from './GlobalShortcutSettings'
 
 type SettingsCategory = 'general' | 'appearance' | 'layout' | 'editor' | 'network' | 'data' | 'vault' | 'runtime' | 'ai' | 'tools' | 'shortcuts' | 'about'
 
@@ -713,10 +714,11 @@ function ToolDefaults({ settings, commit }: SettingsPanelProps) {
 function ShortcutSettings({ settings }: { settings: AppSettings }) {
   const { t } = useI18n()
   return (
-    <SettingsGroup title={t('settings.group.shortcuts')}>
+    <><SettingsGroup title={t('settings.group.shortcuts')}>
       <SettingRow label={t('settings.shortcut.search')}><kbd>{formatShortcut(settings.shortcuts.search)}</kbd></SettingRow>
       <SettingRow label={t('settings.shortcut.settings')}><kbd>{formatShortcut(settings.shortcuts.settings)}</kbd></SettingRow>
     </SettingsGroup>
+    <SettingsGroup title={t('settings.globalShortcut.title')}><GlobalShortcutSettings /></SettingsGroup></>
   )
 }
 

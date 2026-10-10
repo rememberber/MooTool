@@ -4,6 +4,7 @@ import { buildTrayMenuTemplate, type TrayMenuActions, type TrayMenuLabels } from
 
 const labels: TrayMenuLabels = {
   open: 'Open MooTool',
+  commandPalette: 'Command Palette',
   settings: 'Settings…',
   colorPicker: 'Color Picker',
   screenshot: 'Capture',
@@ -18,6 +19,7 @@ function profile(id: number, name: string): HostProfile {
 function actions(): TrayMenuActions {
   return {
     openApp: vi.fn(),
+    openCommandPalette: vi.fn(),
     openSettings: vi.fn(),
     openColorPicker: vi.fn(),
     captureScreen: vi.fn(),
@@ -34,26 +36,33 @@ describe('buildTrayMenuTemplate', () => {
     const template = buildTrayMenuTemplate(labels, profiles, 2, handlers)
 
     expect(template.map((item) => item.type === 'separator' ? '-' : item.label)).toEqual([
-      'Open MooTool', 'Settings…', '-', 'Color Picker', 'Capture', 'Translation', '-', 'Local', 'Development', '-', 'Quit MooTool'
+      'Open MooTool', 'Command Palette', 'Settings…', '-', 'Color Picker', 'Capture', 'Translation', '-', 'Local', 'Development', '-', 'Quit MooTool'
     ])
-    expect(template[7]).toMatchObject({ type: 'checkbox', checked: false })
-    expect(template[8]).toMatchObject({ type: 'checkbox', checked: true })
+    expect(template[8]).toMatchObject({ type: 'checkbox', checked: false })
+    expect(template[9]).toMatchObject({ type: 'checkbox', checked: true })
 
-    ;(template[8].click as () => void)()
+    ;(template[9].click as () => void)()
     expect(handlers.switchHost).toHaveBeenCalledWith(profiles[1])
   })
 
   it('does not add an empty Host separator when no profiles exist', () => {
     const template = buildTrayMenuTemplate(labels, [], null, actions())
     expect(template.map((item) => item.type === 'separator' ? '-' : item.label)).toEqual([
-      'Open MooTool', 'Settings…', '-', 'Color Picker', 'Capture', 'Translation', '-', 'Quit MooTool'
+      'Open MooTool', 'Command Palette', 'Settings…', '-', 'Color Picker', 'Capture', 'Translation', '-', 'Quit MooTool'
     ])
   })
 
   it('routes the screenshot shortcut to its action', () => {
     const handlers = actions()
     const template = buildTrayMenuTemplate(labels, [], null, handlers)
-    ;(template[4].click as () => void)()
+    ;(template[5].click as () => void)()
     expect(handlers.captureScreen).toHaveBeenCalledOnce()
+  })
+
+  it('opens the command palette from the tray', () => {
+    const handlers = actions()
+    const template = buildTrayMenuTemplate(labels, [], null, handlers)
+    ;(template[1].click as () => void)()
+    expect(handlers.openCommandPalette).toHaveBeenCalledOnce()
   })
 })

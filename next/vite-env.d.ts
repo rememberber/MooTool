@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import type { WindowMaterialStatus } from './src/shared/contracts/windowMaterial'
+import type { GlobalShortcutStatus } from './src/shared/contracts/shortcuts'
 import type { RegexInput, RegexResult } from './src/shared/contracts/regex'
 
 import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, ToolId, ToolWindowSnapshot, ToolWindowStatus, ToolWorkspaceBounds, WorkspaceState } from './src/shared/contracts/app'
@@ -44,6 +45,9 @@ declare global {
       getSystemTheme: () => Promise<'light' | 'dark'>
       setPreventDisplaySleep: (enabled: boolean) => Promise<boolean>
       getSettings: () => Promise<AppSettings>
+      getGlobalShortcutStatus: () => Promise<GlobalShortcutStatus>
+      retryGlobalShortcut: () => Promise<GlobalShortcutStatus>
+      onGlobalShortcutStatusChange: (callback: (status: GlobalShortcutStatus) => void) => () => void
       updateSettings: (patch: SettingsPatch) => Promise<AppSettings>
       openSettings: (category?: string) => Promise<void>
       dismissWindow: () => Promise<void>
