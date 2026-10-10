@@ -810,7 +810,7 @@ test('opens settings as a workspace page and synchronizes appearance changes', a
   await expect(settingsPage.locator('.settings-page')).toBeVisible()
   await expect.poll(() => electronApp.windows().length).toBe(initialWindowCount)
   await expect(settingsPage.getByRole('button', { name: '设置', exact: true })).toHaveAttribute('aria-current', 'page')
-  await expect(settingsPage.locator('.settings-nav__item')).toHaveCount(11)
+  await expect(settingsPage.locator('.settings-nav__item')).toHaveCount(12)
   const trayToggle = settingsPage.getByRole('switch', { name: '启用系统托盘' })
   const autoDownloadToggle = settingsPage.getByRole('switch', { name: '自动静默下载新版' })
   await expect(autoDownloadToggle).toHaveAttribute('aria-checked', 'true')
@@ -885,7 +885,8 @@ test('opens settings as a workspace page and synchronizes appearance changes', a
 
   await mainPage.getByRole('button', { name: '搜索', exact: true }).click()
   await mainPage.locator('.command-palette__search input').fill('json')
-  await expect(mainPage.locator('.command-result')).toContainText('JSON')
+  await expect(mainPage.locator('.command-result[data-command-kind="tool"]')).toContainText('JSON')
+  await expect(mainPage.locator('.command-result[data-command-id="json-format"]')).toContainText('格式化 JSON')
   await mainPage.getByRole('button', { name: '关闭搜索', exact: true }).click()
   await mainPage.evaluate(() => window.mootool.updateSettings({ layout: { hiddenNavigationToolIds: [] } }))
   await expect(mainPage.getByRole('button', { name: 'JSON', exact: true })).toBeVisible()

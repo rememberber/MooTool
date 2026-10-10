@@ -4,6 +4,16 @@ import iconv from 'iconv-lite'
 export type UrlCharset = 'utf-8' | 'gb2312'
 export type AsciiFormat = 'decimal' | 'hex'
 
+export function encodeBase64(value: string): string {
+  return Buffer.from(value, 'utf8').toString('base64')
+}
+
+export function decodeBase64(value: string): string {
+  const normalized = value.replace(/\s+/g, '')
+  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(normalized)) throw new Error('Invalid Base64')
+  return new TextDecoder('utf-8', { fatal: true }).decode(Buffer.from(normalized, 'base64'))
+}
+
 export function toUnicode(value: string): string {
   return Array.from(value, (character) => {
     const codePoint = character.codePointAt(0) ?? 0

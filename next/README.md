@@ -22,6 +22,27 @@ npm run typecheck
 npm run build
 ```
 
+## Developer command palette
+
+Press **Cmd+K** on macOS or **Ctrl+K** on Windows/Linux inside the main MooTool window, or click the sidebar search button. The palette searches both tool pages and executable actions. Use arrow keys to select an entry and Enter to run it. Tool-name searches retain tool pages as the first result.
+
+Actions preview their result before copying. Enter on **Copy result** or click the button to update the clipboard; Esc returns to search, and another Esc closes the palette. Clipboard text is read only when you execute a text action without an inline argument. Opening or searching the palette does not read the clipboard.
+
+| Action | Inline command example |
+| --- | --- |
+| Generate UUID v4 | `uuid` |
+| Timestamp to date in the system timezone | `timestamp 1728000000` or `时间戳 1728000000000` |
+| Format / minify JSON | `json {"a":1}` / `json minify {"a":1}` |
+| Base64 encode / decode UTF-8 text | `base64 encode hello` / `base64 decode aGVsbG8=` |
+| URL encode / decode UTF-8 text | `url encode hello world` / `url decode hello%20world` |
+| Deduplicate lines in their original order | `deduplicate` or `按行去重` (uses clipboard text) |
+
+Text actions accept up to 100,000 characters. Invalid JSON, duplicate JSON keys, malformed Base64, invalid UTF-8 Base64 output, and malformed URL percent escapes show errors without modifying the clipboard. The input and output are kept only for the current palette session. The palette runs locally and does not send text to an AI service.
+
+Action metadata and execution live in `src/app/actionRegistry.ts`, separately from page navigation in `toolRegistry.ts`. Implementations load on demand and reuse the existing JSON, time, encoding and Quick Note transformation functions. This first version uses the existing in-app shortcut; it does not register a system-wide shortcut.
+
+Validation: `npm run check`; `npx playwright test tests/electron/command-palette.spec.ts` covers keyboard navigation, preview/copy, clipboard isolation, invalid input, stale async results, compact layout, and light/dark themes.
+
 ## Developer translation
 
 - **Split identifier** turns `getHTTPResponse` / `user_id` into words before translation.

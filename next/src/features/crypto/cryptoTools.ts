@@ -77,9 +77,7 @@ export function decodeBase(algorithm: BaseAlgorithm, content: string): string {
   return base32.decode(content.replace(/\s+/g, ''))
 }
 
-export function randomUuid(): string {
-  return globalThis.crypto.randomUUID()
-}
+export { randomUuid } from '@/shared/utils/uuid'
 
 export function randomDigits(length: number): string {
   return randomFromAlphabet('0123456789', length)

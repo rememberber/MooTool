@@ -5549,8 +5549,10 @@ select:not([multiple]) {
 }
 
 .command-palette {
+  display: flex;
+  flex-direction: column;
   width: min(620px, calc(100vw - 48px));
-  max-height: min(570px, calc(100vh - 200px));
+  max-height: min(570px, calc(100vh - min(150px, 16vh) - 24px));
   align-self: flex-start;
   background: var(--surface-elevated);
   border: 1px solid var(--border);
@@ -5561,6 +5563,7 @@ select:not([multiple]) {
 }
 
 .command-palette__search {
+  flex-shrink: 0;
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr) 30px;
   align-items: center;
@@ -5583,6 +5586,7 @@ select:not([multiple]) {
 }
 
 .command-palette__results {
+  min-height: 0;
   max-height: 500px;
   padding: 8px;
   overflow-y: auto;
@@ -5617,6 +5621,67 @@ select:not([multiple]) {
   padding: 44px 16px;
   color: var(--text-muted);
   text-align: center;
+}
+
+.command-result__label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 7px 0;
+  overflow-wrap: anywhere;
+}
+
+.command-palette__hint {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.command-palette__preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 16px;
+}
+
+.command-palette__preview textarea {
+  width: 100%;
+  height: 240px;
+  min-height: 60px;
+  resize: none;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-strong);
+  background: var(--surface);
+  font-family: var(--text-code-editor-font-family, ui-monospace, Menlo, Consolas, monospace);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.command-palette__preview-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.command-palette__error {
+  flex-shrink: 0;
+  max-height: 90px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  margin: 0;
+  padding: 10px 16px;
+  color: var(--error-text);
 }
 
 .settings-page {
