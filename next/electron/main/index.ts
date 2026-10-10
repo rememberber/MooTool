@@ -1,5 +1,7 @@
 import { windowChromeOptions, trackWindowChrome } from './windowChrome'
 import { GlobalCommandShortcut } from './globalCommandShortcut'
+import { commandActionTitles, defaultCommandPaletteState, isCommandActionId, normalizeCommandPaletteState, trayCommandActions, updateCommandPaletteState, type CommandPaletteState } from '../../src/shared/contracts/commandPalette'
+import { messages } from '../../src/shared/i18n/messages'
 import { WindowMaterialController, loadNativeGlass } from './windowMaterial'
 import { runImageBatch } from '../../src/shared/imageBatch'
 import { vectorizeInWorker } from './imageVectorizationTask'
@@ -139,6 +141,7 @@ import type { AiIntegrationService } from './aiIntegrationService'
 type PersistedStore = {
   settings: AppSettings
   workspace: WorkspaceState
+  commandPalette: CommandPaletteState
   window: WindowState
   toolWindows: Partial<Record<string, WindowState>>
   secrets: Partial<Record<SecretKey, string>>
@@ -642,6 +645,24 @@ function registerIpc(): void {
     return { key: normalizedKey, stored: false, encryptionAvailable: safeStorage.isEncryptionAvailable() }
   })
   ipcMain.handle('workspace:get', () => store.get('workspace'))
+  ipcMain.handle('command-palette:get', (event) => {
+    assertMainRenderer(event.sender)
+    return normalizeCommandPaletteState(store.get('commandPalette'))
+  })
+  ipcMain.handle('command-palette:update', (event, operation: unknown) => {
+    assertMainRenderer(event.sender)
+    const previous = normalizeCommandPaletteState(store.get('commandPalette'))
+    const state = updateCommandPaletteState(previous, operation)
+    store.set('commandPalette', state)
+    if (previous.pinnedActionIds.join(',') !== state.pinnedActionIds.join(',')) updateTray(store.get('settings'))
+    broadcast('command-palette:changed', state)
+    return state
+  })
+  ipcMain.handle('command-palette:open-action', (event, actionId: unknown) => {
+    assertMainRenderer(event.sender)
+    if (!isCommandActionId(actionId)) throw new Error('Invalid command action')
+    navigateMainWindow({ type: 'run-command-action', actionId })
+  })
   ipcMain.handle('workspace:set', (_event, nextState: WorkspaceState) => {
     const state = normalizeWorkspaceState(nextState)
     store.set('workspace', state)
@@ -2002,13 +2023,14 @@ function updateTray(settings: AppSettings): void {
   tray.setContextMenu(Menu.buildFromTemplate(buildTrayMenuTemplate(labels, profiles, activeHostId, {
     openApp: showMainWindow,
     openCommandPalette: () => navigateMainWindow('focus-search'),
+    runCommandAction: (actionId) => navigateMainWindow({ type: 'run-command-action', actionId }),
     openSettings: () => openSettingsPage(),
     openColorPicker: () => { void pickScreenColorFromTray() },
     captureScreen: () => { void captureScreenFromTray() },
     openTranslation: () => openToolFromTray('translation'),
     switchHost: (profile) => { void switchHostFromTray(profile.id) },
     quit: () => { isQuitting = true; app.quit() }
-  })))
+  }, trayCommandActions(store.get('commandPalette')).map((actionId) => ({ actionId, label: messages[settings.general.language][commandActionTitles[actionId]] })))))
 }
 
 async function switchHostFromTray(hostId: number): Promise<void> {
@@ -2321,11 +2343,12 @@ function normalizeSecretKey(value: unknown): SecretKey {
 type MenuLabels = Record<'file' | 'edit' | 'view' | 'window' | 'tools' | 'search' | 'settings' | 'checkUpdates' | 'open' | 'quit' |
   'about' | 'backup' | 'shortcuts' | 'appearance' | 'layout' | 'runtime' | 'toolDefaults' | 'undo' | 'redo' | 'cut' | 'copy' |
   'paste' | 'selectAll' | 'actualSize' | 'zoomIn' | 'zoomOut' | 'fullscreen' | 'minimize' | 'zoom' | 'bringAllToFront' |
-  'hide' | 'hideOthers' | 'showAll' | 'colorPicker' | 'screenshot' | 'translation' | 'hostSwitched' | 'hostSwitchFailed' | 'commandPalette', string>
+  'hide' | 'hideOthers' | 'showAll' | 'colorPicker' | 'screenshot' | 'translation' | 'hostSwitched' | 'hostSwitchFailed' | 'commandPalette' | 'quickActions', string>
 
 const menuLabels: Record<AppLanguage, MenuLabels> = {
   'zh-CN': {
     commandPalette: '命令面板…',
+    quickActions: '快捷动作',
     file: '文件', edit: '编辑', view: '显示', window: '窗口', tools: '工具', search: '搜索工具', settings: '设置…', checkUpdates: '检查更新…',
     open: '打开 MooTool', quit: '退出 MooTool', about: '关于 MooTool', backup: '同步与备份…', shortcuts: '快捷键…', appearance: '外观…',
     layout: '布局与习惯…', runtime: '运行环境…', toolDefaults: '工具默认值…', undo: '撤销', redo: '重做', cut: '剪切', copy: '复制',
@@ -2335,6 +2358,7 @@ const menuLabels: Record<AppLanguage, MenuLabels> = {
   },
   'en-US': {
     commandPalette: 'Command Palette…',
+    quickActions: 'Quick Actions',
     file: 'File', edit: 'Edit', view: 'View', window: 'Window', tools: 'Tools', search: 'Search Tools', settings: 'Settings…', checkUpdates: 'Check for Updates…',
     open: 'Open MooTool', quit: 'Quit MooTool', about: 'About MooTool', backup: 'Sync and Backup…', shortcuts: 'Keyboard Shortcuts…', appearance: 'Appearance…',
     layout: 'Layout and Behavior…', runtime: 'Runtimes…', toolDefaults: 'Tool Defaults…', undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy',
@@ -2344,6 +2368,7 @@ const menuLabels: Record<AppLanguage, MenuLabels> = {
   },
   'ja-JP': {
     commandPalette: 'コマンドパレット…',
+    quickActions: 'クイックアクション',
     file: 'ファイル', edit: '編集', view: '表示', window: 'ウインドウ', tools: 'ツール', search: 'ツールを検索', settings: '設定…', checkUpdates: 'アップデートを確認…',
     open: 'MooTool を開く', quit: 'MooTool を終了', about: 'MooTool について', backup: '同期とバックアップ…', shortcuts: 'キーボードショートカット…', appearance: '外観…',
     layout: 'レイアウトと操作…', runtime: '実行環境…', toolDefaults: 'ツールのデフォルト…', undo: '取り消す', redo: 'やり直す', cut: 'カット', copy: 'コピー',
@@ -2407,6 +2432,7 @@ app.whenReady().then(async () => {
         ? mergeSettings(defaultAppSettings, { general: { legacyMigrationHintDismissed: true } })
         : defaultAppSettings,
       workspace: defaultWorkspaceState,
+      commandPalette: defaultCommandPaletteState,
       window: defaultWindowState,
       toolWindows: {},
       secrets: {},
@@ -2415,6 +2441,7 @@ app.whenReady().then(async () => {
     }
   })
   store.set('settings', mergeSettings(defaultAppSettings, store.get('settings') as SettingsPatch))
+  store.set('commandPalette', normalizeCommandPaletteState(store.get('commandPalette')))
   openDataRepositories()
   systemService = new SystemService(app.getPath('temp'))
   runtimeExecutionService = new RuntimeExecutionService(join(app.getPath('temp'), 'mootool-runtime'))

@@ -5674,6 +5674,9 @@ select:not([multiple]) {
   font-size: 12px;
 }
 
+.command-palette__section { padding: 10px 10px 6px; color: var(--text-muted); font-size: 11px; }
+.command-palette__preferences { display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--border-soft); }
+
 .command-palette__error {
   flex-shrink: 0;
   max-height: 90px;

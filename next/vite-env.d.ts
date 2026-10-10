@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 import type { WindowMaterialStatus } from './src/shared/contracts/windowMaterial'
 import type { GlobalShortcutStatus } from './src/shared/contracts/shortcuts'
+import type { CommandActionId, CommandPaletteOperation, CommandPaletteState } from './src/shared/contracts/commandPalette'
 import type { RegexInput, RegexResult } from './src/shared/contracts/regex'
 
 import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, ToolId, ToolWindowSnapshot, ToolWindowStatus, ToolWorkspaceBounds, WorkspaceState } from './src/shared/contracts/app'
@@ -55,6 +56,10 @@ declare global {
       setSecret: (key: SecretKey, value: string) => Promise<SecretStatus>
       clearSecret: (key: SecretKey) => Promise<SecretStatus>
       getWorkspaceState: () => Promise<WorkspaceState>
+      getCommandPaletteState: () => Promise<CommandPaletteState>
+      updateCommandPalette: (operation: CommandPaletteOperation) => Promise<CommandPaletteState>
+      openCommandAction: (actionId: CommandActionId) => Promise<void>
+      onCommandPaletteStateChange: (callback: (state: CommandPaletteState) => void) => () => void
       setWorkspaceState: (state: WorkspaceState) => Promise<WorkspaceState>
       getToolWindowSnapshot: () => Promise<ToolWindowSnapshot>
       activateToolView: (toolId: ToolId) => Promise<ToolWindowSnapshot>

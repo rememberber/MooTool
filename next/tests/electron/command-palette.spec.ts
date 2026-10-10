@@ -130,7 +130,7 @@ test('keeps focus and long result lists inside a compact palette in both themes'
   await search('')
   const input = page.locator('.command-palette__search input')
   await input.press('Shift+Tab')
-  await expect(page.getByRole('button', { name: '关闭搜索', exact: true })).toBeFocused()
+  await expect(page.getByRole('button', { name: '清空最近执行', exact: true })).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(input).toBeFocused()
   for (let index = 0; index < 34; index += 1) await input.press('ArrowDown')

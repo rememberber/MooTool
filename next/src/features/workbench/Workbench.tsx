@@ -26,6 +26,7 @@ export function Workbench() {
   const openTool = useAppStore((state) => state.openTool)
   const searchOpen = useAppStore((state) => state.searchOpen)
   const setSearchOpen = useAppStore((state) => state.setSearchOpen)
+  const requestCommandAction = useAppStore((state) => state.requestCommandAction)
   const [recentCollapsed, setRecentCollapsed] = useState(false)
   const [groupManagerOpen, setGroupManagerOpen] = useState(false)
   const [updateNotesOpen, setUpdateNotesOpen] = useState(false)
@@ -66,6 +67,8 @@ export function Workbench() {
     const unsubscribeNavigation = window.mootool.onNavigate((event) => {
       if (event === 'focus-search') {
         setSearchOpen(true)
+      } else if (event.type === 'run-command-action') {
+        requestCommandAction(event.actionId)
       } else if (event.type === 'open-tool') {
         setSettingsCategory(null)
         openTool(event.toolId)
@@ -79,7 +82,7 @@ export function Workbench() {
       unsubscribeNavigation()
       unsubscribeToolWindows()
     }
-  }, [hydrate, openTool, setSearchOpen])
+  }, [hydrate, openTool, setSearchOpen, requestCommandAction])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

@@ -1,4 +1,5 @@
 import type { MessageKey } from '@/shared/i18n/messages'
+import type { CommandActionId } from '@/shared/contracts/commandPalette'
 
 export type ActionContext = {
   t: (key: MessageKey, params?: Record<string, string>) => string
@@ -6,7 +7,7 @@ export type ActionContext = {
 }
 
 export type ActionDefinition = {
-  id: string
+  id: CommandActionId
   titleKey: MessageKey
   keywords: string[]
   aliases: string[]

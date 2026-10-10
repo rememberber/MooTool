@@ -41,6 +41,16 @@ Text actions accept up to 100,000 characters. Invalid JSON, duplicate JSON keys,
 
 Action metadata and execution live in `src/app/actionRegistry.ts`, separately from page navigation in `toolRegistry.ts`. Implementations load on demand and reuse the existing JSON, time, encoding and Quick Note transformation functions.
 
+### Pinned and recent actions
+
+With an empty search query, the palette groups **Pinned actions**, **Recently run**, **All actions**, and **Tools**. Select an action with arrow keys and click **Pin action**, or pin it from its result preview. Pinned actions appear in the order they were added; the remaining sections exclude duplicates. **Unpin action** removes the pin. Successful execution records up to five distinct recent actions, with repeat executions moved to the front. **Clear recent actions** clears that list while preserving pins.
+
+Pins and recent actions survive restarts. Persistence stores validated action IDs and their order only; it does not store command arguments, clipboard text, previews, or generated results. Re-running a recent action reads the current clipboard when text is needed. Failed or superseded executions are not recorded.
+
+The tray **Quick Actions** submenu follows the pinned list. With no pins, it offers **Generate UUID**, **Format JSON**, and **Base64 decode**. Selecting an entry restores the main window and executes the action into a preview; copying remains explicit. A newer quick action replaces an in-flight request, and its predecessor cannot overwrite the new preview or recent order.
+
+The shared metadata and persistence rules live in `src/shared/contracts/commandPalette.ts`; the main process validates operations and owns storage and tray refresh. `tests/electron/command-preferences.spec.ts` covers pinning/unpinning, recent ordering and clearing, payload exclusion, quick-action dispatch above docked tools, repeated dispatch, stale results, failures and restart persistence.
+
 ### Global shortcut and tray access
 
 Open **Settings → Keyboard Shortcuts → Global command palette** to enable a system-wide shortcut. It is **off by default**, including when upgrading existing installations. The default combination is **Cmd+Shift+Space** on macOS and **Ctrl+Shift+Space** on Windows/Linux. Enter a custom combination such as `Ctrl+Alt+Space`, then save; enabling, disabling and changing the combination take effect immediately. The settings page reports registration status, rejects invalid combinations and conflicts with built-in search/settings/editor shortcuts, and offers retry when the operating system rejects registration.

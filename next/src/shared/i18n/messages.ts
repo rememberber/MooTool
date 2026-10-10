@@ -14,6 +14,15 @@ export const languageLabels: Record<Language, string> = {
 
 export const messages = {
   'zh-CN': {
+    'app.command.section.pinned': '常用动作',
+    'app.command.section.recent': '最近执行',
+    'app.command.section.all': '全部动作',
+    'app.command.section.tools': '工具',
+    'app.command.pin': '设为常用',
+    'app.command.unpin': '取消常用',
+    'app.command.pinned': '常用',
+    'app.command.clearRecent': '清空最近执行',
+    'app.command.preferencesFailed': '命令面板偏好保存或读取失败，请重试。',
     'settings.globalShortcut.title': '全局命令面板',
     'settings.globalShortcut.enable': '启用全局命令面板快捷键',
     'settings.globalShortcut.description': 'MooTool 在后台运行时，可从其他应用呼出命令面板。修改组合后点击保存，即时生效。',
@@ -1378,6 +1387,15 @@ export const messages = {
     ,'messageBoard.keepAwake': '屏幕常亮'
   },
   'en-US': {
+    'app.command.section.pinned': 'Pinned actions',
+    'app.command.section.recent': 'Recently run',
+    'app.command.section.all': 'All actions',
+    'app.command.section.tools': 'Tools',
+    'app.command.pin': 'Pin action',
+    'app.command.unpin': 'Unpin action',
+    'app.command.pinned': 'Pinned',
+    'app.command.clearRecent': 'Clear recent actions',
+    'app.command.preferencesFailed': 'Could not read or save command palette preferences. Please try again.',
     'settings.globalShortcut.title': 'Global command palette',
     'settings.globalShortcut.enable': 'Enable global command palette shortcut',
     'settings.globalShortcut.description': 'Open the palette from other apps while MooTool runs in the background. Save a changed combination to apply it immediately.',
@@ -2742,6 +2760,15 @@ export const messages = {
     ,'messageBoard.keepAwake': 'Screen stays awake'
   },
   'ja-JP': {
+    'app.command.section.pinned': 'よく使うアクション',
+    'app.command.section.recent': '最近実行したアクション',
+    'app.command.section.all': 'すべてのアクション',
+    'app.command.section.tools': 'ツール',
+    'app.command.pin': 'よく使うに追加',
+    'app.command.unpin': 'よく使うから削除',
+    'app.command.pinned': 'よく使う',
+    'app.command.clearRecent': '最近の実行履歴を消去',
+    'app.command.preferencesFailed': 'コマンドパレットの設定を読み取り、または保存できませんでした。再試行してください。',
     'settings.globalShortcut.title': 'グローバルコマンドパレット',
     'settings.globalShortcut.enable': 'グローバルコマンドパレットのショートカットを有効化',
     'settings.globalShortcut.description': 'MooTool のバックグラウンド実行中に他のアプリからパレットを開けます。変更後に保存するとすぐに適用されます。',

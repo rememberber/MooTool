@@ -1,3 +1,5 @@
+import type { CommandActionId } from './commandPalette'
+
 export const toolIds = [
   'mootool',
   'quickNote',
@@ -48,6 +50,9 @@ export const defaultWorkspaceState: WorkspaceState = {
 }
 
 export type AppNavigationEvent = 'focus-search' | {
+  type: 'run-command-action'
+  actionId: CommandActionId
+} | {
   type: 'open-tool'
   toolId: ToolId
 } | {

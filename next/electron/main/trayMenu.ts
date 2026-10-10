@@ -1,9 +1,11 @@
 import type { MenuItemConstructorOptions } from 'electron'
 import type { HostProfile } from '../../src/shared/contracts/system'
+import type { CommandActionId } from '../../src/shared/contracts/commandPalette'
 
 export type TrayMenuLabels = {
   open: string
   commandPalette: string
+  quickActions: string
   settings: string
   colorPicker: string
   screenshot: string
@@ -14,6 +16,7 @@ export type TrayMenuLabels = {
 export type TrayMenuActions = {
   openApp: () => void
   openCommandPalette: () => void
+  runCommandAction: (actionId: CommandActionId) => void
   openSettings: () => void
   openColorPicker: () => void
   captureScreen: () => void
@@ -26,11 +29,13 @@ export function buildTrayMenuTemplate(
   labels: TrayMenuLabels,
   profiles: HostProfile[],
   activeHostId: number | null,
-  actions: TrayMenuActions
+  actions: TrayMenuActions,
+  quickActions: Array<{ actionId: CommandActionId; label: string }> = []
 ): MenuItemConstructorOptions[] {
   return [
     { label: labels.open, click: actions.openApp },
     { label: labels.commandPalette, click: actions.openCommandPalette },
+    ...(quickActions.length ? [{ label: labels.quickActions, submenu: quickActions.map(({ actionId, label }) => ({ label, click: () => actions.runCommandAction(actionId) })) }] : []),
     { label: labels.settings, click: actions.openSettings },
     { type: 'separator' },
     { label: labels.colorPicker, click: actions.openColorPicker },
