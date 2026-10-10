@@ -5677,6 +5677,33 @@ select:not([multiple]) {
 .command-palette__section { padding: 10px 10px 6px; color: var(--text-muted); font-size: 11px; }
 .command-palette__preferences { display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--border-soft); }
 
+.batch-rename-workspace { display: flex; flex-direction: column; min-height: 0; overflow: auto; }
+.batch-rename-toolbar { flex-shrink: 0; gap: 8px; flex-wrap: wrap; }
+.batch-rename-toolbar .workspace-drag-zone { flex: 1; min-width: 20px; }
+.batch-rename-rules { display: grid; grid-template-columns: repeat(4, minmax(100px, 1fr)); gap: 12px; padding: 16px; border-bottom: 1px solid var(--border-soft); }
+.batch-rename-rules > label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-muted); }
+.batch-rename-rules input:not([type='checkbox']) { width: 100%; min-width: 0; padding: 8px; border: 1px solid var(--border-control); border-radius: 6px; background: var(--control); color: var(--text-strong); font: inherit; }
+.batch-rename-toggles { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 20px; font-size: 12px; }
+.batch-rename-toggles label { display: flex; gap: 6px; align-items: center; }
+.batch-rename-preview-toolbar { flex-shrink: 0; flex-wrap: wrap; gap: 8px; }
+.batch-rename-table-wrap { flex: 1; min-height: 180px; overflow: auto; }
+.batch-rename-table { width: 100%; min-width: 640px; table-layout: fixed; border-collapse: collapse; font-size: 12px; }
+.batch-rename-table th:first-child { width: 40px; }
+.batch-rename-table th:nth-child(2) { width: 45px; }
+.batch-rename-table th:last-child { width: 140px; }
+.batch-rename-table th, .batch-rename-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-soft); text-align: left; vertical-align: top; }
+.batch-rename-table th { position: sticky; top: 0; background: var(--surface); z-index: 1; color: var(--text-muted); }
+.batch-rename-table td:nth-child(3), .batch-rename-table td:nth-child(4) { min-width: 180px; overflow-wrap: anywhere; }
+.batch-rename-table small { display: block; margin-top: 5px; color: var(--text-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.batch-rename-row--conflict { color: var(--error-text); background: var(--error-bg); }
+.batch-rename-empty { padding: 48px !important; text-align: center !important; color: var(--text-muted); }
+.batch-rename-error, .batch-rename-notice { flex-shrink: 0; margin: 0; padding: 10px 16px; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.batch-rename-error { color: var(--error-text); background: var(--error-bg); }
+.batch-rename-error code { display: block; }
+.batch-rename-notice { color: var(--success-text); background: var(--success-bg); }
+.batch-rename-help { flex-shrink: 0; padding: 12px 16px; color: var(--text-muted); border-top: 1px solid var(--border-soft); font-size: 11px; }
+@media (max-width: 850px) { .batch-rename-rules { grid-template-columns: repeat(2, minmax(100px, 1fr)); } }
+
 .command-palette__error {
   flex-shrink: 0;
   max-height: 90px;

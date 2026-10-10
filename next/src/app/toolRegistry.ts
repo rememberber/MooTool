@@ -72,6 +72,7 @@ const QrCodeTool = lazy(() => import('@/features/qrcode/QrCodeTool').then((modul
 const ColorBoardTool = lazy(() => import('@/features/color/ColorBoardTool').then((module) => ({ default: module.ColorBoardTool })))
 const ImageTool = lazy(() => import('@/features/image/ImageTool').then((module) => ({ default: module.ImageTool })))
 const PdfTool = lazy(() => import('@/features/pdf/PdfTool').then((module) => ({ default: module.PdfTool })))
+const BatchRenameTool = lazy(() => import('@/features/batchRename/BatchRenameTool').then((module) => ({ default: module.BatchRenameTool })))
 const VariablesTool = lazy(() => import('@/features/variables/VariablesTool').then((module) => ({ default: module.VariablesTool })))
 const HttpTool = lazy(() => import('@/features/http/HttpTool').then((module) => ({ default: module.HttpTool })))
 const HostTool = lazy(() => import('@/features/host/HostTool').then((module) => ({ default: module.HostTool })))
@@ -107,6 +108,7 @@ export const toolRegistry: ToolDefinition[] = [
   tool('colorBoard', 'daily', 'app.nav.colorBoard', Palette, ['color', 'palette', 'hex', 'rgb', '调色', '颜色'], ColorBoardTool, 'parity-review'),
   tool('image', 'daily', 'app.nav.image', Image, ['image', 'watermark', 'compress', '图片', '图像'], ImageTool, 'parity-review'),
   tool('pdf', 'daily', 'app.nav.pdf', FileText, ['pdf', 'merge', 'split', '合并', '拆分'], PdfTool, 'parity-review'),
+  tool('batchRename', 'daily', 'app.nav.batchRename', FileCog, ['rename', 'batch', 'files', '重命名', '批量', '文件'], BatchRenameTool, 'complete'),
   tool('hardware', 'system', 'app.nav.hardware', Cpu, ['hardware', 'system', 'cpu', 'memory', '系统', '硬件'], HardwareTool, 'parity-review')
 ]
 
@@ -142,7 +144,7 @@ function tool(
     icon,
     component,
     status,
-    supportsHistory: id !== 'mootool' && id !== 'hardware' && id !== 'messageBoard',
+    supportsHistory: id !== 'mootool' && id !== 'hardware' && id !== 'messageBoard' && id !== 'batchRename',
     supportsFavorites: ['regex', 'cron', 'colorBoard'].includes(id)
   }
 }

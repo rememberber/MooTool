@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 import type { WindowMaterialStatus } from './src/shared/contracts/windowMaterial'
 import type { GlobalShortcutStatus } from './src/shared/contracts/shortcuts'
+import type { RenameFile, RenameOptions, RenamePreview, RenameResult, RenameStatus } from './src/shared/contracts/batchRename'
 import type { CommandActionId, CommandPaletteOperation, CommandPaletteState } from './src/shared/contracts/commandPalette'
 import type { RegexInput, RegexResult } from './src/shared/contracts/regex'
 
@@ -46,6 +47,12 @@ declare global {
       getSystemTheme: () => Promise<'light' | 'dark'>
       setPreventDisplaySleep: (enabled: boolean) => Promise<boolean>
       getSettings: () => Promise<AppSettings>
+      selectRenameFiles: () => Promise<RenameFile[] | null>
+      previewBatchRename: (ids: string[], options: RenameOptions) => Promise<RenamePreview>
+      executeBatchRename: (token: string) => Promise<RenameResult>
+      undoBatchRename: () => Promise<RenameResult>
+      getBatchRenameStatus: () => Promise<RenameStatus>
+      onBatchRenameStatusChange: (callback: (status: RenameStatus) => void) => () => void
       getGlobalShortcutStatus: () => Promise<GlobalShortcutStatus>
       retryGlobalShortcut: () => Promise<GlobalShortcutStatus>
       onGlobalShortcutStatusChange: (callback: (status: GlobalShortcutStatus) => void) => () => void

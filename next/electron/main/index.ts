@@ -1,5 +1,6 @@
 import { windowChromeOptions, trackWindowChrome } from './windowChrome'
 import { GlobalCommandShortcut } from './globalCommandShortcut'
+import { BatchRenameService } from './batchRenameService'
 import { commandActionTitles, defaultCommandPaletteState, isCommandActionId, normalizeCommandPaletteState, trayCommandActions, updateCommandPaletteState, type CommandPaletteState } from '../../src/shared/contracts/commandPalette'
 import { messages } from '../../src/shared/i18n/messages'
 import { WindowMaterialController, loadNativeGlass } from './windowMaterial'
@@ -201,6 +202,7 @@ const vaultWorkspaceService = new VaultWorkspaceService({
 })
 let mainWindow: BrowserWindow | null = null
 let mainWindowMaterial: WindowMaterialController | null = null
+let batchRenameService: BatchRenameService
 const commandShortcut = new GlobalCommandShortcut(globalShortcut, () => navigateMainWindow('focus-search'), process.platform)
 let toolWindowManager: ToolWindowManager
 let tray: Tray | null = null
@@ -839,6 +841,34 @@ function registerIpc(): void {
     const fileStat = await stat(path)
     if (fileStat.size > 20 * 1024 * 1024) throw new Error('File exceeds 20 MB limit')
     return { path, name: basename(path), content: await readFile(path, 'utf8') }
+  })
+  ipcMain.handle('batch-rename:select', async (event) => {
+    assertToolWindowAccess(event.sender, 'batchRename')
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
+    const options: OpenDialogOptions = { properties: ['openFile', 'multiSelections'] }
+    const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
+    if (result.canceled) return null
+    return batchRenameService.select(event.sender.id, result.filePaths)
+  })
+  ipcMain.handle('batch-rename:preview', (event, ids: unknown, options: unknown) => {
+    assertToolWindowAccess(event.sender, 'batchRename')
+    return batchRenameService.preview(event.sender.id, ids, options)
+  })
+  ipcMain.handle('batch-rename:execute', async (event, token: unknown) => {
+    assertToolWindowAccess(event.sender, 'batchRename')
+    const result = await batchRenameService.execute(event.sender.id, token)
+    broadcast('batch-rename:status-changed', result.status)
+    return result
+  })
+  ipcMain.handle('batch-rename:undo', async (event) => {
+    assertToolWindowAccess(event.sender, 'batchRename')
+    const result = await batchRenameService.undo(event.sender.id)
+    broadcast('batch-rename:status-changed', result.status)
+    return result
+  })
+  ipcMain.handle('batch-rename:status', (event) => {
+    assertToolWindowAccess(event.sender, 'batchRename')
+    return batchRenameService.status()
   })
   ipcMain.handle('files:save-text', async (event, input: SaveTextFileInput): Promise<string | null> => {
     if (!isRecord(input) || typeof input.content !== 'string' || input.content.length > 20 * 1024 * 1024) {
@@ -2443,6 +2473,8 @@ app.whenReady().then(async () => {
   store.set('settings', mergeSettings(defaultAppSettings, store.get('settings') as SettingsPatch))
   store.set('commandPalette', normalizeCommandPaletteState(store.get('commandPalette')))
   openDataRepositories()
+  batchRenameService = new BatchRenameService(join(app.getPath('userData'), 'file-operations'))
+  app.on('web-contents-created', (_event, contents) => { const id = contents.id; contents.once('destroyed', () => batchRenameService.release(id)) })
   systemService = new SystemService(app.getPath('temp'))
   runtimeExecutionService = new RuntimeExecutionService(join(app.getPath('temp'), 'mootool-runtime'))
   gitAskPassPath = await prepareGitAskPass()

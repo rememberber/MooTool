@@ -63,6 +63,12 @@ Implementation: `electron/main/globalCommandShortcut.ts` owns registration and c
 
 Validation: `npm run check`; `npx playwright test tests/electron/command-palette.spec.ts` covers keyboard navigation, preview/copy, clipboard isolation, invalid input, stale async results, compact layout, and light/dark themes.
 
+## Batch Rename
+
+**Batch Rename** is available in the daily tools group and command-palette search (`rename` / `重命名`). Choose up to 500 regular files, set literal replacement, prefixes/suffixes or numbering, preview names/conflicts, then explicitly execute. The final extension is preserved by default. Changing rules or selection requires another preview.
+
+The latest batch can be undone after restarting the app. Failed operations attempt rollback and retain a recovery journal when restoration cannot finish. Existing destination files are not overwritten. This version requires a writable filesystem with hard-link support and does not rename directories or evaluate regex patterns. See [Batch Rename boundaries and verification](doc/batch-rename.md).
+
 ## Developer translation
 
 - **Split identifier** turns `getHTTPResponse` / `user_id` into words before translation.

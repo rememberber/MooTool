@@ -402,7 +402,7 @@ test('opens all registered tools through search and persists recent access', asy
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { showRecent: true } })
 
   try {
-    await expect(mainPage.locator('.tool-button')).toHaveCount(26)
+    await expect(mainPage.locator('.tool-button')).toHaveCount(27)
 
     await mainPage.getByRole('button', { name: '搜索', exact: true }).click()
     const searchInput = mainPage.locator('.command-palette__search input')

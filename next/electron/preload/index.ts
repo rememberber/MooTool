@@ -1,5 +1,6 @@
 import type { WindowMaterialStatus } from '../../src/shared/contracts/windowMaterial'
 import type { GlobalShortcutStatus } from '../../src/shared/contracts/shortcuts'
+import type { RenameFile, RenameOptions, RenamePreview, RenameResult, RenameStatus } from '../../src/shared/contracts/batchRename'
 import type { CommandActionId, CommandPaletteOperation, CommandPaletteState } from '../../src/shared/contracts/commandPalette'
 import type { RegexInput, RegexResult } from '../../src/shared/contracts/regex'
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
@@ -53,6 +54,12 @@ contextBridge.exposeInMainWorld('mootool', {
   getSystemTheme: (): Promise<'light' | 'dark'> => ipcRenderer.invoke('theme:get-system'),
   setPreventDisplaySleep: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('system:set-prevent-display-sleep', enabled),
   getSettings: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),
+  selectRenameFiles: (): Promise<RenameFile[] | null> => ipcRenderer.invoke('batch-rename:select'),
+  previewBatchRename: (ids: string[], options: RenameOptions): Promise<RenamePreview> => ipcRenderer.invoke('batch-rename:preview', ids, options),
+  executeBatchRename: (token: string): Promise<RenameResult> => ipcRenderer.invoke('batch-rename:execute', token),
+  undoBatchRename: (): Promise<RenameResult> => ipcRenderer.invoke('batch-rename:undo'),
+  getBatchRenameStatus: (): Promise<RenameStatus> => ipcRenderer.invoke('batch-rename:status'),
+  onBatchRenameStatusChange: (callback: (status: RenameStatus) => void) => subscribe('batch-rename:status-changed', callback),
   getGlobalShortcutStatus: (): Promise<GlobalShortcutStatus> => ipcRenderer.invoke('shortcuts:global-status'),
   retryGlobalShortcut: (): Promise<GlobalShortcutStatus> => ipcRenderer.invoke('shortcuts:global-retry'),
   onGlobalShortcutStatusChange: (callback: (status: GlobalShortcutStatus) => void) => subscribe('shortcuts:global-status-changed', callback),
