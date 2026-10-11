@@ -953,6 +953,34 @@ export const messages = {
     ,'image.import': '导入图片'
     ,'image.fromBase64': '从 Base64 导入'
     ,'image.compress': '压缩'
+    ,'image.resize': "调整尺寸"
+    ,'image.resize.title': "批量调整图片尺寸"
+    ,'image.resize.preset': "尺寸预设"
+    ,'image.resize.small': "小"
+    ,'image.resize.medium': "中"
+    ,'image.resize.large': "大"
+    ,'image.resize.custom': "自定义"
+    ,'image.resize.width': "宽度（px）"
+    ,'image.resize.height': "高度（px）"
+    ,'image.resize.auto': "自动"
+    ,'image.resize.dimensionsHint': "可留空一个尺寸，按原图比例计算；至少填写一项，范围为 1–16384 的整数。"
+    ,'image.resize.mode': "缩放模式"
+    ,'image.resize.fit': "等比适应"
+    ,'image.resize.fill': "裁剪填充"
+    ,'image.resize.stretch': "拉伸"
+    ,'image.resize.formatAuto': "JPEG 原图保持 JPEG，其余为 PNG"
+    ,'image.resize.shrinkOnly': "仅缩小，不放大"
+    ,'image.resize.fitHint': "保持比例，完整放入目标框；输出可能小于填写的尺寸。"
+    ,'image.resize.fillHint': "保持比例填满目标框，超出部分从中心裁剪。"
+    ,'image.resize.stretchHint': "直接调整为目标尺寸，可能改变原图比例。"
+    ,'image.resize.shrinkFillHint': "仅缩小时，目标框也会缩小以避免放大；以每张图的预览尺寸为准。"
+    ,'image.resize.libraryHint': "处理图片库中的副本。保留原图时，同名输出会自动编号；覆盖仅影响图片库。"
+    ,'image.resize.preview': "输出尺寸预览"
+    ,'image.resize.file': "文件"
+    ,'image.resize.source': "原始尺寸"
+    ,'image.resize.output': "输出尺寸"
+    ,'image.resize.invalid': "请填写至少一个有效尺寸：1–16384 的整数。"
+    ,'image.resize.tooLarge': "输出过大：单边不得超过 16384 px，总像素不得超过 3200 万。"
     ,'image.watermark': '水印'
     ,'image.toSvg': '转 SVG'
     ,'image.copy': '复制图片'
@@ -2373,6 +2401,34 @@ export const messages = {
     ,'image.import': 'Import images'
     ,'image.fromBase64': 'Import Base64'
     ,'image.compress': 'Compress'
+    ,'image.resize': "Resize"
+    ,'image.resize.title': "Batch resize images"
+    ,'image.resize.preset': "Size preset"
+    ,'image.resize.small': "Small"
+    ,'image.resize.medium': "Medium"
+    ,'image.resize.large': "Large"
+    ,'image.resize.custom': "Custom"
+    ,'image.resize.width': "Width (px)"
+    ,'image.resize.height': "Height (px)"
+    ,'image.resize.auto': "Auto"
+    ,'image.resize.dimensionsHint': "Leave one dimension empty to calculate it proportionally. Enter at least one integer from 1 to 16384."
+    ,'image.resize.mode': "Resize mode"
+    ,'image.resize.fit': "Fit"
+    ,'image.resize.fill': "Fill and crop"
+    ,'image.resize.stretch': "Stretch"
+    ,'image.resize.formatAuto': "JPEG for JPEG sources; PNG otherwise"
+    ,'image.resize.shrinkOnly': "Only shrink, never enlarge"
+    ,'image.resize.fitHint': "Keep the aspect ratio and fit the whole image inside the box. Output may be smaller than the specified dimensions."
+    ,'image.resize.fillHint': "Keep the aspect ratio and fill the box, cropping from the center."
+    ,'image.resize.stretchHint': "Resize directly to the target dimensions, which may change the aspect ratio."
+    ,'image.resize.shrinkFillHint': "With shrink-only enabled, the target box also shrinks to prevent enlargement. Check each image in the preview."
+    ,'image.resize.libraryHint': "Processes library copies. Keeping originals adds a number for name conflicts; overwrite affects the library only."
+    ,'image.resize.preview': "Output size preview"
+    ,'image.resize.file': "File"
+    ,'image.resize.source': "Original size"
+    ,'image.resize.output': "Output size"
+    ,'image.resize.invalid': "Enter at least one valid dimension: an integer from 1 to 16384."
+    ,'image.resize.tooLarge': "Output is too large: maximum 16384 px per side and 32 million pixels total."
     ,'image.watermark': 'Watermark'
     ,'image.toSvg': 'To SVG'
     ,'image.copy': 'Copy image'
@@ -3793,6 +3849,34 @@ export const messages = {
     ,'image.import': '画像をインポート'
     ,'image.fromBase64': 'Base64 からインポート'
     ,'image.compress': '圧縮'
+    ,'image.resize': "サイズ変更"
+    ,'image.resize.title': "画像のサイズを一括変更"
+    ,'image.resize.preset': "サイズプリセット"
+    ,'image.resize.small': "小"
+    ,'image.resize.medium': "中"
+    ,'image.resize.large': "大"
+    ,'image.resize.custom': "カスタム"
+    ,'image.resize.width': "幅（px）"
+    ,'image.resize.height': "高さ（px）"
+    ,'image.resize.auto': "自動"
+    ,'image.resize.dimensionsHint': "片方を空欄にすると元画像の比率で計算します。少なくとも一方に 1〜16384 の整数を入力してください。"
+    ,'image.resize.mode': "変更モード"
+    ,'image.resize.fit': "比率を維持して収める"
+    ,'image.resize.fill': "中央を切り抜いて埋める"
+    ,'image.resize.stretch': "引き伸ばす"
+    ,'image.resize.formatAuto': "JPEG 元画像は JPEG、その他は PNG"
+    ,'image.resize.shrinkOnly': "縮小のみ（拡大しない）"
+    ,'image.resize.fitHint': "比率を維持し、画像全体を指定枠に収めます。出力が指定サイズより小さくなる場合があります。"
+    ,'image.resize.fillHint': "比率を維持して指定枠を埋め、はみ出す部分を中央から切り抜きます。"
+    ,'image.resize.stretchHint': "指定サイズに直接変更するため、元画像の比率が変わる場合があります。"
+    ,'image.resize.shrinkFillHint': "縮小のみの場合、拡大を防ぐため指定枠も縮小します。各画像のプレビューを確認してください。"
+    ,'image.resize.libraryHint': "画像ライブラリ内のコピーを処理します。元画像を残す場合は同名出力に連番を付け、上書きはライブラリ内だけに適用します。"
+    ,'image.resize.preview': "出力サイズのプレビュー"
+    ,'image.resize.file': "ファイル"
+    ,'image.resize.source': "元のサイズ"
+    ,'image.resize.output': "出力サイズ"
+    ,'image.resize.invalid': "少なくとも一方に 1〜16384 の整数を入力してください。"
+    ,'image.resize.tooLarge': "出力が大きすぎます。各辺は最大 16384 px、総画素数は最大 3200 万です。"
     ,'image.watermark': '透かし'
     ,'image.toSvg': 'SVG に変換'
     ,'image.copy': '画像をコピー'

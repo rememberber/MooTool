@@ -13,6 +13,7 @@ export type ImageAsset = ImageAssetSummary & {
 export type SaveImageAssetInput = {
   name: string
   dataUrl: string
+  createOnly?: boolean
 }
 
 export type RenameImageAssetInput = {

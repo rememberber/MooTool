@@ -19,6 +19,66 @@ export type WatermarkImageOptions = {
 
 export type CropRect = { x: number; y: number; width: number; height: number }
 
+export type ResizeImageOptions = {
+  width: number | null
+  height: number | null
+  fit: 'fit' | 'fill' | 'stretch'
+  shrinkOnly: boolean
+  format: ImageOutputFormat
+}
+
+export type ResizeGeometry = { width: number; height: number; source: CropRect }
+
+// Keep preview and drawing on the same geometry, including per-image shrink limits.
+export function resizeGeometry(width: number, height: number, options: ResizeImageOptions): ResizeGeometry {
+  if (![width, height].every(value => Number.isSafeInteger(value) && value > 0)
+    || !['fit', 'fill', 'stretch'].includes(options.fit)
+    || !['auto', 'png', 'jpeg'].includes(options.format)
+    || typeof options.shrinkOnly !== 'boolean'
+    || (options.width === null && options.height === null)
+    || [options.width, options.height].some(value => value !== null && (!Number.isInteger(value) || value < 1 || value > 16384))) {
+    throw new Error('image.resize.invalid')
+  }
+  const targetWidth = options.width ?? Math.max(1, Math.round(width * options.height! / height))
+  const targetHeight = options.height ?? Math.max(1, Math.round(height * options.width! / width))
+  let outputWidth = targetWidth
+  let outputHeight = targetHeight
+  let source: CropRect = { x: 0, y: 0, width, height }
+  if (options.fit === 'fit') {
+    const scale = Math.min(targetWidth / width, targetHeight / height, options.shrinkOnly ? 1 : Infinity)
+    outputWidth = Math.max(1, Math.round(width * scale))
+    outputHeight = Math.max(1, Math.round(height * scale))
+  } else if (options.fit === 'fill') {
+    const boxScale = options.shrinkOnly ? Math.min(1, width / targetWidth, height / targetHeight) : 1
+    outputWidth = Math.max(1, Math.round(targetWidth * boxScale))
+    outputHeight = Math.max(1, Math.round(targetHeight * boxScale))
+    const scale = Math.max(outputWidth / width, outputHeight / height)
+    source = { x: (width - outputWidth / scale) / 2, y: (height - outputHeight / scale) / 2, width: outputWidth / scale, height: outputHeight / scale }
+  } else if (options.shrinkOnly) {
+    outputWidth = Math.min(width, targetWidth)
+    outputHeight = Math.min(height, targetHeight)
+  }
+  if (outputWidth > 16384 || outputHeight > 16384 || outputWidth * outputHeight > 32_000_000) throw new Error('image.resize.tooLarge')
+  return { width: outputWidth, height: outputHeight, source }
+}
+
+export async function resizeImage(dataUrl: string, options: ResizeImageOptions): Promise<string> {
+  const image = await loadImage(dataUrl)
+  const geometry = resizeGeometry(image.naturalWidth, image.naturalHeight, options)
+  const canvas = createCanvas(geometry.width, geometry.height)
+  const context = getContext(canvas)
+  context.imageSmoothingEnabled = true
+  context.imageSmoothingQuality = 'high'
+  const mime = options.format === 'jpeg' || (options.format === 'auto' && dataUrl.startsWith('data:image/jpeg')) ? 'image/jpeg' : 'image/png'
+  if (mime === 'image/jpeg') {
+    context.fillStyle = '#FFFFFF'
+    context.fillRect(0, 0, geometry.width, geometry.height)
+  }
+  const source = geometry.source
+  context.drawImage(image, source.x, source.y, source.width, source.height, 0, 0, geometry.width, geometry.height)
+  return canvas.toDataURL(mime, 0.92)
+}
+
 export async function compressImage(dataUrl: string, options: CompressImageOptions): Promise<string> {
   const image = await loadImage(dataUrl)
   const { width, height } = scaledDimensions(image.naturalWidth, image.naturalHeight, options.scale)
@@ -79,7 +139,7 @@ export function scaledDimensions(width: number, height: number, scale: number): 
   return { width: Math.max(1, Math.round(width * normalized)), height: Math.max(1, Math.round(height * normalized)) }
 }
 
-export function processedImageName(name: string, suffix: 'compressed' | 'watermarked', format: ImageOutputFormat = 'auto'): string {
+export function processedImageName(name: string, suffix: 'compressed' | 'watermarked' | 'resized', format: ImageOutputFormat = 'auto'): string {
   const extensionIndex = name.lastIndexOf('.')
   const base = extensionIndex > 0 ? name.slice(0, extensionIndex) : name
   const currentExtension = extensionIndex > 0 ? name.slice(extensionIndex + 1).toLowerCase() : 'png'

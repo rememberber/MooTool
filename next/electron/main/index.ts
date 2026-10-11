@@ -1013,7 +1013,7 @@ function registerIpc(): void {
   })
   ipcMain.handle('images:save', (_event, input: SaveImageAssetInput) => {
     if (!isRecord(input) || typeof input.name !== 'string' || typeof input.dataUrl !== 'string') throw new Error('Invalid image')
-    return createImageRepository().save({ name: normalizeImageName(input.name), dataUrl: normalizeDataUrl(input.dataUrl) })
+    return createImageRepository().save({ name: normalizeImageName(input.name), dataUrl: normalizeDataUrl(input.dataUrl), createOnly: input.createOnly === true })
   })
   ipcMain.handle('images:rename', (_event, input: RenameImageAssetInput) => {
     if (!isRecord(input) || typeof input.name !== 'string' || typeof input.nextName !== 'string') throw new Error('Invalid image rename')

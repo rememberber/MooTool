@@ -43,9 +43,18 @@ export class ImageRepository {
     if (image.isEmpty()) throw new Error('Invalid image data')
     const requested = sanitizeImageName(input.name)
     const extension = extname(requested).toLowerCase()
-    const name = extension === '.jpg' || extension === '.jpeg' ? requested : `${parse(requested).name}.png`
+    let name = extension === '.jpg' || extension === '.jpeg' ? requested : `${parse(requested).name}.png`
     const bytes = extension === '.jpg' || extension === '.jpeg' ? image.toJPEG(92) : image.toPNG()
-    await writeFile(this.resolveName(name), bytes)
+    if (input.createOnly) {
+      const parts = parse(name)
+      for (let index = 1; ; index++) {
+        // Leave room for the numeric suffix within the repository's name limit.
+        const suffix = index === 1 ? '' : `-${index}`
+        name = `${parts.name.slice(0, 160 - suffix.length - parts.ext.length)}${suffix}${parts.ext}`
+        try { await writeFile(this.resolveName(name), bytes, { flag: 'wx' }); break }
+        catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error }
+      }
+    } else await writeFile(this.resolveName(name), bytes)
     return this.summary(name)
   }
 

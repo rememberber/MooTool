@@ -10,7 +10,8 @@ import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { ImageBase64Dialog, ImageCompressDialog, ImageSvgDialog, ImageWatermarkDialog } from './ImageDialogs'
-import { compressImage, ensureImageDataUrl, processedImageName, watermarkImage, type CompressImageOptions, type ImageOutputMode, type WatermarkImageOptions } from './imageTools'
+import { ImageResizeDialog } from './ImageResizeDialog'
+import { compressImage, ensureImageDataUrl, processedImageName, resizeImage, watermarkImage, type CompressImageOptions, type ImageOutputMode, type ResizeImageOptions, type WatermarkImageOptions } from './imageTools'
 
 export function ImageTool() {
   const { t } = useI18n()
@@ -46,6 +47,7 @@ export function ImageTool() {
 
   const [base64Mode, setBase64Mode] = useState<'import' | 'export' | null>(null)
   const [compressOpen, setCompressOpen] = useState(false)
+  const [resizeOpen, setResizeOpen] = useState(false)
   const [watermarkOpen, setWatermarkOpen] = useState(false)
   const [svgOpen, setSvgOpen] = useState(false)
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 })
@@ -250,6 +252,15 @@ export function ImageTool() {
     await processImages(async (asset) => compressImage(asset.dataUrl, options), 'compressed', mode, options.format)
   }
 
+  async function processResize(options: ResizeImageOptions, mode: ImageOutputMode): Promise<void> {
+    setResizeOpen(false)
+    await processImages(asset => resizeImage(asset.dataUrl, {
+      ...options,
+      // Repository reads are PNG data URLs even for JPEG sources.
+      format: options.format === 'auto' ? /\.jpe?g$/i.test(asset.name) ? 'jpeg' : 'png' : options.format
+    }), 'resized', mode, options.format)
+  }
+
   async function processWatermark(options: WatermarkImageOptions, mode: ImageOutputMode): Promise<void> {
     setWatermarkOpen(false)
     await processImages(async (asset) => watermarkImage(asset.dataUrl, options), 'watermarked', mode, 'auto')
@@ -268,7 +279,7 @@ export function ImageTool() {
     finally { batchJobId.current = ''; setBusy(false) }
   }
 
-  async function processImages(transform: (asset: ImageAsset) => Promise<string>, suffix: 'compressed' | 'watermarked', mode: ImageOutputMode, format: CompressImageOptions['format']): Promise<void> {
+  async function processImages(transform: (asset: ImageAsset) => Promise<string>, suffix: 'compressed' | 'watermarked' | 'resized', mode: ImageOutputMode, format: CompressImageOptions['format']): Promise<void> {
     if (!processingNames.length || busy) return
     const signal = beginBatch()
     let preferred = ''
@@ -279,7 +290,8 @@ export function ImageTool() {
         const dataUrl = await transform(asset)
         signal.throwIfAborted()
         const outputName = mode === 'overwrite' ? overwriteName(asset.name, format) : processedImageName(asset.name, suffix, format)
-        const saved = await window.mootool.saveImageAsset({ name: outputName, dataUrl })
+        // A format change may collide with another source in the library.
+        const saved = await window.mootool.saveImageAsset({ name: outputName, dataUrl, createOnly: mode === 'keep' || outputName !== asset.name })
         if (mode === 'overwrite' && saved.name !== asset.name) await window.mootool.deleteImageAssets([asset.name])
         preferred ||= saved.name
       }, signal, setBatch)
@@ -292,7 +304,7 @@ export function ImageTool() {
     <section className="tool-page p4-tool image-tool-page">
       <ToolPageHeader title={t('image.title')} />
       <div className="local-tool-shell image-workspace">
-        <div className="image-main-toolbar"><button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('image.toggleList')} onClick={() => setListVisible((value) => !value)}><List size={14} /></button><button className="toolbar-button" type="button" disabled={busy} onClick={() => { void capture() }}><ScanLine size={14} />{t('image.screenshot')}</button><button className="toolbar-button" type="button" onClick={() => { void importClipboard() }}><ClipboardPaste size={14} />{t('image.fromClipboard')}</button><button className="toolbar-button" type="button" onClick={() => { void importImages() }}><FolderOpen size={14} />{t('image.import')}</button><button className="toolbar-button" type="button" onClick={() => setBase64Mode('import')}><ImageDown size={14} />{t('image.fromBase64')}</button><WorkspaceDragZone className="p4-toolbar__spacer" /><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setSvgOpen(true)}><Shapes size={14} />{t('image.toSvg')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setCompressOpen(true)}><Minimize2 size={14} />{t('image.compress')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setWatermarkOpen(true)}><Type size={14} />{t('image.watermark')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => { void saveCurrent() }}><Save size={14} />{t('common.save')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => { void copyImage() }}><ClipboardCopy size={14} />{t('image.copy')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => setBase64Mode('export')}><Upload size={14} />{t('image.toBase64')}</button></div>
+        <div className="image-main-toolbar"><button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('image.toggleList')} onClick={() => setListVisible((value) => !value)}><List size={14} /></button><button className="toolbar-button" type="button" disabled={busy} onClick={() => { void capture() }}><ScanLine size={14} />{t('image.screenshot')}</button><button className="toolbar-button" type="button" onClick={() => { void importClipboard() }}><ClipboardPaste size={14} />{t('image.fromClipboard')}</button><button className="toolbar-button" type="button" onClick={() => { void importImages() }}><FolderOpen size={14} />{t('image.import')}</button><button className="toolbar-button" type="button" onClick={() => setBase64Mode('import')}><ImageDown size={14} />{t('image.fromBase64')}</button><WorkspaceDragZone className="p4-toolbar__spacer" /><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setSvgOpen(true)}><Shapes size={14} />{t('image.toSvg')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setResizeOpen(true)}><Maximize2 size={14} />{t('image.resize')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setCompressOpen(true)}><Minimize2 size={14} />{t('image.compress')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setWatermarkOpen(true)}><Type size={14} />{t('image.watermark')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => { void saveCurrent() }}><Save size={14} />{t('common.save')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => { void copyImage() }}><ClipboardCopy size={14} />{t('image.copy')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => setBase64Mode('export')}><Upload size={14} />{t('image.toBase64')}</button></div>
         <ResizableColumns className={listVisible ? 'image-layout' : 'image-layout image-layout--collapsed'} columns={listVisible ? 2 : 1} defaultSizes={listVisible ? [230, 770] : [1]} minPaneWidths={listVisible ? [180, 360] : [360]} storageKey="image-library">
           {listVisible && <aside className="image-library"><header><span>{t('image.library')}</span><button className="icon-button" type="button" aria-label={t('image.import')} onClick={() => { void importImages() }}><ImagePlus size={14} /></button></header><div className="image-list">{assets.length === 0 ? <div className="history-empty">{t('image.empty')}</div> : assets.map((asset) => <div className={current?.name === asset.name ? 'image-list-item image-list-item--active' : 'image-list-item'} key={asset.name}><input type="checkbox" aria-label={`${t('image.select')} ${asset.name}`} checked={selectedNames.includes(asset.name)} onChange={(event) => toggleAsset(asset.name, event.target.checked)} /><button type="button" onClick={() => { void selectAsset(asset.name) }}><FileImage size={15} /><span><strong>{asset.name}</strong><small>{asset.width} × {asset.height} · {formatBytes(asset.size)}</small></span></button></div>)}</div><footer><button className="icon-button" type="button" disabled={!current} aria-label={t('common.rename')} onClick={() => { void renameCurrent() }}><Pencil size={14} /></button><button className="icon-button" type="button" disabled={!processingNames.length} aria-label={t('common.export')} onClick={() => { void exportSelected() }}><Download size={14} /></button><button className="icon-button icon-button--danger" type="button" disabled={!processingNames.length} aria-label={t('common.action.delete')} onClick={() => { void deleteSelected() }}><Trash2 size={14} /></button></footer></aside>}
           <main className="image-canvas-panel" onDoubleClick={() => { if (current) void window.mootool.openImageAsset(current.name) }}><div ref={canvasRef} className={fit ? 'image-canvas image-canvas--fit' : 'image-canvas'}>{current ? <img src={current.dataUrl} alt={current.name} style={{ width: `${current.width * effectiveZoom}px`, height: `${current.height * effectiveZoom}px` }} /> : <div className="image-placeholder"><FileImage size={48} /><span>{t('image.emptyPreview')}</span></div>}</div><div className="image-zoom-toolbar" onDoubleClick={(event) => event.stopPropagation()}><button className="icon-button" type="button" aria-label={t('image.zoomIn')} disabled={!current} onClick={() => changeZoom(1.1)}><Plus size={14} /></button><button className="icon-button" type="button" aria-label={t('image.zoomOut')} disabled={!current} onClick={() => changeZoom(1 / 1.1)}><Minus size={14} /></button><button className="icon-button image-actual-size-button" type="button" aria-label={t('image.original')} aria-pressed={!fit && Math.abs(zoom - 1) < 0.001} title={t('image.original')} disabled={!current} onClick={showOriginalSize}>1:1</button><button className="icon-button" type="button" aria-label={t('image.fit')} aria-pressed={fit} title={t('image.fit')} disabled={!current} onClick={() => setFit(true)}><Maximize2 size={14} /></button><span>{current ? `${current.width} × ${current.height} · ${formatBytes(current.size)} · ${fit ? `${t('image.fit')} · ` : ''}${Math.round(effectiveZoom * 100)}%` : ''}</span></div></main>
@@ -309,6 +321,7 @@ export function ImageTool() {
       </Dialog>
       <ImageBase64Dialog open={base64Mode !== null} mode={base64Mode ?? 'import'} value={base64Mode === 'export' ? current?.dataUrl ?? '' : ''} onClose={() => setBase64Mode(null)} onImport={(value) => { void importBase64(value) }} />
       <ImageCompressDialog open={compressOpen} count={processingNames.length} onClose={() => setCompressOpen(false)} onConfirm={(options, mode) => { void processCompression(options, mode) }} />
+      <ImageResizeDialog open={resizeOpen} assets={processingNames.map(name => assets.find(asset => asset.name === name)).filter((asset): asset is ImageAssetSummary => Boolean(asset))} onClose={() => setResizeOpen(false)} onConfirm={(options, mode) => { void processResize(options, mode) }} />
       <ImageWatermarkDialog open={watermarkOpen} count={processingNames.length} onClose={() => setWatermarkOpen(false)} onConfirm={(options, mode) => { void processWatermark(options, mode) }} />
       <ImageSvgDialog open={svgOpen} count={processingNames.length} onClose={() => setSvgOpen(false)} onConfirm={(options) => { void processSvg(options) }} />
     </section>
@@ -316,7 +329,7 @@ export function ImageTool() {
 }
 
 function overwriteName(name: string, format: CompressImageOptions['format']): string {
-  if (format === 'auto') return name
+  if (format === 'auto') return /\.(?:png|jpe?g)$/i.test(name) ? name : name.replace(/\.[^.]+$/, '') + '.png'
   const base = name.replace(/\.[^.]+$/, '')
   return `${base}.${format === 'jpeg' ? 'jpg' : 'png'}`
 }

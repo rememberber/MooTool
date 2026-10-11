@@ -4471,6 +4471,7 @@ select:not([multiple]) {
   z-index: 1000;
   inset: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
   padding: 28px;
   background: rgba(18, 18, 20, 0.24);
@@ -4482,6 +4483,7 @@ select:not([multiple]) {
 .dialog {
   position: relative;
   display: flex;
+  min-width: 0;
   max-width: min(100%, 900px);
   max-height: min(82vh, 760px);
   flex-direction: column;
@@ -7388,6 +7390,24 @@ select:not([multiple]) {
 .image-options .checkbox-row input,
 .output-mode input {
   accent-color: var(--accent-strong);
+}
+
+.image-resize-mode-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+.image-resize-options .output-mode { flex-wrap: wrap; }
+.image-resize-preview { max-height: 190px; overflow: auto; border: 1px solid var(--border-soft); border-radius: 6px; }
+.image-resize-preview table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+.image-resize-preview caption { padding: 10px; text-align: left; font-weight: 600; }
+.image-resize-preview th, .image-resize-preview td { padding: 8px 10px; text-align: left; border-top: 1px solid var(--border-soft); }
+.image-resize-preview th { color: var(--text-muted); font-weight: 500; }
+.image-resize-preview th:first-child { width: 45%; }
+.image-resize-preview td:first-child { overflow-wrap: anywhere; }
+.image-resize-preview td:not(:first-child) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.image-options > .image-resize-error { color: var(--danger, #c44); }
+
+@media (max-width: 620px) {
+  .image-resize-options .image-option-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .image-resize-options .image-option-grid:not(.image-resize-mode-grid) > label:first-child { grid-column: 1 / -1; }
+  .image-resize-options .image-resize-mode-grid { grid-template-columns: 1fr; }
 }
 
 .output-mode {

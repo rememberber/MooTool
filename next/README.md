@@ -69,6 +69,10 @@ Validation: `npm run check`; `npx playwright test tests/electron/command-palette
 
 The latest batch can be undone after restarting the app. Failed operations attempt rollback and retain a recovery journal when restoration cannot finish. Existing destination files are not overwritten. This version requires a writable filesystem with hard-link support and does not rename directories or evaluate regex patterns. See [Batch Rename boundaries and verification](doc/batch-rename.md).
 
+## Batch Image Resize
+
+In **Image Assistant**, select library images and choose **Resize**. Use a preset or enter pixel dimensions (one side may be left empty), choose proportional fit, centered fill/crop, or stretch, and review each image's actual output size before processing. Shrink-only and keeping originals are enabled by default. Outputs support PNG and JPEG, report per-image progress/failures, and can be cancelled between images. New outputs receive numeric suffixes on name conflicts, including format conversions that would collide with another source. See [Image resize behavior and verification](doc/image-resize.md).
+
 ## Developer translation
 
 - **Split identifier** turns `getHTTPResponse` / `user_id` into words before translation.
