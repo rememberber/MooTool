@@ -1803,6 +1803,75 @@
               "size": 116417848
             }
           ]
+        },
+        {
+          "version": "1.3.1",
+          "title": "MooTool Next Electron 1.3.1",
+          "notes": "## English\n\n> Product: MooTool Next Electron<br>\n> Version: 1.3.1<br>\n> This release is installed and updated independently from MooTool Java and does not overwrite the Java edition.\n\n### Fixes and improvements\n\n- Batch Rename previews new names, then renames up to 500 regular files. Rules include find and replace, prefix, suffix, and numbering. Conflicts block the batch. The last successful batch can be undone, and an interrupted batch can be recovered.\n- The command palette can generate a UUID, convert a timestamp, format or minify JSON, encode or decode Base64 and URL text, and remove duplicate lines. Actions can be pinned, and recent actions stay at the top.\n- A global shortcut opens the command palette while MooTool is in the background. The default is ⌘⇧Space on macOS and Ctrl+Shift+Space on Windows and Linux. Pinned actions are also available from the tray.\n- The JSON workspace status bar shows the current file path and an unsaved marker.\n- Dark mode uses the Islands Dark palette for tool workspaces. The application sidebar keeps its own material.\n\n### Notes\n\n- Installers remain unsigned. On macOS, the app downloads and verifies the new DMG, then asks the user to open it and drag the app into Applications.\n- The Java product line continues to use `v*` tags and its existing update manifest.\n\n## 中文\n\n> 产品线：MooTool Next Electron<br>\n> 版本：1.3.1<br>\n> 本版本与 MooTool Java 独立安装、独立更新，不会覆盖 Java 版本。\n\n### 修复与改进\n\n- 新增批量重命名：先预览新文件名，再重命名最多 500 个普通文件。规则包括查找替换、前缀、后缀和连续编号。存在冲突时整批不执行。最近一次成功的批次可以撤销，中断的批次可以恢复。\n- 命令面板可以生成 UUID、把时间戳转为日期、格式化或压缩 JSON、编解码 Base64 和 URL，以及去除重复行。动作可以设为常用，最近执行的动作会排在前面。\n- 全局快捷键可在 MooTool 处于后台时打开命令面板。默认是 macOS 的 ⌘⇧Space，以及 Windows 和 Linux 的 Ctrl+Shift+Space。常用动作也可以从托盘打开。\n- JSON 工作区状态栏显示当前文件路径和未保存标记。\n- 深色模式的工具工作区改用 Islands Dark 配色。应用侧栏仍使用自己的材质。\n\n### 说明\n\n- 安装包仍未签名。macOS 会下载并校验新版 DMG，随后提示用户打开 DMG 并将应用拖入“应用程序”。\n- Java 产品线继续使用 `v*` tag 和原有更新清单，不受本次发布影响。\n\n## 日本語\n\n> 製品ライン：MooTool Next Electron<br>\n> バージョン：1.3.1<br>\n> このリリースは MooTool Java とは独立してインストール・更新され、Java 版を上書きしません。\n\n### 修正と改善\n\n- 一括リネームを追加しました。新しい名前をプレビューしてから、最大 500 個の通常ファイルを改名します。検索と置換、接頭辞、接尾辞、連番に対応します。競合があると一括処理は実行されません。直前に成功した一括処理は取り消せ、中断した処理は復旧できます。\n- コマンドパレットで UUID の生成、タイムスタンプから日付への変換、JSON の整形と圧縮、Base64 と URL のエンコードとデコード、重複行の削除ができます。操作はよく使う項目に固定でき、最近実行した操作は上部に残ります。\n- グローバルショートカットで、MooTool がバックグラウンドのときもコマンドパレットを開けます。既定は macOS の ⌘⇧Space、Windows と Linux の Ctrl+Shift+Space です。固定した操作はトレイからも開けます。\n- JSON ワークスペースのステータスバーに、現在のファイルパスと未保存マークを表示します。\n- ダークモードのツール作業領域は Islands Dark の配色です。アプリのサイドバーは従来の質感のままです。\n\n### 補足\n\n- インストーラーは引き続き未署名です。macOS では新しい DMG をダウンロードして検証し、その後 DMG を開いてアプリを「アプリケーション」へドラッグするよう案内します。\n- Java 製品ラインは引き続き `v*` タグと従来の更新マニフェストを使用し、このリリースの影響を受けません。",
+          "prerelease": false,
+          "releaseUrl": "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.3.1",
+          "assets": [
+            {
+              "platform": "darwin",
+              "architecture": "arm64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.3.1-mac-arm64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.3.1/MooTool-Next-Electron-1.3.1-mac-arm64.dmg",
+              "sha512": "xAruBDxwwhYsZ6ywkLsdGsQBFJay0hdga9iy4Fe/RxAcPWmHlXaj+jHaGlVKZnbp2kaoeG1IJ3ZgdDsW/v+vSQ==",
+              "size": 151132410
+            },
+            {
+              "platform": "darwin",
+              "architecture": "x64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.3.1-mac-x64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.3.1/MooTool-Next-Electron-1.3.1-mac-x64.dmg",
+              "sha512": "+eCDrhI9pm9VdfhD99jS28cYLbWK3IrJFh1nTFEQbVMa3zECL4xQKD+fCCVfPwZ+lCuZzPBv7d877UBrWSgBhw==",
+              "size": 152931383
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "nsis",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.3.1-win-x64-setup.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.3.1/MooTool-Next-Electron-1.3.1-win-x64-setup.exe",
+              "sha512": "+WBu7QMRMqV3NhCg84oa2R/9mQ3wp7SNQxTRDhBKw6hgFhHa8070gx0jN0czUlckYPPW47iLbRYHWsPfq3x/3Q==",
+              "size": 118980939
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "portable",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.3.1-win-x64-portable.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.3.1/MooTool-Next-Electron-1.3.1-win-x64-portable.exe",
+              "sha512": "c6guA2Zkg58wPjV118Gd5yBC6dQ8TYJiqWhuBSeG5IqL0+OL/vRt6KGN15vcmI+n3k6tiLgC986Dya/T+XYWIQ==",
+              "size": 118793735
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "appimage",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.3.1-linux-x64.AppImage",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.3.1/MooTool-Next-Electron-1.3.1-linux-x64.AppImage",
+              "sha512": "9TjLcOhXo9kv6uIzpWwElqTm/Ouzm3yYGOcS/sDJmYp4BIeeDYqgQkcqPsn0bzUplxflBHAZC6YJoJndVznnVg==",
+              "size": 158648936
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "deb",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.3.1-linux-x64.deb",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.3.1/MooTool-Next-Electron-1.3.1-linux-x64.deb",
+              "sha512": "3MALpQQz3bMwwuded1ELHei0kTIyE2a3/lQkRSWRM67Bah3SgO92Kyd3VlWqgCcCSy5cZUdkamMW1dDxpU951A==",
+              "size": 116483924
+            }
+          ]
         }
       ]
     },
