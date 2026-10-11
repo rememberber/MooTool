@@ -3,14 +3,16 @@ import { link, lstat, mkdir, readFile, readdir, realpath, rename, unlink, writeF
 import { basename, dirname, isAbsolute, join } from 'node:path'
 import { normalizeRenameOptions, renameCandidate, renameNameKey, validRenameName, type RenameFile, type RenamePreview, type RenameResult, type RenameRow, type RenameStatus } from '../../src/shared/contracts/batchRename'
 
-type Identity = { dev: string; ino: string }
+type Identity = { dev: string; ino: string; size: string; mtimeNs: string }
 type Move = { source: string; target: string; temporary: string; identity: Identity }
 type Journal = { version: 1; phase: 'pending' | 'done'; moves: Move[]; previous?: Journal }
 type Plan = { owner: number; rows: RenameRow[]; moves: Move[] }
 type FsApi = { link: typeof link; unlink: typeof unlink }
 
 function fail(code: string): never { throw new Error(`batchRename.error.${code}`) }
-function matches(left: Identity, right: Identity): boolean { return left.dev === right.dev && left.ino === right.ino }
+function matches(left: Identity, right: Identity): boolean {
+  return left.dev === right.dev && left.ino === right.ino && left.size === right.size && left.mtimeNs === right.mtimeNs
+}
 
 export class BatchRenameService {
   private selections = new Map<number, Map<string, RenameFile>>()
@@ -156,7 +158,8 @@ export class BatchRenameService {
     try {
       const stat = await lstat(path, { bigint: true })
       if (!stat.isFile() || stat.isSymbolicLink()) return null
-      return { dev: String(stat.dev), ino: String(stat.ino) }
+      // Size and mtime catch a replaced file when a filesystem reuses the inode number.
+      return { dev: String(stat.dev), ino: String(stat.ino), size: String(stat.size), mtimeNs: String(stat.mtimeNs) }
     } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null; throw error }
   }
 
@@ -250,7 +253,7 @@ export class BatchRenameService {
           if (![move.source, move.target, move.temporary].every((path) => typeof path === 'string' && isAbsolute(path))
             || dirname(move.source) !== dirname(move.target) || dirname(move.source) !== dirname(move.temporary)
             || !/^\.mootool-rename-[\da-f-]{36}$/.test(basename(move.temporary))
-            || !move.identity || ![move.identity.dev, move.identity.ino].every((value) => typeof value === 'string' && /^\d+$/.test(value))) fail('journal')
+            || !move.identity || ![move.identity.dev, move.identity.ino, move.identity.size, move.identity.mtimeNs].every((value) => typeof value === 'string' && /^\d+$/.test(value))) fail('journal')
         }
         if (journal.previous) { if (previous || journal.previous.phase !== 'done') fail('journal'); validate(journal.previous, true) }
         return journal
