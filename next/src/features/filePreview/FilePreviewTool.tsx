@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight, Files, FolderOpen, Trash2 } from 'lucide-rea
 import { useRef, useState, type DragEvent } from 'react'
 import { ToolPageHeader, WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { useI18n } from '@/shared/i18n/I18nProvider'
-import { classifyPreview, formatPreviewSize, previewBatchLimit, previewLimits } from './filePreview'
+import { classifyPreview, formatPreviewSize, previewBatchLimit, previewLimits, type PreviewViewState } from './filePreview'
 import { PreviewContent } from './PreviewContent'
 import './filePreview.css'
 
@@ -13,6 +13,7 @@ export function FilePreviewTool() {
   const [dragging, setDragging] = useState(false)
   const [notice, setNotice] = useState('')
   const [batch, setBatch] = useState(0)
+  const views = useRef({ batch: 0, states: new Map<number, PreviewViewState>() })
   const input = useRef<HTMLInputElement>(null)
   const root = useRef<HTMLElement>(null)
   const file = files[index]
@@ -21,7 +22,8 @@ export function FilePreviewTool() {
   function select(next: File[]): void {
     if (next.length > previewBatchLimit) { setNotice(t('filePreview.batchLimit')); return }
     if (!next.length) return
-    setFiles(next); setIndex(0); setNotice(''); setBatch(value => value + 1)
+    views.current = { batch: views.current.batch + 1, states: new Map() }
+    setFiles(next); setIndex(0); setNotice(''); setBatch(views.current.batch)
     root.current?.focus()
   }
   function drop(event: DragEvent): void {
@@ -47,7 +49,7 @@ export function FilePreviewTool() {
           <span className="file-preview-count">{files.length ? `${index + 1} / ${files.length}` : ''}</span>
           <button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('filePreview.previous')} disabled={index === 0 || !file} onClick={() => setIndex(index - 1)}><ChevronLeft size={16} /></button>
           <button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('filePreview.next')} disabled={index >= files.length - 1} onClick={() => setIndex(index + 1)}><ChevronRight size={16} /></button>
-          <button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('common.action.clear')} disabled={!files.length} onClick={() => { setFiles([]); setIndex(0); setNotice('') }}><Trash2 size={15} /></button>
+          <button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('common.action.clear')} disabled={!files.length} onClick={() => { views.current = { batch: views.current.batch + 1, states: new Map() }; setBatch(views.current.batch); setFiles([]); setIndex(0); setNotice('') }}><Trash2 size={15} /></button>
         </div>
         {notice && <p className="file-preview-notice" role="alert">{notice}</p>}
         {file && kind ? <div className="file-preview-workspace">
@@ -60,7 +62,9 @@ export function FilePreviewTool() {
             <header className="file-preview-metadata"><strong title={file.name}>{file.name}</strong><span>{formatPreviewSize(file.size)} · {file.lastModified ? new Date(file.lastModified).toLocaleString() : '—'}</span></header>
             {kind === 'unsupported' ? <p className="file-preview-empty" role="status">{t('filePreview.unsupported')}</p>
               : file.size > previewLimits[kind] ? <p className="file-preview-empty" role="status">{t('filePreview.tooLarge', { limit: formatPreviewSize(previewLimits[kind]) })}</p>
-                : <PreviewContent key={`${batch}:${index}`} file={file} kind={kind} />}
+                : <PreviewContent key={`${batch}:${index}`} file={file} kind={kind} initialState={views.current.states.get(index)} onStateChange={patch => {
+                  if (views.current.batch === batch) views.current.states.set(index, { ...views.current.states.get(index), ...patch })
+                }} />}
           </div>
         </div> : <button className="file-preview-empty file-preview-drop" type="button" onClick={() => input.current?.click()}><Files size={38} /><strong>{t('filePreview.empty')}</strong><span>{t('filePreview.hint')}</span></button>}
         <footer className="file-preview-footer">{t('filePreview.footer')}</footer>

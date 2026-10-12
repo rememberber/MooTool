@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { classifyPreview, decodePreviewText, jsonPreview, readPreviewBytes } from './filePreview'
+import { classifyPreview, decodePreviewText, jsonPreview, readPreviewBytes, scanPreviewMatches } from './filePreview'
+import { defaultFindReplaceOptions } from '@/shared/components/findReplace'
 
 describe('file preview', () => {
   it('classifies local files without executing HTML or SVG', () => {
@@ -39,5 +40,20 @@ describe('file preview', () => {
     const file = { size: 3 * 1024 ** 2, arrayBuffer: () => { throw new Error('must not read') } } as unknown as File
     await expect(readPreviewBytes(file, 'text')).rejects.toThrow('tooLarge')
     await expect(readPreviewBytes({ size: 0, arrayBuffer: async () => { throw new Error('deleted') } } as unknown as File, 'text')).rejects.toThrow('unreadable')
+  })
+  it('finds literal text and wraps in both directions without interpreting regex', () => {
+    const text = '中文 a.b A.B aXb 中文'
+    const options = { ...defaultFindReplaceOptions, regex: true }
+    expect(scanPreviewMatches(text, 'a.b', options)).toEqual({ count: 2, match: { start: 3, end: 6 }, wrapped: false })
+    expect(scanPreviewMatches(text, 'a.b', options, 6)).toEqual({ count: 2, match: { start: 7, end: 10 }, wrapped: false })
+    expect(scanPreviewMatches(text, 'a.b', options, 10)).toEqual({ count: 2, match: { start: 3, end: 6 }, wrapped: true })
+    expect(scanPreviewMatches(text, 'a.b', options, 0, false)).toEqual({ count: 2, match: { start: 7, end: 10 }, wrapped: true })
+    expect(scanPreviewMatches(text, '中文', options).count).toBe(2)
+  })
+  it('counts matches in large files and honors case and whole-word options', () => {
+    expect(scanPreviewMatches('a'.repeat(100_000), 'a', defaultFindReplaceOptions, 90_000).match).toEqual({ start: 90_000, end: 90_001 })
+    expect(scanPreviewMatches('cat CAT category', 'cat', { ...defaultFindReplaceOptions, matchCase: true, wholeWord: true }).count).toBe(1)
+    expect(scanPreviewMatches('text', '', defaultFindReplaceOptions)).toEqual({ count: 0, match: null, wrapped: false })
+    expect(scanPreviewMatches('text', 'missing', defaultFindReplaceOptions).match).toBeNull()
   })
 })

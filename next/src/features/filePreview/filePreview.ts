@@ -1,8 +1,47 @@
 import { applyEdits, format, parse, type ParseError } from 'jsonc-parser'
 import type { TextCodeEditorLanguage } from '@/shared/components/codeEditorLanguage'
+import type { CodeEditorViewState } from '@/shared/components/codeEditorViewState'
+import { buildSearchRegExp, defaultFindReplaceOptions, type FindMatch, type FindReplaceOptions } from '@/shared/components/findReplace'
 
 export type PreviewKind = 'text' | 'json' | 'image' | 'pdf' | 'unsupported'
 export type TextEncoding = 'auto' | 'utf-8' | 'utf-16le' | 'utf-16be' | 'gb18030'
+export type PreviewViewState = {
+  encoding?: TextEncoding
+  formatted?: boolean
+  wrap?: boolean
+  editor?: CodeEditorViewState
+  findOpen?: boolean
+  findQuery?: string
+  findOptions?: FindReplaceOptions
+  imageZoom?: number | null
+  pdfPage?: number
+  pdfZoom?: number
+}
+export type PreviewStateProps = {
+  initialState?: PreviewViewState
+  onStateChange: (patch: Partial<PreviewViewState>) => void
+}
+
+/** Literal search, counting without retaining an array for every match in a large file. */
+export function scanPreviewMatches(content: string, query: string, options: FindReplaceOptions, from = 0, forward = true): { count: number; match: FindMatch | null; wrapped: boolean } {
+  const expression = buildSearchRegExp(query, { ...defaultFindReplaceOptions, ...options, regex: false })
+  if (!expression) return { count: 0, match: null, wrapped: false }
+  let count = 0
+  let first: FindMatch | null = null
+  let last: FindMatch | null = null
+  let next: FindMatch | null = null
+  let previous: FindMatch | null = null
+  for (const item of content.matchAll(expression)) {
+    const match = { start: item.index!, end: item.index! + item[0].length }
+    count++
+    first ??= match
+    last = match
+    if (!next && match.start >= from) next = match
+    if (match.end <= from) previous = match
+  }
+  const direct = forward ? next : previous
+  return { count, match: direct ?? (forward ? first : last), wrapped: count > 0 && direct === null }
+}
 export const previewBatchLimit = 100
 export const previewLimits = { text: 2 * 1024 ** 2, json: 2 * 1024 ** 2, image: 32 * 1024 ** 2, pdf: 50 * 1024 ** 2, unsupported: 0 }
 const languages: Record<string, TextCodeEditorLanguage> = {

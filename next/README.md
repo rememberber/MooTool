@@ -85,6 +85,8 @@ The command palette includes **Rich text to Markdown**, **Table to JSON**, **Cli
 
 Open **Quick File Preview** in the daily tools group or search for `peek` / `preview` / `预览`. Drop or choose a batch of up to 100 files, then switch using the list, previous/next buttons, or Left/Right outside text controls. Text and JSON reuse the read-only code editor; JSON formatting preserves number tokens and duplicate keys. Images support fit/actual size/zoom, and PDF pages render locally with page selection and zoom. Every new selection replaces the batch; source files are never modified and preview contents are not added to history. See [formats, limits and verification](doc/file-preview.md).
 
+Use **Cmd+F / Ctrl+F** to find literal text in the current text/JSON preview, with case/whole-word options and previous/next navigation. Returning to a file in the same batch restores its encoding, editor position, find settings, image zoom or PDF page/zoom. Cached settings are cleared with the batch and do not retain file contents or PDF workers.
+
 ## Developer translation
 
 - **Split identifier** turns `getHTTPResponse` / `user_id` into words before translation.

@@ -3,14 +3,16 @@ import { getDocument, PDFWorker, type PDFDocumentProxy, type RenderTask } from '
 import PdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?worker'
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '@/shared/i18n/I18nProvider'
-import { readPreviewBytes } from './filePreview'
+import { readPreviewBytes, type PreviewStateProps } from './filePreview'
 
-export function PdfPreview({ file }: { file: File }) {
+export function PdfPreview({ file, initialState, onStateChange }: { file: File } & PreviewStateProps) {
   const { t } = useI18n()
   const [document, setDocument] = useState<PDFDocumentProxy | null>(null)
   const [error, setError] = useState<'pdf' | 'password' | null>(null)
-  const [page, setPage] = useState(1)
-  const [zoom, setZoom] = useState(1)
+  const [page, setPage] = useState(initialState?.pdfPage ?? 1)
+  const [zoom, setZoom] = useState(initialState?.pdfZoom ?? 1)
+  function changePage(page: number): void { setPage(page); onStateChange({ pdfPage: page }) }
+  function changeZoom(zoom: number): void { setZoom(zoom); onStateChange({ pdfZoom: zoom }) }
   useEffect(() => {
     let active = true
     const port = new PdfWorker()
@@ -23,7 +25,7 @@ export function PdfPreview({ file }: { file: File }) {
       void (task?.destroy() ?? Promise.resolve()).catch(() => {}).finally(() => { worker.destroy(); port.terminate() })
     }
     void worker.promise.catch(() => {})
-    setDocument(null); setError(null); setPage(1); setZoom(1)
+    setDocument(null); setError(null)
     const assets = new URL('./pdfjs/', window.location.href).href
     void readPreviewBytes(file, 'pdf').then(bytes => {
       if (!active) return
@@ -31,7 +33,7 @@ export function PdfPreview({ file }: { file: File }) {
         standardFontDataUrl: `${assets}standard_fonts/`, wasmUrl: `${assets}wasm/`,
         useWorkerFetch: false, enableXfa: false, maxImageSize: 32_000_000, canvasMaxAreaInBytes: 32_000_000 })
       return task.promise
-    }).then(pdf => { if (active && pdf) setDocument(pdf) }).catch(error => {
+    }).then(pdf => { if (active && pdf) { changePage(Math.max(1, Math.min(initialState?.pdfPage ?? 1, pdf.numPages))); setDocument(pdf) } }).catch(error => {
       if (active) { setError(error?.name === 'PasswordException' ? 'password' : 'pdf'); dispose() }
     })
     return () => {
@@ -42,13 +44,13 @@ export function PdfPreview({ file }: { file: File }) {
   }, [file])
   return <div className="file-preview-content">
     <div className="file-preview-options">
-      <button className="toolbar-button toolbar-button--icon" type="button" disabled={!document || page <= 1} aria-label={t('filePreview.previousPage')} onClick={() => setPage(page - 1)}><ChevronLeft size={15} /></button>
-      <label>{t('filePreview.page')}<input type="number" aria-label={t('filePreview.page')} min={1} max={document?.numPages ?? 1} value={page} disabled={!document} onChange={event => { const value = Number(event.target.value); if (Number.isInteger(value) && value >= 1 && value <= (document?.numPages ?? 1)) setPage(value) }} /></label>
+      <button className="toolbar-button toolbar-button--icon" type="button" disabled={!document || page <= 1} aria-label={t('filePreview.previousPage')} onClick={() => changePage(page - 1)}><ChevronLeft size={15} /></button>
+      <label>{t('filePreview.page')}<input type="number" aria-label={t('filePreview.page')} min={1} max={document?.numPages ?? 1} value={page} disabled={!document} onChange={event => { const value = Number(event.target.value); if (Number.isInteger(value) && value >= 1 && value <= (document?.numPages ?? 1)) changePage(value) }} /></label>
       <span>/ {document?.numPages ?? '—'}</span>
-      <button className="toolbar-button toolbar-button--icon" type="button" disabled={!document || page >= document.numPages} aria-label={t('filePreview.nextPage')} onClick={() => setPage(page + 1)}><ChevronRight size={15} /></button>
-      <button className="toolbar-button" type="button" onClick={() => setZoom(1)}>{t('filePreview.fit')}</button>
-      <button className="toolbar-button toolbar-button--icon" type="button" disabled={zoom <= .25} aria-label={t('filePreview.zoomOut')} onClick={() => setZoom(value => Math.max(.25, value / 1.25))}><Minus size={14} /></button>
-      <button className="toolbar-button toolbar-button--icon" type="button" disabled={zoom >= 3} aria-label={t('filePreview.zoomIn')} onClick={() => setZoom(value => Math.min(3, value * 1.25))}><Plus size={14} /></button>
+      <button className="toolbar-button toolbar-button--icon" type="button" disabled={!document || page >= document.numPages} aria-label={t('filePreview.nextPage')} onClick={() => changePage(page + 1)}><ChevronRight size={15} /></button>
+      <button className="toolbar-button" type="button" onClick={() => changeZoom(1)}>{t('filePreview.fit')}</button>
+      <button className="toolbar-button toolbar-button--icon" type="button" disabled={zoom <= .25} aria-label={t('filePreview.zoomOut')} onClick={() => changeZoom(Math.max(.25, zoom / 1.25))}><Minus size={14} /></button>
+      <button className="toolbar-button toolbar-button--icon" type="button" disabled={zoom >= 3} aria-label={t('filePreview.zoomIn')} onClick={() => changeZoom(Math.min(3, zoom * 1.25))}><Plus size={14} /></button>
       <span>{Math.round(zoom * 100)}%</span>
     </div>
     {error ? <p className="file-preview-empty" role="status">{t(`filePreview.error.${error}`)}</p>

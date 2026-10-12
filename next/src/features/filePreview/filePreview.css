@@ -20,6 +20,10 @@
 .file-preview-content .cm-editor { height: 100%; }
 .file-preview-content .cm-scroller { overflow: auto; }
 .file-preview-text-status { padding: 5px 12px; font-size: 11px; color: var(--text-muted); }
+.file-preview-find { flex: 0 0 auto; }
+.file-preview-find .find-replace-bar__row { display: flex; flex-wrap: wrap; }
+.file-preview-find .find-replace-bar__row > input { width: auto; flex: 1 1 120px; min-width: 80px; }
+.file-preview-find .find-replace-bar__controls { flex: 1 1 260px; flex-wrap: wrap; }
 .file-preview-empty { display: flex; flex: 1; min-height: 0; justify-content: center; align-items: center; flex-direction: column; gap: 14px; text-align: center; padding: 30px; color: var(--text-muted); margin: 0; overflow: auto; }
 .file-preview-drop { background: transparent; border: 0; cursor: pointer; }
 .file-preview-drop strong { font-size: 17px; color: var(--text); }

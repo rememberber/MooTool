@@ -19,6 +19,7 @@ export type FindReplaceBarProps = {
   focusRequest?: number
   /** When false, only the find row is shown. Defaults to true. */
   showReplace?: boolean
+  allowRegex?: boolean
   onFindTextChange: (value: string) => void
   onReplaceTextChange: (value: string) => void
   onOptionsChange: (options: FindReplaceOptions) => void
@@ -40,6 +41,7 @@ export function FindReplaceBar({
   autoFocus = true,
   focusRequest = 0,
   showReplace = true,
+  allowRegex = true,
   onFindTextChange,
   onReplaceTextChange,
   onOptionsChange,
@@ -118,10 +120,10 @@ export function FindReplaceBar({
             <input type="checkbox" checked={options.wholeWord} onChange={(event) => patchOptions({ wholeWord: event.target.checked })} />
             {t('findReplace.wholeWord')}
           </label>
-          <label className="find-replace-bar__option">
+          {allowRegex && <label className="find-replace-bar__option">
             <input type="checkbox" checked={options.regex} onChange={(event) => patchOptions({ regex: event.target.checked })} />
             {t('findReplace.regex')}
-          </label>
+          </label>}
         </div>
         <Tooltip content={t('common.close')}>
           <button className="icon-ghost find-replace-bar__close" type="button" aria-label={t('common.close')} onClick={onClose}>
