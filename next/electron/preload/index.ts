@@ -1,7 +1,7 @@
 import type { WindowMaterialStatus } from '../../src/shared/contracts/windowMaterial'
 import type { GlobalShortcutStatus } from '../../src/shared/contracts/shortcuts'
 import type { RenameFile, RenameOptions, RenamePreview, RenameResult, RenameStatus } from '../../src/shared/contracts/batchRename'
-import type { CommandActionId, CommandPaletteOperation, CommandPaletteState } from '../../src/shared/contracts/commandPalette'
+import type { ClipboardTextSnapshot, CommandActionId, CommandPaletteOperation, CommandPaletteState } from '../../src/shared/contracts/commandPalette'
 import type { RegexInput, RegexResult } from '../../src/shared/contracts/regex'
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import type {
@@ -71,6 +71,7 @@ contextBridge.exposeInMainWorld('mootool', {
   clearSecret: (key: SecretKey): Promise<SecretStatus> => ipcRenderer.invoke('secret:clear', key),
   getWorkspaceState: (): Promise<WorkspaceState> => ipcRenderer.invoke('workspace:get'),
   getCommandPaletteState: (): Promise<CommandPaletteState> => ipcRenderer.invoke('command-palette:get'),
+  readCommandClipboard: (): Promise<ClipboardTextSnapshot> => ipcRenderer.invoke('command-palette:read-clipboard'),
   updateCommandPalette: (operation: CommandPaletteOperation): Promise<CommandPaletteState> => ipcRenderer.invoke('command-palette:update', operation),
   openCommandAction: (actionId: CommandActionId): Promise<void> => ipcRenderer.invoke('command-palette:open-action', actionId),
   onCommandPaletteStateChange: (callback: (state: CommandPaletteState) => void) => subscribe('command-palette:changed', callback),

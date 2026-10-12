@@ -5668,6 +5668,7 @@ select:not([multiple]) {
 
 .command-palette__preview-actions {
   display: flex;
+  flex-wrap: wrap;
   flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
@@ -5675,6 +5676,10 @@ select:not([multiple]) {
   color: var(--text-muted);
   font-size: 12px;
 }
+
+.command-palette__export { display: flex; align-items: center; gap: 8px; }
+.command-palette__export select { width: 78px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; color: var(--text-strong); background: var(--surface); }
+.command-palette__preview-actions > [role='status'] { flex: 1 1 100%; min-height: 16px; }
 
 .command-palette__section { padding: 10px 10px 6px; color: var(--text-muted); font-size: 11px; }
 .command-palette__preferences { display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--border-soft); }

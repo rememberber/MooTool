@@ -1,9 +1,9 @@
-import { ArrowLeft, Copy, Search, Star, WandSparkles, X } from 'lucide-react'
+import { ArrowLeft, Copy, Save, Search, Star, WandSparkles, X } from 'lucide-react'
 import { Fragment, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useAppStore } from '@/app/appStore'
 import { actionRegistry, executeAction, searchActions, type ActionMatch } from '@/app/actionRegistry'
-import { defaultCommandPaletteState, orderedCommandActions, type CommandActionId, type CommandPaletteOperation, type CommandPaletteState, type CommandSection } from '@/shared/contracts/commandPalette'
+import { commandFileExtensions, commandOutputFormat, defaultCommandPaletteState, orderedCommandActions, type CommandActionId, type CommandFileFormat, type CommandPaletteOperation, type CommandPaletteState, type CommandSection } from '@/shared/contracts/commandPalette'
 import { toolGroups, toolRegistry, type ToolDefinition } from '@/app/toolRegistry'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
@@ -27,6 +27,8 @@ export function CommandPalette({ onOpenTool }: { onOpenTool?: (toolId: ToolDefin
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [saved, setSaved] = useState('')
+  const [fileFormat, setFileFormat] = useState<CommandFileFormat>('text')
   const [preferences, setPreferences] = useState<CommandPaletteState>(defaultCommandPaletteState)
   const [preferenceError, setPreferenceError] = useState('')
   const [preferenceBusy, setPreferenceBusy] = useState(false)
@@ -70,6 +72,7 @@ export function CommandPalette({ onOpenTool }: { onOpenTool?: (toolId: ToolDefin
     setPreview(null)
     setError('')
     setCopied(false)
+    setSaved('')
     setQuery('')
     setSelectedIndex(0)
     if (!open) return
@@ -143,6 +146,7 @@ export function CommandPalette({ onOpenTool }: { onOpenTool?: (toolId: ToolDefin
     setPreview(null)
     setError('')
     setCopied(false)
+    setSaved('')
   }
 
   async function choose(result: Result, replacePending = false): Promise<void> {
@@ -163,13 +167,18 @@ export function CommandPalette({ onOpenTool }: { onOpenTool?: (toolId: ToolDefin
     setBusy(true)
     setError('')
     setCopied(false)
+    setSaved('')
     try {
       const text = await executeAction(result.match, async () => {
         try { return await navigator.clipboard.readText() }
         catch { throw new Error(t('app.command.clipboardFailed')) }
-      }, { t, zone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' })
+      }, { t, zone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' }, async () => {
+        try { return await window.mootool.readCommandClipboard() }
+        catch (reason) { throw new Error(t(reason instanceof Error && reason.message.includes('app.command.tooLarge') ? 'app.command.tooLarge' : 'app.command.clipboardFailed')) }
+      })
       if (request.current === currentRequest) {
         setPreview({ actionId: result.match.action.id, title: t(result.match.action.titleKey), text })
+        setFileFormat(commandOutputFormat(result.match.action.id))
         void savePreference({ type: 'record', actionId: result.match.action.id })
       }
     } catch (reason) {
@@ -188,6 +197,7 @@ export function CommandPalette({ onOpenTool }: { onOpenTool?: (toolId: ToolDefin
     running.current = true
     setBusy(true)
     setError('')
+    setSaved('')
     try {
       await navigator.clipboard.writeText(preview.text)
       if (request.current === currentRequest) setCopied(true)
@@ -201,6 +211,28 @@ export function CommandPalette({ onOpenTool }: { onOpenTool?: (toolId: ToolDefin
     }
   }
 
+  async function saveResult(): Promise<void> {
+    if (!preview || running.current) return
+    if (fileFormat === 'json') {
+      try { JSON.parse(preview.text) }
+      catch { setError(t('app.command.invalidJsonSave')); return }
+    }
+    const currentRequest = ++request.current
+    running.current = true
+    setBusy(true)
+    setError('')
+    setSaved('')
+    setCopied(false)
+    try {
+      const path = await window.mootool.saveTextFile({ kind: fileFormat, defaultName: `clipboard.${commandFileExtensions[fileFormat]}`, content: preview.text })
+      if (request.current === currentRequest && path) setSaved(path)
+    } catch {
+      if (request.current === currentRequest) setError(t('app.command.saveFailed'))
+    } finally {
+      if (request.current === currentRequest) { running.current = false; setBusy(false) }
+    }
+  }
+
   function handleKeyDown(event: KeyboardEvent<HTMLElement>): void {
     if (event.nativeEvent.isComposing) return
     if (event.key === 'Escape') {
@@ -209,7 +241,7 @@ export function CommandPalette({ onOpenTool }: { onOpenTool?: (toolId: ToolDefin
       if (preview) back()
       else setOpen(false)
     } else if (event.key === 'Tab') {
-      const focusable = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('input, button:not([disabled]):not([tabindex="-1"]), textarea') ?? [])
+      const focusable = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('input, button:not([disabled]):not([tabindex="-1"]), textarea, select:not([disabled])') ?? [])
       const first = focusable[0]
       const last = focusable[focusable.length - 1]
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
@@ -253,8 +285,14 @@ export function CommandPalette({ onOpenTool }: { onOpenTool?: (toolId: ToolDefin
         {preview ? <div className="command-palette__preview">
           <textarea readOnly value={preview.text} aria-label={t('app.command.preview')} spellCheck={false} />
           <div className="command-palette__preview-actions">
-            <span role="status">{copied ? t('app.command.copied') : ''}</span>
+            <span role="status" title={saved}>{copied ? t('app.command.copied') : saved ? t('app.command.saved') : ''}</span>
             <button className="dialog-button" type="button" data-command-copy aria-disabled={busy} onClick={() => void copyResult()}><Copy size={14} />{t('app.command.copy')}</button>
+            <div className="command-palette__export">
+              <select aria-label={t('app.command.fileFormat')} value={fileFormat} disabled={busy} onChange={event => { setFileFormat(event.target.value as CommandFileFormat); setError(''); setSaved('') }}>
+                <option value="text">.txt</option><option value="markdown">.md</option><option value="json">.json</option><option value="html">.html</option>
+              </select>
+              <button className="dialog-button" type="button" disabled={busy} onClick={() => void saveResult()}><Save size={14} />{t('app.command.save')}</button>
+            </div>
           </div>
         </div> : <div className="command-palette__results" id={listId} role="listbox" aria-label={t('app.search.title')}>
           {results.length === 0 ? <div className="command-palette__empty">{t('app.search.empty')}</div> : results.map((result, index) => {
@@ -262,7 +300,7 @@ export function CommandPalette({ onOpenTool }: { onOpenTool?: (toolId: ToolDefin
             const tool = result.kind === 'tool' ? result.tool : null
             const Icon = tool?.icon ?? WandSparkles
             const group = tool && tool.groupId !== 'home' ? toolGroups.find((item) => item.id === tool.groupId) : null
-            const detail = action ? t(action.input === 'none' ? 'app.command.noInput' : result.kind === 'action' && result.match.argument !== undefined ? 'app.command.inline' : 'app.command.clipboard')
+            const detail = action ? t(action.input === 'none' ? 'app.command.noInput' : result.kind === 'action' && result.match.argument !== undefined ? 'app.command.inline' : action.input === 'rich-text' || action.input === 'html' ? 'app.command.richClipboard' : 'app.command.clipboard')
               : group ? t(group.titleKey) : ''
             return <Fragment key={action ? `action-${action.id}` : `tool-${tool!.id}`}>
               {result.section && result.section !== results[index - 1]?.section && <div className="command-palette__section" role="presentation">{t(`app.command.section.${result.section}`)}</div>}

@@ -133,7 +133,8 @@ test('keeps focus and long result lists inside a compact palette in both themes'
   await expect(page.getByRole('button', { name: '清空最近执行', exact: true })).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(input).toBeFocused()
-  for (let index = 0; index < 35; index += 1) await input.press('ArrowDown')
+  const count = await page.locator('.command-palette').getByRole('option').count()
+  for (let index = 0; index < count - 1; index += 1) await input.press('ArrowDown')
   await expect(page.locator('.command-palette').getByRole('option', { selected: true })).toContainText('系统信息')
   await expect.poll(() => page.locator('.command-palette').getByRole('option', { selected: true }).evaluate((element) => {
     const row = element.getBoundingClientRect()

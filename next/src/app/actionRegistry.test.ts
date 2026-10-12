@@ -19,7 +19,7 @@ describe('command actions', () => {
   it('searches translated labels and keywords without evaluating clipboard content', () => {
     expect(searchActions('去重', t).map(({ action }) => action.id)).toContain('deduplicate-lines')
     expect(searchActions('base64', t)).toHaveLength(2)
-    expect(searchActions('json', t).map(({ action }) => action.id)).toEqual(['json-format', 'json-minify'])
+    expect(searchActions('json', t).map(({ action }) => action.id)).toEqual(['json-format', 'json-minify', 'table-json'])
     expect(searchActions('uuid', t)[0].argument).toBeUndefined()
     expect(new Set(actionRegistry.map((action) => action.id)).size).toBe(actionRegistry.length)
   })
@@ -50,5 +50,23 @@ describe('command actions', () => {
     expect(await executeAction(searchActions('url decode %E4%BD%A0%E5%A5%BD+world', t)[0], vi.fn(), context)).toBe('你好 world')
     expect(await executeAction(searchActions('时间戳 1728000000000', t)[0], vi.fn(), context)).toBe('2024-10-04 08:00:00 (Asia/Shanghai)')
     expect(await executeAction(searchActions('按行去重 a\r\na\r\nb', t)[0], vi.fn(), context)).toBe('a\nb')
+  })
+
+  it('takes a rich clipboard snapshot only for explicit rich actions and preserves plain fallbacks', async () => {
+    const plain = vi.fn(async () => 'untouched clipboard')
+    const rich = vi.fn(async () => ({ text: 'plain * text', html: '' }))
+    expect(await executeAction(searchActions('markdown', t)[0], plain, context, rich)).toBe('plain * text')
+    expect(rich).toHaveBeenCalledOnce()
+    expect(plain).not.toHaveBeenCalled()
+    expect(await executeAction(searchActions('table json code\tvalue\n001\ttrue', t)[0], plain, context, rich)).toBe('[\n  {\n    "code": "001",\n    "value": "true"\n  }\n]')
+    expect(await executeAction(searchActions('clipboard html <p>Example</p>', t)[0], plain, context, rich)).toBe('<p>Example</p>')
+    expect(rich).toHaveBeenCalledOnce()
+    expect(plain).not.toHaveBeenCalled()
+  })
+
+  it('rejects absent HTML and oversized rich content with translated errors', async () => {
+    await expect(executeAction(searchActions('clipboard html', t)[0], vi.fn(), context, async () => ({ text: 'text', html: '' }))).rejects.toThrow(t('app.command.noHtml'))
+    await expect(executeAction(searchActions('markdown', t)[0], vi.fn(), context, async () => ({ text: 'text', html: 'a'.repeat(100001) }))).rejects.toThrow(t('app.command.tooLarge'))
+    await expect(executeAction(searchActions('table json a\ta\n1\t2', t)[0], vi.fn(), context)).rejects.toThrow(t('app.command.tableHeaders'))
   })
 })

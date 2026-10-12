@@ -651,6 +651,13 @@ function registerIpc(): void {
     assertMainRenderer(event.sender)
     return normalizeCommandPaletteState(store.get('commandPalette'))
   })
+  ipcMain.handle('command-palette:read-clipboard', (event) => {
+    assertMainRenderer(event.sender)
+    const text = clipboard.readText()
+    const html = clipboard.availableFormats().includes('text/html') ? clipboard.readHTML() : ''
+    if (text.length > 100_000 || html.length > 100_000) throw new Error('app.command.tooLarge')
+    return { text, html }
+  })
   ipcMain.handle('command-palette:update', (event, operation: unknown) => {
     assertMainRenderer(event.sender)
     const previous = normalizeCommandPaletteState(store.get('commandPalette'))
@@ -2234,12 +2241,12 @@ function normalizeRenameFavoriteFolderInput(value: RenameFavoriteFolderInput): R
 }
 
 function normalizeTextFileKind(value: unknown): TextFileKind {
-  if (value === 'json' || value === 'xml' || value === 'text' || value === 'source') return value
+  if (value === 'json' || value === 'xml' || value === 'text' || value === 'source' || value === 'markdown' || value === 'html') return value
   throw new Error('Unsupported text file type')
 }
 
 function sanitizeDefaultFileName(value: unknown, kind: TextFileKind): string {
-  const extension = kind === 'json' ? '.json' : kind === 'xml' ? '.xml' : '.txt'
+  const extension = kind === 'json' ? '.json' : kind === 'xml' ? '.xml' : kind === 'markdown' ? '.md' : kind === 'html' ? '.html' : '.txt'
   const raw = typeof value === 'string' ? basename(value) : `untitled${extension}`
   const sanitized = raw.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120) || `untitled${extension}`
   return extname(sanitized) ? sanitized : `${sanitized}${extension}`
@@ -2415,6 +2422,8 @@ const closeDialogLabels: Record<AppLanguage, { message: string; hide: string; qu
 }
 
 const textFileFilters: Record<TextFileKind, { name: string; extensions: string[] }> = {
+  markdown: { name: 'Markdown', extensions: ['md'] },
+  html: { name: 'HTML', extensions: ['html', 'htm'] },
   json: { name: 'JSON', extensions: ['json'] },
   xml: { name: 'XML', extensions: ['xml'] },
   text: { name: 'Text', extensions: ['txt', 'text', 'log'] },

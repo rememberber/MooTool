@@ -73,6 +73,10 @@ The latest batch can be undone after restarting the app. Failed operations attem
 
 In **Image Assistant**, select library images and choose **Resize**. Use a preset or enter pixel dimensions (one side may be left empty), choose proportional fit, centered fill/crop, or stretch, and review each image's actual output size before processing. Shrink-only and keeping originals are enabled by default. Outputs support PNG and JPEG, report per-image progress/failures, and can be cancelled between images. New outputs receive numeric suffixes on name conflicts, including format conversions that would collide with another source. See [Image resize behavior and verification](doc/image-resize.md).
 
+## Clipboard Conversion
+
+The command palette includes **Rich text to Markdown**, **Table to JSON**, **Clipboard plain text**, and **Clipboard HTML source**. Actions read the clipboard only when executed, preview text without rendering copied HTML, and require a separate copy or save click. Every text preview can be saved through the native dialog as `.txt`, `.md`, `.json`, or `.html`; JSON saves require valid JSON. Table conversion keeps all values as strings and uses the first row as unique column names. See [Clipboard conversion boundaries and verification](doc/clipboard-actions.md).
+
 ## Developer translation
 
 - **Split identifier** turns `getHTTPResponse` / `user_id` into words before translation.

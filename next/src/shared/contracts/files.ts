@@ -1,4 +1,4 @@
-export type TextFileKind = 'json' | 'xml' | 'text' | 'source'
+export type TextFileKind = 'json' | 'xml' | 'text' | 'source' | 'markdown' | 'html'
 
 export type TextFileResult = {
   path: string
