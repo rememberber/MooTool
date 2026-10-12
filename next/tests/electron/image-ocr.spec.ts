@@ -53,7 +53,7 @@ test('recognizes Chinese locally, previews before copying, and saves edited text
   const corrected = '校对后的中文识别结果\n订单编号 001234'
   await editor().fill(corrected)
   await dialog().getByRole('button', { name: '复制文字', exact: true }).click()
-  await expect.poll(() => app.evaluate(({ clipboard }) => clipboard.readText())).toBe(corrected)
+  await expect.poll(() => app.evaluate(({ clipboard }) => clipboard.readText().replaceAll('\r\n', '\n'))).toBe(corrected)
   const output = join(directory, 'recognized.txt')
   await app.evaluate(({ dialog }, output) => { dialog.showSaveDialog = (async () => ({ canceled: false, filePath: output })) as typeof dialog.showSaveDialog }, output)
   await dialog().getByRole('button', { name: '保存文字', exact: true }).click()
