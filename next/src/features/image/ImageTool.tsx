@@ -1,6 +1,6 @@
 import { runImageBatch, type ImageBatchProgress } from '@/shared/imageBatch'
 import { Dialog } from '@/shared/components/Dialog'
-import { ClipboardCopy, ClipboardPaste, Download, FileImage, FolderOpen, ImageDown, ImagePlus, List, Maximize2, Minimize2, Minus, Pencil, Plus, Save, ScanLine, Shapes, Trash2, Type, Upload } from 'lucide-react'
+import { ClipboardCopy, ClipboardPaste, Download, FileImage, FolderOpen, ImageDown, ImagePlus, List, Maximize2, Minimize2, Minus, Pencil, Plus, Save, ScanLine, ScanText, Shapes, Trash2, Type, Upload } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ToolPageHeader, WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
@@ -11,6 +11,8 @@ import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { ImageBase64Dialog, ImageCompressDialog, ImageSvgDialog, ImageWatermarkDialog } from './ImageDialogs'
 import { ImageResizeDialog } from './ImageResizeDialog'
+import { ImageOcrDialog } from './ImageOcrDialog'
+import type { OcrSource, OcrStatus } from '@/shared/contracts/ocr'
 import { compressImage, ensureImageDataUrl, processedImageName, resizeImage, watermarkImage, type CompressImageOptions, type ImageOutputMode, type ResizeImageOptions, type WatermarkImageOptions } from './imageTools'
 
 export function ImageTool() {
@@ -50,6 +52,16 @@ export function ImageTool() {
   const [resizeOpen, setResizeOpen] = useState(false)
   const [watermarkOpen, setWatermarkOpen] = useState(false)
   const [svgOpen, setSvgOpen] = useState(false)
+  const [ocrSource, setOcrSource] = useState<OcrSource | null>(null)
+  const [ocrStatus, setOcrStatus] = useState<OcrStatus | null>(null)
+  useEffect(() => {
+    let active = true
+    void window.mootool.getOcrStatus().then(status => { if (active) setOcrStatus(status) }).catch(() => {
+      if (active) setOcrStatus({ available: false, engine: null, languages: [], reason: 'component' })
+    })
+    return () => { active = false }
+  }, [])
+  const ocrHint = !ocrStatus ? t('common.loading') : ocrStatus.available ? t('image.ocr.local') : t(`image.ocr.unavailable.${ocrStatus.reason ?? 'component'}`)
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 })
   const canvasRef = useRef<HTMLDivElement>(null)
   const zoomAnchorRef = useRef<ZoomAnchor | null>(null)
@@ -203,6 +215,16 @@ export function ImageTool() {
     } catch (error) { actions.reportError(error) } finally { setBusy(false) }
   }
 
+  async function captureForOcr(): Promise<void> {
+    if (busy || !ocrStatus?.available) return
+    setBusy(true)
+    try {
+      const result = await window.mootool.captureScreenRegion()
+      if (result) setOcrSource({ name: t('image.ocr.captureSource'), dataUrl: result.dataUrl, width: result.width, height: result.height })
+    } catch (error) { actions.reportError(error) }
+    finally { setBusy(false) }
+  }
+
   async function saveCapture(dataUrl: string): Promise<void> {
     try {
       const saved = await window.mootool.saveImageAsset({ name: `Screenshot-${timestamp()}.png`, dataUrl })
@@ -304,7 +326,7 @@ export function ImageTool() {
     <section className="tool-page p4-tool image-tool-page">
       <ToolPageHeader title={t('image.title')} />
       <div className="local-tool-shell image-workspace">
-        <div className="image-main-toolbar"><button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('image.toggleList')} onClick={() => setListVisible((value) => !value)}><List size={14} /></button><button className="toolbar-button" type="button" disabled={busy} onClick={() => { void capture() }}><ScanLine size={14} />{t('image.screenshot')}</button><button className="toolbar-button" type="button" onClick={() => { void importClipboard() }}><ClipboardPaste size={14} />{t('image.fromClipboard')}</button><button className="toolbar-button" type="button" onClick={() => { void importImages() }}><FolderOpen size={14} />{t('image.import')}</button><button className="toolbar-button" type="button" onClick={() => setBase64Mode('import')}><ImageDown size={14} />{t('image.fromBase64')}</button><WorkspaceDragZone className="p4-toolbar__spacer" /><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setSvgOpen(true)}><Shapes size={14} />{t('image.toSvg')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setResizeOpen(true)}><Maximize2 size={14} />{t('image.resize')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setCompressOpen(true)}><Minimize2 size={14} />{t('image.compress')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setWatermarkOpen(true)}><Type size={14} />{t('image.watermark')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => { void saveCurrent() }}><Save size={14} />{t('common.save')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => { void copyImage() }}><ClipboardCopy size={14} />{t('image.copy')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => setBase64Mode('export')}><Upload size={14} />{t('image.toBase64')}</button></div>
+        <div className="image-main-toolbar"><button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('image.toggleList')} onClick={() => setListVisible((value) => !value)}><List size={14} /></button><button className="toolbar-button" type="button" disabled={busy} onClick={() => { void capture() }}><ScanLine size={14} />{t('image.screenshot')}</button><button className="toolbar-button" type="button" disabled={busy || !ocrStatus?.available} title={ocrHint} onClick={() => { void captureForOcr() }}><ScanText size={14} />{t('image.ocr.capture')}</button><button className="toolbar-button" type="button" onClick={() => { void importClipboard() }}><ClipboardPaste size={14} />{t('image.fromClipboard')}</button><button className="toolbar-button" type="button" onClick={() => { void importImages() }}><FolderOpen size={14} />{t('image.import')}</button><button className="toolbar-button" type="button" onClick={() => setBase64Mode('import')}><ImageDown size={14} />{t('image.fromBase64')}</button><WorkspaceDragZone className="p4-toolbar__spacer" /><button className="toolbar-button" type="button" disabled={!current || busy || !ocrStatus?.available} title={ocrHint} onClick={() => { if (current) setOcrSource({ name: current.name, dataUrl: current.dataUrl, width: current.width, height: current.height }) }}><ScanText size={14} />{t('image.ocr.title')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setSvgOpen(true)}><Shapes size={14} />{t('image.toSvg')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setResizeOpen(true)}><Maximize2 size={14} />{t('image.resize')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setCompressOpen(true)}><Minimize2 size={14} />{t('image.compress')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setWatermarkOpen(true)}><Type size={14} />{t('image.watermark')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => { void saveCurrent() }}><Save size={14} />{t('common.save')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => { void copyImage() }}><ClipboardCopy size={14} />{t('image.copy')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => setBase64Mode('export')}><Upload size={14} />{t('image.toBase64')}</button></div>
         <ResizableColumns className={listVisible ? 'image-layout' : 'image-layout image-layout--collapsed'} columns={listVisible ? 2 : 1} defaultSizes={listVisible ? [230, 770] : [1]} minPaneWidths={listVisible ? [180, 360] : [360]} storageKey="image-library">
           {listVisible && <aside className="image-library"><header><span>{t('image.library')}</span><button className="icon-button" type="button" aria-label={t('image.import')} onClick={() => { void importImages() }}><ImagePlus size={14} /></button></header><div className="image-list">{assets.length === 0 ? <div className="history-empty">{t('image.empty')}</div> : assets.map((asset) => <div className={current?.name === asset.name ? 'image-list-item image-list-item--active' : 'image-list-item'} key={asset.name}><input type="checkbox" aria-label={`${t('image.select')} ${asset.name}`} checked={selectedNames.includes(asset.name)} onChange={(event) => toggleAsset(asset.name, event.target.checked)} /><button type="button" onClick={() => { void selectAsset(asset.name) }}><FileImage size={15} /><span><strong>{asset.name}</strong><small>{asset.width} × {asset.height} · {formatBytes(asset.size)}</small></span></button></div>)}</div><footer><button className="icon-button" type="button" disabled={!current} aria-label={t('common.rename')} onClick={() => { void renameCurrent() }}><Pencil size={14} /></button><button className="icon-button" type="button" disabled={!processingNames.length} aria-label={t('common.export')} onClick={() => { void exportSelected() }}><Download size={14} /></button><button className="icon-button icon-button--danger" type="button" disabled={!processingNames.length} aria-label={t('common.action.delete')} onClick={() => { void deleteSelected() }}><Trash2 size={14} /></button></footer></aside>}
           <main className="image-canvas-panel" onDoubleClick={() => { if (current) void window.mootool.openImageAsset(current.name) }}><div ref={canvasRef} className={fit ? 'image-canvas image-canvas--fit' : 'image-canvas'}>{current ? <img src={current.dataUrl} alt={current.name} style={{ width: `${current.width * effectiveZoom}px`, height: `${current.height * effectiveZoom}px` }} /> : <div className="image-placeholder"><FileImage size={48} /><span>{t('image.emptyPreview')}</span></div>}</div><div className="image-zoom-toolbar" onDoubleClick={(event) => event.stopPropagation()}><button className="icon-button" type="button" aria-label={t('image.zoomIn')} disabled={!current} onClick={() => changeZoom(1.1)}><Plus size={14} /></button><button className="icon-button" type="button" aria-label={t('image.zoomOut')} disabled={!current} onClick={() => changeZoom(1 / 1.1)}><Minus size={14} /></button><button className="icon-button image-actual-size-button" type="button" aria-label={t('image.original')} aria-pressed={!fit && Math.abs(zoom - 1) < 0.001} title={t('image.original')} disabled={!current} onClick={showOriginalSize}>1:1</button><button className="icon-button" type="button" aria-label={t('image.fit')} aria-pressed={fit} title={t('image.fit')} disabled={!current} onClick={() => setFit(true)}><Maximize2 size={14} /></button><span>{current ? `${current.width} × ${current.height} · ${formatBytes(current.size)} · ${fit ? `${t('image.fit')} · ` : ''}${Math.round(effectiveZoom * 100)}%` : ''}</span></div></main>
@@ -324,6 +346,7 @@ export function ImageTool() {
       <ImageResizeDialog open={resizeOpen} assets={processingNames.map(name => assets.find(asset => asset.name === name)).filter((asset): asset is ImageAssetSummary => Boolean(asset))} onClose={() => setResizeOpen(false)} onConfirm={(options, mode) => { void processResize(options, mode) }} />
       <ImageWatermarkDialog open={watermarkOpen} count={processingNames.length} onClose={() => setWatermarkOpen(false)} onConfirm={(options, mode) => { void processWatermark(options, mode) }} />
       <ImageSvgDialog open={svgOpen} count={processingNames.length} onClose={() => setSvgOpen(false)} onConfirm={(options) => { void processSvg(options) }} />
+      {ocrSource && <ImageOcrDialog source={ocrSource} status={ocrStatus} onClose={() => setOcrSource(null)} />}
     </section>
   )
 }

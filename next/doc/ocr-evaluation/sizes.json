@@ -1,0 +1,129 @@
+{
+  "measuredPlatformArtifacts": {
+    "linux/x64": {
+      "rawBytes": 46218000,
+      "files": [
+        {
+          "name": "libonnxruntime.so.1",
+          "bytes": 45828512
+        },
+        {
+          "name": "onnxruntime_binding.node",
+          "bytes": 389488
+        }
+      ]
+    },
+    "linux/arm64": {
+      "rawBytes": 25530144,
+      "files": [
+        {
+          "name": "libonnxruntime.so.1",
+          "bytes": 25135496
+        },
+        {
+          "name": "onnxruntime_binding.node",
+          "bytes": 394648
+        }
+      ]
+    },
+    "darwin/arm64": {
+      "rawBytes": 89446696,
+      "files": [
+        {
+          "name": "libonnxruntime.1.30.0.dylib",
+          "bytes": 44589928
+        },
+        {
+          "name": "libonnxruntime.1.dylib",
+          "bytes": 44589928
+        },
+        {
+          "name": "onnxruntime_binding.node",
+          "bytes": 266840
+        }
+      ]
+    },
+    "win32/x64": {
+      "rawBytes": 67075688,
+      "files": [
+        {
+          "name": "dxil.dll",
+          "bytes": 1508664
+        },
+        {
+          "name": "DirectML.dll",
+          "bytes": 18527584
+        },
+        {
+          "name": "dxcompiler.dll",
+          "bytes": 17986360
+        },
+        {
+          "name": "onnxruntime.dll",
+          "bytes": 28754232
+        },
+        {
+          "name": "onnxruntime_binding.node",
+          "bytes": 298848
+        }
+      ]
+    },
+    "win32/arm64": {
+      "rawBytes": 72737344,
+      "files": [
+        {
+          "name": "dxil.dll",
+          "bytes": 1769784
+        },
+        {
+          "name": "DirectML.dll",
+          "bytes": 18444600
+        },
+        {
+          "name": "dxcompiler.dll",
+          "bytes": 22285624
+        },
+        {
+          "name": "onnxruntime.dll",
+          "bytes": 29815136
+        },
+        {
+          "name": "onnxruntime_binding.node",
+          "bytes": 422200
+        }
+      ]
+    }
+  },
+  "macIntelPresent": false,
+  "ppOcrModels": [
+    {
+      "name": "PP-OCRv6_det_tiny.onnx",
+      "url": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx",
+      "sha256": "f42c0fbd294d95eac1a550e131b277dac97462c8025fa4b6c3cec1b7894bd3d5",
+      "bytes": 1829618
+    },
+    {
+      "name": "PP-OCRv6_rec_tiny.onnx",
+      "url": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx",
+      "sha256": "e16e242de5937ad92609223f19bc2aff3727ee40b095f996907c24749bad251b",
+      "bytes": 4489813
+    },
+    {
+      "name": "PP-OCRv6_det_small.onnx",
+      "url": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_small.onnx",
+      "sha256": "090f04abcd9d9a7498bc4ebf677e4cb9bdce1fe4197ddb7e529f1ef44e1ff94f",
+      "bytes": 9929594
+    },
+    {
+      "name": "PP-OCRv6_rec_small.onnx",
+      "url": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/rec/PP-OCRv6_rec_small.onnx",
+      "sha256": "6f327246b50388f3c176ae304bd95767ea6dc0c9ae92153ef8cbe210b3c14884",
+      "bytes": 21234383
+    }
+  ],
+  "tesseractCoreFullBytes": 45262431,
+  "tesseractJsFullBytes": 1411341,
+  "tesseractCoreNodeOnlyBytes": 19484605,
+  "onnxMacArm64RequiredBytes": 44856768,
+  "onnxMacArm64DuplicateLibraryRemoved": true
+}

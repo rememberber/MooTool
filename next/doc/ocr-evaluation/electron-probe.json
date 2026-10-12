@@ -1,0 +1,22 @@
+{
+  "electron": "43.2.0",
+  "node": "24.18.0",
+  "arch": "arm64",
+  "platform": "darwin",
+  "onnxRuntime": {
+    "common": "1.30.0",
+    "node": "1.30.0"
+  },
+  "loadMs": 43.47695900000008,
+  "inputNames": [
+    "x"
+  ],
+  "shapes": {
+    "fetch_name_0": [
+      1,
+      40,
+      6906
+    ]
+  },
+  "note": "Native binding and one recognition-model inference only; not a complete JavaScript OCR pipeline."
+}

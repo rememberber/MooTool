@@ -7398,6 +7398,28 @@ select:not([multiple]) {
 }
 
 .image-resize-mode-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+.image-ocr-options { display: flex; flex-direction: column; gap: 12px; }
+.dialog:has(.image-ocr-options) .dialog__footer { flex-wrap: wrap; }
+.image-ocr-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--text-muted); font-size: 12px; }
+.image-ocr-controls label { display: flex; align-items: center; gap: 8px; }
+.image-ocr-controls select { padding: 6px 10px; color: var(--text-strong); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+.image-ocr-workspace { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 16px; }
+.image-ocr-workspace figure { margin: 0; min-width: 0; }
+.image-ocr-workspace figure > div { display: flex; align-items: center; justify-content: center; height: 250px; padding: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.image-ocr-workspace img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+.image-ocr-workspace figcaption { margin-top: 8px; font-size: 11px; color: var(--text-muted); overflow-wrap: anywhere; }
+.image-ocr-editor { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 12px; }
+.image-ocr-editor textarea { flex: 1; width: 100%; min-height: 240px; padding: 10px; resize: none; color: var(--text-strong); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; font: inherit; line-height: 1.6; }
+.image-ocr-options > p { margin: 0; font-size: 12px; line-height: 1.5; }
+.image-ocr-metadata, .image-ocr-help { color: var(--text-muted); }
+.image-ocr-error { color: var(--danger, #c44); }
+.image-ocr-notice { min-height: 18px; color: var(--text-muted); }
+@media (max-width: 680px) {
+  .image-ocr-workspace { grid-template-columns: minmax(0, 1fr); }
+  .image-ocr-workspace figure > div { height: 130px; }
+  .image-ocr-editor textarea { min-height: 150px; }
+  .image-ocr-controls { flex-wrap: wrap; }
+}
 .image-resize-options .output-mode { flex-wrap: wrap; }
 .image-resize-preview { max-height: 190px; overflow: auto; border: 1px solid var(--border-soft); border-radius: 6px; }
 .image-resize-preview table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }

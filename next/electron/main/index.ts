@@ -1,6 +1,8 @@
 import { windowChromeOptions, trackWindowChrome } from './windowChrome'
 import { GlobalCommandShortcut } from './globalCommandShortcut'
 import { BatchRenameService } from './batchRenameService'
+import { OcrService } from './ocrService'
+import { VisionOcrBackend } from './ocrBackend'
 import { commandActionTitles, defaultCommandPaletteState, isCommandActionId, normalizeCommandPaletteState, trayCommandActions, updateCommandPaletteState, type CommandPaletteState } from '../../src/shared/contracts/commandPalette'
 import { messages } from '../../src/shared/i18n/messages'
 import { WindowMaterialController, loadNativeGlass } from './windowMaterial'
@@ -203,6 +205,7 @@ const vaultWorkspaceService = new VaultWorkspaceService({
 let mainWindow: BrowserWindow | null = null
 let mainWindowMaterial: WindowMaterialController | null = null
 let batchRenameService: BatchRenameService
+let ocrService: OcrService
 const commandShortcut = new GlobalCommandShortcut(globalShortcut, () => navigateMainWindow('focus-search'), process.platform)
 let toolWindowManager: ToolWindowManager
 let tray: Tray | null = null
@@ -1011,6 +1014,18 @@ function registerIpc(): void {
     return color
   })
   ipcMain.handle('images:list', () => createImageRepository().list())
+  ipcMain.handle('ocr:status', (event) => {
+    assertToolWindowAccess(event.sender, 'image')
+    return ocrService.status()
+  })
+  ipcMain.handle('ocr:recognize', (event, input: unknown) => {
+    assertToolWindowAccess(event.sender, 'image')
+    return ocrService.recognize(event.sender.id, input)
+  })
+  ipcMain.handle('ocr:cancel', (event, requestId: unknown) => {
+    assertToolWindowAccess(event.sender, 'image')
+    return ocrService.cancel(event.sender.id, requestId)
+  })
   ipcMain.handle('images:read', (_event, name: string) => createImageRepository().read(normalizeImageName(name)))
   ipcMain.handle('images:import', async (event) => {
     const owner = resolveOwnerWindow(event.sender) ?? mainWindow
@@ -2483,7 +2498,15 @@ app.whenReady().then(async () => {
   store.set('commandPalette', normalizeCommandPaletteState(store.get('commandPalette')))
   openDataRepositories()
   batchRenameService = new BatchRenameService(join(app.getPath('userData'), 'file-operations'))
-  app.on('web-contents-created', (_event, contents) => { const id = contents.id; contents.once('destroyed', () => batchRenameService.release(id)) })
+  const ocrHelper = app.isPackaged ? join(process.resourcesPath, 'native', 'mootool-ocr') : join(__dirname, '../native/mootool-ocr')
+  ocrService = new OcrService(new VisionOcrBackend(ocrHelper, process.platform, Number(process.getSystemVersion().split('.')[0])), app.getPath('temp'), (dataUrl) => {
+    const image = nativeImage.createFromDataURL(dataUrl)
+    if (image.isEmpty()) throw new Error('image.ocr.error.input')
+    const { width, height } = image.getSize()
+    if (width > 16384 || height > 16384 || width * height > 32000000) throw new Error('image.ocr.error.tooLarge')
+    return { png: image.toPNG(), width, height }
+  })
+  app.on('web-contents-created', (_event, contents) => { const id = contents.id; contents.once('destroyed', () => { batchRenameService.release(id); ocrService.release(id) }) })
   systemService = new SystemService(app.getPath('temp'))
   runtimeExecutionService = new RuntimeExecutionService(join(app.getPath('temp'), 'mootool-runtime'))
   gitAskPassPath = await prepareGitAskPass()
@@ -2534,6 +2557,7 @@ app.whenReady().then(async () => {
 })
 
 app.on('before-quit', () => {
+  ocrService?.stop()
   isQuitting = true
   commandShortcut.dispose()
   javaRegexService.dispose()

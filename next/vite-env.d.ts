@@ -3,6 +3,7 @@ import type { WindowMaterialStatus } from './src/shared/contracts/windowMaterial
 import type { GlobalShortcutStatus } from './src/shared/contracts/shortcuts'
 import type { RenameFile, RenameOptions, RenamePreview, RenameResult, RenameStatus } from './src/shared/contracts/batchRename'
 import type { ClipboardTextSnapshot, CommandActionId, CommandPaletteOperation, CommandPaletteState } from './src/shared/contracts/commandPalette'
+import type { OcrStatus, OcrRequest, OcrResult } from './src/shared/contracts/ocr'
 import type { RegexInput, RegexResult } from './src/shared/contracts/regex'
 
 import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, ToolId, ToolWindowSnapshot, ToolWindowStatus, ToolWorkspaceBounds, WorkspaceState } from './src/shared/contracts/app'
@@ -130,6 +131,9 @@ declare global {
       chooseImageFile: () => Promise<ImageFilePayload | null>
       saveBinaryFile: (input: SaveBinaryFileInput) => Promise<string | null>
       readClipboardImage: () => Promise<string | null>
+      getOcrStatus: () => Promise<OcrStatus>
+      recognizeImageText: (input: OcrRequest) => Promise<OcrResult>
+      cancelImageTextRecognition: (requestId: string) => Promise<boolean>
       writeClipboardImage: (dataUrl: string) => Promise<void>
       captureScreens: () => Promise<ScreenCapture[]>
       captureScreenRegion: () => Promise<ScreenCaptureResult | null>

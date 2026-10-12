@@ -1,0 +1,7 @@
+{
+  "engine": "RapidOCR PP-OCRv6 small",
+  "policy": "macOS sandbox deny network-outbound",
+  "telemetryDisabled": true,
+  "id": "traditional-20",
+  "text": "繁體中文辨識:檔案名稱、視窗設定與離線文字擷取。\n請確認輸出內容，保留原圖，再將辨識結果複製到剪貼簿。\n訂單編號001234，價格NT$128.50，時間09:30。"
+}

@@ -1,0 +1,6 @@
+{
+  "engine": "Tesseract.js 7.0.0 Node cores",
+  "id": "light-20",
+  "text": "中 文 識別 評估 : 先 预 览 ， 再 复制 ， 全 部 在 本 机 完成 。\n批 量 重 命名 、 圈 片 壓縮 、 格 式 轉 換 和 剪貼 板 工具 。\n订单 编号 001234, 金 額 #128.50, 日 期 2026-10-12。\n",
+  "note": "Node .js and .wasm cores retained, browser .wasm.js cores removed. One host probe, not a full cross-platform packaging test."
+}

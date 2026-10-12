@@ -1,0 +1,695 @@
+[
+  {
+    "engine": "RapidOCR PP-OCRv6 small (screen max1536)",
+    "file": "rapid-small-screen.json",
+    "perSample": [
+      {
+        "id": "light-20",
+        "warmMedianMs": 115.5800839769654,
+        "recognized": "中文识别评估：先预览，再复制，全部在本机完成。\n批量重命名、图片压缩、格式转换和剪贴板工具。\n订单编号 001234，金额 ¥128.50，日期2026-10-12。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 79,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 46
+      },
+      {
+        "id": "dark-16",
+        "warmMedianMs": 136.01783299236558,
+        "recognized": "设置已保存，重启应用后生效。请检查全局快捷键是否冲突。\n当前版本支持JSON、Base64、URL 编码与中文文本处理。\n复制结果不会自动粘贴到其他应用，识别图片不会上传。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 83,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 62
+      },
+      {
+        "id": "small-12",
+        "warmMedianMs": 130.79679102520458,
+        "recognized": "请先选择文件，再调整参数并预览输出结果。\n字体较小时，中文笔画容易粘连，标点和数字也可能识别错误。\n文件路径/Users/test/截图.png，版本 v1.3.1，编号 000102。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 89,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 53
+      },
+      {
+        "id": "retina-12x2",
+        "warmMedianMs": 201.66508300462738,
+        "recognized": "请先选择文件，再调整参数并预览输出结果。\n字体较小时，中文笔画容易粘连，标点和数字也可能识别错误。\n文件路径/Users/test/截图.png，版本 v1.3.1，编号000102。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 89,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 53
+      },
+      {
+        "id": "traditional-20",
+        "warmMedianMs": 145.69929198478349,
+        "recognized": "繁體中文辨識:檔案名稱、視窗設定與離線文字擷取。\n請確認輸出內容，保留原圖，再將辨識結果複製到剪貼簿。\n訂單編號001234，價格NT$128.50，時間09:30。",
+        "allCER": 0.012345679012345678,
+        "allEdits": 1,
+        "allCharacters": 81,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 52
+      },
+      {
+        "id": "mixed-18",
+        "warmMedianMs": 123.36595900706016,
+        "recognized": "请求失败:HTTP 403，请检查 API Key 和网络连接。\n错误代码EACCES，配置项 enableOCR=true，超时3000ms。\n邮箱 test@example.com，地址 https://example.com/api/v1。",
+        "allCER": 0.008771929824561403,
+        "allEdits": 1,
+        "allCharacters": 114,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 25
+      },
+      {
+        "id": "blur-low-contrast",
+        "warmMedianMs": 132.11237502400763,
+        "recognized": "截图中文字模糊时，应先查看预览再确认识别结果。\n保存失败，请重试或复制内容后手动保存，原文件未被修改。\n库存000108件，合计 ¥2,048.90，折扣8.5%。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 79,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 52
+      },
+      {
+        "id": "serif-22",
+        "warmMedianMs": 130.8182500069961,
+        "recognized": "离线文字识别用于截图、文档片段和日常信息整理。\n模型体积与运行时体积应分别统计，不能混为一谈。\n简体中文、繁體中文和English需要分别验证。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 70,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 57
+      }
+    ],
+    "allCER": 0.0029239766081871343,
+    "hanCER": 0.0,
+    "allCharacters": 684,
+    "hanCharacters": 400,
+    "warmMedianMs": 132.0878960104892
+  },
+  {
+    "engine": "RapidOCR PP-OCRv6 small",
+    "file": "rapid-small.json",
+    "perSample": [
+      {
+        "id": "light-20",
+        "warmMedianMs": 328.4069999936037,
+        "recognized": "中文识别评估:先预览，再复制，全部在本机完成。\n批量重命名、图片压缩、格式转换和剪贴板工具。\n订单编号001234，金额 ¥128.50，日期2026-10-12。",
+        "allCER": 0.012658227848101266,
+        "allEdits": 1,
+        "allCharacters": 79,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 46
+      },
+      {
+        "id": "dark-16",
+        "warmMedianMs": 330.38254198618233,
+        "recognized": "设置已保存，重启应用后生效。请检查全局快捷键是否冲突。\n当前版本支持JSON、Base64、URL 编码与中文文本处理。\n复制结果不会自动粘贴到其他应用，识别图片不会上传。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 83,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 62
+      },
+      {
+        "id": "small-12",
+        "warmMedianMs": 339.45608398062177,
+        "recognized": "请先选择文件，再调整参数并预览输出结果。\n字体较小时，中文笔画容易粘连，标点和数字也可能识别错误。\n文件路径/Users/test/截图.png，版本 v1.3.1，编号 000102。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 89,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 53
+      },
+      {
+        "id": "retina-12x2",
+        "warmMedianMs": 361.1885000136681,
+        "recognized": "请先选择文件，再调整参数并预览输出结果。\n字体较小时，中文笔画容易粘连，标点和数字也可能识别错误。\n文件路径 /Users/test/截图.png，版本 v1.3.1，编号 000102。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 89,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 53
+      },
+      {
+        "id": "traditional-20",
+        "warmMedianMs": 329.0157500014175,
+        "recognized": "繁體中文辨識:檔案名稱、視窗設定與離線文字擷取。\n請確認輸出內容，保留原圖，再將辨識結果複製到剪貼簿。\n訂單編號001234，價格NT$128.50，時間09:30。",
+        "allCER": 0.012345679012345678,
+        "allEdits": 1,
+        "allCharacters": 81,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 52
+      },
+      {
+        "id": "mixed-18",
+        "warmMedianMs": 331.74191700527444,
+        "recognized": "请求失败:HTTP 403，请检查 API Key和网络连接。\n错误代码 EACCES，配置项 enableOCR=true，超时 3000ms。\n邮箱 test@example.com，地址 https://example.com/api/v1。",
+        "allCER": 0.008771929824561403,
+        "allEdits": 1,
+        "allCharacters": 114,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 25
+      },
+      {
+        "id": "blur-low-contrast",
+        "warmMedianMs": 323.75550002325326,
+        "recognized": "截图中文字模糊时，应先查看预览再确认识别结果。\n保存失败，请重试或复制内容后手动保存，原文件未被修改。\n库存000108件，合计¥2,048.90，折扣8.5%。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 79,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 52
+      },
+      {
+        "id": "serif-22",
+        "warmMedianMs": 318.9924170146696,
+        "recognized": "离线文字识别用于截图、文档片段和日常信息整理。\n模型体积与运行时体积应分别统计，不能混为一谈。\n简体中文、繁體中文和English需要分别验证。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 70,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 57
+      }
+    ],
+    "allCER": 0.0043859649122807015,
+    "hanCER": 0.0,
+    "allCharacters": 684,
+    "hanCharacters": 400,
+    "warmMedianMs": 331.0622294957284
+  },
+  {
+    "engine": "RapidOCR PP-OCRv6 tiny (screen max1536)",
+    "file": "rapid-tiny-screen.json",
+    "perSample": [
+      {
+        "id": "light-20",
+        "warmMedianMs": 39.738375024171546,
+        "recognized": "中文识别评估:先预览，再复制，全部在本机完成。\n批量重命名、图片压缩、格式转换和剪贴板工具。\n订单编号001234，金额¥128.50，日期2026-10-12。",
+        "allCER": 0.012658227848101266,
+        "allEdits": 1,
+        "allCharacters": 79,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 46
+      },
+      {
+        "id": "dark-16",
+        "warmMedianMs": 41.85700000380166,
+        "recognized": "设置已保存，重启应用后生效。请检查全局快捷键是否冲突。\n当前版本支持 JSON、Base64、URL 编码与中文文本处理。\n复制结果不会自动粘贴到其他应用，识别图片不会上传。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 83,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 62
+      },
+      {
+        "id": "small-12",
+        "warmMedianMs": 39.6099170029629,
+        "recognized": "请先选择文件，再调整参数并预览输出结果。\n字体较小时，中文笔画容易粘连，标点和数字也可能识别错误。\n文件路径 /Users/test/截图.png， 版本 v1.3.1，编号 000102。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 89,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 53
+      },
+      {
+        "id": "retina-12x2",
+        "warmMedianMs": 84.40900000277907,
+        "recognized": "请先选择文件，再调整参数并预览输出结果。\n字体较小时，中文笔画容易粘连，标点和数字也可能识别错误。\n文件路径 /Users/test/截图.png，版本 v1.3.1，编号 000102。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 89,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 53
+      },
+      {
+        "id": "traditional-20",
+        "warmMedianMs": 39.20345799997449,
+        "recognized": "繁體中文辨識:檔案名释、視窗設定與離線文字撷取。\n请確还输出內容，保留原圖，再将辨識結果複製到剪貼簿。\n訂單编號001234，價格NT$128.50，時間09:30。",
+        "allCER": 0.09876543209876543,
+        "allEdits": 8,
+        "allCharacters": 81,
+        "hanCER": 0.1346153846153846,
+        "hanEdits": 7,
+        "hanCharacters": 52
+      },
+      {
+        "id": "mixed-18",
+        "warmMedianMs": 38.215957989450544,
+        "recognized": "请求失败:HTTP403，请检查 API Key和网络连接。\n错误代码 EACCES，配置项 enableOCR=true，超时 3000ms。\n邮箱 test@example.com,地址 https://example.com/api/v1。",
+        "allCER": 0.017543859649122806,
+        "allEdits": 2,
+        "allCharacters": 114,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 25
+      },
+      {
+        "id": "blur-low-contrast",
+        "warmMedianMs": 38.857458013808355,
+        "recognized": "截图中文字模糊时，应先查看预览再确认识别结果。\n保存失败，请重试或复制内容后手动保存，原文件未被修改。\n库存000108件，合计¥2,048.90，折扣8.5%。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 79,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 52
+      },
+      {
+        "id": "serif-22",
+        "warmMedianMs": 38.462875003460795,
+        "recognized": "离线文字识别用于截图、文档片段和日常信息整理。\n模型体积与运行时体积应分别统计，不能混为一谈。\n简体中文、繁體中文和English 需要分别验证。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 70,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 57
+      }
+    ],
+    "allCER": 0.01608187134502924,
+    "hanCER": 0.0175,
+    "allCharacters": 684,
+    "hanCharacters": 400,
+    "warmMedianMs": 39.87952051102184
+  },
+  {
+    "engine": "RapidOCR PP-OCRv6 tiny",
+    "file": "rapid-tiny.json",
+    "perSample": [
+      {
+        "id": "light-20",
+        "warmMedianMs": 151.0769999877084,
+        "recognized": "中文识别评估:先预览，再复制，全部在本机完成。\n批量重命名、图片压缩、格式转换和剪贴板工具。\n订单编号 001234，金额¥128.50，日期2026-10-12。",
+        "allCER": 0.012658227848101266,
+        "allEdits": 1,
+        "allCharacters": 79,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 46
+      },
+      {
+        "id": "dark-16",
+        "warmMedianMs": 149.01583298342302,
+        "recognized": "设置已保存，重启应用后生效。请检查全局快捷键是否冲突。\n当前版本支持 JSON、Base64、URL 编码与中文文本处理。\n复制结果不会自动粘贴到其他应用，识别图片不会上传。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 83,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 62
+      },
+      {
+        "id": "small-12",
+        "warmMedianMs": 148.92879201215692,
+        "recognized": "请先选择文件，再调整参数并预览输出结果。\n字体较小时，中文笔画容易粘连，标点和数字也可能识别错误。\n文件路径 /Users/test/截图.png，版本 v1.3.1，编号000102。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 89,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 53
+      },
+      {
+        "id": "retina-12x2",
+        "warmMedianMs": 171.3977920007892,
+        "recognized": "请先选择文件，再调整参数并预览输出结果。\n字体较小时，中文笔画容易粘连，标点和数字也可能识别错误。\n文件路径/Users/test/截图.png，版本 v1.3.1，编号 000102。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 89,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 53
+      },
+      {
+        "id": "traditional-20",
+        "warmMedianMs": 148.626707989024,
+        "recognized": "繁體中文辨識：檔案名种、視窗設定與離線文字撷取。\n请確还输出內容，保留原圖，再將辨識结果複製到剪貼簿。\n訂單编號001234，價格 NT$128.50，時間09:30。",
+        "allCER": 0.08641975308641975,
+        "allEdits": 7,
+        "allCharacters": 81,
+        "hanCER": 0.1346153846153846,
+        "hanEdits": 7,
+        "hanCharacters": 52
+      },
+      {
+        "id": "mixed-18",
+        "warmMedianMs": 150.6743749778252,
+        "recognized": "请求失败:HTTP 403，请检查 API Key和网络连接。\n错误代码 EACCES，配置项 enableOCR=true，超时 3000ms。\n邮箱 test@example.com，地址 https://example.com/api/v1。",
+        "allCER": 0.008771929824561403,
+        "allEdits": 1,
+        "allCharacters": 114,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 25
+      },
+      {
+        "id": "blur-low-contrast",
+        "warmMedianMs": 148.82966698496602,
+        "recognized": "截图中文字模糊时，应先查看预览再确认识别结果。\n保存失败，请重试或复制内容后手动保存，原文件未被修改。\n库存000108件，合计¥2,048.90，折扣8.5%。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 79,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 52
+      },
+      {
+        "id": "serif-22",
+        "warmMedianMs": 150.07629100000486,
+        "recognized": "离线文字识别用于截图、文档片段和日常信息整理。\n模型体积与运行时体积应分别统计，不能混为一谈。\n简体中文、繁體中文和English 需要分别验证。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 70,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 57
+      }
+    ],
+    "allCER": 0.013157894736842105,
+    "hanCER": 0.0175,
+    "allCharacters": 684,
+    "hanCharacters": 400,
+    "warmMedianMs": 150.34012451360468
+  },
+  {
+    "engine": "Tesseract.js 7.0.0 (chi_sim+eng)",
+    "file": "tesseract-simplified.json",
+    "perSample": [
+      {
+        "id": "light-20",
+        "warmMedianMs": 110.80124999999998,
+        "recognized": "中 文 识别 评估 : 先 预 览 ， 再 复制 ， 全 部 在 本 机 完成 。\n\n批量 重 命名 、 图 片 压缩 、 格 式 转换 和 航 贴 板 工具 。\n\n订单 编号 001234， 人 金额 Y128.50， 日 期 2026-10-12。\n",
+        "allCER": 0.05063291139240506,
+        "allEdits": 4,
+        "allCharacters": 79,
+        "hanCER": 0.043478260869565216,
+        "hanEdits": 2,
+        "hanCharacters": 46
+      },
+      {
+        "id": "dark-16",
+        "warmMedianMs": 210.9811669999999,
+        "recognized": "设置 已 保存 ， 重 启 应 用 后 生效 。 请 检查 全 局 快捷 键 是 否 冲突 。\n\n当前 版 本 支持 JSON、Base64、URL 编码 与 中 文 文本 处 理 。\n\n复制 结果 不 会 自动 粘贴 到 其 他 应 用 ， 识 别 图 片 不 会 上 传 。\n",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 83,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 62
+      },
+      {
+        "id": "small-12",
+        "warmMedianMs": 85.72237499999983,
+        "recognized": "请 先 选择 文件 ， 再 调整 参数 并 预览 输出 结果 。\n\n字体 较 小 时 ， 中 文笔 画 容易 粘连 ， 标 点 和 数字 也 可 能 识别\n\n文件 路 径 /Users/test/ 稚 图 .png， 版 本 v1.3.1， 编 号 000102-\n",
+        "allCER": 0.056179775280898875,
+        "allEdits": 5,
+        "allCharacters": 89,
+        "hanCER": 0.05660377358490566,
+        "hanEdits": 3,
+        "hanCharacters": 53
+      },
+      {
+        "id": "retina-12x2",
+        "warmMedianMs": 144.37166700000012,
+        "recognized": "请 先 选择 文件 ， 再 调整 参数 并 预览 输出 结果 。\n\n字体 较 小 时 ， 中 文笔 画 容易 粘连 ， 标 点 和 数字 也 可 能 识别 错误 。\n\n文件 路 径 /UsersV/test/ 截 图 .png， 版 本 v1.3.1， 编 号 000102 。\n\n",
+        "allCER": 0.011235955056179775,
+        "allEdits": 1,
+        "allCharacters": 89,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 53
+      },
+      {
+        "id": "traditional-20",
+        "warmMedianMs": 115.62108399999988,
+        "recognized": "繁体 中 文 辨 识 : 档案 名 称 、 视 窗 设 定 与 离线 文字 搬 取 。\n\n请 确认 输出 内 容 ， 保 留 原 图 ， 再 将 辨识 结果 复 几 到 剪贴 簿 。\n\n订单 编号 001234， 价 格 NT$128.50， 时 间 09:30。\n",
+        "allCER": 0.37037037037037035,
+        "allEdits": 30,
+        "allCharacters": 81,
+        "hanCER": 0.5576923076923077,
+        "hanEdits": 29,
+        "hanCharacters": 52
+      },
+      {
+        "id": "mixed-18",
+        "warmMedianMs": 125.01195799999982,
+        "recognized": "请 求 失败 : HTTP 403， 请 检查 AP Key 和 网 络 连接 。\n\n错误 代码 EACCES， 配 置 项 enableOCR=true， 超 时 3000ms。\n\n邮箱 test@example.com， 地 址 https://example.com/api/v1。\n",
+        "allCER": 0.017543859649122806,
+        "allEdits": 2,
+        "allCharacters": 114,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 25
+      },
+      {
+        "id": "blur-low-contrast",
+        "warmMedianMs": 110.35149999999976,
+        "recognized": "截图 中 文字 模糊 时 ， 应 先 查 看 预览 再 确认 识别 结果 。\n\n保存 失败 ， 请 重 试 或 复制 内 容 后 手动 保存 ， 原 文件 未 被 修改 。\n\n库存 000108 件 ， 合 计 Y2,048.90， 折 扣 8.5% 。\n",
+        "allCER": 0.012658227848101266,
+        "allEdits": 1,
+        "allCharacters": 79,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 52
+      },
+      {
+        "id": "serif-22",
+        "warmMedianMs": 108.8540409999996,
+        "recognized": "离线 文字 识别 用 于 截图 、 文 档 片段 和 日 常 信息 整理 。\n\n模型 体积 与 运行 时 体积 应 分 别 统计 ， 不 能 混为一谈 。\n\n简体 中 文 、 繁 体 中 文 和 English 需要 分 别 验证 。\n",
+        "allCER": 0.014285714285714285,
+        "allEdits": 1,
+        "allCharacters": 70,
+        "hanCER": 0.017543859649122806,
+        "hanEdits": 1,
+        "hanCharacters": 57
+      }
+    ],
+    "allCER": 0.06432748538011696,
+    "hanCER": 0.0875,
+    "allCharacters": 684,
+    "hanCharacters": 400,
+    "warmMedianMs": 113.24939600000016
+  },
+  {
+    "engine": "Tesseract.js 7.0.0 (chi_sim+chi_tra+eng)",
+    "file": "tesseract.json",
+    "perSample": [
+      {
+        "id": "light-20",
+        "warmMedianMs": 318.5218749999999,
+        "recognized": "中 文 識別 評估 : 先 预 览 ， 再 复制 ， 全 部 在 本 机 完成 。\n\n批 量 重 命名 、 圈 片 壓縮 、 格 式 轉 換 和 剪貼 板 工具 。\n\n订单 编号 001234, 金 額 #128.50, 日 期 2026-10-12。\n",
+        "allCER": 0.17721518987341772,
+        "allEdits": 14,
+        "allCharacters": 79,
+        "hanCER": 0.21739130434782608,
+        "hanEdits": 10,
+        "hanCharacters": 46
+      },
+      {
+        "id": "dark-16",
+        "warmMedianMs": 330.0445840000002,
+        "recognized": "设置 已 保存 ， 重 启 应 用 后 生效 。 请 检查 全 局 快捷 键 是 否 冲突 。\n\n当前 版 本 支持 JSON、Base64、URL 编码 与 中 文 文本 处 理 。\n\n复制 结果 不 会 自动 粘贴 到 其 他 应 用 ， 识 别 图 片 不 会 上 传 。\n",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 83,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 62
+      },
+      {
+        "id": "small-12",
+        "warmMedianMs": 241.81216700000095,
+        "recognized": "请 先 选择 文件 ， 再 调整 参数 并 预览 输出 结果 。\n\n字体 较 小 时 ， 中 文笔 画 容易 粘连 ， 标 点 和 数字 也 可 能 识别\n\n文件 路 径 /Users/tast/ 截 回 .png, 版 本 v1.31, HE 000102.\n",
+        "allCER": 0.12359550561797752,
+        "allEdits": 11,
+        "allCharacters": 89,
+        "hanCER": 0.09433962264150944,
+        "hanEdits": 5,
+        "hanCharacters": 53
+      },
+      {
+        "id": "retina-12x2",
+        "warmMedianMs": 316.0489580000012,
+        "recognized": "请 先 选择 文件 ， 再 调整 参数 并 预览 输出 结果 。\n\n字体 较 小 时 ， 中 文笔 画 容易 粘连 ， 标 点 和 数字 也 可 能 识别 错误 。\n\n文件 路 径 /Users/test/ 截 回 .png, 版 本 v1.3.1, 編號 000102,\n\n",
+        "allCER": 0.06741573033707865,
+        "allEdits": 6,
+        "allCharacters": 89,
+        "hanCER": 0.05660377358490566,
+        "hanEdits": 3,
+        "hanCharacters": 53
+      },
+      {
+        "id": "traditional-20",
+        "warmMedianMs": 335.16654199999994,
+        "recognized": "繁體 中 文 辨識 : 檔案 名 稱 、 視 窗 設定 與 離線 文 字 擷 取 。\n\n請 確認 輸出 內 容 , 保留 原 圖 , 再 將 辨識 結果 複製 到 剪貼 簿 。\n\n訂單 編號 001234, 價 格 NT$128.50, 時 間 09:30。\n",
+        "allCER": 0.06172839506172839,
+        "allEdits": 5,
+        "allCharacters": 81,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 52
+      },
+      {
+        "id": "mixed-18",
+        "warmMedianMs": 317.4787500000002,
+        "recognized": "请 求 失败 : HTTP 403， 请 检查 API Key 和 网 络 连接 。\n\n錯誤 代碼 EACCES, 配置 項 enableOCR=true, 超 時 3000ms。\n\n邮箱 test@example.com, 地 址 https://example.com/api/v1。\n",
+        "allCER": 0.07894736842105263,
+        "allEdits": 9,
+        "allCharacters": 114,
+        "hanCER": 0.2,
+        "hanEdits": 5,
+        "hanCharacters": 25
+      },
+      {
+        "id": "blur-low-contrast",
+        "warmMedianMs": 319.89837499999976,
+        "recognized": "截图 中 文字 模糊 时 ， 应 先 查 看 预览 再 确认 识别 结果 。\n\n保存 失败 ， 请 重 试 或 复制 内 容 后 手动 保存 ， 原 文件 未 被 修改 。\n\n库存 000108 件 ， 合 计 ¥2,048.90, 折扣 8.5%.\n",
+        "allCER": 0.02531645569620253,
+        "allEdits": 2,
+        "allCharacters": 79,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 52
+      },
+      {
+        "id": "serif-22",
+        "warmMedianMs": 177.3633749999999,
+        "recognized": "离线 文字 识别 用 于 截图 、 文 档 片段 和 日 常 信息 整理 。\n\n模型 体积 与 运行 时 体积 应 分 别 统计 ， 不 能 混为一谈 。\n\n简体 中 文 、 繁 体 中 文 和 English 需要 分 别 验证 。\n",
+        "allCER": 0.014285714285714285,
+        "allEdits": 1,
+        "allCharacters": 70,
+        "hanCER": 0.017543859649122806,
+        "hanEdits": 1,
+        "hanCharacters": 57
+      }
+    ],
+    "allCER": 0.07017543859649122,
+    "hanCER": 0.06,
+    "allCharacters": 684,
+    "hanCharacters": 400,
+    "warmMedianMs": 317.653542
+  },
+  {
+    "engine": "Apple Vision",
+    "file": "vision.json",
+    "perSample": [
+      {
+        "id": "light-20",
+        "warmMedianMs": 58.931375,
+        "recognized": "中文识别评估：先预览，再复制，全部在本机完成。\n批量重命名、图片压缩、格式转换和剪贴板工具。\n订单编号001234，金额￥128.50，日期 2026-10-12。",
+        "allCER": 0.012658227848101266,
+        "allEdits": 1,
+        "allCharacters": 79,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 46
+      },
+      {
+        "id": "dark-16",
+        "warmMedianMs": 60.781833,
+        "recognized": "设置已保存，重启应用后生效。请检查全局快捷键是否冲突。\n当前版本支持 JSON、 Base64、URL 编码与中文文本处理。\n复制结果不会自动粘贴到其他应用，识别图片不会上传。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 83,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 62
+      },
+      {
+        "id": "small-12",
+        "warmMedianMs": 64.735,
+        "recognized": "请先选择文件，再调整参数并预览输出结果。\n字体较小时，中文笔画容易粘连，标点和数字也可能识别错误。\n文件路径 /Users/test/截图.png，版本 v1.3.1，编号000102。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 89,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 53
+      },
+      {
+        "id": "retina-12x2",
+        "warmMedianMs": 81.139125,
+        "recognized": "请先选择文件，再调整参数并预览输出结果。\n字体较小时，中文笔画容易粘连，标点和数字也可能识别错误。\n文件路径/Users/test/截图.png，版本 v1.3.1，编号 000102。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 89,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 53
+      },
+      {
+        "id": "traditional-20",
+        "warmMedianMs": 66.947,
+        "recognized": "繁體中文辨識：檔案名稱、視設定與離線文字擷取。\n請確認輸出內容，保留原圖，再將辨識結果複製到剪貼簿。\n訂單編號 001234，價格 NT$128.50，時間 09:30。",
+        "allCER": 0.012345679012345678,
+        "allEdits": 1,
+        "allCharacters": 81,
+        "hanCER": 0.019230769230769232,
+        "hanEdits": 1,
+        "hanCharacters": 52
+      },
+      {
+        "id": "mixed-18",
+        "warmMedianMs": 75.730792,
+        "recognized": "请求失败：HTTP 403，请检查 APIKey 和网络连接。\n错误代码 EACCES，配置项 enableOCR=true，超时 3000ms。\n邮租 test@example.com，地址 https://example.com/api/V1。",
+        "allCER": 0.017543859649122806,
+        "allEdits": 2,
+        "allCharacters": 114,
+        "hanCER": 0.04,
+        "hanEdits": 1,
+        "hanCharacters": 25
+      },
+      {
+        "id": "blur-low-contrast",
+        "warmMedianMs": 53.383333,
+        "recognized": "截图中文字模糊时，应先查看预览再确认识别结果。\n保存失败，请重试或复制内容后手动保存，原文件未被修改。\n库存000108 件，合计 ￥2,048.90，折扣8.5%。",
+        "allCER": 0.012658227848101266,
+        "allEdits": 1,
+        "allCharacters": 79,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 52
+      },
+      {
+        "id": "serif-22",
+        "warmMedianMs": 65.906417,
+        "recognized": "离线文字识别用于截图、文档片段和日常信息整理。\n模型体积与运行时体积应分别统计，不能混为一谈。\n简体中文、繁體中文和 English 需要分别验证。",
+        "allCER": 0.0,
+        "allEdits": 0,
+        "allCharacters": 70,
+        "hanCER": 0.0,
+        "hanEdits": 0,
+        "hanCharacters": 57
+      }
+    ],
+    "allCER": 0.007309941520467836,
+    "hanCER": 0.005,
+    "allCharacters": 684,
+    "hanCharacters": 400,
+    "warmMedianMs": 65.3207085
+  }
+]

@@ -2,6 +2,7 @@ import type { WindowMaterialStatus } from '../../src/shared/contracts/windowMate
 import type { GlobalShortcutStatus } from '../../src/shared/contracts/shortcuts'
 import type { RenameFile, RenameOptions, RenamePreview, RenameResult, RenameStatus } from '../../src/shared/contracts/batchRename'
 import type { ClipboardTextSnapshot, CommandActionId, CommandPaletteOperation, CommandPaletteState } from '../../src/shared/contracts/commandPalette'
+import type { OcrStatus, OcrRequest, OcrResult } from '../../src/shared/contracts/ocr'
 import type { RegexInput, RegexResult } from '../../src/shared/contracts/regex'
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import type {
@@ -137,6 +138,9 @@ contextBridge.exposeInMainWorld('mootool', {
   chooseImageFile: (): Promise<ImageFilePayload | null> => ipcRenderer.invoke('files:choose-image'),
   saveBinaryFile: (input: SaveBinaryFileInput): Promise<string | null> => ipcRenderer.invoke('files:save-binary', input),
   readClipboardImage: (): Promise<string | null> => ipcRenderer.invoke('clipboard:read-image'),
+  getOcrStatus: (): Promise<OcrStatus> => ipcRenderer.invoke('ocr:status'),
+  recognizeImageText: (input: OcrRequest): Promise<OcrResult> => ipcRenderer.invoke('ocr:recognize', input),
+  cancelImageTextRecognition: (requestId: string): Promise<boolean> => ipcRenderer.invoke('ocr:cancel', requestId),
   writeClipboardImage: (dataUrl: string): Promise<void> => ipcRenderer.invoke('clipboard:write-image', dataUrl),
   captureScreens: (): Promise<ScreenCapture[]> => ipcRenderer.invoke('screen:capture'),
   captureScreenRegion: (): Promise<ScreenCaptureResult | null> => ipcRenderer.invoke('screen:capture-region'),

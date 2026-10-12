@@ -18,8 +18,8 @@
   "scripts": {
     "postinstall": "node scripts/install-electron.mjs",
     "electron:install": "node scripts/install-electron.mjs",
-    "dev": "electron-vite dev",
-    "build": "tsc --noEmit && electron-vite build",
+    "dev": "npm run build:native-ocr && electron-vite dev",
+    "build": "npm run build:native-ocr && tsc --noEmit && electron-vite build",
     "package": "npm run build && electron-builder",
     "package:mac": "npm run build && electron-builder --mac dmg --publish never",
     "package:win": "npm run build && electron-builder --win nsis portable --publish never",
@@ -28,7 +28,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "npm run build && playwright test",
-    "check": "npm run typecheck && npm run test && npm run build"
+    "check": "npm run typecheck && npm run test && npm run build",
+    "build:native-ocr": "node scripts/build-native-ocr.mjs"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",
@@ -120,12 +121,20 @@
     },
     "files": [
       "out/**/*",
+      "!out/native/**/*",
       "package.json"
     ],
     "extraResources": [
       {
         "from": "resources/tray-icon.png",
         "to": "tray-icon.png"
+      },
+      {
+        "from": "out/native",
+        "to": "native",
+        "filter": [
+          "mootool-ocr"
+        ]
       }
     ],
     "mac": {
@@ -134,6 +143,9 @@
       "category": "public.app-category.developer-tools",
       "target": [
         "dmg"
+      ],
+      "binaries": [
+        "Contents/Resources/native/mootool-ocr"
       ]
     },
     "win": {

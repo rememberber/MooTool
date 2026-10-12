@@ -77,6 +77,10 @@ In **Image Assistant**, select library images and choose **Resize**. Use a prese
 
 The command palette includes **Rich text to Markdown**, **Table to JSON**, **Clipboard plain text**, and **Clipboard HTML source**. Actions read the clipboard only when executed, preview text without rendering copied HTML, and require a separate copy or save click. Every text preview can be saved through the native dialog as `.txt`, `.md`, `.json`, or `.html`; JSON saves require valid JSON. Table conversion keeps all values as strings and uses the first row as unique column names. See [Clipboard conversion boundaries and verification](doc/clipboard-actions.md).
 
+## Image and Screenshot OCR
+
+On macOS 13+, **Image Assistant → Recognize text** extracts text from the current image through local Apple Vision. **Screenshot OCR** opens the existing region selector and keeps the capture in the recognition preview. Choose a supported language, start recognition, edit the result, then explicitly copy or save text. Recognition can be cancelled and does not modify the original image or automatically write the clipboard. No OCR model or Python runtime is bundled. Windows/Linux backends remain pending. macOS source builds require Xcode Command Line Tools to compile the universal helper; packaged apps include it. See [OCR behavior, packaging and verification](doc/image-ocr.md).
+
 ## Developer translation
 
 - **Split identifier** turns `getHTTPResponse` / `user_id` into words before translation.
