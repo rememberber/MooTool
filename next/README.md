@@ -63,6 +63,8 @@ Implementation: `electron/main/globalCommandShortcut.ts` owns registration and c
 
 Validation: `npm run check`; `npx playwright test tests/electron/command-palette.spec.ts` covers keyboard navigation, preview/copy, clipboard isolation, invalid input, stale async results, compact layout, and light/dark themes.
 
+Opening the palette above a native tool view transfers keyboard focus back to the main renderer after removing the tool view; the search input focuses once that handoff is ready. `tests/electron/command-palette-focus.spec.ts` verifies the in-app menu accelerator path from a docked editor, the sidebar shortcut, and a detached tool window, routing typing and arrow/Enter/Escape keys to the WebContents that actually owns native focus. Global-shortcut tests also check native focus before filling the input when restoring hidden/minimized windows.
+
 ## Batch Rename
 
 **Batch Rename** is available in the daily tools group and command-palette search (`rename` / `重命名`). Choose up to 500 regular files, set literal replacement, prefixes/suffixes or numbering, preview names/conflicts, then explicitly execute. The final extension is preserved by default. Changing rules or selection requires another preview.

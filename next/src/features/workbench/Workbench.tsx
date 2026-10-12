@@ -347,7 +347,7 @@ export function Workbench() {
         )}
       </section>
 
-      <CommandPalette onOpenTool={(toolId) => {
+      <CommandPalette focusReady={workspaceOverlayReady} onOpenTool={(toolId) => {
         setSettingsCategory(null)
         openTool(toolId)
       }} />

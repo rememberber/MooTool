@@ -9,7 +9,7 @@ import { useI18n } from '@/shared/i18n/I18nProvider'
 
 type Result = ({ kind: 'tool'; tool: ToolDefinition } | { kind: 'action'; match: ActionMatch }) & { section?: CommandSection | 'tools' }
 
-export function CommandPalette({ onOpenTool }: { onOpenTool?: (toolId: ToolDefinition['id']) => void }) {
+export function CommandPalette({ onOpenTool, focusReady = true }: { onOpenTool?: (toolId: ToolDefinition['id']) => void; focusReady?: boolean }) {
   const { t } = useI18n()
   const open = useAppStore((state) => state.searchOpen)
   const setOpen = useAppStore((state) => state.setSearchOpen)
@@ -99,10 +99,10 @@ export function CommandPalette({ onOpenTool }: { onOpenTool?: (toolId: ToolDefin
   }, [selectedIndex, results, open, preview])
 
   useLayoutEffect(() => {
-    if (!open) return
+    if (!open || !focusReady) return
     if (preview) dialogRef.current?.querySelector<HTMLButtonElement>('[data-command-copy]')?.focus()
     else inputRef.current?.focus()
-  }, [open, preview])
+  }, [open, preview, focusReady])
 
   useEffect(() => {
     if (!open || !actionRequest) return

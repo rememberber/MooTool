@@ -69,6 +69,9 @@ test('registers a custom combination and restores a hidden or minimized main win
       const window = BrowserWindow.getAllWindows()[0]
       return { visible: window.isVisible(), minimized: window.isMinimized(), toolViews: window.contentView.children.length }
     })).toEqual({ visible: true, minimized: false, toolViews: 0 })
+    await expect(page.locator('.command-palette__search input')).toBeFocused()
+    await expect.poll(() => app.evaluate(({ BrowserWindow, webContents }) =>
+      webContents.getFocusedWebContents()?.id === BrowserWindow.getAllWindows()[0].webContents.id)).toBe(true)
     await page.locator('.command-palette__search input').fill('uuid')
     await page.keyboard.press('Enter')
     await expect(page.getByRole('textbox', { name: '结果预览' })).toHaveValue(/^[\da-f-]{36}$/)

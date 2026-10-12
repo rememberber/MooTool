@@ -380,7 +380,7 @@ function createMainWindow(): BrowserWindow {
   window.on('focus', () => {
     updateApplicationWindowActivity()
     // Defer so this wins over Chromium restoring focus into the sidebar shell.
-    setTimeout(() => toolWindowManager?.focusActiveDockedView())
+    setTimeout(() => toolWindowManager?.focusActiveView())
   })
   window.on('blur', updateApplicationWindowActivity)
 

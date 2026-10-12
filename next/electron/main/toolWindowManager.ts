@@ -61,16 +61,20 @@ export class ToolWindowManager {
     this.activeToolId = toolId
     if (this.options.enabled && toolId !== 'mootool') this.getOrCreate(toolId)
     this.syncMainHost()
-    this.focusActiveDockedView()
+    this.focusActiveView()
     this.notify()
     return this.snapshot()
   }
 
-  /** Move keyboard focus into the docked tool WebContentsView instead of the sidebar shell. */
-  focusActiveDockedView(): void {
-    if (this.activeToolId === 'mootool') return
+  /** Give native keyboard focus to the renderer that owns the active workspace. */
+  focusActiveView(): void {
     const mainWindow = this.options.getMainWindow()
     if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.isFocused()) return
+    if (this.activeToolId === 'mootool') {
+      // Removing a focused tool view does not restore the shell's native keyboard focus.
+      mainWindow.webContents.focus()
+      return
+    }
     const record = this.records.get(this.activeToolId as DetachableToolId)
     if (record?.host === 'main' && record.ready && !record.view.webContents.isDestroyed()) {
       record.view.webContents.focus()
@@ -286,7 +290,7 @@ export class ToolWindowManager {
       this.syncMainHost()
       this.sendActivity(record)
       this.notify()
-      if (record.toolId === this.activeToolId) this.focusActiveDockedView()
+      if (record.toolId === this.activeToolId) this.focusActiveView()
     })
     view.webContents.on('render-process-gone', () => {
       record.ready = false
