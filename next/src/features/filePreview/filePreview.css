@@ -1,0 +1,44 @@
+.file-preview-tool { position: relative; outline: none; }
+.file-preview-toolbar, .file-preview-options { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border-soft); flex: 0 0 auto; flex-wrap: wrap; }
+.file-preview-toolbar .workspace-drag-zone { flex: 1; min-width: 12px; height: 26px; }
+.file-preview-count { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.file-preview-workspace { display: flex; flex: 1; min-height: 0; min-width: 0; }
+.file-preview-list { width: 205px; flex: 0 0 auto; overflow: auto; border-right: 1px solid var(--border-soft); padding: 8px; background: var(--surface-soft); }
+.file-preview-item { display: flex; flex-direction: column; gap: 5px; width: 100%; text-align: left; padding: 10px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--text); }
+.file-preview-item:hover { background: var(--control-hover); }
+.file-preview-item--active { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.file-preview-item span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-preview-item small { color: var(--text-muted); font-size: 11px; }
+.file-preview-detail, .file-preview-content { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
+.file-preview-metadata { display: flex; flex-direction: column; gap: 5px; padding: 12px 16px; border-bottom: 1px solid var(--border-soft); }
+.file-preview-metadata strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-preview-metadata span, .file-preview-options span { color: var(--text-muted); font-size: 11px; }
+.file-preview-options label { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.file-preview-options select, .file-preview-options input[type=number] { background: var(--control); color: var(--text); border: 1px solid var(--border-control); border-radius: 4px; padding: 4px; }
+.file-preview-options input[type=number] { width: 52px; }
+.file-preview-content .text-code-editor { flex: 1; min-height: 0; }
+.file-preview-content .cm-editor { height: 100%; }
+.file-preview-content .cm-scroller { overflow: auto; }
+.file-preview-text-status { padding: 5px 12px; font-size: 11px; color: var(--text-muted); }
+.file-preview-empty { display: flex; flex: 1; min-height: 0; justify-content: center; align-items: center; flex-direction: column; gap: 14px; text-align: center; padding: 30px; color: var(--text-muted); margin: 0; overflow: auto; }
+.file-preview-drop { background: transparent; border: 0; cursor: pointer; }
+.file-preview-drop strong { font-size: 17px; color: var(--text); }
+.file-preview-drop span { max-width: 480px; line-height: 1.8; }
+.file-preview-footer { flex: 0 0 auto; padding: 9px 12px; color: var(--text-muted); border-top: 1px solid var(--border-soft); font-size: 11px; }
+.file-preview-notice { padding: 10px; margin: 0; color: var(--error-text); background: var(--error-bg); }
+.file-preview-image { flex: 1; min-height: 0; overflow: auto; padding: 16px; background: var(--surface-soft); }
+.file-preview-image img { display: block; max-width: none; margin: auto; }
+.file-preview-image--fit { display: flex; align-items: center; justify-content: center; }
+.file-preview-image--fit img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.file-preview-pdf-area { position: relative; flex: 1; min-height: 0; display: flex; }
+.file-preview-pdf { flex: 1; min-width: 0; overflow: auto; background: var(--surface-soft); padding: 24px; }
+.file-preview-pdf canvas { display: block; margin: 0 auto; background: white; box-shadow: 0 2px 12px var(--shadow); }
+.file-preview-pdf-status { position: absolute; top: 0; left: 12px; padding: 6px; background: var(--surface); color: var(--text-muted); z-index: 1; }
+.file-preview-drop-overlay { position: absolute; inset: 16px; z-index: 102; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: color-mix(in srgb, var(--surface) 94%, transparent); border: 2px dashed var(--accent); border-radius: 10px; color: var(--accent); }
+@media (max-width: 760px) {
+  .file-preview-workspace { flex-direction: column; }
+  .file-preview-list { display: flex; width: auto; max-height: 90px; border-right: 0; border-bottom: 1px solid var(--border-soft); gap: 4px; }
+  .file-preview-item { flex: 0 0 160px; }
+  .file-preview-metadata { padding: 8px 12px; }
+  .file-preview-toolbar, .file-preview-options { padding: 7px 8px; gap: 6px; }
+}

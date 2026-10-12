@@ -42,6 +42,10 @@
 :root:not([data-fullscreen='true']) .tool-view-shell--detached.tool-view-shell--macos .image-main-toolbar {
   padding-left: 90px;
 }
+
+:root:not([data-fullscreen='true']) .tool-view-shell--detached.tool-view-shell--macos .file-preview-toolbar {
+  padding-left: 90px;
+}
 .tool-view-shell--detached:not(.tool-view-shell--immersive) .tool-page { padding-top: 18px; }
 :root:not([data-fullscreen='true']) .tool-view-shell--detached.tool-view-shell--macos:not(.tool-view-shell--immersive) .tool-page__header { padding-left: 102px; }
 .window-material-status {

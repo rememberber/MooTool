@@ -18,8 +18,8 @@
   "scripts": {
     "postinstall": "node scripts/install-electron.mjs",
     "electron:install": "node scripts/install-electron.mjs",
-    "dev": "npm run build:native-ocr && electron-vite dev",
-    "build": "npm run build:native-ocr && tsc --noEmit && electron-vite build",
+    "dev": "npm run build:native-ocr && npm run prepare:preview-pdf && electron-vite dev",
+    "build": "npm run build:native-ocr && npm run prepare:preview-pdf && tsc --noEmit && electron-vite build",
     "package": "npm run build && electron-builder",
     "package:mac": "npm run build && electron-builder --mac dmg --publish never",
     "package:win": "npm run build && electron-builder --win nsis portable --publish never",
@@ -30,7 +30,8 @@
     "test:e2e": "npm run build && playwright test",
     "check": "npm run typecheck && npm run test && npm run build",
     "build:native-ocr": "node scripts/build-native-ocr.mjs",
-    "ocr:prepare": "node scripts/prepare-ocr-resources.mjs"
+    "ocr:prepare": "node scripts/prepare-ocr-resources.mjs",
+    "prepare:preview-pdf": "node scripts/prepare-preview-pdf.mjs"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",
@@ -101,6 +102,7 @@
     "electron": "^43.2.0",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
+    "pdfjs-dist": "6.4.299",
     "typescript": "^7.0.2",
     "vite": "^7.3.6",
     "vitest": "^4.1.10"

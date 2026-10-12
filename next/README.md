@@ -81,6 +81,10 @@ The command palette includes **Rich text to Markdown**, **Table to JSON**, **Cli
 
 **Image Assistant → Recognize text** extracts text from the current image. **Screenshot OCR** opens the existing region selector and keeps the capture in the recognition preview. Start recognition, edit the result, then explicitly copy or save text. Recognition can be cancelled and does not modify the original image or automatically write the clipboard. macOS 13+ uses local Apple Vision and bundles no OCR model. Windows/Linux x64/arm64 use an isolated CPU PP-OCRv6 small process with local models covering Simplified Chinese, Traditional Chinese, English and Japanese. No Python or recognition-time downloads are required. macOS source builds need Xcode Command Line Tools; Windows/Linux source development needs `npm run ocr:prepare`. Installer builds prepare verified offline resources automatically. See [OCR behavior](doc/image-ocr.md) and [PP-OCR packaging and validation status](doc/ppocr-backend.md).
 
+## Quick File Preview
+
+Open **Quick File Preview** in the daily tools group or search for `peek` / `preview` / `预览`. Drop or choose a batch of up to 100 files, then switch using the list, previous/next buttons, or Left/Right outside text controls. Text and JSON reuse the read-only code editor; JSON formatting preserves number tokens and duplicate keys. Images support fit/actual size/zoom, and PDF pages render locally with page selection and zoom. Every new selection replaces the batch; source files are never modified and preview contents are not added to history. See [formats, limits and verification](doc/file-preview.md).
+
 ## Developer translation
 
 - **Split identifier** turns `getHTTPResponse` / `user_id` into words before translation.

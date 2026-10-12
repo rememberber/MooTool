@@ -26,6 +26,7 @@ export const toolIds = [
   'colorBoard',
   'image',
   'pdf',
+  'filePreview',
   'batchRename',
   'hardware'
 ] as const
