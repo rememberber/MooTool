@@ -152,6 +152,14 @@ jobs:
         if: runner.os == 'Linux'
         run: xvfb-run --auto-servernum node scripts/test-packaged-ai.mjs
 
+      - name: Verify packaged offline OCR (macOS and Windows)
+        if: runner.os != 'Linux'
+        run: node scripts/test-packaged-ocr.mjs
+
+      - name: Verify packaged offline OCR (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum node scripts/test-packaged-ocr.mjs
+
       - name: Upload AI integration verification
         if: always()
         uses: actions/upload-artifact@v4

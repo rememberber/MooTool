@@ -22,5 +22,5 @@ export type OcrResult = {
   durationMs: number
 }
 
-export const ocrErrorCodes = ['input', 'tooLarge', 'unavailable', 'language', 'busy', 'cancelled', 'timeout', 'failed'] as const
+export const ocrErrorCodes = ['input', 'tooLarge', 'tooComplex', 'unavailable', 'language', 'busy', 'cancelled', 'timeout', 'failed'] as const
 export type OcrErrorCode = (typeof ocrErrorCodes)[number]

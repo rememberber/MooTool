@@ -8,7 +8,7 @@ let page: Page
 let directory: string
 let fixture: string
 let previous: { text: string; html: string; rtf: string; image: string }
-test.skip(process.platform !== 'darwin', 'The first OCR backend requires macOS Vision.')
+test.skip(process.platform === 'darwin' && process.arch !== 'arm64' && process.env.MOOTOOL_OCR_BACKEND === 'pp-ocrv6-small', 'ONNX Runtime 1.30.0 has no Intel macOS binary.')
 test.setTimeout(150000)
 test.beforeEach(async ({}, testInfo) => {
   directory = await mkdtemp(join(tmpdir(), 'mootool-ocr-ui-'))
@@ -22,7 +22,7 @@ test.beforeEach(async ({}, testInfo) => {
   if (testInfo.title.includes('native tool')) return
   await expect(page.locator('.image-list-item')).toHaveCount(1)
   await page.locator('.image-list-item').getByRole('button').click()
-  await expect(page.locator('.image-main-toolbar').getByRole('button', { name: '识别文字', exact: true })).toBeEnabled()
+  await expect(page.locator('.image-main-toolbar').getByRole('button', { name: '识别文字', exact: true })).toBeEnabled({ timeout: 35000 })
 })
 test.afterEach(async () => {
   if (app) {
@@ -41,11 +41,13 @@ test('recognizes Chinese locally, previews before copying, and saves edited text
   await app.evaluate(({ clipboard }) => clipboard.writeText('OCR clipboard sentinel'))
   await open()
   await expect(editor()).toHaveValue('')
-  await dialog().getByRole('combobox', { name: '识别语言' }).selectOption('zh-Hans')
+  const status = await page.evaluate(() => window.mootool.getOcrStatus())
+  if (status.engine === 'apple-vision') await dialog().getByRole('combobox', { name: '识别语言' }).selectOption('zh-Hans')
+  else { await expect(dialog().getByRole('combobox', { name: '识别语言' })).toHaveValue('auto'); await expect(dialog()).toContainText('简体/繁体/英文/日文') }
   await start()
   await expect(editor()).toHaveValue(/中文识别评估/, { timeout: 125000 })
   await expect(editor()).toHaveValue(/批量重命名/)
-  await expect(dialog().locator('.image-ocr-metadata')).toContainText('Vision')
+  await expect(dialog().locator('.image-ocr-metadata')).toContainText(status.engine === 'apple-vision' ? 'Vision' : 'PP-OCRv6 small')
   expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe('OCR clipboard sentinel')
   await page.screenshot({ path: testInfo.outputPath('ocr-light.png'), animations: 'disabled' })
   const corrected = '校对后的中文识别结果\n订单编号 001234'
@@ -133,7 +135,7 @@ test('recognizes in a detached native tool view and fits a narrow window', async
   }, script)
   await expect.poll(() => tool('document.querySelectorAll(".image-list-item").length')).toBe(1)
   await tool('document.querySelector(".image-list-item button").click()')
-  await expect.poll(() => tool('[...document.querySelectorAll(".image-main-toolbar button")].find(button => button.textContent === "识别文字")?.disabled')).toBe(false)
+  await expect.poll(() => tool('[...document.querySelectorAll(".image-main-toolbar button")].find(button => button.textContent === "识别文字")?.disabled'), { timeout: 35000 }).toBe(false)
   await tool('[...document.querySelectorAll(".image-main-toolbar button")].find(button => button.textContent === "识别文字").click()')
   await expect.poll(() => tool('Boolean(document.querySelector(".image-ocr-options"))')).toBe(true)
   await tool('document.querySelector(".dialog__footer .dialog-button--primary").click()')
@@ -146,7 +148,7 @@ test('recognizes in a detached native tool view and fits a narrow window', async
   await expect.poll(() => tool('innerWidth')).toBeLessThanOrEqual(620)
   await tool('Promise.all(document.querySelector(".dialog").getAnimations({ subtree: true }).map(animation => animation.finished))')
   await tool('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))')
-  expect(await tool('document.querySelector(".image-main-toolbar button").getBoundingClientRect().left >= 90')).toBe(true)
+  if (process.platform === 'darwin') expect(await tool('document.querySelector(".image-main-toolbar button").getBoundingClientRect().left >= 90')).toBe(true)
   expect(await tool('document.querySelector(".dialog__body").scrollWidth <= document.querySelector(".dialog__body").clientWidth')).toBe(true)
   expect(await tool('[...document.querySelectorAll(".dialog__footer button")].every(button => { const box = button.getBoundingClientRect(); return box.left >= 0 && box.right <= innerWidth && box.bottom <= innerHeight })')).toBe(true)
   await tool('window.mootool.updateSettings({ appearance: { theme: "dark" } })')

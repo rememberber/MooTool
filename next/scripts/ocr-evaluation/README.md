@@ -2,6 +2,8 @@
 
 These scripts are assessment tools only. They do not register IPC handlers, add app dependencies, or ship OCR functionality. The fixed PNG fixtures, expected text, raw recognition results and scores are in `../../doc/ocr-evaluation/`.
 
+`probe-ppocr.mjs` validates the later production JavaScript pipeline through Electron's actual OCR IPC and isolated utility process. Prepare macOS arm64 test resources with `npm run ocr:prepare -- --platform darwin --arch arm64`, build, then run `node scripts/ocr-evaluation/probe-ppocr.mjs /tmp/ppocr-electron-results.json`. It reuses the fixed corpus, records two passes with fresh processes per image, and does not overwrite the original Python/Vision assessment output. Results and limitations are documented in `../../doc/ppocr-backend.md`.
+
 Run from `next/`. Keep model weights and temporary dependencies outside the repository:
 
 ```sh

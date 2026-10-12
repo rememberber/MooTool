@@ -1,0 +1,27 @@
+MooTool offline OCR resources
+
+PP-OCRv6 small detection/recognition weights originate from PaddleOCR
+(Baidu/PaddlePaddle rights holders), converted and distributed by RapidAI
+as RapidOCR v3.10.0. Model weights: Apache-2.0; ownership remains with the
+upstream rights holders. The character dictionary is extracted from the
+verified recognition model without changing the model.
+
+Pipeline adapted from RapidOCR v3.10.0's DB detection, crop/resize and CTC
+decoding and PaddleOCR's original algorithms. Copyright (c) 2021 RapidOCR
+Authors; Copyright (c) 2020 PaddlePaddle Authors. Modifications for MooTool:
+JavaScript/OpenCV.js CPU pipeline, bounded resources, original image crops,
+process isolation and MooTool's result protocol. Apache-2.0.
+
+https://github.com/RapidAI/RapidOCR/tree/v3.10.0
+https://github.com/PaddlePaddle/PaddleOCR
+
+ONNX Runtime 1.30.0: Microsoft, MIT. Its upstream license and third-party
+notices accompany this bundle. The Node installer is not executed at runtime.
+OpenCV.js 4.12.0, distributed by @techstark/opencv-js 4.12.0-release.1:
+Apache-2.0 (license included with its runtime package).
+pngjs 7.0.0: MIT (license included with its runtime package).
+clipper-lib 6.4.2: Boost Software License 1.0. Its copyright and attribution
+headers, including Tom Wu's JSBN notice, are retained in clipper.js.
+
+Model sources/checksums: doc/ocr-evaluation/sizes.json.
+Runtime versions/integrities: scripts/ocr-runtime/package-lock.json.

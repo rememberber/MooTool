@@ -1,0 +1,11 @@
+{
+  "name": "mootool-offline-ocr-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@techstark/opencv-js": "4.12.0-release.1",
+    "clipper-lib": "6.4.2",
+    "onnxruntime-node": "1.30.0",
+    "pngjs": "7.0.0"
+  }
+}

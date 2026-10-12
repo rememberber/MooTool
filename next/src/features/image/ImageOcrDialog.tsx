@@ -79,6 +79,7 @@ export function ImageOcrDialog({ source, status, onClose }: { source: OcrSource;
   }
 
   const languages = status?.languages.length ? status.languages : ['auto'] as const
+  const languageLabel = (language: OcrLanguage) => t(status?.engine === 'pp-ocrv6-small' && language === 'auto' ? 'image.ocr.language.multilingual' : `image.ocr.language.${language}`)
   const unavailable = status && !status.available ? t(`image.ocr.unavailable.${status.reason ?? 'component'}`) : ''
   return <Dialog title={t('image.ocr.title')} open onClose={onClose} width={840} footer={<>
     <button className="dialog-button" type="button" onClick={onClose}>{t('common.close')}</button>
@@ -91,7 +92,7 @@ export function ImageOcrDialog({ source, status, onClose }: { source: OcrSource;
     <div className="image-ocr-options">
       <div className="image-ocr-controls">
         <label><span>{t('image.ocr.language')}</span><select aria-label={t('image.ocr.language')} value={language} disabled={working || actionBusy || !status?.available} onChange={event => setLanguage(event.target.value as OcrLanguage)}>
-          {languages.map(language => <option key={language} value={language}>{t(`image.ocr.language.${language}`)}</option>)}
+          {languages.map(language => <option key={language} value={language}>{languageLabel(language)}</option>)}
         </select></label>
         <span>{t('image.ocr.local')}</span>
       </div>
@@ -99,7 +100,7 @@ export function ImageOcrDialog({ source, status, onClose }: { source: OcrSource;
         <figure><div><img src={source.dataUrl} alt={source.name} /></div><figcaption title={source.name}>{source.name} · {source.width} × {source.height}</figcaption></figure>
         <label className="image-ocr-editor"><span>{t('image.ocr.result')}</span><textarea ref={editor} aria-label={t('image.ocr.result')} maxLength={100000} value={text} disabled={working || actionBusy} spellCheck={false} onChange={event => { setText(event.target.value); setNotice('') }} /></label>
       </div>
-      {result && <p className="image-ocr-metadata">{t(result.engine === 'apple-vision' ? 'image.ocr.engine.vision' : 'image.ocr.engine.ppocr')} · {t(`image.ocr.language.${result.language}`)} · {t('image.ocr.metadata', { count: String(result.lines.length), time: String(result.durationMs) })}</p>}
+      {result && <p className="image-ocr-metadata">{t(result.engine === 'apple-vision' ? 'image.ocr.engine.vision' : 'image.ocr.engine.ppocr')} · {languageLabel(result.language)} · {t('image.ocr.metadata', { count: String(result.lines.length), time: String(result.durationMs) })}</p>}
       <p className="image-ocr-help">{t(text ? 'image.ocr.review' : 'image.ocr.intro')}</p>
       {unavailable && <p className="image-ocr-error" role="alert">{unavailable}</p>}
       {error && <p className="image-ocr-error" role="alert">{error}</p>}

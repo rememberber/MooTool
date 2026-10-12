@@ -10,6 +10,7 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, 'electron/main/index.ts'),
           imageVectorizationWorker: resolve(__dirname, 'electron/main/imageVectorizationWorker.ts'),
+          ppOcrWorker: resolve(__dirname, 'electron/main/ppOcrWorker.ts'),
           mcp: resolve(__dirname, 'electron/mcp/index.ts')
         }
       }

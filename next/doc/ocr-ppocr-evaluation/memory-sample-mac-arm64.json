@@ -1,0 +1,8 @@
+{
+  "platform": "darwin",
+  "arch": "arm64",
+  "peakSampledWorkingSetBytes": 324681728,
+  "image": "retina-12x2",
+  "durationMs": 736,
+  "note": "20 ms sampling; not an exact process peak or worst-case memory bound."
+}

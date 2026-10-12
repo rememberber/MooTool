@@ -79,7 +79,7 @@ The command palette includes **Rich text to Markdown**, **Table to JSON**, **Cli
 
 ## Image and Screenshot OCR
 
-On macOS 13+, **Image Assistant → Recognize text** extracts text from the current image through local Apple Vision. **Screenshot OCR** opens the existing region selector and keeps the capture in the recognition preview. Choose a supported language, start recognition, edit the result, then explicitly copy or save text. Recognition can be cancelled and does not modify the original image or automatically write the clipboard. No OCR model or Python runtime is bundled. Windows/Linux backends remain pending. macOS source builds require Xcode Command Line Tools to compile the universal helper; packaged apps include it. See [OCR behavior, packaging and verification](doc/image-ocr.md).
+**Image Assistant → Recognize text** extracts text from the current image. **Screenshot OCR** opens the existing region selector and keeps the capture in the recognition preview. Start recognition, edit the result, then explicitly copy or save text. Recognition can be cancelled and does not modify the original image or automatically write the clipboard. macOS 13+ uses local Apple Vision and bundles no OCR model. Windows/Linux x64/arm64 use an isolated CPU PP-OCRv6 small process with local models covering Simplified Chinese, Traditional Chinese, English and Japanese. No Python or recognition-time downloads are required. macOS source builds need Xcode Command Line Tools; Windows/Linux source development needs `npm run ocr:prepare`. Installer builds prepare verified offline resources automatically. See [OCR behavior](doc/image-ocr.md) and [PP-OCR packaging and validation status](doc/ppocr-backend.md).
 
 ## Developer translation
 

@@ -1,0 +1,43 @@
+{
+  "policy": "macOS sandbox deny network-outbound",
+  "transport": "Standalone Node adapter for the production worker; actual inference/resource checks unchanged",
+  "node": "24.21.0",
+  "platform": "darwin",
+  "arch": "arm64",
+  "result": {
+    "width": 1000,
+    "height": 240,
+    "lines": [
+      {
+        "text": "中文识别评估：先预览，再复制，全部在本机完成。",
+        "confidence": 0.9932188469430675,
+        "box": {
+          "x": 38,
+          "y": 33,
+          "width": 460,
+          "height": 23
+        }
+      },
+      {
+        "text": "批量重命名、图片压缩、格式转换和剪贴板工具。",
+        "confidence": 0.999849877574227,
+        "box": {
+          "x": 39,
+          "y": 99,
+          "width": 440,
+          "height": 22
+        }
+      },
+      {
+        "text": "订单编号001234，金额¥128.50，日期 2026-10-12。",
+        "confidence": 0.9842133249555315,
+        "box": {
+          "x": 37,
+          "y": 163,
+          "width": 497,
+          "height": 24
+        }
+      }
+    ]
+  }
+}

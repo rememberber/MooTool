@@ -3,6 +3,7 @@ import { GlobalCommandShortcut } from './globalCommandShortcut'
 import { BatchRenameService } from './batchRenameService'
 import { OcrService } from './ocrService'
 import { VisionOcrBackend } from './ocrBackend'
+import { PpOcrBackend } from './ppOcrBackend'
 import { commandActionTitles, defaultCommandPaletteState, isCommandActionId, normalizeCommandPaletteState, trayCommandActions, updateCommandPaletteState, type CommandPaletteState } from '../../src/shared/contracts/commandPalette'
 import { messages } from '../../src/shared/i18n/messages'
 import { WindowMaterialController, loadNativeGlass } from './windowMaterial'
@@ -32,6 +33,7 @@ import {
   session,
   shell,
   Tray,
+  utilityProcess,
   type WebContents,
   type WebContentsView,
   type NativeImage,
@@ -2499,7 +2501,12 @@ app.whenReady().then(async () => {
   openDataRepositories()
   batchRenameService = new BatchRenameService(join(app.getPath('userData'), 'file-operations'))
   const ocrHelper = app.isPackaged ? join(process.resourcesPath, 'native', 'mootool-ocr') : join(__dirname, '../native/mootool-ocr')
-  ocrService = new OcrService(new VisionOcrBackend(ocrHelper, process.platform, Number(process.getSystemVersion().split('.')[0])), app.getPath('temp'), (dataUrl) => {
+  const testPpOcr = process.env.NODE_ENV === 'test' && process.env.MOOTOOL_OCR_BACKEND === 'pp-ocrv6-small'
+  const ocrResources = app.isPackaged ? join(process.resourcesPath, 'ocr') : join(__dirname, '../ocr', `${process.platform}-${process.arch}`)
+  const ocrBackend = process.platform === 'darwin' && !testPpOcr
+    ? new VisionOcrBackend(ocrHelper, process.platform, Number(process.getSystemVersion().split('.')[0]))
+    : new PpOcrBackend(ocrResources, join(__dirname, 'ppOcrWorker.js'), path => utilityProcess.fork(path, [], { stdio: 'ignore', serviceName: 'MooTool Offline OCR', allowLoadingUnsignedLibraries: process.platform === 'darwin' }))
+  ocrService = new OcrService(ocrBackend, app.getPath('temp'), (dataUrl) => {
     const image = nativeImage.createFromDataURL(dataUrl)
     if (image.isEmpty()) throw new Error('image.ocr.error.input')
     const { width, height } = image.getSize()

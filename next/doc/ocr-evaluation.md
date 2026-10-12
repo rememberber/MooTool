@@ -100,4 +100,4 @@ Windows 官方说明该 OCR API 对桌面应用要求 package identity。目前 
 
 固定 PNG、参考文字、所有原始输出、统计与体积清单在 [ocr-evaluation/](ocr-evaluation/)，脚本及依赖版本在 [评估脚本说明](../scripts/ocr-evaluation/README.md)。重复实验应使用固定 PNG，重新生成字体截图会改变语料。
 
-本轮没有修改产品行为、生产 package.json/lockfile，也没有运行与评估无关的产品全量测试。未提交或推送评估产物。
+评估阶段没有修改产品行为或生产依赖；评估产物后续随首批 Vision 实现提交。PP-OCR 的完整 Electron 流程、最新体积和验收状态见 [后端说明](ppocr-backend.md)。

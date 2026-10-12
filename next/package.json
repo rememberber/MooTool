@@ -29,7 +29,8 @@
     "test": "vitest run",
     "test:e2e": "npm run build && playwright test",
     "check": "npm run typecheck && npm run test && npm run build",
-    "build:native-ocr": "node scripts/build-native-ocr.mjs"
+    "build:native-ocr": "node scripts/build-native-ocr.mjs",
+    "ocr:prepare": "node scripts/prepare-ocr-resources.mjs"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",
@@ -115,6 +116,7 @@
       }
     ],
     "asar": true,
+    "beforePack": "./scripts/prepare-ocr-package.cjs",
     "directories": {
       "buildResources": "resources",
       "output": "dist"
@@ -122,6 +124,8 @@
     "files": [
       "out/**/*",
       "!out/native/**/*",
+      "!out/ocr/**/*",
+      "!out/ocr-cache/**/*",
       "package.json"
     ],
     "extraResources": [
@@ -130,14 +134,12 @@
         "to": "tray-icon.png"
       },
       {
-        "from": "out/native",
-        "to": "native",
-        "filter": [
-          "mootool-ocr"
-        ]
+        "from": "resources/ocr",
+        "to": "ocr-licenses"
       }
     ],
     "mac": {
+      "extraResources": [{ "from": "out/native", "to": "native", "filter": ["mootool-ocr"] }],
       "icon": "resources/icon.icns",
       "executableName": "MooTool Next Electron",
       "category": "public.app-category.developer-tools",
@@ -149,6 +151,7 @@
       ]
     },
     "win": {
+      "extraResources": [{ "from": "out/ocr/win32-${arch}", "to": "ocr" }],
       "icon": "resources/icon.png",
       "executableName": "MooTool Next Electron",
       "target": [
@@ -165,6 +168,7 @@
       "artifactName": "MooTool-Next-Electron-${version}-win-${arch}-portable.${ext}"
     },
     "linux": {
+      "extraResources": [{ "from": "out/ocr/linux-${arch}", "to": "ocr" }],
       "syncDesktopName": true,
       "icon": "resources/icon.png",
       "category": "Utility;Development",
