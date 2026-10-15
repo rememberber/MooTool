@@ -1,10 +1,11 @@
-import { ArrowLeft, Copy, Save, Search, Star, WandSparkles, X } from 'lucide-react'
+import { ArrowLeft, Copy, FileInput, Save, Search, Star, WandSparkles, X } from 'lucide-react'
 import { Fragment, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useAppStore } from '@/app/appStore'
 import { actionRegistry, executeAction, searchActions, type ActionMatch } from '@/app/actionRegistry'
-import { commandFileExtensions, commandOutputFormat, defaultCommandPaletteState, orderedCommandActions, type CommandActionId, type CommandFileFormat, type CommandPaletteOperation, type CommandPaletteState, type CommandSection } from '@/shared/contracts/commandPalette'
+import { commandFileExtensions, commandImportTarget, commandOutputFormat, defaultCommandPaletteState, orderedCommandActions, type CommandActionId, type CommandFileFormat, type CommandPaletteOperation, type CommandPaletteState, type CommandSection } from '@/shared/contracts/commandPalette'
 import { toolGroups, toolRegistry, type ToolDefinition } from '@/app/toolRegistry'
+import { TextCodeEditor } from '@/shared/components/TextCodeEditor'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
 type Result = ({ kind: 'tool'; tool: ToolDefinition } | { kind: 'action'; match: ActionMatch }) & { section?: CommandSection | 'tools' }
@@ -211,6 +212,26 @@ export function CommandPalette({ onOpenTool, focusReady = true }: { onOpenTool?:
     }
   }
 
+  async function importResult(): Promise<void> {
+    if (!preview || running.current) return
+    const currentRequest = ++request.current
+    running.current = true
+    setBusy(true)
+    setError('')
+    try {
+      const result = await window.mootool.importCommandResult({ actionId: preview.actionId, content: preview.text })
+      if (request.current !== currentRequest) return
+      if (onOpenTool) onOpenTool(result.kind)
+      else openTool(result.kind)
+      setOpen(false)
+      await window.mootool.focusToolWindow(result.kind)
+    } catch {
+      if (request.current === currentRequest) setError(t('app.command.importFailed'))
+    } finally {
+      if (request.current === currentRequest) { running.current = false; setBusy(false) }
+    }
+  }
+
   async function saveResult(): Promise<void> {
     if (!preview || running.current) return
     if (fileFormat === 'json') {
@@ -241,7 +262,7 @@ export function CommandPalette({ onOpenTool, focusReady = true }: { onOpenTool?:
       if (preview) back()
       else setOpen(false)
     } else if (event.key === 'Tab') {
-      const focusable = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('input, button:not([disabled]):not([tabindex="-1"]), textarea, select:not([disabled])') ?? [])
+      const focusable = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('input, button:not([disabled]):not([tabindex="-1"]), textarea, .cm-content[tabindex], select:not([disabled])') ?? [])
       const first = focusable[0]
       const last = focusable[focusable.length - 1]
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
@@ -283,10 +304,11 @@ export function CommandPalette({ onOpenTool, focusReady = true }: { onOpenTool?:
           <button className="icon-ghost" type="button" aria-label={t('app.search.close')} onClick={() => setOpen(false)}><X size={16} /></button>
         </div>
         {preview ? <div className="command-palette__preview">
-          <textarea readOnly value={preview.text} aria-label={t('app.command.preview')} spellCheck={false} />
+          <TextCodeEditor className="command-palette__code" readOnly value={preview.text} ariaLabel={t('app.command.preview')} language={commandOutputFormat(preview.actionId)} />
           <div className="command-palette__preview-actions">
             <span role="status" title={saved}>{copied ? t('app.command.copied') : saved ? t('app.command.saved') : ''}</span>
             <button className="dialog-button" type="button" data-command-copy aria-disabled={busy} onClick={() => void copyResult()}><Copy size={14} />{t('app.command.copy')}</button>
+            <button className="dialog-button" type="button" disabled={busy} onClick={() => void importResult()}><FileInput size={14} />{t(commandImportTarget(preview.actionId) === 'json' ? 'app.command.importJson' : 'app.command.importNote')}</button>
             <div className="command-palette__export">
               <select aria-label={t('app.command.fileFormat')} value={fileFormat} disabled={busy} onChange={event => { setFileFormat(event.target.value as CommandFileFormat); setError(''); setSaved('') }}>
                 <option value="text">.txt</option><option value="markdown">.md</option><option value="json">.json</option><option value="html">.html</option>

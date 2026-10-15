@@ -62,7 +62,7 @@ async function assertPaletteKeyboard() {
   await app.evaluate(({ webContents }) => webContents.getFocusedWebContents()!.insertText('uuid'))
   await expect(input).toHaveValue('uuid')
   await focusedKey('ENTER')
-  await expect(page.getByRole('textbox', { name: '结果预览' })).toHaveValue(/^[\da-f-]{36}$/)
+  await expect(page.getByRole('textbox', { name: '结果预览' })).toHaveText(/^[\da-f-]{36}$/, { useInnerText: true })
   await expect(page.getByRole('button', { name: '复制结果', exact: true })).toBeFocused()
   await focusedKey('ESCAPE')
   await expect(input).toBeFocused()

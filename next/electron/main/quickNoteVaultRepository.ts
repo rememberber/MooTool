@@ -19,7 +19,7 @@ const maxFileSize = 20 * 1024 * 1024
 const maxEntries = 5000
 const maxDepth = 24
 const attachmentExtensions = new Set(['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'])
-const noteExtensions = new Set(['.txt', '.md', '.json', '.java', '.js', '.ts', '.py', '.xml', '.yaml', '.yml', '.sql'])
+const noteExtensions = new Set(['.txt', '.md', '.json', '.java', '.js', '.ts', '.py', '.html', '.xml', '.yaml', '.yml', '.sql'])
 
 export class QuickNoteVaultRepository {
   constructor(private readonly rootDirectory: string) {}
@@ -54,7 +54,7 @@ export class QuickNoteVaultRepository {
     return this.resolveExisting(root, normalizeEntryPath(relativePath))
   }
 
-  async create(input: CreateQuickNoteInput): Promise<QuickNoteFile> {
+  async create(input: CreateQuickNoteInput & { content?: string; syntax?: string }): Promise<QuickNoteFile> {
     const title = normalizeTitle(input.title)
     const root = await this.ensureRoot()
     const parent = normalizeDirectoryPath(input.parentPath ?? '', true)
@@ -62,15 +62,16 @@ export class QuickNoteVaultRepository {
     assertInsideRoot(root, parentTarget, true)
     await mkdir(parentTarget, { recursive: true })
     await this.assertRealDirectoryInside(root, parentTarget)
-    const relativePath = await this.uniqueNotePath(root, parent, sanitizeName(title))
+    const syntax = input.syntax ?? 'text/plain'
+    const relativePath = await this.uniqueNotePath(root, parent, sanitizeName(title), extensionForSyntax(syntax))
     const now = new Date().toISOString()
     return this.save({
       relativePath,
-      content: '',
+      content: input.content ?? '',
       metadata: {
         title,
         style: '',
-        syntax: 'text/plain',
+        syntax,
         fontName: typeof input.fontName === 'string' ? input.fontName.slice(0, 120) : 'ui-monospace',
         fontSize: clampFontSize(input.fontSize ?? 14),
         lineSpacing: 1,
@@ -487,6 +488,7 @@ function extensionForSyntax(syntax: string): string {
     case 'text/javascript': return '.js'
     case 'text/typescript': return '.ts'
     case 'text/python': return '.py'
+    case 'text/html': return '.html'
     case 'text/xml': return '.xml'
     case 'text/yaml': return '.yaml'
     case 'text/sql': return '.sql'

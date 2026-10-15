@@ -2,7 +2,7 @@
 import type { WindowMaterialStatus } from './src/shared/contracts/windowMaterial'
 import type { GlobalShortcutStatus } from './src/shared/contracts/shortcuts'
 import type { RenameFile, RenameOptions, RenamePreview, RenameResult, RenameStatus } from './src/shared/contracts/batchRename'
-import type { ClipboardTextSnapshot, CommandActionId, CommandPaletteOperation, CommandPaletteState } from './src/shared/contracts/commandPalette'
+import type { ClipboardTextSnapshot, CommandResultImport, ImportCommandResultInput, CommandActionId, CommandPaletteOperation, CommandPaletteState } from './src/shared/contracts/commandPalette'
 import type { OcrStatus, OcrRequest, OcrResult } from './src/shared/contracts/ocr'
 import type { RegexInput, RegexResult } from './src/shared/contracts/regex'
 
@@ -65,6 +65,8 @@ declare global {
       clearSecret: (key: SecretKey) => Promise<SecretStatus>
       getWorkspaceState: () => Promise<WorkspaceState>
       getCommandPaletteState: () => Promise<CommandPaletteState>
+      importCommandResult: (input: ImportCommandResultInput) => Promise<CommandResultImport>
+      onCommandResultImport: (callback: (result: CommandResultImport) => void) => () => void
       readCommandClipboard: () => Promise<ClipboardTextSnapshot>
       updateCommandPalette: (operation: CommandPaletteOperation) => Promise<CommandPaletteState>
       openCommandAction: (actionId: CommandActionId) => Promise<void>

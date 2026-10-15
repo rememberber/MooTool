@@ -31,6 +31,18 @@ describe('JsonVaultRepository', () => {
     expect((await repository.list())[0]?.children).toEqual([])
   })
 
+  it('creates imported snippets with unique names while retaining exact content and existing files', async () => {
+    const repository = createRepository()
+    const existing = await repository.createDefault()
+    const content = '{\n  "imported": true\n}'
+    const imported = await repository.createDefault(content)
+    const repeated = await repository.createDefault(content)
+    expect(new Set([existing.relativePath, imported.relativePath, repeated.relativePath]).size).toBe(3)
+    expect((await repository.read(existing.relativePath)).content).toBe('{}')
+    expect((await repository.read(imported.relativePath)).content).toBe(content)
+    expect((await repository.read(repeated.relativePath)).content).toBe(content)
+  })
+
   it('rejects traversal, hidden paths, and non-JSON reads', async () => {
     const repository = createRepository()
     await expect(repository.save({ relativePath: '../outside.json', content: '{}' })).rejects.toThrow('Invalid Vault path')

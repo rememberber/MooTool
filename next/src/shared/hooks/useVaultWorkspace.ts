@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useState } from 'react'
 import { useSettings } from '@/features/settings/SettingsProvider'
+import type { CommandResultImport } from '@/shared/contracts/commandPalette'
 import type { VaultKind, VaultWorkspace } from '@/shared/contracts/vaultWorkspace'
 import { useToast } from '@/shared/feedback/ToastProvider'
 
@@ -8,13 +9,19 @@ export function useVaultWorkspace<File>(
   open: () => Promise<VaultWorkspace<File>>,
   activePath: string,
   onReset: (rootKey: string) => void,
-  onOpen: (workspace: VaultWorkspace<File>, rootKey: string) => void
+  onOpen: (workspace: VaultWorkspace<File>, rootKey: string) => void,
+  onImport?: (relativePath: string) => Promise<void>
 ) {
   const { settings, ready: settingsReady } = useSettings()
   const toast = useToast()
   const customRoot = kind === 'json' ? settings.vault.jsonPath : settings.vault.quickNotePath
   const rootKey = JSON.stringify([kind, customRoot, customRoot ? '' : settings.data.directory])
   const [loaded, setLoaded] = useState<{ key: string; rootDirectory: string } | null>(null)
+  const [imported, setImported] = useState<CommandResultImport | null>(null)
+  const importFile = useEffectEvent(async (relativePath: string) => { await onImport?.(relativePath) })
+  useEffect(() => window.mootool.onCommandResultImport((result) => {
+    if (result.kind === kind) setImported(result)
+  }), [kind])
   const reset = useEffectEvent(onReset)
   const accept = useEffectEvent(onOpen)
   const ready = settingsReady && loaded?.key === rootKey
@@ -36,6 +43,14 @@ export function useVaultWorkspace<File>(
     void window.mootool.rememberVaultFile({ kind, rootDirectory: loaded.rootDirectory, relativePath: activePath })
       .catch((error) => toast.error(error instanceof Error ? error.message : String(error)))
   }, [activePath, kind, loaded, ready, toast])
+
+  useEffect(() => {
+    if (!ready || !loaded || !imported) return
+    setImported(null)
+    if (imported.rootDirectory === loaded.rootDirectory) {
+      void importFile(imported.relativePath).catch((error) => toast.error(error instanceof Error ? error.message : String(error)))
+    }
+  }, [imported, loaded, ready, toast])
 
   return { ready, rootKey }
 }

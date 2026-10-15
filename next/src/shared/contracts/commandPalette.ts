@@ -21,6 +21,12 @@ export function commandOutputFormat(actionId: CommandActionId): CommandFileForma
   return ['json-format', 'json-minify', 'table-json'].includes(actionId) ? 'json' : 'text'
 }
 
+export type ImportCommandResultInput = { actionId: CommandActionId; content: string }
+export type CommandResultImport = { kind: 'json' | 'quickNote'; rootDirectory: string; relativePath: string }
+export function commandImportTarget(actionId: CommandActionId): CommandResultImport['kind'] {
+  return commandOutputFormat(actionId) === 'json' ? 'json' : 'quickNote'
+}
+
 export function isCommandActionId(value: unknown): value is CommandActionId {
   return typeof value === 'string' && commandActionIds.includes(value as CommandActionId)
 }

@@ -5651,19 +5651,10 @@ select:not([multiple]) {
   padding: 16px;
 }
 
-.command-palette__preview textarea {
-  width: 100%;
+.command-palette__preview .command-palette__code {
   height: 240px;
   min-height: 60px;
-  resize: none;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text-strong);
-  background: var(--surface);
-  font-family: var(--text-code-editor-font-family, ui-monospace, Menlo, Consolas, monospace);
-  font-size: 13px;
-  line-height: 1.6;
+  flex: 1 1 240px;
 }
 
 .command-palette__preview-actions {

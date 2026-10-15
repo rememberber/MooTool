@@ -176,6 +176,7 @@ const syntaxOptions = [
   ['text/javascript', 'JavaScript'],
   ['text/typescript', 'TypeScript'],
   ['text/python', 'Python'],
+  ['text/html', 'HTML'],
   ['text/xml', 'XML'],
   ['text/yaml', 'YAML'],
   ['text/sql', 'SQL']
@@ -330,6 +331,10 @@ export function QuickNoteTool() {
         update({ vaultRootKey: rootKey, selectedPath: note.relativePath, selectedKind: 'file', note, content: note.content, metadataDirty: false, busy: false, query: '',
           expanded: ensureAncestorsExpanded(state.expanded, note.relativePath) })
       } else update({ vaultRootKey: rootKey, busy: false, query: '' })
+    }, async (path) => {
+      update({ query: '', viewMode: 'editor' })
+      await selectNode({ relativePath: path, name: path, kind: 'file' })
+      await loadTree()
     })
   const metadataSignature = JSON.stringify(state.note?.metadata ?? {})
   const directories = useMemo(() => collectDirectoryPaths(state.nodes), [state.nodes])

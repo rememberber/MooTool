@@ -44,6 +44,19 @@ describe('QuickNoteVaultRepository', () => {
     await expect(repository.read(moved)).rejects.toThrow()
   })
 
+  it('creates repeated imports using the final syntax extension without replacing an existing note', async () => {
+    const { repository } = await createRepository()
+    for (const [syntax, extension, content] of [['text/markdown', '.md', '# Title\n\nBody'], ['text/html', '.html', '<h1>Title</h1>'], ['text/plain', '.txt', 'plain text']]) {
+      const first = await repository.create({ title: 'Imported', content, syntax })
+      const second = await repository.create({ title: 'Imported', content, syntax })
+      expect(first.relativePath).toBe(`Imported${extension}`)
+      expect(second.relativePath).toBe(`Imported (2)${extension}`)
+      expect((await repository.read(first.relativePath)).content).toBe(content)
+      expect((await repository.read(second.relativePath)).metadata.syntax).toBe(syntax)
+    }
+    expect(await repository.list()).toHaveLength(6)
+  })
+
   it('reads legacy files and honors gitignore filtering', async () => {
     const { directory, repository } = await createRepository()
     await mkdir(join(directory, 'Private'))

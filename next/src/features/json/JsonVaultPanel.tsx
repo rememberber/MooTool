@@ -145,6 +145,10 @@ export function JsonVaultPanel({ content, onOpen, onDirtyChange }: JsonVaultPane
       }
       setVaultRootKey(rootKey)
       setExpanded((current) => ensureAncestorsExpanded(current, file.relativePath))
+    }, async (path) => {
+      setQuery('')
+      await openFile(path)
+      await load()
     })
 
   const scrollSelectedIntoView = useCallback((path = latestSelectionRef.current.selectedPath) => {

@@ -4,7 +4,7 @@ import { BatchRenameService } from './batchRenameService'
 import { OcrService } from './ocrService'
 import { VisionOcrBackend } from './ocrBackend'
 import { PpOcrBackend } from './ppOcrBackend'
-import { commandActionTitles, defaultCommandPaletteState, isCommandActionId, normalizeCommandPaletteState, trayCommandActions, updateCommandPaletteState, type CommandPaletteState } from '../../src/shared/contracts/commandPalette'
+import { commandImportTarget, commandOutputFormat, commandActionTitles, defaultCommandPaletteState, isCommandActionId, normalizeCommandPaletteState, trayCommandActions, updateCommandPaletteState, type CommandPaletteState } from '../../src/shared/contracts/commandPalette'
 import { messages } from '../../src/shared/i18n/messages'
 import { WindowMaterialController, loadNativeGlass } from './windowMaterial'
 import { runImageBatch } from '../../src/shared/imageBatch'
@@ -662,6 +662,34 @@ function registerIpc(): void {
     const html = clipboard.availableFormats().includes('text/html') ? clipboard.readHTML() : ''
     if (text.length > 100_000 || html.length > 100_000) throw new Error('app.command.tooLarge')
     return { text, html }
+  })
+  ipcMain.handle('command-palette:import', async (event, input: unknown) => {
+    assertMainRenderer(event.sender)
+    if (!isRecord(input) || !isCommandActionId(input.actionId) || typeof input.content !== 'string' || input.content.length > 1_000_000) throw new Error('Invalid command result')
+    const kind = commandImportTarget(input.actionId)
+    const rootDirectory = kind === 'json' ? getJsonVaultRoot() : getQuickNoteRoot()
+    let relativePath: string
+    if (kind === 'json') {
+      JSON.parse(input.content)
+      const repository = new JsonVaultRepository(rootDirectory)
+      const file = await repository.createDefault(input.content)
+      relativePath = file.relativePath
+      await vaultWorkspaceService.remember({ kind, rootDirectory, relativePath }, repository)
+      jsonVaultCheckpointScheduler.recordActivity('Import command result')
+    } else {
+      const repository = new QuickNoteVaultRepository(rootDirectory)
+      const settings = store.get('settings')
+      const format = commandOutputFormat(input.actionId)
+      const syntax = format === 'markdown' ? 'text/markdown' : format === 'html' ? 'text/html' : 'text/plain'
+      const file = await repository.create({ content: input.content, syntax, title: messages[settings.general.language][commandActionTitles[input.actionId]],
+        fontName: settings.editor.quickNoteFontName, fontSize: settings.editor.quickNoteFontSize, lineWrap: settings.editor.softWrap })
+      relativePath = file.relativePath
+      await vaultWorkspaceService.remember({ kind, rootDirectory, relativePath }, repository)
+      quickNoteCheckpointScheduler.recordActivity('Import command result')
+    }
+    const result = { kind, rootDirectory, relativePath }
+    broadcast('command-palette:imported', result)
+    return result
   })
   ipcMain.handle('command-palette:update', (event, operation: unknown) => {
     assertMainRenderer(event.sender)

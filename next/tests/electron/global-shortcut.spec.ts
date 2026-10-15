@@ -74,7 +74,7 @@ test('registers a custom combination and restores a hidden or minimized main win
       webContents.getFocusedWebContents()?.id === BrowserWindow.getAllWindows()[0].webContents.id)).toBe(true)
     await page.locator('.command-palette__search input').fill('uuid')
     await page.keyboard.press('Enter')
-    await expect(page.getByRole('textbox', { name: '结果预览' })).toHaveValue(/^[\da-f-]{36}$/)
+    await expect(page.getByRole('textbox', { name: '结果预览' })).toHaveText(/^[\da-f-]{36}$/, { useInnerText: true })
     await page.keyboard.press('Escape')
     await page.keyboard.press('Escape')
   }
