@@ -4050,6 +4050,9 @@ select:not([multiple]) {
 .calculator-base-grid > input { min-width: 0; height: 36px; padding: 0 10px; color: var(--text-body); background: var(--surface); border: 1px solid var(--border-control); border-radius: 5px; outline: none; font-family: ui-monospace, Menlo, monospace; }
 .calculator-base-actions { grid-column: 1 / -1; display: flex; justify-content: center; gap: 10px; }
 .calculator-base-actions button { min-width: 112px; }
+.calculator-hint { margin: 0 0 12px; color: var(--text-muted); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.calculator-float-options { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-bottom: 12px; }
+.calculator-float-options .compact-select { margin-top: 0; }
 .calculator-operation-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(140px, auto); align-items: end; gap: 10px; }
 .labeled-input { display: flex; flex-direction: column; gap: 5px; }
 .labeled-input span { color: var(--text-faint); font-size: 10px; }

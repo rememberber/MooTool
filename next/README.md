@@ -65,6 +65,14 @@ Validation: `npm run check`; `npx playwright test tests/electron/command-palette
 
 Opening the palette above a native tool view transfers keyboard focus back to the main renderer after removing the tool view; the search input focuses once that handoff is ready. `tests/electron/command-palette-focus.spec.ts` verifies the in-app menu accelerator path from a docked editor, the sidebar shortcut, and a detached tool window, routing typing and arrow/Enter/Escape keys to the WebContents that actually owns native focus. Global-shortcut tests also check native focus before filling the input when restoring hidden/minimized windows.
 
+## Calculator floating-point conversion
+
+In **Calculator → Base conversion**, hexadecimal fractions convert exactly to decimal (for example, `A.F` → `10.9375`, or `-0xA.F` → `-10.9375`). Binary fractions and optional `0x` / `0b` prefixes are supported too. Integer precision is preserved with BigInt. Reverse conversions support fractions that terminate in the target base; repeating fractions report an error instead of rounding.
+
+The separate **IEEE 754 floating point: HEX → DEC** section decodes 32-bit single-precision or 64-bit double-precision hexadecimal encodings. Select big-endian or little-endian byte order and enter exactly 8 or 16 hex digits, optionally with a `0x` prefix or spaces between bytes. For example, 32-bit big-endian `3F800000` and little-endian `00 00 80 3F` both produce `1.0`. Negative zero, subnormal numbers, Infinity and NaN are supported. Results use JavaScript's decimal representation of the decoded value; integral results include `.0`. Inputs, format, byte order and results survive restart, and successful conversions use the calculator's existing history.
+
+Validation: `npm run test -- src/features/calculator/calculatorTools.test.ts` and, after building, `npx playwright test tests/electron/calculator-float.spec.ts`.
+
 ## Batch Rename
 
 **Batch Rename** is available in the daily tools group and command-palette search (`rename` / `重命名`). Choose up to 500 regular files, set literal replacement, prefixes/suffixes or numbering, preview names/conflicts, then explicitly execute. The final extension is preserved by default. Changing rules or selection requires another preview.

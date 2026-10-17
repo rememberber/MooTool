@@ -6,7 +6,7 @@ import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { ToolPageHeader, WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
-import { combination, convertBase, evaluateExpression, gcd, lcm, permutation } from './calculatorTools'
+import { combination, convertBase, evaluateExpression, gcd, hexFloatToDecimal, lcm, permutation } from './calculatorTools'
 
 export function CalculatorTool() {
   const { t } = useI18n()
@@ -17,6 +17,10 @@ export function CalculatorTool() {
     decimal: '255',
     hex: 'ff',
     binary: '11111111',
+    floatHex: '3F800000',
+    floatDecimal: '1.0',
+    floatBits: '32',
+    floatByteOrder: 'big',
     gcdFirst: '54',
     gcdSecond: '24',
     lcmFirst: '54',
@@ -43,6 +47,8 @@ export function CalculatorTool() {
   const setCombinationM = (value: React.SetStateAction<typeof draft.combinationM>) => setField('combinationM', value)
   const setLog = (value: React.SetStateAction<typeof draft.log>) => setField('log', value)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const floatBits = draft.floatBits === '64' ? 64 : 32
+  const floatByteOrder = draft.floatByteOrder === 'little' ? 'little' : 'big'
 
   function run(summary: string, input: string, calculate: () => string): void {
     try {
@@ -79,6 +85,7 @@ export function CalculatorTool() {
 
             <section className="calculator-section calculator-base-panel">
               <h2>{t('calculator.base')}</h2>
+              <p className="calculator-hint">{t('calculator.baseHint')}</p>
               <div className="calculator-base-grid">
                 <label htmlFor="calculator-hex">{t('calculator.hex')}</label>
                 <input id="calculator-hex" value={hex} onChange={(event) => setHex(event.target.value)} />
@@ -94,6 +101,28 @@ export function CalculatorTool() {
                 </div>
                 <label htmlFor="calculator-binary">{t('calculator.binary')}</label>
                 <input id="calculator-binary" value={binary} onChange={(event) => setBinary(event.target.value)} />
+              </div>
+            </section>
+
+            <section className="calculator-section calculator-float-panel">
+              <h2>{t('calculator.float')}</h2>
+              <div className="calculator-float-options">
+                <label className="compact-select"><span>{t('calculator.floatFormat')}</span><select aria-label={t('calculator.floatFormat')} value={String(floatBits)} onChange={(event) => setField('floatBits', event.target.value)}><option value="32">{t('calculator.float32')}</option><option value="64">{t('calculator.float64')}</option></select></label>
+                <label className="compact-select"><span>{t('calculator.byteOrder')}</span><select aria-label={t('calculator.byteOrder')} value={floatByteOrder} onChange={(event) => setField('floatByteOrder', event.target.value)}><option value="big">{t('calculator.bigEndian')}</option><option value="little">{t('calculator.littleEndian')}</option></select></label>
+              </div>
+              <p className="calculator-hint" id="calculator-float-hint">{t('calculator.floatHint', { digits: String(floatBits / 4) })}</p>
+              <div className="calculator-base-grid">
+                <label htmlFor="calculator-float-hex">{t('calculator.hex')}</label>
+                <input id="calculator-float-hex" aria-describedby="calculator-float-hint" placeholder={floatBits === 32 ? '3F800000' : '3FF0000000000000'} value={draft.floatHex} onChange={(event) => setField('floatHex', event.target.value)} />
+                <div className="calculator-base-actions">
+                  <button className="panel-command" type="button" aria-label="IEEE 754 HEX → DEC" onClick={() => run(`IEEE 754 ${floatBits} (${floatByteOrder}) HEX → DEC`, draft.floatHex, () => {
+                    const value = hexFloatToDecimal(draft.floatHex, floatBits, floatByteOrder)
+                    setField('floatDecimal', value)
+                    return value
+                  })}><ArrowDown size={15} />{t('common.convert')}</button>
+                </div>
+                <label htmlFor="calculator-float-decimal">{t('calculator.decimal')}</label>
+                <input id="calculator-float-decimal" value={draft.floatDecimal} readOnly />
               </div>
             </section>
 
