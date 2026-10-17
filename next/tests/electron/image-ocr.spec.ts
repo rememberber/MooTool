@@ -2,6 +2,7 @@ import { _electron as electron, expect, test, type ElectronApplication, type Pag
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { seedOcrComponent } from './ocrComponentFixture'
 
 let app: ElectronApplication
 let page: Page
@@ -12,6 +13,7 @@ test.skip(process.platform === 'darwin' && process.arch !== 'arm64' && process.e
 test.setTimeout(150000)
 test.beforeEach(async ({}, testInfo) => {
   directory = await mkdtemp(join(tmpdir(), 'mootool-ocr-ui-'))
+  await seedOcrComponent(directory)
   fixture = `data:image/png;base64,${(await readFile('doc/ocr-evaluation/light-20.png')).toString('base64')}`
   const executablePath = process.env.MOOTOOL_OCR_EXECUTABLE
   app = await electron.launch({ executablePath, args: [...(executablePath ? [] : ['.']), `--user-data-dir=${directory}`], cwd: process.cwd(), env: { ...process.env, NODE_ENV: 'test', MOOTOOL_TOOL_VIEWS: testInfo.title.includes('native tool') ? '1' : '0' } })

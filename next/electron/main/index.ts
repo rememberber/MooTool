@@ -4,6 +4,7 @@ import { BatchRenameService } from './batchRenameService'
 import { OcrService } from './ocrService'
 import { VisionOcrBackend } from './ocrBackend'
 import { PpOcrBackend } from './ppOcrBackend'
+import { OptionalOcrComponent, parseComponentManifest } from './optionalOcrComponent'
 import { commandImportTarget, commandOutputFormat, commandActionTitles, defaultCommandPaletteState, isCommandActionId, normalizeCommandPaletteState, trayCommandActions, updateCommandPaletteState, type CommandPaletteState } from '../../src/shared/contracts/commandPalette'
 import { messages } from '../../src/shared/i18n/messages'
 import { WindowMaterialController, loadNativeGlass } from './windowMaterial'
@@ -208,6 +209,7 @@ let mainWindow: BrowserWindow | null = null
 let mainWindowMaterial: WindowMaterialController | null = null
 let batchRenameService: BatchRenameService
 let ocrService: OcrService
+let optionalOcrComponent: OptionalOcrComponent | undefined
 const commandShortcut = new GlobalCommandShortcut(globalShortcut, () => navigateMainWindow('focus-search'), process.platform)
 let toolWindowManager: ToolWindowManager
 let tray: Tray | null = null
@@ -1044,12 +1046,29 @@ function registerIpc(): void {
     return color
   })
   ipcMain.handle('images:list', () => createImageRepository().list())
-  ipcMain.handle('ocr:status', (event) => {
+  ipcMain.handle('ocr:status', async (event) => {
     assertToolWindowAccess(event.sender, 'image')
-    return ocrService.status()
+    await optionalOcrComponent?.initialize()
+    const component = optionalOcrComponent?.status()
+    if (component && component.status !== 'installed') return { available: false, engine: null, languages: [], reason: 'component', component }
+    return { ...await ocrService.status(), component }
+  })
+  ipcMain.handle('ocr:download', async (event) => {
+    assertToolWindowAccess(event.sender, 'image')
+    if (!optionalOcrComponent) throw new Error('OCR download unavailable')
+    await optionalOcrComponent.initialize()
+    return optionalOcrComponent.install()
+  })
+  ipcMain.handle('ocr:restart', (event) => {
+    assertToolWindowAccess(event.sender, 'image')
+    if (!app.isPackaged || optionalOcrComponent?.status().status !== 'restart') return false
+    app.relaunch()
+    app.quit()
+    return true
   })
   ipcMain.handle('ocr:recognize', (event, input: unknown) => {
     assertToolWindowAccess(event.sender, 'image')
+    if (optionalOcrComponent && optionalOcrComponent.status().status !== 'installed') throw new Error('image.ocr.error.unavailable')
     return ocrService.recognize(event.sender.id, input)
   })
   ipcMain.handle('ocr:cancel', (event, requestId: unknown) => {
@@ -2530,7 +2549,17 @@ app.whenReady().then(async () => {
   batchRenameService = new BatchRenameService(join(app.getPath('userData'), 'file-operations'))
   const ocrHelper = app.isPackaged ? join(process.resourcesPath, 'native', 'mootool-ocr') : join(__dirname, '../native/mootool-ocr')
   const testPpOcr = process.env.NODE_ENV === 'test' && process.env.MOOTOOL_OCR_BACKEND === 'pp-ocrv6-small'
-  const ocrResources = app.isPackaged ? join(process.resourcesPath, 'ocr') : join(__dirname, '../ocr', `${process.platform}-${process.arch}`)
+  let ocrResources = app.isPackaged ? join(process.resourcesPath, 'ocr') : join(__dirname, '../ocr', `${process.platform}-${process.arch}`)
+  if (app.isPackaged && process.platform !== 'darwin') {
+    try {
+      const target = `${process.platform}-${process.arch}`
+      const metadata = join(process.resourcesPath, 'optional-components', `${target}.json`)
+      if ((await stat(metadata)).size > 200000) throw new Error('Invalid OCR component metadata')
+      const manifest = parseComponentManifest(JSON.parse(await readFile(metadata, 'utf8')), target)
+      optionalOcrComponent = new OptionalOcrComponent(manifest, join(app.getPath('userData'), 'components', 'ocr'))
+      ocrResources = optionalOcrComponent.directory
+    } catch (error) { console.warn('Optional OCR metadata unavailable:', error) }
+  }
   const ocrBackend = process.platform === 'darwin' && !testPpOcr
     ? new VisionOcrBackend(ocrHelper, process.platform, Number(process.getSystemVersion().split('.')[0]))
     : new PpOcrBackend(ocrResources, join(__dirname, 'ppOcrWorker.js'), path => utilityProcess.fork(path, [], { stdio: 'ignore', serviceName: 'MooTool Offline OCR', allowLoadingUnsignedLibraries: process.platform === 'darwin' }))

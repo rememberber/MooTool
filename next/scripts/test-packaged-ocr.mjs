@@ -11,7 +11,7 @@ if (process.platform === 'darwin') {
   executable = join(directory, bundle, 'Contents/MacOS/MooTool Next Electron')
 } else executable = resolve(process.platform === 'win32' ? 'dist/win-unpacked/MooTool Next Electron.exe' : 'dist/linux-unpacked/mootool-next')
 await access(executable)
-const specs = ['tests/electron/image-ocr.spec.ts', ...(process.platform === 'darwin' ? [] : ['tests/electron/ppocr-lifecycle.spec.ts'])]
+const specs = ['tests/electron/image-ocr.spec.ts', ...(process.platform === 'darwin' ? [] : ['tests/electron/ppocr-lifecycle.spec.ts', 'tests/electron/ocr-component.spec.ts'])]
 const result = spawnSync(process.execPath, [require.resolve('@playwright/test/cli'), 'test', ...specs, '--trace=retain-on-failure'], { stdio: 'inherit', env: { ...process.env, MOOTOOL_OCR_EXECUTABLE: executable } })
 if (result.error) throw result.error
 process.exitCode = result.status ?? 1

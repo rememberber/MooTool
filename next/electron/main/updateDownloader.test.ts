@@ -37,6 +37,13 @@ describe('downloadUpdateFile', () => {
       .rejects.toThrow('checksum mismatch')
     expect(await readdir(directory)).toEqual([])
   })
+  it('stops and cleans responses larger than the pinned size', async () => {
+    const directory = await temporaryDirectory()
+    const payload = new TextEncoder().encode('too much data')
+    await expect(downloadUpdateFile({ ...updateDownload(payload), size: 1 }, directory, () => {}, async () => new Response(payload)))
+      .rejects.toThrow('exceeds expected size')
+    expect(await readdir(directory)).toEqual([])
+  })
 })
 
 async function temporaryDirectory(): Promise<string> {

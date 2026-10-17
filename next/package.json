@@ -34,6 +34,26 @@
     "prepare:preview-pdf": "node scripts/prepare-preview-pdf.mjs"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@visioncortex/vtracer": "1.0.0-alpha.3",
+    "buffer": "^6.0.3",
+    "diff": "^9.0.0",
+    "electron-store": "^11.0.2",
+    "electron-updater": "^6.8.9",
+    "fast-xml-parser": "^5.10.1",
+    "iconv-lite": "^0.7.3",
+    "ignore": "^7.0.6",
+    "jsonc-parser": "^3.3.1",
+    "jsonpath-plus": "^10.4.0",
+    "luxon": "^3.7.2",
+    "pdf-lib": "^1.17.1",
+    "smol-toml": "^1.8.0",
+    "systeminformation": "^5.33.1",
+    "undici": "^8.9.0",
+    "yaml": "^2.9.0",
+    "zod": "^4.6.4"
+  },
+  "devDependencies": {
     "@codemirror/autocomplete": "^6.20.3",
     "@codemirror/commands": "^6.10.4",
     "@codemirror/lang-html": "^6.4.11",
@@ -49,48 +69,8 @@
     "@codemirror/state": "^6.7.1",
     "@codemirror/view": "^6.43.7",
     "@lezer/highlight": "^1.2.3",
-    "@modelcontextprotocol/sdk": "^1.30.0",
-    "@prettier/plugin-xml": "^3.4.2",
-    "@visioncortex/vtracer": "1.0.0-alpha.3",
-    "@zxing/browser": "^0.2.1",
-    "@zxing/library": "^0.23.0",
-    "buffer": "^6.0.3",
-    "cron-parser": "^5.6.2",
-    "cronstrue": "^3.24.0",
-    "crypto-js": "^4.2.0",
-    "diff": "^9.0.0",
-    "dompurify": "^3.4.12",
-    "electron-store": "^11.0.2",
-    "electron-updater": "^6.8.9",
-    "fast-xml-parser": "^5.10.1",
-    "hi-base32": "^0.5.1",
-    "iconv-lite": "^0.7.3",
-    "ignore": "^7.0.6",
-    "jsonc-parser": "^3.3.1",
-    "jsonpath-plus": "^10.4.0",
-    "lucide-react": "^1.27.0",
-    "luxon": "^3.7.2",
-    "marked": "^18.0.7",
-    "node-forge": "^1.4.0",
-    "pdf-lib": "^1.17.1",
-    "prettier": "^3.9.6",
-    "prettier-plugin-java": "^2.10.3",
-    "protobufjs": "^8.7.1",
-    "qrcode": "^1.5.4",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "sm-crypto": "^0.5.3",
-    "smol-toml": "^1.8.0",
-    "sql-formatter": "^15.8.2",
-    "systeminformation": "^5.33.1",
-    "ua-parser-js": "^2.0.10",
-    "undici": "^8.9.0",
-    "yaml": "^2.9.0",
-    "zod": "^4.6.4",
-    "zustand": "^5.0.14"
-  },
-  "devDependencies": {
     "@playwright/test": "^1.62.0",
+    "@prettier/plugin-xml": "^3.4.2",
     "@types/crypto-js": "^4.2.2",
     "@types/luxon": "^3.7.2",
     "@types/node": "^26.1.2",
@@ -99,13 +79,33 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
+    "@zxing/browser": "^0.2.1",
+    "@zxing/library": "^0.23.0",
+    "cron-parser": "^5.6.2",
+    "cronstrue": "^3.24.0",
+    "crypto-js": "^4.2.0",
+    "dompurify": "^3.4.12",
     "electron": "^43.2.0",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
+    "hi-base32": "^0.5.1",
+    "lucide-react": "^1.27.0",
+    "marked": "^18.0.7",
+    "node-forge": "^1.4.0",
     "pdfjs-dist": "6.4.299",
+    "prettier": "^3.9.6",
+    "prettier-plugin-java": "^2.10.3",
+    "protobufjs": "^8.7.1",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "sm-crypto": "^0.5.3",
+    "sql-formatter": "^15.8.2",
     "typescript": "^7.0.2",
+    "ua-parser-js": "^2.0.10",
     "vite": "^7.3.6",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "zustand": "^5.0.14"
   },
   "build": {
     "appId": "com.rememberber.mootool.next.electron",
@@ -128,7 +128,8 @@
       "!out/native/**/*",
       "!out/ocr/**/*",
       "!out/ocr-cache/**/*",
-      "package.json"
+      "package.json",
+      "!out/optional-components/**/*"
     ],
     "extraResources": [
       {
@@ -141,7 +142,15 @@
       }
     ],
     "mac": {
-      "extraResources": [{ "from": "out/native", "to": "native", "filter": ["mootool-ocr"] }],
+      "extraResources": [
+        {
+          "from": "out/native",
+          "to": "native",
+          "filter": [
+            "mootool-ocr"
+          ]
+        }
+      ],
       "icon": "resources/icon.icns",
       "executableName": "MooTool Next Electron",
       "category": "public.app-category.developer-tools",
@@ -153,7 +162,12 @@
       ]
     },
     "win": {
-      "extraResources": [{ "from": "out/ocr/win32-${arch}", "to": "ocr" }],
+      "extraResources": [
+        {
+          "from": "out/optional-components/win32-${arch}.json",
+          "to": "optional-components/win32-${arch}.json"
+        }
+      ],
       "icon": "resources/icon.png",
       "executableName": "MooTool Next Electron",
       "target": [
@@ -170,7 +184,12 @@
       "artifactName": "MooTool-Next-Electron-${version}-win-${arch}-portable.${ext}"
     },
     "linux": {
-      "extraResources": [{ "from": "out/ocr/linux-${arch}", "to": "ocr" }],
+      "extraResources": [
+        {
+          "from": "out/optional-components/linux-${arch}.json",
+          "to": "optional-components/linux-${arch}.json"
+        }
+      ],
       "syncDesktopName": true,
       "icon": "resources/icon.png",
       "category": "Utility;Development",

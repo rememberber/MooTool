@@ -25,7 +25,7 @@ npm run dev
 npm run ocr:prepare -- --platform win32 --arch x64
 npm run ocr:prepare -- --platform linux --arch arm64
 
-# 打包自动调用 beforePack，资源放入 resources/ocr
+# 打包自动调用 beforePack，OCR 独立资源放入 dist/optional-components
 npm run package:win
 npm run package:linux
 
@@ -34,9 +34,9 @@ npm run ocr:prepare -- --platform darwin --arch arm64
 MOOTOOL_OCR_BACKEND=pp-ocrv6-small npx playwright test tests/electron/image-ocr.spec.ts tests/electron/ppocr-lifecycle.spec.ts
 ```
 
-构建时首次下载 npm 运行时和模型；识别时不下载，不启动 Python/HTTP 服务。缓存和准备产物位于 `out/ocr-cache`/`out/ocr`，不进入 Git，也不复制进 app.asar。`MOOTOOL_OCR_MODEL_SOURCE` 可显式指定本地模型目录，仍必须通过固定校验。启动探测时资源文件缺失或校验失败会禁用 OCR；运行中的资源变化也会被识别前的再次校验拒绝，不自动联网修复。工作进程禁用 JS HTTP、fetch 和 socket 连接；ONNX Node 绑定未公开 Python/C API 的 telemetry 禁用接口，Windows 原生运行时与系统遥测行为仍需在目标机器断网验收，不能用 JS 拦截声称已禁用所有原生遥测。
+构建时首次下载 npm 运行时和模型，封装为独立组件；Windows/Linux 安装包首次使用 OCR 时需确认下载，校验完成后重启生效。后续识别不下载，不启动 Python/HTTP 服务。缓存和准备产物位于 `out/ocr-cache`/`out/ocr`，不进入 Git，也不复制进 app.asar。`MOOTOOL_OCR_MODEL_SOURCE` 可显式指定本地模型目录，仍必须通过固定校验。进入图片助手后检查本地组件，资源缺失或校验失败时提示用户下载修复；运行中的资源变化也会被识别前的再次校验拒绝。只有点击下载按钮才联网，完整流程见 [按需组件说明](optional-components.md)。工作进程禁用 JS HTTP、fetch 和 socket 连接；ONNX Node 绑定未公开 Python/C API 的 telemetry 禁用接口，Windows 原生运行时与系统遥测行为仍需在目标机器断网验收，不能用 JS 拦截声称已禁用所有原生遥测。
 
-资源 manifest 记录每个文件的 SHA-256/字节数和目标架构，工作进程每次加载前验证。正式 Windows/Linux 包不会重新签名 `resources/ocr` 的库；若自定义签名流程会改变 DLL 内容，须在签名后、最终发布前重新封存 manifest，仍保留模型的固定校验值。macOS 强制 PP 的临时诊断包包含重新签名的 dylib/Node binding，必须签完原生库后更新资源 manifest，再对外层 app 重新签名；正式 macOS 包没有这些 PP 文件。
+资源 manifest 记录每个文件的 SHA-256/字节数和目标架构，工作进程每次加载前验证。正式 Windows/Linux 组件中的库不会由安装包重新签名；若自定义签名流程会改变 DLL 内容，须在签名后、最终发布前重新封存 manifest，仍保留模型的固定校验值。macOS 强制 PP 的临时诊断包包含重新签名的 dylib/Node binding，必须签完原生库后更新资源 manifest，再对外层 app 重新签名；正式 macOS 包没有这些 PP 文件。
 
 资源体积为未压缩文件字节总量，包含模型、选定原生库、JS/WASM、字典及随资源的声明；不是安装包增量，也不包含 manifest、包内公共许可证副本及额外签名开销。
 

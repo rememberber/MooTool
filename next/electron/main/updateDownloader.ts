@@ -40,6 +40,7 @@ export async function downloadUpdateFile(
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
+      if (transferred + value.byteLength > download.size) throw new Error('Update download exceeds expected size')
       await writeAll(file, value)
       hash.update(value)
       transferred += value.byteLength
@@ -63,6 +64,7 @@ export async function downloadUpdateFile(
     await rename(temporary, destination)
     return destination
   } catch (error) {
+    await reader.cancel().catch(() => undefined)
     if (!closed) await file.close().catch(() => undefined)
     await rm(temporary, { force: true }).catch(() => undefined)
     throw error

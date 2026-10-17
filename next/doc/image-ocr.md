@@ -4,7 +4,7 @@ Electron 版图片助手提供两个入口：选择当前图片后点「识别�
 
 **macOS 13 及以上默认使用 Apple Vision**，不随应用分发 OCR 模型。可选语言根据当前系统实际能力显示，包含简体、繁体、英文和日文；「自动（中英）」尝试简体、繁体和英文。
 
-**Windows/Linux x64/arm64 已接入 PP-OCRv6 small 的完整 JavaScript CPU 流程**，模型和推理运行时随安装包提供，无需 Python。使用同一个多语言模型识别简体、繁体、英文和日文，不提供实际无效的单语言切换。资源缺失、校验失败或不支持的架构会禁用入口并提示。Windows/Linux 实机验收状态见 [PP-OCR 后端说明](ppocr-backend.md)。
+**Windows/Linux x64/arm64 已接入 PP-OCRv6 small 的完整 JavaScript CPU 流程**，模型和推理运行时改为首次使用时经用户确认下载，校验完成后重启生效，无需 Python。使用同一个多语言模型识别简体、繁体、英文和日文，不提供实际无效的单语言切换。组件缺失或损坏时保留入口并提示下载；不支持的架构会禁用入口并提示。Windows/Linux 实机验收状态见 [PP-OCR 后端说明](ppocr-backend.md)。
 
 窗口展示识别引擎、语言模式、行数和耗时。数字、标点及复杂排版仍需人工校对，结果是文字行拼接，不提供表格还原或手写识别保证。
 
@@ -21,7 +21,7 @@ Electron 版图片助手提供两个入口：选择当前图片后点「识别�
 
 `npm run dev` 和 `npm run build` 会调用 `scripts/build-native-ocr.mjs`。macOS 开发环境需安装 Xcode Command Line Tools，脚本编译 macOS 13 部署目标的 arm64/x86_64 通用可执行文件，并在源码或脚本更新后重新构建。其他系统跳过原生编译。
 
-构建结果位于 `out/native/mootool-ocr`；macOS 安装包通过 `extraResources` 将 helper 放到 `Contents/Resources/native/mootool-ocr`，主进程从该位置加载。`mac.binaries` 将其纳入 Electron Builder 的应用签名流程。Windows/Linux 的打包 hook 生成按架构筛选的资源目录，放到 `resources/ocr`，并严格校验模型和资源完整性。用户运行安装包不需要 Swift 编译器、Python 或自行下载模型。详见 [PP-OCR 构建命令和体积](ppocr-backend.md)。
+构建结果位于 `out/native/mootool-ocr`；macOS 安装包通过 `extraResources` 将 helper 放到 `Contents/Resources/native/mootool-ocr`，主进程从该位置加载。`mac.binaries` 将其纳入 Electron Builder 的应用签名流程。Windows/Linux 的打包 hook 生成按架构筛选的独立组件下载包，安装包只包含固定下载描述文件。用户首次使用时在应用内确认下载并重启，之后离线使用；无需 Swift 编译器、Python 或手动配置模型。下载进度、校验、重试和发布约定见 [按需组件说明](optional-components.md)。详见 [PP-OCR 构建命令和体积](ppocr-backend.md)。
 
 ## 验证
 

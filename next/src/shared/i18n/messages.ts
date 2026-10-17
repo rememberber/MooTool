@@ -1007,6 +1007,15 @@ export const messages = {
     ,'pdf.help.merge2': '文件会按列表顺序和填写的页码范围合并。'
     ,'pdf.help.merge3': '当前仅支持未加密 PDF。'
     ,'image.title': '图片助手'
+    ,'image.ocr.component.title': "下载文字识别组件"
+    ,'image.ocr.component.intro': "首次使用需下载约 {size} MiB 的文字识别组件，完成后重启生效。组件只需下载一次，之后可离线使用。"
+    ,'image.ocr.component.download': "下载组件"
+    ,'image.ocr.component.downloading': "正在下载…"
+    ,'image.ocr.component.progress': "正在下载并校验：{percent}%。关闭此窗口后仍会继续。"
+    ,'image.ocr.component.ready': "组件已下载并校验完成。重启应用后即可识别文字，请先保存正在编辑的内容。"
+    ,'image.ocr.component.error': "下载或校验失败，请检查网络和磁盘空间后重试。"
+    ,'image.ocr.component.restart': "立即重启"
+    ,'image.ocr.component.later': "稍后重启"
     ,'image.ocr.title': "识别文字"
     ,'image.ocr.capture': "截图识字"
     ,'image.ocr.captureSource': "截图选区"
@@ -2552,6 +2561,15 @@ export const messages = {
     ,'pdf.help.merge2': 'Files are merged in list order using their page ranges.'
     ,'pdf.help.merge3': 'Only unencrypted PDF files are currently supported.'
     ,'image.title': 'Image Assistant'
+    ,'image.ocr.component.title': "Download text recognition"
+    ,'image.ocr.component.intro': "First use requires a text recognition component (about {size} MiB). Restart after downloading. Download once, then use offline."
+    ,'image.ocr.component.download': "Download component"
+    ,'image.ocr.component.downloading': "Downloading…"
+    ,'image.ocr.component.progress': "Downloading and verifying: {percent}%. Closing this dialog will keep the download running."
+    ,'image.ocr.component.ready': "The component is downloaded and verified. Restart to recognize text. Save your work first."
+    ,'image.ocr.component.error': "Download or verification failed. Check your connection and disk space, then retry."
+    ,'image.ocr.component.restart': "Restart now"
+    ,'image.ocr.component.later': "Restart later"
     ,'image.ocr.title': "Recognize text"
     ,'image.ocr.capture': "Capture text"
     ,'image.ocr.captureSource': "Captured region"
@@ -4097,6 +4115,15 @@ export const messages = {
     ,'pdf.help.merge2': '一覧順とページ範囲に従って結合します。'
     ,'pdf.help.merge3': '現在は暗号化されていない PDF のみ対応します。'
     ,'image.title': '画像アシスタント'
+    ,'image.ocr.component.title': "文字認識コンポーネントをダウンロード"
+    ,'image.ocr.component.intro': "初回は約 {size} MiB の文字認識コンポーネントのダウンロードと再起動が必要です。その後はオフラインで利用できます。"
+    ,'image.ocr.component.download': "ダウンロード"
+    ,'image.ocr.component.downloading': "ダウンロード中…"
+    ,'image.ocr.component.progress': "ダウンロードと検証中：{percent}%。この画面を閉じても続行します。"
+    ,'image.ocr.component.ready': "ダウンロードと検証が完了しました。編集中の内容を保存してから再起動してください。"
+    ,'image.ocr.component.error': "ダウンロードまたは検証に失敗しました。ネットワークと空き容量を確認して再試行してください。"
+    ,'image.ocr.component.restart': "今すぐ再起動"
+    ,'image.ocr.component.later': "後で再起動"
     ,'image.ocr.title': "文字認識"
     ,'image.ocr.capture': "画面の文字を認識"
     ,'image.ocr.captureSource': "キャプチャ範囲"

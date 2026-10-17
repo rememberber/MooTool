@@ -2,10 +2,12 @@ import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { seedOcrComponent } from './ocrComponentFixture'
 
 test.skip(process.platform === 'darwin' && process.arch !== 'arm64', 'ONNX Runtime has no Intel macOS binary.')
 test('kills real OCR work, removes its private snapshot and can recognize again without retaining a utility process', async ({}, testInfo) => {
   const directory = await mkdtemp(join(tmpdir(), 'mootool-ppocr-lifecycle-'))
+  await seedOcrComponent(directory)
   const executablePath = process.env.MOOTOOL_OCR_EXECUTABLE
   const app = await electron.launch({ executablePath, args: [...(executablePath ? [] : ['.']), `--user-data-dir=${directory}`], cwd: process.cwd(), env: { ...process.env, NODE_ENV: 'test', MOOTOOL_TOOL_VIEWS: '0', MOOTOOL_OCR_BACKEND: 'pp-ocrv6-small' } })
   try {

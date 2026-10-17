@@ -1,7 +1,10 @@
+import type { ComponentState } from './optionalComponent'
+
 export const ocrLanguages = ['auto', 'zh-Hans', 'zh-Hant', 'en-US', 'ja-JP'] as const
 export type OcrLanguage = (typeof ocrLanguages)[number]
 export type OcrEngine = 'apple-vision' | 'pp-ocrv6-small'
 export type OcrStatus = {
+  component?: ComponentState
   available: boolean
   engine: OcrEngine | null
   languages: OcrLanguage[]
