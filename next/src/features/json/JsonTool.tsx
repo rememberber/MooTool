@@ -1,4 +1,4 @@
-import { CheckCircle2, FileJson, XCircle } from 'lucide-react'
+import { CheckCircle2, FileJson, FilePlus2, FolderOpen, Sparkles, XCircle } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
@@ -22,7 +22,7 @@ import { JsonCodeEditor, type JsonCodeEditorHandle } from './JsonCodeEditor'
 import { JsonInspector } from './JsonInspector'
 import { JsonToolbar } from './JsonToolbar'
 import { JsonToolDialogs, type InputConversion, type OutputDialogState } from './JsonToolDialogs'
-import { JsonVaultPanel } from './JsonVaultPanel'
+import { JsonVaultPanel, type JsonVaultPanelHandle } from './JsonVaultPanel'
 import type { JsonFormatOptions } from './jsonTools'
 import { useJsonValidation } from './useJsonValidation'
 import { runTextTask, isTaskCancelled } from '@/shared/workers/runTextTask'
@@ -110,6 +110,7 @@ export function JsonTool() {
   const { settings, updateSettings } = useSettings()
   const toast = useToast()
   const editorRef = useRef<JsonCodeEditorHandle>(null)
+  const vaultRef = useRef<JsonVaultPanelHandle>(null)
   const findIndexRef = useRef(jsonFindIndex)
   const [state, update] = useReducer(updateJsonState, settings.editor.softWrap, createJsonState)
   const [dirty, setDirty] = useState(false)
@@ -219,6 +220,7 @@ export function JsonTool() {
     try {
       const file = await window.mootool.openTextFile('json')
       if (!file) return
+      if (!state.filePath) { vaultRef.current?.createFile(file.content, file.name); return }
       update({ content: file.content, notice: t('json.notice.imported') })
       toast.success(t('json.notice.imported'))
     } catch (error) {
@@ -316,19 +318,30 @@ export function JsonTool() {
     })
   }
 
+  const inspectorVisible = state.inspectorOpen && Boolean(state.filePath)
   return (
     <section className="tool-page tool-page--workspace json-tool" aria-label={t('json.title')}>
 
       <ResizableColumns
-        className={state.inspectorOpen ? 'json-layout' : 'json-layout json-layout--editor-only'}
-        columns={state.inspectorOpen ? 3 : 2}
-        defaultSizes={state.inspectorOpen ? [190, 520, 280] : [190, 800]}
-        minPaneWidths={state.inspectorOpen ? [150, 360, 220] : [150, 360]}
-        minimumWidth={state.inspectorOpen ? 1100 : 720}
-        storageKey={state.inspectorOpen ? 'json-three-pane' : 'json-two-pane'}
+        className={inspectorVisible ? 'json-layout' : 'json-layout json-layout--editor-only'}
+        columns={inspectorVisible ? 3 : 2}
+        defaultSizes={inspectorVisible ? [190, 520, 280] : [190, 800]}
+        minPaneWidths={inspectorVisible ? [150, 360, 220] : [150, 360]}
+        minimumWidth={inspectorVisible ? 1100 : 720}
+        storageKey={inspectorVisible ? 'json-three-pane' : 'json-two-pane'}
       >
-        <JsonVaultPanel content={state.content} onOpen={openVaultContent} onDirtyChange={setDirty} />
-        <div className="editor-shell" inert={!state.filePath}>
+        <JsonVaultPanel ref={vaultRef} content={state.content} onOpen={openVaultContent} onDirtyChange={setDirty} />
+        <div className="editor-shell">
+          {!state.filePath ? <div className="json-empty-state">
+            <FileJson size={36} aria-hidden="true" />
+            <h2>{t('json.empty.title')}</h2>
+            <p>{t('json.empty.description')}</p>
+            <div className="json-empty-state__actions">
+              <button className="dialog-button dialog-button--primary" type="button" onClick={() => vaultRef.current?.createFile()}><FilePlus2 size={15} />{t('json.vault.new')}</button>
+              <button className="dialog-button" type="button" onClick={() => { void importFile() }}><FolderOpen size={15} />{t('json.empty.import')}</button>
+              <button className="dialog-button" type="button" onClick={() => vaultRef.current?.createFile(JSON.stringify({ name: 'MooTool', tools: ['JSON', 'PDF'], local: true }, null, 2), 'example.json')}><Sparkles size={15} />{t('json.empty.example')}</button>
+            </div>
+          </div> : <>
           <JsonToolbar
             wrap={state.wrap}
             copied={state.copyState === 'copied'}
@@ -388,9 +401,10 @@ export function JsonTool() {
               <span>{status.message}</span>
             </span>
           </footer>
+          </>}
         </div>
 
-        {state.inspectorOpen && (
+        {inspectorVisible && (
           <JsonInspector
             formatOptions={state.formatOptions}
             className={state.className}

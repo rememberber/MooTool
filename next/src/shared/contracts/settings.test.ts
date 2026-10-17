@@ -71,7 +71,7 @@ describe('mergeSettings', () => {
       }
     })
 
-    expect(settings.schemaVersion).toBe(14)
+    expect(settings.schemaVersion).toBe(15)
     expect(settings.appearance.interfaceStyle).toBe('modern')
     expect(settings.runtime.javaPath).toBe('/opt/java')
     expect(settings.runtime.drafts).toEqual(defaultAppSettings.runtime.drafts)
@@ -219,4 +219,12 @@ it('migrates and validates window material preferences', () => {
   expect(mergeSettings(defaultAppSettings, {
     appearance: { windowMaterial: 'invalid' as 'auto' }
   }).appearance.windowMaterial).toBe('auto')
+})
+
+it('defaults Escape window dismissal on for existing installs and preserves an explicit opt-out', () => {
+  expect(defaultAppSettings.general.escapeHidesWindow).toBe(true)
+  expect(mergeSettings(defaultAppSettings, { schemaVersion: 14, general: { language: 'en-US' } }).general.escapeHidesWindow).toBe(true)
+  const disabled = mergeSettings(defaultAppSettings, { general: { escapeHidesWindow: false } })
+  expect(mergeSettings(defaultAppSettings, disabled).general.escapeHidesWindow).toBe(false)
+  expect(mergeSettings(defaultAppSettings, { general: { escapeHidesWindow: 'invalid' as unknown as boolean } }).general.escapeHidesWindow).toBe(true)
 })

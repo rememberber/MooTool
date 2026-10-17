@@ -69,6 +69,8 @@ for (const nativeViews of ['0', '1']) test.describe(`command result import (nati
       // Reopen the panel immediately, before the editor's idle save timer.
     }
     await page.reload()
+    // Native views survive this reload; wait for the main shell's navigation subscription too.
+    await expect(page.locator('.tool-button--active').filter({ hasText: 'JSON' })).toBeVisible()
     await expect.poll(async () => {
       const json = await tool('json')
       return json.locator('.vault-tree [aria-selected="true"]').getAttribute('data-path')

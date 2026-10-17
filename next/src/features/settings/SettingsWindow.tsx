@@ -189,6 +189,9 @@ function GeneralSettings({ settings, commit }: SettingsPanelProps) {
       <SettingRow label={t('settings.trayEnabled')}>
         <Toggle checked={settings.general.trayEnabled} label={t('settings.trayEnabled')} onChange={(value) => commit({ general: { trayEnabled: value } })} />
       </SettingRow>
+      <SettingRow label={t('settings.escapeHidesWindow')} hint={t('settings.escapeHidesWindowHint')}>
+        <Toggle checked={settings.general.escapeHidesWindow} label={t('settings.escapeHidesWindow')} onChange={value => commit({ general: { escapeHidesWindow: value } })} />
+      </SettingRow>
       <SettingRow label={t('settings.closeBehavior')}>
         <Segmented
           value={settings.general.closeBehavior}
@@ -837,8 +840,8 @@ function SettingsGroup({ title, action, className = '', children }: { title: str
   )
 }
 
-function SettingRow({ label, children }: { label: string; children: ReactNode }) {
-  return <div className="setting-row"><label>{label}</label><div className="setting-row__control">{children}</div></div>
+function SettingRow({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
+  return <div className="setting-row"><label>{label}{hint && <small className="setting-row__hint">{hint}</small>}</label><div className="setting-row__control">{children}</div></div>
 }
 
 function Toggle({ checked, label, onChange }: { checked: boolean; label: string; onChange: (value: boolean) => void }) {

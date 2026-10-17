@@ -161,6 +161,7 @@ declare global {
       cancelImageBatch: () => Promise<void>
       onImageBatchProgress: (callback: (value: import('./src/shared/imageBatch').ImageBatchProgress & { jobId?: string }) => void) => () => void
       vectorizeImageAssets: (names: string[], options: ImageVectorizeOptions, jobId?: string) => Promise<ImageVectorizeResult | null>
+      actOnPdfOutput: (path: string, action: 'open' | 'reveal') => Promise<void>
       cancelPdfJob: (jobId: string) => Promise<boolean>
       onPdfProgress: (callback: (progress: PdfProgress) => void) => () => void
       choosePdfFiles: (jobId?: string) => Promise<PdfFileInfo[]>

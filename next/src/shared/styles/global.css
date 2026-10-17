@@ -3359,6 +3359,12 @@ select:not([multiple]) {
   box-shadow: 0 16px 34px var(--shadow-soft);
 }
 
+.json-empty-state { display: flex; flex: 1; min-height: 220px; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 32px; text-align: center; color: var(--text-muted); }
+.json-empty-state h2 { margin: 0; color: var(--text-strong); font-size: 18px; }
+.json-empty-state p { max-width: 460px; margin: 0; line-height: 1.7; }
+.json-empty-state__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.setting-row__hint { display: block; max-width: 320px; margin-top: 5px; font-size: 11px; line-height: 1.5; color: var(--text-muted); font-weight: normal; }
+
 .editor-toolbar {
   display: flex;
   align-items: center;
@@ -5468,6 +5474,8 @@ select:not([multiple]) {
 }
 
 .toast-viewport {
+  max-height: calc(100vh - 44px);
+  overflow-y: auto;
   position: fixed;
   z-index: 450;
   right: 22px;
@@ -5482,7 +5490,7 @@ select:not([multiple]) {
 
 .toast {
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) 28px;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   min-height: 48px;
@@ -5510,11 +5518,20 @@ select:not([multiple]) {
 }
 
 .toast__message {
+  max-height: 35vh;
+  overflow-y: auto;
+  user-select: text;
+  white-space: pre-wrap;
   min-width: 0;
   overflow-wrap: anywhere;
   font-size: 14px;
   line-height: 1.45;
 }
+
+.toast__actions { display: flex; align-items: center; gap: 4px; }
+.toast__copy { padding: 5px; color: var(--text-body); background: transparent; border-radius: 5px; font-size: 11px; cursor: pointer; }
+.toast__copy:hover { background: var(--control-hover); }
+.toast { flex-shrink: 0; }
 
 .toast__dismiss {
   display: inline-flex;
@@ -7134,6 +7151,13 @@ select:not([multiple]) {
   color: var(--text-faint);
   font-style: normal;
 }
+
+.pdf-output-strip--results { flex-wrap: wrap; max-height: 180px; overflow-y: auto; flex-shrink: 0; }
+.pdf-output-item { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; width: 100%; }
+.pdf-output-item code { flex: 1 1 180px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pdf-output-item__actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.pdf-operation-summary { margin: 0; padding: 8px 12px; font-size: 12px; border-top: 1px solid var(--border-soft); }
+.pdf-status--cancelled { color: var(--text-muted); }
 
 .pdf-help p {
   margin: 0;

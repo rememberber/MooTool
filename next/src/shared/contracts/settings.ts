@@ -2,7 +2,7 @@ import { normalizeTranslationLanguagePair } from './network'
 import { isToolId, type ToolId } from './app'
 import { isVaultTreeExpandMode, type VaultTreeExpandMode } from '../vaultTreeExpand'
 
-export const appSettingsSchemaVersion = 14
+export const appSettingsSchemaVersion = 15
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type WindowMaterial = 'auto' | 'solid' | 'vibrancy' | 'liquid-glass'
@@ -30,6 +30,7 @@ export type AppSettings = {
     autoDownloadUpdates: boolean
     startMaximized: boolean
     closeBehavior: CloseBehavior
+    escapeHidesWindow: boolean
     trayEnabled: boolean
     /** First-install tip about migrating Java-edition data; upgrades default to dismissed. */
     legacyMigrationHintDismissed: boolean
@@ -131,6 +132,7 @@ export const defaultAppSettings: AppSettings = {
     autoDownloadUpdates: true,
     startMaximized: false,
     closeBehavior: 'ask',
+    escapeHidesWindow: true,
     trayEnabled: true,
     legacyMigrationHintDismissed: false
   },
@@ -256,6 +258,7 @@ export function normalizeSettings(value: AppSettings): AppSettings {
       ...value.general,
       language: languages.includes(value.general.language) ? value.general.language : defaultAppSettings.general.language,
       closeBehavior: closeBehaviors.includes(value.general.closeBehavior) ? value.general.closeBehavior : defaultAppSettings.general.closeBehavior,
+      escapeHidesWindow: typeof value.general.escapeHidesWindow === 'boolean' ? value.general.escapeHidesWindow : true,
       legacyMigrationHintDismissed: Boolean(value.general.legacyMigrationHintDismissed)
     },
     appearance: {

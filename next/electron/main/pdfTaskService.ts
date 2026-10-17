@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { copyFile, mkdtemp, rename, rm } from 'node:fs/promises'
 import { join, dirname } from 'node:path'
 import { tmpdir } from 'node:os'
+import { pdfCancellationCode } from '../../src/shared/contracts/pdf'
 import type { PdfFileInfo, PdfMergeSource, PdfOperationResult, PdfProgress, PdfSplitTask } from '../../src/shared/contracts/pdf'
 
 export type PdfWorkerTask =
@@ -28,16 +29,16 @@ export class PdfJob {
 
   async execute<T extends PdfWorkerTask>(task: T): Promise<PdfResult<T>> {
     const { signal } = this.controller
-    signal.throwIfAborted()
+    if (signal.aborted) throw new DOMException(pdfCancellationCode, 'AbortError')
     const directory = await mkdtemp(join(tmpdir(), 'mootool-pdf-'))
     let worker: Worker | undefined
     const adjacentFiles: { path: string; temporary: string }[] = []
     try {
-      signal.throwIfAborted()
+      if (signal.aborted) throw new DOMException(pdfCancellationCode, 'AbortError')
       worker = new Worker(this.workerPath, { workerData: { task, directory } })
       const activeWorker = worker
       const message = await new Promise<Extract<PdfWorkerMessage, { type: 'done' }>>((resolve, reject) => {
-        const abort = () => reject(new DOMException('PDF operation cancelled', 'AbortError'))
+        const abort = () => reject(new DOMException(pdfCancellationCode, 'AbortError'))
         signal.addEventListener('abort', abort, { once: true })
         const cleanup = () => signal.removeEventListener('abort', abort)
         activeWorker.on('message', (message: PdfWorkerMessage) => {
@@ -48,13 +49,13 @@ export class PdfJob {
         activeWorker.once('exit', code => { cleanup(); reject(new Error(`PDF worker exited (${code})`)) })
         if (signal.aborted) { cleanup(); abort() }
       })
-      signal.throwIfAborted()
+      if (signal.aborted) throw new DOMException(pdfCancellationCode, 'AbortError')
       // Workers write only to staging. Cancellation never interrupts a destination write.
       for (const { path, stagedPath } of message.staged) {
         const temporary = join(dirname(path), `.mootool-pdf-${randomUUID()}.tmp`)
         adjacentFiles.push({ path, temporary })
         await copyFile(stagedPath, temporary)
-        signal.throwIfAborted()
+        if (signal.aborted) throw new DOMException(pdfCancellationCode, 'AbortError')
       }
       this.committing = true
       this.progress({ jobId: this.id, phase: 'saving', completed: 0, total: adjacentFiles.length, name: '' })

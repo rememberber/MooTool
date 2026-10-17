@@ -1,8 +1,7 @@
 import { MoreHorizontal, Check } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { useToolActivity } from '@/shared/components/ToolActivity'
-import { Dialog } from '@/shared/components/Dialog'
+import { Dialog, DialogPortal } from '@/shared/components/Dialog'
 import type { FavoriteFolderRecord, FavoriteRecord } from '@/shared/contracts/favorites'
 import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -128,11 +127,11 @@ export function ColorFavoritesManager({ open, currentValue, onClose, onApply }: 
           <button className="color-collection-more" aria-label={`${words[0]} · ${record.name}`} onClick={event => { const rect = event.currentTarget.getBoundingClientRect(); openMenu(record, rect.right, rect.bottom) }}><MoreHorizontal size={16} /></button>
         </article>)}
       </div>
-      {menu && open && toolActive && createPortal(<div ref={menuRef} className="quick-note-tree-menu color-collection-context-menu" role="menu" style={{ left: menu.left, top: menu.top }}>
+      {menu && open && toolActive && <DialogPortal><div ref={menuRef} className="quick-note-tree-menu color-collection-context-menu" role="menu" style={{ left: menu.left, top: menu.top }}>
         <button role="menuitem" disabled={!editRecord} onClick={() => { if (editRecord) setEditing(editRecord); setMenu(null) }}>{words[0]}</button>
         {([-1, 1] as const).map((direction, i) => <button role="menuitem" key={direction} disabled={menu.ids.includes(records[direction === -1 ? 0 : records.length - 1]?.id)} onClick={() => void run(() => move(menu.ids, direction))}>{words[i + 1]}</button>)}
         <button role="menuitem" onClick={() => void run(() => remove(menu.ids))}>{t('common.action.delete')}</button>
-      </div>, document.body)}
+      </div></DialogPortal>}
     </Dialog>
     <Dialog title={words[0]} open={open && editing !== null} width={440} onClose={() => setEditing(null)} footer={<><button className="dialog-button" onClick={() => setEditing(null)}>{t('common.cancel')}</button><button className="dialog-button dialog-button--primary" disabled={!editing?.name.trim() || !editing.value.trim() || !folderId} onClick={() => void run(async () => { if (!editing) return; const value = formatColor(parseColor(editing.value), 'HEX_UPPER'); await window.mootool.saveFavorite({ ...editing, value, kind: 'color', folderId }); setEditing(null); await load() })}>{t('common.save')}</button></>}>
       {editing && <><div className="color-favorite-preview"><span style={{ background: previewColor(editing.value) }} /><strong>{editing.value}</strong></div>

@@ -91,17 +91,18 @@ export function DesktopDialogProvider({ children }: { children: ReactNode }) {
     <DesktopDialogContext.Provider value={api}>
       {children}
       <Dialog
+        key={request?.id}
         title={title}
         open={Boolean(request)}
         width={420}
         onClose={() => settle(null)}
         footer={request && (
           <>
-            <button className="dialog-button" type="button" onClick={() => settle(null)}>{t('common.cancel')}</button>
+            <button className="dialog-button" type="button" data-dialog-initial-focus={request.type === 'confirm' && request.options.danger || undefined} onClick={() => settle(null)}>{t('common.cancel')}</button>
             <button
               className={request.options.danger ? 'dialog-button dialog-button--danger desktop-dialog__confirm' : 'dialog-button dialog-button--primary'}
               type="button"
-              autoFocus={request.type === 'confirm'}
+              autoFocus={request.type === 'confirm' && !request.options.danger}
               onClick={() => settle(request.type === 'prompt' ? request.value : true)}
             >
               {confirmLabel}

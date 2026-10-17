@@ -20,7 +20,7 @@ import {
   Trash2,
   UnfoldVertical
 } from 'lucide-react'
-import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type Ref } from 'react'
 import { createPortal } from 'react-dom'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { Dialog } from '@/shared/components/Dialog'
@@ -41,13 +41,14 @@ import {
 import { VaultGitDialog } from './VaultGitDialog'
 
 type JsonVaultPanelProps = {
+  ref?: Ref<JsonVaultPanelHandle>
   content: string
   onOpen: (content: string, relativePath: string) => void
   onDirtyChange: (dirty: boolean) => void
 }
 
 type SelectedEntry = { path: string; kind: JsonVaultNode['kind'] }
-type TextAction = { type: 'file' | 'folder' | 'rename'; value: string } | null
+type TextAction = { type: 'file' | 'folder' | 'rename'; value: string; content?: string } | null
 const jsonVaultPathType = 'application/x-mootool-vault-path'
 const jsonVaultKindType = 'application/x-mootool-vault-kind'
 
@@ -87,7 +88,9 @@ let jsonVaultSessionState: JsonVaultSessionState = {
 let jsonVaultTreeScrollTop = 0
 let jsonVaultNeedsExpandPreference = true
 
-export function JsonVaultPanel({ content, onOpen, onDirtyChange }: JsonVaultPanelProps) {
+export type JsonVaultPanelHandle = { createFile: (initialContent?: string, name?: string) => void }
+
+export function JsonVaultPanel({ content, onOpen, onDirtyChange, ref }: JsonVaultPanelProps) {
   const toolActive = useToolActivity()
   const { t } = useI18n()
   const desktopDialog = useDesktopDialog()
@@ -406,10 +409,19 @@ export function JsonVaultPanel({ content, onOpen, onDirtyChange }: JsonVaultPane
     await Promise.all([load(), reloadSelectedFromDisk(), refreshGitChangeCount()])
   }
 
-  function beginCreateFile(): void {
+  useImperativeHandle(ref, () => ({ createFile: createFileDraft }))
+
+  function createFileDraft(initialContent?: string, name = 'snippet.json'): void {
     const parent = selectedDirectory(selectedEntry)
-    setTextAction({ type: 'file', value: [parent, 'snippet.json'].filter(Boolean).join('/') })
+    const base = name.replace(/\.json$/i, '').replace(/[\\/]/g, '_') || 'snippet'
+    const exists = (path: string, entries: JsonVaultNode[]): boolean => entries.some(node => node.relativePath === path || exists(path, node.children ?? []))
+    let suffix = 1
+    let path = ''
+    do { path = [parent, `${base}${suffix === 1 ? '' : `_${suffix}`}.json`].filter(Boolean).join('/'); suffix++ } while (exists(path, nodes))
+    setTextAction({ type: 'file', value: path, content: initialContent })
   }
+
+  function beginCreateFile(): void { createFileDraft() }
 
   function beginCreateFolder(): void {
     const parent = selectedDirectory(selectedEntry)
@@ -427,7 +439,7 @@ export function JsonVaultPanel({ content, onOpen, onDirtyChange }: JsonVaultPane
     if (!textAction?.value.trim()) return
     try {
       if (textAction.type === 'file') {
-        const file = await window.mootool.saveJsonVaultFile({ relativePath: textAction.value, content: content || '{\n\n}' })
+        const file = await window.mootool.saveJsonVaultFile({ relativePath: textAction.value, content: textAction.content ?? (content || '{\n\n}') })
         setSelectedEntry({ path: file.relativePath, kind: 'file' })
         setSelectedPath(file.relativePath)
         setSavedContent(file.content)

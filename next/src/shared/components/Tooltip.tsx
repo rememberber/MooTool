@@ -12,7 +12,7 @@ import {
   type ReactElement,
   type ReactNode
 } from 'react'
-import { createPortal } from 'react-dom'
+import { DialogPortal } from './Dialog'
 import { useToolActivity } from './ToolActivity'
 
 type TooltipSide = 'top' | 'right' | 'bottom' | 'left'
@@ -153,12 +153,11 @@ export function Tooltip({ children, content, side = 'top', delay = 400, contain 
       onBlurCapture={hideTooltip}
     >
       {cloneElement(children, { 'aria-describedby': describedBy })}
-      {open && toolActive && createPortal(
+      {open && toolActive && <DialogPortal>
         <span className={`tooltip tooltip--${side}`} id={id} role="tooltip" style={position}>
           {content}
-        </span>,
-        document.body
-      )}
+        </span>
+      </DialogPortal>}
     </span>
   )
 }

@@ -47,7 +47,7 @@ import Store from 'electron-store'
 import { autoUpdater } from 'electron-updater'
 import { randomUUID, createHash, getHashes } from 'node:crypto'
 import { createReadStream, readFileSync, watch, type FSWatcher } from 'node:fs'
-import { chmod, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { chmod, lstat, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, join, parse } from 'node:path'
 import {
   defaultWorkspaceState,
@@ -133,6 +133,7 @@ import {
   normalizeTranslationWordInput
 } from './p5Validation'
 import { PdfTaskService, type PdfJob } from './pdfTaskService'
+import { PdfOutputAccess } from './pdfOutputAccess'
 import { SystemService } from './systemService'
 import { currentUpdateProductId, defaultReleaseUrl, UpdateService } from './updateService'
 import { UpdateManager, type UpdateAdapter } from './updateManager'
@@ -244,6 +245,8 @@ let updateIntervalTimer: NodeJS.Timeout | undefined
 let updateCheckPromise: Promise<UpdateCheckResult> | null = null
 let lastUpdateResult: UpdateCheckResult | null = null
 const pdfTasks = new PdfTaskService()
+const pdfOutputs = new PdfOutputAccess()
+const pdfOutputOwners = new Set<number>()
 const allowedPdfPaths = new Set<string>()
 const updateService = new UpdateService(process.env.MOOTOOL_UPDATE_FEED_URL || undefined, {
   productId: currentUpdateProductId,
@@ -593,6 +596,7 @@ function registerIpc(): void {
     openSettingsPage(typeof category === 'string' ? category : undefined)
   })
   ipcMain.handle('window:dismiss', (event) => {
+    if (!store.get('settings').general.escapeHidesWindow) return
     if (closeHttpResponseWindow(event.sender.id)) return
     if (toolWindowManager.dismissOwner(event.sender)) return
 
@@ -1164,6 +1168,11 @@ function registerIpc(): void {
   })
   const withPdfJob = async <T>(event: Electron.IpcMainInvokeEvent, id: unknown, operation: (job: PdfJob) => Promise<T>) => {
     const jobId = id === undefined ? randomUUID() : normalizeRequestId(id)
+    const owner = event.sender.id
+    if (!pdfOutputOwners.has(owner)) {
+      pdfOutputOwners.add(owner)
+      event.sender.once('destroyed', () => { pdfOutputs.forget(owner); pdfOutputOwners.delete(owner) })
+    }
     const cancel = () => { pdfTasks.cancel(event.sender.id, jobId) }
     event.sender.once('destroyed', cancel)
     event.sender.once('render-process-gone', cancel)
@@ -1176,6 +1185,12 @@ function registerIpc(): void {
       event.sender.removeListener('render-process-gone', cancel)
     }
   }
+  ipcMain.handle('pdf:output-action', async (event, path: unknown, action: unknown) => {
+    const output = pdfOutputs.authorize(event.sender.id, path, action)
+    if (!(await lstat(output.path)).isFile()) throw new Error('PDF output is no longer a regular file')
+    if (output.action === 'reveal') shell.showItemInFolder(output.path)
+    else { const error = await shell.openPath(output.path); if (error) throw new Error(error) }
+  })
   ipcMain.handle('pdf:cancel', (event, id: unknown) => pdfTasks.cancel(event.sender.id, normalizeRequestId(id)))
   ipcMain.handle('pdf:choose-files', (event, id?: unknown) => withPdfJob(event, id, async job => {
     const owner = resolveOwnerWindow(event.sender) ?? mainWindow
@@ -1192,10 +1207,15 @@ function registerIpc(): void {
     const options = { defaultPath: join(app.getPath('desktop'), 'merge.pdf'), filters: [pdfFileFilter] }
     const result = owner ? await dialog.showSaveDialog(owner, options) : await dialog.showSaveDialog(options)
     if (result.canceled || !result.filePath) return null
-    return job.execute({ kind: 'merge', sources: normalizedSources, outputPath: result.filePath })
+    const output = await job.execute({ kind: 'merge', sources: normalizedSources, outputPath: result.filePath })
+    if (!event.sender.isDestroyed()) pdfOutputs.remember(event.sender.id, output.outputs)
+    return output
   }))
-  ipcMain.handle('pdf:split', (event, tasks: PdfSplitTask[], id?: unknown) => withPdfJob(event, id,
-    job => job.execute({ kind: 'split', tasks: normalizePdfSplitTasks(tasks) })))
+  ipcMain.handle('pdf:split', (event, tasks: PdfSplitTask[], id?: unknown) => withPdfJob(event, id, async job => {
+    const output = await job.execute({ kind: 'split', tasks: normalizePdfSplitTasks(tasks) })
+    if (!event.sender.isDestroyed()) pdfOutputs.remember(event.sender.id, output.outputs)
+    return output
+  }))
   ipcMain.handle('json-vault:list', (_event, input?: JsonVaultListInput) => createJsonVaultRepository().list(normalizeJsonVaultListInput(input)))
   ipcMain.handle('json-vault:workspace', () => {
     const root = getJsonVaultRoot()

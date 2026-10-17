@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { SettingsProvider } from '@/features/settings/SettingsProvider'
+import { SettingsProvider, useSettings } from '@/features/settings/SettingsProvider'
 import { ToastProvider, useToast } from '@/shared/feedback/ToastProvider'
 import { DesktopDialogProvider } from '@/shared/feedback/DesktopDialogProvider'
 import { I18nProvider, useI18n } from '@/shared/i18n/I18nProvider'
@@ -26,7 +26,8 @@ function ThemedApp() {
   const params = new URLSearchParams(window.location.search)
   const windowType = params.get('window')
   const isScreenOverlay = windowType === 'capture' || windowType === 'color-picker'
-  useEscapeToDismissWindow(!isScreenOverlay)
+  const { settings, ready } = useSettings()
+  useEscapeToDismissWindow(ready && !isScreenOverlay && settings.general.escapeHidesWindow)
 
   return (
     <ToastProvider>
@@ -46,7 +47,7 @@ function useEscapeToDismissWindow(enabled: boolean): void {
 
       // Dialogs, menus and other transient UI own the first Escape press. Their
       // handlers run during the same dispatch and may also call preventDefault.
-      const transientUiOpen = document.querySelector('[role="dialog"], [role="menu"], [aria-modal="true"]') !== null
+      const transientUiOpen = document.querySelector('[role="dialog"], [role="menu"], [aria-modal="true"], details[open]') !== null
       if (transientUiOpen) return
 
       window.setTimeout(() => {

@@ -162,6 +162,8 @@ See the [AI integration guide](doc/mootool-ai-integration.md) for configuration 
 - Write one source file per version under `release-notes/{version}.md` before pushing `next-electron-v{version}`.
 - `.github/workflows/next-build-installers.yml` validates the tag, package version, release notes, installers, and updater metadata before publishing.
 
+交互与键盘：弹窗焦点、持久错误提示、JSON 空状态、PDF 结果操作和 Esc 设置见 [弹窗、提示与任务反馈](doc/usability-and-keyboard.md)。
+
 性能与恢复：大文本计算、PDF 后台任务、按需加载和崩溃恢复的边界与验证见 [后台计算与工具恢复](doc/performance-and-recovery.md)。
 
 Tool pages live under `src/features/*`. Filesystem, storage, shell and OS capabilities are exposed through `electron/preload`; the independent MCP entry lives under `electron/mcp`.

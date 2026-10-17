@@ -168,6 +168,7 @@ contextBridge.exposeInMainWorld('mootool', {
   cancelImageBatch: (): Promise<void> => ipcRenderer.invoke('images:cancel-batch'),
   onImageBatchProgress: (callback: (value: import('../../src/shared/imageBatch').ImageBatchProgress & { jobId?: string }) => void) => subscribe('images:batch-progress', callback),
   vectorizeImageAssets: (names: string[], options: ImageVectorizeOptions, jobId?: string): Promise<ImageVectorizeResult | null> => ipcRenderer.invoke('images:vectorize-svg', names, options, jobId),
+  actOnPdfOutput: (path: string, action: 'open' | 'reveal'): Promise<void> => ipcRenderer.invoke('pdf:output-action', path, action),
   cancelPdfJob: (jobId: string): Promise<boolean> => ipcRenderer.invoke('pdf:cancel', jobId),
   onPdfProgress: (callback: (progress: PdfProgress) => void) => subscribe('pdf:progress', callback),
   choosePdfFiles: (jobId?: string): Promise<PdfFileInfo[]> => ipcRenderer.invoke('pdf:choose-files', jobId),

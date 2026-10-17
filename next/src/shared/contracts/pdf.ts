@@ -31,3 +31,9 @@ export type PdfProgress = {
   total: number
   name: string
 }
+
+export const pdfCancellationCode = 'PDF_OPERATION_CANCELLED'
+export function isPdfCancellation(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError'
+    || String(error instanceof Error ? error.message : error).includes(pdfCancellationCode)
+}

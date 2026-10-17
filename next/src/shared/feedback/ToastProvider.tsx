@@ -40,6 +40,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
   const [timers] = useState(() => new Map<number, number>())
   const nextId = useRef(1)
+  const [copiedId, setCopiedId] = useState<number | null>(null)
 
   const dismiss = useCallback((id: number) => {
     const timer = timers.get(id)
@@ -52,20 +53,27 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const show = useCallback((message: ReactNode, options: ToastOptions = {}) => {
     const id = nextId.current++
-    const duration = options.duration ?? 3200
+    const tone = options.tone ?? 'info'
+    const duration = options.duration ?? (tone === 'error' ? 0 : 3200)
     const item: ToastItem = { id, message, tone: options.tone ?? 'info' }
 
     setToasts((current) => {
-      const next = [...current, item]
-      const overflow = next.slice(0, -4)
-      for (const toast of overflow) {
-        const timer = timers.get(toast.id)
-        if (timer !== undefined) {
-          window.clearTimeout(timer)
-          timers.delete(toast.id)
-        }
+      const duplicates = tone === 'error' && typeof message === 'string'
+        ? current.filter(toast => toast.tone === 'error' && toast.message === message) : []
+      for (const duplicate of duplicates) {
+        const timer = timers.get(duplicate.id)
+        if (timer !== undefined) { window.clearTimeout(timer); timers.delete(duplicate.id) }
       }
-      return next.slice(-4)
+      const next = [...current.filter(toast => !duplicates.includes(toast)), item]
+      // Never evict an unread error to make room for routine notifications.
+      while (next.length > 4) {
+        const index = next.findIndex(toast => toast.tone !== 'error')
+        if (index < 0) break
+        const [removed] = next.splice(index, 1)
+        const timer = timers.get(removed.id)
+        if (timer !== undefined) { window.clearTimeout(timer); timers.delete(removed.id) }
+      }
+      return next
     })
 
     if (duration > 0) {
@@ -102,6 +110,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             >
               <ToastIcon tone={toast.tone} />
               <div className="toast__message">{toast.message}</div>
+              <div className="toast__actions">
+                {toast.tone === 'error' && <button className="toast__copy" type="button" onClick={async event => {
+                  const message = event.currentTarget.closest('.toast')?.querySelector('.toast__message')?.textContent ?? ''
+                  try { await navigator.clipboard.writeText(message); setCopiedId(toast.id) }
+                  catch { /* Keep the selectable error available for manual copying. */ }
+                }}>{t(copiedId === toast.id ? 'json.action.copied' : 'common.toast.copyError')}</button>}
               <button
                 className="toast__dismiss"
                 type="button"
@@ -110,6 +124,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               >
                 <X size={15} />
               </button>
+              </div>
             </div>
           ))}
         </div>,
