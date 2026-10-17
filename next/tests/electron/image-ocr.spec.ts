@@ -19,6 +19,7 @@ test.beforeEach(async ({}, testInfo) => {
   app = await electron.launch({ executablePath, args: [...(executablePath ? [] : ['.']), `--user-data-dir=${directory}`], cwd: process.cwd(), env: { ...process.env, NODE_ENV: 'test', MOOTOOL_TOOL_VIEWS: testInfo.title.includes('native tool') ? '1' : '0' } })
   page = await app.firstWindow(); page.setDefaultTimeout(5000)
   previous = await app.evaluate(({ clipboard }) => ({ text: clipboard.readText(), html: clipboard.readHTML(), rtf: clipboard.readRTF(), image: clipboard.readImage().isEmpty() ? '' : clipboard.readImage().toDataURL() }))
+  await page.evaluate(() => window.mootool.updateSettings({ general: { language: 'zh-CN' } }))
   await page.evaluate(dataUrl => window.mootool.saveImageAsset({ name: 'Chinese.png', dataUrl }), fixture)
   await page.locator('.tool-button').filter({ hasText: '图片助手' }).click()
   if (testInfo.title.includes('native tool')) return

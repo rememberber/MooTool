@@ -9,6 +9,7 @@ test('download prompt requires a click, allows retry and offers restart after co
   const app = await electron.launch({ executablePath, args: [...(executablePath ? [] : ['.']), `--user-data-dir=${directory}`], env: { ...process.env, NODE_ENV: 'test', MOOTOOL_TOOL_VIEWS: '0' } })
   try {
     const page = await app.firstWindow()
+    await page.evaluate(() => window.mootool.updateSettings({ general: { language: 'zh-CN' } }))
     await app.evaluate(({ ipcMain }) => {
       let status = 'missing', attempts = 0
       ipcMain.removeHandler('ocr:status'); ipcMain.removeHandler('ocr:download'); ipcMain.removeHandler('ocr:restart')
@@ -47,6 +48,7 @@ test('offers OCR download on first use and reuses the verified component after r
   try {
     app = await launch()
     const page = await app.firstWindow()
+    await page.evaluate(() => window.mootool.updateSettings({ general: { language: 'zh-CN' } }))
     expect(await page.evaluate(() => window.mootool.getOcrStatus())).toMatchObject({ available: false, component: { status: 'missing' } })
     const target = `${process.platform}-${process.arch}`
     const metadata = JSON.parse(await readFile(resolve('out/optional-components', `${target}.json`), 'utf8'))
