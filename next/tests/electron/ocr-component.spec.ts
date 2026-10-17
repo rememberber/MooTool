@@ -52,7 +52,8 @@ test('offers OCR download on first use and reuses the verified component after r
     const metadata = JSON.parse(await readFile(resolve('out/optional-components', `${target}.json`), 'utf8'))
     // Use the exact release asset, with no dependency on a published release or network.
     await app.evaluate(async (_electron, path) => {
-      const payload = await (await import('node:fs/promises')).readFile(path)
+      // evaluate() runs through eval, which cannot dynamically import modules.
+      const payload = process.getBuiltinModule('fs').readFileSync(path)
       const original = globalThis.fetch
       globalThis.fetch = (async (input, init) => String(input).endsWith('.bin.gz') ? new Response(payload) : original(input, init)) as typeof fetch
     }, resolve('dist/optional-components', metadata.download.fileName))
