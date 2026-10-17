@@ -23,23 +23,10 @@ import { JsonInspector } from './JsonInspector'
 import { JsonToolbar } from './JsonToolbar'
 import { JsonToolDialogs, type InputConversion, type OutputDialogState } from './JsonToolDialogs'
 import { JsonVaultPanel } from './JsonVaultPanel'
-import {
-  compressJson,
-  escapeJavaString,
-  escapeJsonString,
-  formatJson,
-  formatJsonAdvanced,
-  javaBeanToJson,
-  jsonToJavaBean,
-  jsonToXml,
-  queryJsonPath,
-  swapJsonKeysAndValues,
-  unescapeJsonString,
-  unescapeJsonText,
-  validateJson,
-  xmlToJson,
-  type JsonFormatOptions
-} from './jsonTools'
+import type { JsonFormatOptions } from './jsonTools'
+import { useJsonValidation } from './useJsonValidation'
+import { runTextTask, isTaskCancelled } from '@/shared/workers/runTextTask'
+import type { JsonOperation } from '@/shared/workers/textTask'
 
 type CopyState = 'idle' | 'copied' | 'failed'
 
@@ -119,14 +106,20 @@ async function persistHistory(summary: string, input: string, output: string): P
 
 export function JsonTool() {
   const toolActive = useToolActivity()
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const { settings, updateSettings } = useSettings()
   const toast = useToast()
   const editorRef = useRef<JsonCodeEditorHandle>(null)
   const findIndexRef = useRef(jsonFindIndex)
   const [state, update] = useReducer(updateJsonState, settings.editor.softWrap, createJsonState)
   const [dirty, setDirty] = useState(false)
-  const status = useMemo(() => validateJson(state.content, t), [state.content, t])
+  const status = useJsonValidation(state.content, language, t)
+  const currentInput = useRef({ state, language })
+  currentInput.current = { state, language }
+  const taskController = useRef<AbortController | null>(null)
+  const [calculating, setCalculating] = useState(false)
+  useEffect(() => () => { taskController.current?.abort() }, [])
+  useEffect(() => { taskController.current?.abort() }, [state.content, state.filePath, state.conversionInput, state.inputConversion, language])
   const findMatches = useMemo(
     () => findAllMatches(state.content, state.findQuery, state.findOptions),
     [state.content, state.findOptions, state.findQuery]
@@ -167,30 +160,47 @@ export function JsonTool() {
   }, [])
 
   function showError(error: unknown): void {
+    if (isTaskCancelled(error)) return
     const message = error instanceof Error ? error.message : t('json.notice.failed')
     update({ notice: message })
     toast.error(message)
   }
 
-  async function runTransform(transform: (value: string) => string, success: string, summary = success): Promise<void> {
+  async function calculate(operation: JsonOperation, input = state.content): Promise<string> {
+    taskController.current?.abort()
+    const controller = new AbortController()
+    taskController.current = controller
+    const snapshot = currentInput.current
+    setCalculating(true)
     try {
-      const output = transform(state.content)
-      update({ content: output, notice: success })
-      toast.success(success)
-      await persistHistory(summary, state.content, output)
-    } catch (error) {
-      showError(error)
+      const output = await runTextTask({ kind: 'json', operation, input, language,
+        options: state.formatOptions, className: state.className, path: state.jsonPath }, controller.signal)
+      const current = currentInput.current
+      if (controller.signal.aborted || current.language !== snapshot.language
+        || current.state.content !== snapshot.state.content || current.state.filePath !== snapshot.state.filePath
+        || current.state.conversionInput !== snapshot.state.conversionInput
+        || current.state.inputConversion !== snapshot.state.inputConversion) throw new DOMException('Cancelled', 'AbortError')
+      return output
+    } finally {
+      if (taskController.current === controller) { taskController.current = null; setCalculating(false) }
     }
   }
 
-  async function showOutput(title: string, transform: (value: string) => string): Promise<void> {
+  async function runTransform(operation: JsonOperation, success: string, summary = success): Promise<void> {
     try {
-      const output = transform(state.content)
+      const output = await calculate(operation)
+      update({ content: output, notice: success })
+      toast.success(success)
+      await persistHistory(summary, state.content, output)
+    } catch (error) { showError(error) }
+  }
+
+  async function showOutput(title: string, operation: JsonOperation): Promise<void> {
+    try {
+      const output = await calculate(operation)
       update({ outputDialog: { title, value: output }, notice: title })
       await persistHistory(title, state.content, output)
-    } catch (error) {
-      showError(error)
-    }
+    } catch (error) { showError(error) }
   }
 
   async function copyValue(value: string): Promise<void> {
@@ -230,9 +240,7 @@ export function JsonTool() {
   async function runInputConversion(): Promise<void> {
     if (!state.inputConversion) return
     try {
-      const output = state.inputConversion === 'xmlToJson'
-        ? xmlToJson(state.conversionInput, t)
-        : javaBeanToJson(state.conversionInput, t)
+      const output = await calculate(state.inputConversion === 'xmlToJson' ? 'fromXml' : 'fromBean', state.conversionInput)
       const title = state.inputConversion === 'xmlToJson' ? t('json.action.xmlToJson') : t('json.action.beanToJson')
       update({ content: output, inputConversion: null, conversionInput: '', notice: title })
       toast.success(title)
@@ -332,8 +340,8 @@ export function JsonTool() {
             replacedCount={state.replacedCount}
             fontName={settings.editor.jsonFontName}
             onFontNameChange={(jsonFontName) => { void updateSettings({ editor: { jsonFontName } }) }}
-            onFormat={() => { void runTransform((value) => formatJson(value, t, 2), t('json.notice.formatted'), t('json.action.format')) }}
-            onCompress={() => { void runTransform((value) => compressJson(value, t), t('json.notice.compressed'), t('json.action.compress')) }}
+            onFormat={() => { void runTransform('format', t('json.notice.formatted'), t('json.action.format')) }}
+            onCompress={() => { void runTransform('compress', t('json.notice.compressed'), t('json.action.compress')) }}
             onToggleWrap={() => update({ wrap: !state.wrap })}
             onCopy={() => { void copyValue(state.content) }}
             onToggleFind={() => { if (state.findOpen) update({ findOpen: false }); else openFindReplace() }}
@@ -367,12 +375,13 @@ export function JsonTool() {
             onKeyDown={(event) => {
               if (isFormatShortcut(event)) {
                 event.preventDefault()
-                void runTransform((value) => formatJson(value, t, 2), t('json.notice.formatted'), t('json.action.format'))
+                void runTransform('format', t('json.notice.formatted'), t('json.action.format'))
               }
             }}
             onViewStateChange={(viewState) => { jsonEditorViewState = viewState }}
           />
           <footer className="json-statusbar">
+            {calculating && <button type="button" onClick={() => taskController.current?.abort()}>{t('common.cancel')}</button>}
             <span title={state.filePath}>{dirty ? '• ' : ''}{state.filePath}</span>
             <span className={status.kind === 'valid' ? 'json-statusbar__validation json-statusbar--valid' : status.kind === 'error' ? 'json-statusbar__validation json-statusbar--error' : 'json-statusbar__validation'}>
               {status.kind === 'valid' ? <CheckCircle2 size={12} /> : status.kind === 'error' ? <XCircle size={12} /> : <FileJson size={12} />}
@@ -389,19 +398,19 @@ export function JsonTool() {
             notice={state.notice}
             status={status}
             onFormatOptionsChange={(formatOptions) => update({ formatOptions })}
-            onAdvancedFormat={() => { void runTransform((value) => formatJsonAdvanced(value, t, state.formatOptions), t('json.notice.formatted'), t('json.format.apply')) }}
-            onJsonToXml={() => { void showOutput(t('json.action.jsonToXml'), (value) => jsonToXml(value, t)) }}
+            onAdvancedFormat={() => { void runTransform('advancedFormat', t('json.notice.formatted'), t('json.format.apply')) }}
+            onJsonToXml={() => { void showOutput(t('json.action.jsonToXml'), 'toXml') }}
             onXmlToJson={() => update({ inputConversion: 'xmlToJson', conversionInput: '' })}
             onBeanToJson={() => update({ inputConversion: 'beanToJson', conversionInput: '' })}
-            onJsonToBean={() => { void showOutput(t('json.action.jsonToBean'), (value) => jsonToJavaBean(value, t, state.className)) }}
-            onSwap={() => { void runTransform((value) => swapJsonKeysAndValues(value, t), t('json.action.swap')) }}
-            onEscapeJson={() => { void runTransform(escapeJsonString, t('json.notice.escaped'), t('json.action.escape')) }}
-            onUnescapeJson={() => { void runTransform((value) => unescapeJsonString(value, t), t('json.notice.unescaped'), t('json.action.unescape')) }}
-            onEscapeText={() => { void runTransform(escapeJavaString, t('json.action.escapeText')) }}
-            onUnescapeText={() => { void runTransform(unescapeJsonText, t('json.action.unescapeText')) }}
+            onJsonToBean={() => { void showOutput(t('json.action.jsonToBean'), 'toBean') }}
+            onSwap={() => { void runTransform('swap', t('json.action.swap')) }}
+            onEscapeJson={() => { void runTransform('escape', t('json.notice.escaped'), t('json.action.escape')) }}
+            onUnescapeJson={() => { void runTransform('unescape', t('json.notice.unescaped'), t('json.action.unescape')) }}
+            onEscapeText={() => { void runTransform('escapeText', t('json.action.escapeText')) }}
+            onUnescapeText={() => { void runTransform('unescapeText', t('json.action.unescapeText')) }}
             onClassNameChange={(className) => update({ className })}
             onJsonPathChange={(jsonPath) => update({ jsonPath })}
-            onQueryPath={() => { void showOutput(t('json.panel.jsonPath'), (value) => queryJsonPath(value, state.jsonPath, t)) }}
+            onQueryPath={() => { void showOutput(t('json.panel.jsonPath'), 'query') }}
             onOpenPathPicker={() => update({ pathPickerOpen: true })}
             onClose={() => update({ inspectorOpen: false })}
           />

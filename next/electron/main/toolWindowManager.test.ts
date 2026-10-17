@@ -56,3 +56,37 @@ describe('workspace keyboard focus', () => {
     expect(views[0].webContents.focus).not.toHaveBeenCalled()
   })
 })
+
+describe('tool renderer recovery', () => {
+  it('reloads the same docked view after a crash and restores native focus', async () => {
+    const { manager, main, views } = fixture()
+    manager.activate('calculator')
+    const original = views[0]
+    original.webContents.emit('did-finish-load')
+    original.webContents.emit('render-process-gone')
+    expect(views).toHaveLength(2)
+    expect(views[1]).toBe(original)
+    expect(manager.snapshot().tools[0]).toMatchObject({ ready: false })
+    expect(main.contentView.removeChildView).toHaveBeenCalled()
+    original.webContents.emit('did-finish-load')
+    expect(manager.snapshot().tools[0]).toMatchObject({ ready: true })
+    expect(original.webContents.focus).toHaveBeenCalledTimes(2)
+  })
+
+  it('bounds automatic crash retries and permits an explicit retry', () => {
+    const { manager, views } = fixture()
+    manager.activate('calculator')
+    const original = views[0]
+    original.webContents.emit('render-process-gone')
+    original.webContents.emit('did-finish-load')
+    original.webContents.emit('render-process-gone')
+    expect(views).toHaveLength(2)
+    expect(manager.snapshot().tools[0]).toMatchObject({ ready: false, failed: true })
+    manager.activate('calculator')
+    expect(views).toHaveLength(3)
+    expect(views[2]).toBe(original)
+    original.webContents.emit('did-finish-load')
+    expect(manager.snapshot().tools[0]).toMatchObject({ ready: true })
+    expect(manager.snapshot().tools[0].failed).toBeUndefined()
+  })
+})

@@ -45,7 +45,7 @@ import {
 } from 'electron'
 import Store from 'electron-store'
 import { autoUpdater } from 'electron-updater'
-import { createHash, getHashes } from 'node:crypto'
+import { randomUUID, createHash, getHashes } from 'node:crypto'
 import { createReadStream, readFileSync, watch, type FSWatcher } from 'node:fs'
 import { chmod, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, join, parse } from 'node:path'
@@ -132,7 +132,7 @@ import {
   normalizeTranslationInput,
   normalizeTranslationWordInput
 } from './p5Validation'
-import { inspectPdf, mergePdfs, splitPdfs } from './pdfService'
+import { PdfTaskService, type PdfJob } from './pdfTaskService'
 import { SystemService } from './systemService'
 import { currentUpdateProductId, defaultReleaseUrl, UpdateService } from './updateService'
 import { UpdateManager, type UpdateAdapter } from './updateManager'
@@ -243,6 +243,7 @@ let updateStartupTimer: NodeJS.Timeout | undefined
 let updateIntervalTimer: NodeJS.Timeout | undefined
 let updateCheckPromise: Promise<UpdateCheckResult> | null = null
 let lastUpdateResult: UpdateCheckResult | null = null
+const pdfTasks = new PdfTaskService()
 const allowedPdfPaths = new Set<string>()
 const updateService = new UpdateService(process.env.MOOTOOL_UPDATE_FEED_URL || undefined, {
   productId: currentUpdateProductId,
@@ -324,16 +325,15 @@ function loadRenderer(window: BrowserWindow): void {
   void window.loadFile(join(__dirname, '../renderer/index.html'))
 }
 
-function loadToolRenderer(view: WebContentsView, toolId: string): void {
+function loadToolRenderer(view: WebContentsView, toolId: string): Promise<void> {
   if (isDev && process.env.ELECTRON_RENDERER_URL) {
     const url = new URL(process.env.ELECTRON_RENDERER_URL)
     url.searchParams.set('window', 'tool')
     url.searchParams.set('toolId', toolId)
-    void view.webContents.loadURL(url.toString())
-    return
+    return view.webContents.loadURL(url.toString())
   }
 
-  void view.webContents.loadFile(join(__dirname, '../renderer/index.html'), {
+  return view.webContents.loadFile(join(__dirname, '../renderer/index.html'), {
     query: { window: 'tool', toolId }
   })
 }
@@ -1162,28 +1162,40 @@ function registerIpc(): void {
       imageTasks.delete(event.sender.id)
     }
   })
-  ipcMain.handle('pdf:choose-files', async (event) => {
+  const withPdfJob = async <T>(event: Electron.IpcMainInvokeEvent, id: unknown, operation: (job: PdfJob) => Promise<T>) => {
+    const jobId = id === undefined ? randomUUID() : normalizeRequestId(id)
+    const cancel = () => { pdfTasks.cancel(event.sender.id, jobId) }
+    event.sender.once('destroyed', cancel)
+    event.sender.once('render-process-gone', cancel)
+    try {
+      return await pdfTasks.run(event.sender.id, jobId, progress => {
+        if (!event.sender.isDestroyed()) event.sender.send('pdf:progress', progress)
+      }, operation)
+    } finally {
+      event.sender.removeListener('destroyed', cancel)
+      event.sender.removeListener('render-process-gone', cancel)
+    }
+  }
+  ipcMain.handle('pdf:cancel', (event, id: unknown) => pdfTasks.cancel(event.sender.id, normalizeRequestId(id)))
+  ipcMain.handle('pdf:choose-files', (event, id?: unknown) => withPdfJob(event, id, async job => {
     const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = { properties: ['openFile', 'multiSelections'], filters: [pdfFileFilter] }
     const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     if (result.canceled) return []
-    const files = []
-    for (const path of result.filePaths.slice(0, 20)) {
-      const info = await inspectPdf(path)
-      allowedPdfPaths.add(path)
-      files.push(info)
-    }
+    const files = await job.execute({ kind: 'inspect', paths: result.filePaths.slice(0, 20) })
+    for (const file of files) allowedPdfPaths.add(file.path)
     return files
-  })
-  ipcMain.handle('pdf:merge', async (event, sources: PdfMergeSource[]) => {
+  }))
+  ipcMain.handle('pdf:merge', (event, sources: PdfMergeSource[], id?: unknown) => withPdfJob(event, id, async job => {
     const normalizedSources = normalizePdfMergeSources(sources)
     const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options = { defaultPath: join(app.getPath('desktop'), 'merge.pdf'), filters: [pdfFileFilter] }
     const result = owner ? await dialog.showSaveDialog(owner, options) : await dialog.showSaveDialog(options)
     if (result.canceled || !result.filePath) return null
-    return mergePdfs(normalizedSources, result.filePath)
-  })
-  ipcMain.handle('pdf:split', (_event, tasks: PdfSplitTask[]) => splitPdfs(normalizePdfSplitTasks(tasks)))
+    return job.execute({ kind: 'merge', sources: normalizedSources, outputPath: result.filePath })
+  }))
+  ipcMain.handle('pdf:split', (event, tasks: PdfSplitTask[], id?: unknown) => withPdfJob(event, id,
+    job => job.execute({ kind: 'split', tasks: normalizePdfSplitTasks(tasks) })))
   ipcMain.handle('json-vault:list', (_event, input?: JsonVaultListInput) => createJsonVaultRepository().list(normalizeJsonVaultListInput(input)))
   ipcMain.handle('json-vault:workspace', () => {
     const root = getJsonVaultRoot()
@@ -2580,6 +2592,15 @@ app.whenReady().then(async () => {
     enabled: process.env.NODE_ENV !== 'test' || process.env.MOOTOOL_TOOL_VIEWS === '1',
     getMainWindow: () => mainWindow,
     loadTool: loadToolRenderer,
+    onRecoveryFailed: (toolId, owner) => {
+      const language = store.get('settings').general.language
+      const text = messages[language]
+      const options = { type: 'error' as const, message: text['toolWindow.crashed'],
+        detail: text['toolWindow.recoveryDetail'], buttons: [text['toolWindow.reload'], text['common.close']], cancelId: 1 }
+      void (owner && !owner.isDestroyed() ? dialog.showMessageBox(owner, options) : dialog.showMessageBox(options))
+        .then(result => { if (result.response === 0 && !isQuitting) toolWindowManager.reload(toolId) })
+        .catch(() => undefined)
+    },
     preloadPath: join(__dirname, '../preload/index.js'),
     getWindowState: (toolId) => store.get('toolWindows')[toolId],
     setWindowState: (toolId, state) => {
@@ -2623,6 +2644,7 @@ app.whenReady().then(async () => {
 })
 
 app.on('before-quit', () => {
+  pdfTasks.dispose()
   ocrService?.stop()
   isQuitting = true
   commandShortcut.dispose()

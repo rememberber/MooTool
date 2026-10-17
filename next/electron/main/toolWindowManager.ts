@@ -24,6 +24,9 @@ type ToolViewRecord = {
   host: ToolViewHost
   window: BaseWindow | null
   ready: boolean
+  failed: boolean
+  crashes: number[]
+  loadRevision: number
   title: string
   material: WindowMaterialController | null
   solidRequested: boolean
@@ -33,7 +36,8 @@ type ToolViewRecord = {
 type ToolWindowManagerOptions = {
   enabled: boolean
   getMainWindow: () => BrowserWindow | null
-  loadTool: (view: WebContentsView, toolId: DetachableToolId) => void
+  loadTool: (view: WebContentsView, toolId: DetachableToolId) => void | Promise<void>
+  onRecoveryFailed?: (toolId: DetachableToolId, owner: BaseWindow | null) => void
   preloadPath: string
   getWindowState: (toolId: DetachableToolId) => WindowState | undefined
   setWindowState: (toolId: DetachableToolId, state: WindowState) => void
@@ -59,7 +63,10 @@ export class ToolWindowManager {
 
   activate(toolId: ToolId): ToolWindowSnapshot {
     this.activeToolId = toolId
-    if (this.options.enabled && toolId !== 'mootool') this.getOrCreate(toolId)
+    if (this.options.enabled && toolId !== 'mootool') {
+      const record = this.getOrCreate(toolId)
+      if (record.failed) this.reload(toolId)
+    }
     this.syncMainHost()
     this.focusActiveView()
     this.notify()
@@ -182,6 +189,7 @@ export class ToolWindowManager {
   focus(toolId: DetachableToolId): boolean {
     const record = this.records.get(toolId)
     if (!record?.window || record.window.isDestroyed()) return false
+    if (record.failed) this.reload(toolId)
     record.window.show()
     record.window.focus()
     return true
@@ -278,6 +286,9 @@ export class ToolWindowManager {
       host: 'none',
       window: null,
       ready: false,
+      failed: false,
+      crashes: [],
+      loadRevision: 0,
       title: `MooTool — ${toolId}`,
       material: null,
       solidRequested: false
@@ -287,17 +298,47 @@ export class ToolWindowManager {
     view.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
     view.webContents.on('did-finish-load', () => {
       record.ready = true
+      record.failed = false
       this.syncMainHost()
       this.sendActivity(record)
       this.notify()
       if (record.toolId === this.activeToolId) this.focusActiveView()
     })
     view.webContents.on('render-process-gone', () => {
+      if (this.quitting) return
       record.ready = false
+      record.failed = true
+      record.crashes = record.crashes.filter(time => Date.now() - time < 30_000)
+      record.crashes.push(Date.now())
+      this.syncMainHost()
       this.notify()
+      if (record.crashes.length === 1) this.load(record)
+      else this.options.onRecoveryFailed?.(toolId, record.window ?? this.options.getMainWindow())
     })
-    this.options.loadTool(view, toolId)
+    this.load(record)
     return record
+  }
+
+  /** Reload the existing view, retaining its docked/detached host and window geometry. */
+  reload(toolId: DetachableToolId): void {
+    const record = this.records.get(toolId)
+    if (!record || this.quitting) return
+    record.crashes = []
+    this.load(record)
+  }
+
+  private load(record: ToolViewRecord): void {
+    if (this.quitting || record.view.webContents.isDestroyed()) return
+    const revision = ++record.loadRevision
+    record.ready = false
+    record.failed = false
+    this.notify()
+    void Promise.resolve(this.options.loadTool(record.view, record.toolId)).catch(() => {
+      if (this.quitting || record.view.webContents.isDestroyed() || revision !== record.loadRevision) return
+      record.failed = true
+      this.notify()
+      this.options.onRecoveryFailed?.(record.toolId, record.window ?? this.options.getMainWindow())
+    })
   }
 
   private syncMainHost(): void {
@@ -364,7 +405,8 @@ export class ToolWindowManager {
     return {
       toolId: record.toolId,
       detached: Boolean(record.window && !record.window.isDestroyed()),
-      ready: record.ready
+      ready: record.ready,
+      ...(record.failed ? { failed: true } : {})
     }
   }
 

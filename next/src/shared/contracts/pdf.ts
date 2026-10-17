@@ -23,3 +23,11 @@ export type PdfOperationResult = {
   outputs: string[]
   pageCount: number
 }
+
+export type PdfProgress = {
+  jobId: string
+  phase: 'reading' | 'processing' | 'saving'
+  completed: number
+  total: number
+  name: string
+}

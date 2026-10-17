@@ -19,3 +19,16 @@ describe('resolveTextCodeEditorLanguage', () => {
     expect(resolveTextCodeEditorLanguage()).toBe('text')
   })
 })
+
+describe('on-demand editor grammars', () => {
+  it('loads each supported language and preserves syntax support', async () => {
+    const { loadCodeEditorLanguage, codeEditorLanguageExtensions, textCodeEditorLanguages } = await import('./codeEditorLanguage')
+    const { EditorState } = await import('@codemirror/state')
+    const { syntaxTree } = await import('@codemirror/language')
+    for (const language of textCodeEditorLanguages) {
+      await Promise.all([loadCodeEditorLanguage(language), loadCodeEditorLanguage(language)])
+      const state = EditorState.create({ doc: '{}', extensions: codeEditorLanguageExtensions(language) })
+      if (language === 'json') expect(syntaxTree(state).topNode.name).toBe('JsonText')
+    }
+  })
+})

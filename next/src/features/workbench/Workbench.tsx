@@ -1,5 +1,5 @@
 import { ChevronDown, FolderCog, Languages, LocateFixed, Megaphone, PanelLeftClose, PanelLeftOpen, PanelTopClose, Search, Settings } from 'lucide-react'
-import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/app/appStore'
 import { toolById, toolGroups, type ToolId } from '@/app/toolRegistry'
 import { CommandPalette } from '@/features/search/CommandPalette'
@@ -10,11 +10,12 @@ import { ToolActivityProvider } from '@/shared/components/ToolActivity'
 import type { ToolWindowSnapshot } from '@/shared/contracts/app'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { LegacyMigrationHintDialog } from '@/features/settings/LegacyMigrationHintDialog'
-import { SettingsPage } from '@/features/settings/SettingsWindow'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { CustomGroupManager } from './CustomGroupManager'
 import { UpdateReadyAction } from './UpdateReadyAction'
 import { isImmersiveToolId } from './immersiveTools'
+
+const SettingsPage = lazy(() => import('@/features/settings/SettingsWindow').then(module => ({ default: module.SettingsPage })))
 
 export function Workbench() {
   const { language, languageLabels, languages, setLanguage, t } = useI18n()
@@ -317,11 +318,18 @@ export function Workbench() {
           )
         })}
         {settingsPageOpen ? (
-          <SettingsPage initialCategory={settingsCategory} onBack={() => setSettingsCategory(null)} />
+          <Suspense fallback={<div className="workspace-loading">{t('common.loading')}</div>}><SettingsPage initialCategory={settingsCategory} onBack={() => setSettingsCategory(null)} /></Suspense>
         ) : !toolWindows.enabled ? null : activeTool.id === 'mootool' ? (
           <Suspense fallback={<div className="workspace-loading">{t('common.loading')}</div>}>
             {activeTool.component ? <activeTool.component /> : null}
           </Suspense>
+        ) : activeToolWindow?.failed ? (
+          <section className="detached-tool-placeholder" role="alert">
+            <h1>{t('toolWindow.crashed')}</h1>
+            <p>{t('toolWindow.recoveryDetail')}</p>
+            <button type="button" className="toolbar-button toolbar-button--primary"
+              onClick={() => { void window.mootool.activateToolView(activeTool.id) }}>{t('toolWindow.reload')}</button>
+          </section>
         ) : activeToolWindow?.detached ? (
           <section className="detached-tool-placeholder">
             <span className="detached-tool-placeholder__icon"><activeTool.icon size={32} /><PanelTopClose size={16} /></span>

@@ -13,7 +13,7 @@ import type { FuncHistoryRecord, HistoryQuery, SaveFuncHistoryInput } from './sr
 import type { SaveTextFileInput, TextFileKind, TextFileResult } from './src/shared/contracts/files'
 import type { ImageAsset, ImageAssetSummary, ImageVectorizeOptions, ImageVectorizeResult, RenameImageAssetInput, SaveImageAssetInput, ScreenCapture, ScreenCaptureOverlayData, ScreenCaptureRect, ScreenCaptureResult } from './src/shared/contracts/images'
 import type { DigestAlgorithmId, DigestFileResult, ImageFilePayload, SaveBinaryFileInput } from './src/shared/contracts/nativeFiles'
-import type { PdfFileInfo, PdfMergeSource, PdfOperationResult, PdfSplitTask } from './src/shared/contracts/pdf'
+import type { PdfFileInfo, PdfMergeSource, PdfOperationResult, PdfSplitTask, PdfProgress } from './src/shared/contracts/pdf'
 import type { JsonVaultFile, JsonVaultListInput, JsonVaultNode, MoveJsonVaultEntryInput, RenameJsonVaultEntryInput, SaveJsonVaultFileInput } from './src/shared/contracts/jsonVault'
 import type { RememberVaultFileInput, VaultWorkspace } from './src/shared/contracts/vaultWorkspace'
 import type { CreateQuickNoteInput, MoveQuickNoteEntryInput, QuickNoteAttachment, QuickNoteFile, QuickNoteListInput, QuickNoteNode, RenameQuickNoteEntryInput, SaveQuickNoteInput } from './src/shared/contracts/quickNote'
@@ -161,9 +161,11 @@ declare global {
       cancelImageBatch: () => Promise<void>
       onImageBatchProgress: (callback: (value: import('./src/shared/imageBatch').ImageBatchProgress & { jobId?: string }) => void) => () => void
       vectorizeImageAssets: (names: string[], options: ImageVectorizeOptions, jobId?: string) => Promise<ImageVectorizeResult | null>
-      choosePdfFiles: () => Promise<PdfFileInfo[]>
-      mergePdfFiles: (sources: PdfMergeSource[]) => Promise<PdfOperationResult | null>
-      splitPdfFiles: (tasks: PdfSplitTask[]) => Promise<PdfOperationResult>
+      cancelPdfJob: (jobId: string) => Promise<boolean>
+      onPdfProgress: (callback: (progress: PdfProgress) => void) => () => void
+      choosePdfFiles: (jobId?: string) => Promise<PdfFileInfo[]>
+      mergePdfFiles: (sources: PdfMergeSource[], jobId?: string) => Promise<PdfOperationResult | null>
+      splitPdfFiles: (tasks: PdfSplitTask[], jobId?: string) => Promise<PdfOperationResult>
       listJsonVault: (input?: JsonVaultListInput) => Promise<JsonVaultNode[]>
       readJsonVaultFile: (relativePath: string) => Promise<JsonVaultFile>
       openJsonVaultWorkspace: () => Promise<VaultWorkspace<JsonVaultFile>>

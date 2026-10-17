@@ -18,6 +18,7 @@ import {
   type TextCodeEditorScroll
 } from '@/shared/components/TextCodeEditor'
 import { useToolActions } from '@/shared/hooks/useToolActions'
+import { runTextTask, isTaskCancelled } from '@/shared/workers/runTextTask'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
 import {
@@ -41,10 +42,7 @@ export function TextDiffTool() {
   const { t } = useI18n()
   const actions = useToolActions('textDiff')
   const initialDraft = useMemo(readTextDiffDraft, [])
-  const initialResult = useMemo(
-    () => compareText(initialDraft.left, initialDraft.right, false),
-    [initialDraft.left, initialDraft.right]
-  )
+  const initialResult = useMemo(() => compareText('', '', false), [])
   const [left, setLeft] = useState(initialDraft.left)
   const [right, setRight] = useState(initialDraft.right)
   const [mode, setMode] = useState<DiffMode>('side')
@@ -59,7 +57,14 @@ export function TextDiffTool() {
   const rightEditorRef = useRef<TextCodeEditorHandle>(null)
   const syncingScroll = useRef(false)
   const navigationIndex = useRef(-1)
-  const { result, status } = comparison
+  const { result: completedResult, status } = comparison
+  const result = completedResult.leftText === left && completedResult.rightText === right
+    ? completedResult : initialResult
+  const controllerRef = useRef<AbortController | null>(null)
+  const timerRef = useRef<number | undefined>(undefined)
+  const currentInput = useRef({ left, right, ignoreWhitespace })
+  currentInput.current = { left, right, ignoreWhitespace }
+  const [calculating, setCalculating] = useState(false)
 
   const visibleSegments = useMemo(
     () => highlightMode === 'characters' ? result.segments.filter((segment) => !segment.wholeLine) : result.segments,
@@ -79,15 +84,8 @@ export function TextDiffTool() {
   )
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const next = compareText(left, right, ignoreWhitespace)
-      setComparison({
-        result: next,
-        status: left || right ? { kind: 'complete' } : { kind: 'enterText' }
-      })
-      navigationIndex.current = -1
-    }, 160)
-    return () => window.clearTimeout(timer)
+    timerRef.current = window.setTimeout(() => { void compare(false) }, 160)
+    return () => { window.clearTimeout(timerRef.current); controllerRef.current?.abort() }
   }, [ignoreWhitespace, left, right])
 
   useEffect(() => {
@@ -113,19 +111,33 @@ export function TextDiffTool() {
     setComparison((current) => ({ ...current, status: nextStatus }))
   }
 
-  function compare(): void {
-    const next = compareText(left, right, ignoreWhitespace)
-    applyComparison(next)
-    if (!left && !right) return
-    void actions.saveHistory(
-      t('diff.summary', { added: String(next.added), removed: String(next.removed), changed: String(next.changed) }),
-      left,
-      right,
-      JSON.stringify({ ignoreWhitespace, highlightMode })
-    )
+  async function compare(saveHistory = true): Promise<void> {
+    window.clearTimeout(timerRef.current)
+    controllerRef.current?.abort()
+    const controller = new AbortController()
+    controllerRef.current = controller
+    const input = { left, right, ignoreWhitespace }
+    setCalculating(true)
+    try {
+      const next = await runTextTask({ kind: 'diff', ...input }, controller.signal)
+      const current = currentInput.current
+      if (controller.signal.aborted || current.left !== left || current.right !== right || current.ignoreWhitespace !== ignoreWhitespace) return
+      applyComparison(next)
+      if (saveHistory && (left || right)) {
+        void actions.saveHistory(
+          t('diff.summary', { added: String(next.added), removed: String(next.removed), changed: String(next.changed) }),
+          left, right, JSON.stringify({ ignoreWhitespace, highlightMode })
+        )
+      }
+    } catch (error) {
+      if (!isTaskCancelled(error)) actions.reportError(error)
+    } finally {
+      if (controllerRef.current === controller) { controllerRef.current = null; setCalculating(false) }
+    }
   }
 
   function clear(): void {
+    controllerRef.current?.abort()
     setLeft('')
     setRight('')
     setComparison({ result: compareText('', '', ignoreWhitespace), status: { kind: 'cleared' } })
@@ -133,10 +145,10 @@ export function TextDiffTool() {
   }
 
   function swap(): void {
-    const next = compareText(right, left, ignoreWhitespace)
+    controllerRef.current?.abort()
     setLeft(right)
     setRight(left)
-    applyComparison(next, { kind: 'swapped' })
+    updateStatus({ kind: 'swapped' })
   }
 
   async function copyDiff(): Promise<void> {
@@ -169,12 +181,10 @@ export function TextDiffTool() {
 
   function changeIgnoreWhitespace(checked: boolean): void {
     setIgnoreWhitespace(checked)
-    applyComparison(compareText(left, right, checked))
   }
 
   function changeDisplayMode(nextMode: DiffMode): void {
     setMode(nextMode)
-    if (left || right) applyComparison(compareText(left, right, ignoreWhitespace))
   }
 
   const editors = (
@@ -222,7 +232,8 @@ export function TextDiffTool() {
       <div className="local-tool-shell diff-workspace">
         <div className="diff-toolbar">
           <div className="diff-toolbar__commands">
-            <button className="primary-execution-button" type="button" onClick={compare}><Play size={14} />{t('diff.compare')}</button>
+            <button className="primary-execution-button" type="button" onClick={() => { void compare() }}><Play size={14} />{t('diff.compare')}</button>
+            {calculating && <button type="button" onClick={() => { window.clearTimeout(timerRef.current); controllerRef.current?.abort() }}>{t('common.cancel')}</button>}
             <button type="button" onClick={clear}><Trash2 size={14} />{t('common.action.clear')}</button>
             <button type="button" onClick={swap}><ArrowLeftRight size={14} />{t('common.action.swap')}</button>
             <button type="button" onClick={() => { void copyDiff() }}><Copy size={14} />{t('diff.copy')}</button>
@@ -265,7 +276,7 @@ export function TextDiffTool() {
           <div className="diff-toolbar__tail">
             <WorkspaceDragZone className="diff-toolbar__drag-zone" />
             <span className="diff-status" aria-live="polite">
-              {statusText(status, highlightMode, visibleSegments.length, t)}
+              {calculating ? t('common.processing') : statusText(status, highlightMode, visibleSegments.length, t)}
             </span>
             <button type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>
           </div>

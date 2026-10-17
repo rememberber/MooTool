@@ -73,6 +73,7 @@ export type ToolWindowStatus = {
   toolId: Exclude<ToolId, 'mootool'>
   detached: boolean
   ready: boolean
+  failed?: boolean
 }
 
 export type ToolWindowSnapshot = {

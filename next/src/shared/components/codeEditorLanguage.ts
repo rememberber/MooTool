@@ -1,12 +1,3 @@
-import { html } from '@codemirror/lang-html'
-import { java } from '@codemirror/lang-java'
-import { javascript } from '@codemirror/lang-javascript'
-import { json } from '@codemirror/lang-json'
-import { markdown } from '@codemirror/lang-markdown'
-import { python } from '@codemirror/lang-python'
-import { sql } from '@codemirror/lang-sql'
-import { xml } from '@codemirror/lang-xml'
-import { yaml } from '@codemirror/lang-yaml'
 import { closeBrackets } from '@codemirror/autocomplete'
 import {
   HighlightStyle,
@@ -15,6 +6,7 @@ import {
   indentOnInput,
   syntaxHighlighting
 } from '@codemirror/language'
+import type { LanguageSupport } from '@codemirror/language'
 import type { Extension } from '@codemirror/state'
 import { tags } from '@lezer/highlight'
 
@@ -70,7 +62,7 @@ export function resolveTextCodeEditorLanguage(value?: string | null): TextCodeEd
 export function codeEditorLanguageExtensions(language: TextCodeEditorLanguage, enabled = true): Extension {
   if (!enabled) return [bracketMatching()]
 
-  const languageSupport = languageExtension(language)
+  const languageSupport = languageCache.get(language)
   return [
     bracketMatching(),
     closeBrackets(),
@@ -78,18 +70,31 @@ export function codeEditorLanguageExtensions(language: TextCodeEditorLanguage, e
   ]
 }
 
-function languageExtension(language: TextCodeEditorLanguage): Extension | null {
+// Cache in-flight loads as well as completed grammars across editors in this renderer.
+const languageCache = new Map<TextCodeEditorLanguage, LanguageSupport>()
+const languageLoads = new Map<TextCodeEditorLanguage, Promise<void>>()
+
+export function loadCodeEditorLanguage(language: TextCodeEditorLanguage): Promise<void> {
+  if (language === 'text' || languageCache.has(language)) return Promise.resolve()
+  const existing = languageLoads.get(language)
+  if (existing) return existing
+  const loading = importLanguage(language).then(support => { languageCache.set(language, support) })
+    .finally(() => { languageLoads.delete(language) })
+  languageLoads.set(language, loading)
+  return loading
+}
+
+async function importLanguage(language: Exclude<TextCodeEditorLanguage, 'text'>): Promise<LanguageSupport> {
   switch (language) {
-    case 'json': return json()
-    case 'markdown': return markdown()
-    case 'java': return java()
-    case 'javascript': return javascript()
-    case 'typescript': return javascript({ typescript: true })
-    case 'python': return python()
-    case 'xml': return xml()
-    case 'html': return html()
-    case 'yaml': return yaml()
-    case 'sql': return sql()
-    default: return null
+    case 'json': return (await import('@codemirror/lang-json')).json()
+    case 'markdown': return (await import('@codemirror/lang-markdown')).markdown()
+    case 'java': return (await import('@codemirror/lang-java')).java()
+    case 'javascript': return (await import('@codemirror/lang-javascript')).javascript()
+    case 'typescript': return (await import('@codemirror/lang-javascript')).javascript({ typescript: true })
+    case 'python': return (await import('@codemirror/lang-python')).python()
+    case 'xml': return (await import('@codemirror/lang-xml')).xml()
+    case 'html': return (await import('@codemirror/lang-html')).html()
+    case 'yaml': return (await import('@codemirror/lang-yaml')).yaml()
+    case 'sql': return (await import('@codemirror/lang-sql')).sql()
   }
 }

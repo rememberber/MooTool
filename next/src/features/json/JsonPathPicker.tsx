@@ -13,12 +13,13 @@ type JsonPathPickerProps = {
 export function JsonPathPicker({ content, open, onClose, onChoose }: JsonPathPickerProps) {
   const { t } = useI18n()
   const entries = useMemo(() => {
+    if (!open) return []
     try {
       return listJsonPaths(content, t)
     } catch {
       return []
     }
-  }, [content, t])
+  }, [content, open, t])
   const [selectedPath, setSelectedPath] = useState('$')
   const selected = entries.find((entry) => entry.path === selectedPath)
 

@@ -1,14 +1,14 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { SettingsProvider } from '@/features/settings/SettingsProvider'
-import { Workbench } from '@/features/workbench/Workbench'
-import { ToolWindow } from '@/features/workbench/ToolWindow'
-import { ScreenColorPickerOverlay } from '@/features/color/ScreenColorPickerOverlay'
-import { ScreenCaptureOverlay } from '@/features/image/ScreenCaptureOverlay'
 import { ToastProvider, useToast } from '@/shared/feedback/ToastProvider'
 import { DesktopDialogProvider } from '@/shared/feedback/DesktopDialogProvider'
 import { I18nProvider, useI18n } from '@/shared/i18n/I18nProvider'
 import { useSystemTheme } from '@/shared/theme/useSystemTheme'
 
+const Workbench = lazy(() => import('@/features/workbench/Workbench').then(module => ({ default: module.Workbench })))
+const ToolWindow = lazy(() => import('@/features/workbench/ToolWindow').then(module => ({ default: module.ToolWindow })))
+const ScreenColorPickerOverlay = lazy(() => import('@/features/color/ScreenColorPickerOverlay').then(module => ({ default: module.ScreenColorPickerOverlay })))
+const ScreenCaptureOverlay = lazy(() => import('@/features/image/ScreenCaptureOverlay').then(module => ({ default: module.ScreenCaptureOverlay })))
 const HttpResponseWindow = lazy(() => import('@/features/http/HttpResponseWindow').then(module => ({ default: module.HttpResponseWindow })))
 
 export function App() {
@@ -32,7 +32,7 @@ function ThemedApp() {
     <ToastProvider>
       <DesktopDialogProvider>
         {windowType !== 'tool' && windowType !== 'http-response' && !isScreenOverlay && <UpdateNotifications />}
-        {windowType === 'http-response' ? <Suspense fallback={null}><HttpResponseWindow /></Suspense> : windowType === 'capture' ? <ScreenCaptureOverlay /> : windowType === 'color-picker' ? <ScreenColorPickerOverlay /> : windowType === 'tool' ? <ToolWindow requestedToolId={params.get('toolId') ?? ''} /> : <Workbench />}
+        <Suspense fallback={null}>{windowType === 'http-response' ? <HttpResponseWindow /> : windowType === 'capture' ? <ScreenCaptureOverlay /> : windowType === 'color-picker' ? <ScreenColorPickerOverlay /> : windowType === 'tool' ? <ToolWindow requestedToolId={params.get('toolId') ?? ''} /> : <Workbench />}</Suspense>
       </DesktopDialogProvider>
     </ToastProvider>
   )

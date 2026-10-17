@@ -26,6 +26,7 @@ import {
 import { defaultFindReplaceOptions, type FindReplaceOptions } from './findReplace'
 import {
   codeEditorLanguageExtensions,
+  loadCodeEditorLanguage,
   richCodeDocumentLimit,
   type TextCodeEditorLanguage
 } from './codeEditorLanguage'
@@ -340,9 +341,17 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   }, [columnEditing, columnEditingCompartment])
 
   useEffect(() => {
-    viewRef.current?.dispatch({
+    let cancelled = false
+    const configure = () => viewRef.current?.dispatch({
       effects: languageCompartment.reconfigure(codeEditorLanguageExtensions(language, richLanguageEnabled))
     })
+    configure()
+    if (richLanguageEnabled) {
+      void loadCodeEditorLanguage(language).then(() => {
+        if (!cancelled) configure()
+      }).catch(() => { /* Keep the editor usable without syntax support if loading fails. */ })
+    }
+    return () => { cancelled = true }
   }, [language, languageCompartment, richLanguageEnabled])
 
   useEffect(() => {

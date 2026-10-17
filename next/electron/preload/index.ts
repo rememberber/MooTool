@@ -22,7 +22,7 @@ import type { FuncHistoryRecord, HistoryQuery, SaveFuncHistoryInput } from '../.
 import type { SaveTextFileInput, TextFileKind, TextFileResult } from '../../src/shared/contracts/files'
 import type { ImageAsset, ImageAssetSummary, ImageVectorizeOptions, ImageVectorizeResult, RenameImageAssetInput, SaveImageAssetInput, ScreenCapture, ScreenCaptureOverlayData, ScreenCaptureRect, ScreenCaptureResult } from '../../src/shared/contracts/images'
 import type { DigestAlgorithmId, DigestFileResult, ImageFilePayload, SaveBinaryFileInput } from '../../src/shared/contracts/nativeFiles'
-import type { PdfFileInfo, PdfMergeSource, PdfOperationResult, PdfSplitTask } from '../../src/shared/contracts/pdf'
+import type { PdfFileInfo, PdfMergeSource, PdfOperationResult, PdfSplitTask, PdfProgress } from '../../src/shared/contracts/pdf'
 import type { JsonVaultFile, JsonVaultListInput, JsonVaultNode, MoveJsonVaultEntryInput, RenameJsonVaultEntryInput, SaveJsonVaultFileInput } from '../../src/shared/contracts/jsonVault'
 import type { RememberVaultFileInput, VaultWorkspace } from '../../src/shared/contracts/vaultWorkspace'
 import type { CreateQuickNoteInput, MoveQuickNoteEntryInput, QuickNoteAttachment, QuickNoteFile, QuickNoteListInput, QuickNoteNode, RenameQuickNoteEntryInput, SaveQuickNoteInput } from '../../src/shared/contracts/quickNote'
@@ -168,9 +168,11 @@ contextBridge.exposeInMainWorld('mootool', {
   cancelImageBatch: (): Promise<void> => ipcRenderer.invoke('images:cancel-batch'),
   onImageBatchProgress: (callback: (value: import('../../src/shared/imageBatch').ImageBatchProgress & { jobId?: string }) => void) => subscribe('images:batch-progress', callback),
   vectorizeImageAssets: (names: string[], options: ImageVectorizeOptions, jobId?: string): Promise<ImageVectorizeResult | null> => ipcRenderer.invoke('images:vectorize-svg', names, options, jobId),
-  choosePdfFiles: (): Promise<PdfFileInfo[]> => ipcRenderer.invoke('pdf:choose-files'),
-  mergePdfFiles: (sources: PdfMergeSource[]): Promise<PdfOperationResult | null> => ipcRenderer.invoke('pdf:merge', sources),
-  splitPdfFiles: (tasks: PdfSplitTask[]): Promise<PdfOperationResult> => ipcRenderer.invoke('pdf:split', tasks),
+  cancelPdfJob: (jobId: string): Promise<boolean> => ipcRenderer.invoke('pdf:cancel', jobId),
+  onPdfProgress: (callback: (progress: PdfProgress) => void) => subscribe('pdf:progress', callback),
+  choosePdfFiles: (jobId?: string): Promise<PdfFileInfo[]> => ipcRenderer.invoke('pdf:choose-files', jobId),
+  mergePdfFiles: (sources: PdfMergeSource[], jobId?: string): Promise<PdfOperationResult | null> => ipcRenderer.invoke('pdf:merge', sources, jobId),
+  splitPdfFiles: (tasks: PdfSplitTask[], jobId?: string): Promise<PdfOperationResult> => ipcRenderer.invoke('pdf:split', tasks, jobId),
   listJsonVault: (input?: JsonVaultListInput): Promise<JsonVaultNode[]> => ipcRenderer.invoke('json-vault:list', input),
   openJsonVaultWorkspace: (): Promise<VaultWorkspace<JsonVaultFile>> => ipcRenderer.invoke('json-vault:workspace'),
   rememberVaultFile: (input: RememberVaultFileInput): Promise<void> => ipcRenderer.invoke('vault:remember-file', input),
