@@ -1,5 +1,6 @@
 import { windowChromeOptions, trackWindowChrome } from './windowChrome'
 import { GlobalCommandShortcut } from './globalCommandShortcut'
+import { createInitialSettings } from './initialSettings'
 import { BatchRenameService } from './batchRenameService'
 import { OcrService } from './ocrService'
 import { VisionOcrBackend } from './ocrBackend'
@@ -2528,12 +2529,13 @@ app.whenReady().then(async () => {
     updateCleanupTimer = setInterval(() => { void cleanPendingUpdates() }, UPDATE_CLEANUP_INTERVAL)
     updateCleanupTimer.unref()
   }
+  const initialSettings = createInitialSettings(app.getPreferredSystemLanguages())
   store = new Store<PersistedStore>({
     name: 'mootool-next',
     defaults: {
       settings: process.env.NODE_ENV === 'test'
-        ? mergeSettings(defaultAppSettings, { general: { legacyMigrationHintDismissed: true } })
-        : defaultAppSettings,
+        ? mergeSettings(initialSettings, { general: { legacyMigrationHintDismissed: true } })
+        : initialSettings,
       workspace: defaultWorkspaceState,
       commandPalette: defaultCommandPaletteState,
       window: defaultWindowState,
