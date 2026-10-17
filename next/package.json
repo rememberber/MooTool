@@ -1,7 +1,7 @@
 {
   "name": "mootool-next",
   "desktopName": "com.rememberber.mootool.next.electron.desktop",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "private": true,
   "description": "MooTool rewritten with Electron, Vite, React, and TypeScript.",
   "license": "MIT",
