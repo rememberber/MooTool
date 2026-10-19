@@ -1,0 +1,855 @@
+/* Visual system aligned with Next Electron's modern desktop controls.
+ * Layout that is unique to Tauri stays in styles.css. This file only
+ * replaces tokens, chrome, and shared component surfaces. */
+
+:root {
+  color: #202124;
+  background: #ffffff;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --window-drag-height: 52px;
+  --app-font-size: 13px;
+  --navigation-width: 248px;
+  --navigation-hover: rgb(0 0 0 / 4%);
+  --navigation-selected: rgb(0 0 0 / 9%);
+  --navigation-radius: 7px;
+  --navigation-weight: 500;
+  --navigation-selected-text: var(--text-strong);
+  --sidebar: #f5f5f6;
+  --surface: #ffffff;
+  --surface-muted: #f7f7f8;
+  --workspace: #ffffff;
+  --surface-soft: #f7f7f8;
+  --surface-card: #f4f4f5;
+  --surface-card-hover: #ededee;
+  --surface-elevated: rgba(255, 255, 255, 0.96);
+  --surface-command: rgba(255, 255, 255, 0.96);
+  --panel: var(--surface);
+  --panel-strong: var(--surface);
+  --toolbar: #fafafa;
+  --control: #f1f1f2;
+  --control-hover: rgba(0, 0, 0, 0.06);
+  --control-hover-soft: rgba(0, 0, 0, 0.045);
+  --control-active: #e7e7e9;
+  --border: #e2e2e5;
+  --border-soft: #ececef;
+  --border-control: #dcdce0;
+  --border-control-hover: #cccdd1;
+  --border-strong: #d5d5d8;
+  --navigation-separator: color-mix(in srgb, var(--text) 13%, transparent);
+  --text: #202124;
+  --text-strong: #1d1e21;
+  --text-body: #3d3e43;
+  --text-muted: #76787e;
+  --text-secondary: var(--text-muted);
+  --muted: var(--text-muted);
+  --text-soft: #9b9ca1;
+  --text-faint: #8d8f95;
+  --subtle: var(--text-soft);
+  --editor-text: #242529;
+  --editor-font-weight: 550;
+  --syntax-property: #4e6480;
+  --syntax-string: #3f755d;
+  --syntax-number: #a05f27;
+  --syntax-literal: #8a536b;
+  --syntax-keyword: #7b5792;
+  --syntax-type: #376f91;
+  --syntax-function: #3f6f9c;
+  --syntax-comment: #7e857c;
+  --syntax-operator: #6d6d73;
+  --accent: #4f83cc;
+  --accent-strong: #3f6fae;
+  --accent-contrast: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  --blue: #2f7de1;
+  --danger: #b25448;
+  --warning: #9a681f;
+  --error-text: #b25448;
+  --error-bg: #f8ebe8;
+  --success-text: #35765b;
+  --success-bg: #e8f3ee;
+  --tooltip-bg: #2e2e31;
+  --tooltip-text: #ffffff;
+  --shadow: 0 12px 30px rgba(25, 27, 31, 0.08);
+  --shadow-color: rgba(25, 27, 31, 0.1);
+  --shadow-soft: rgba(25, 27, 31, 0.065);
+  --pattern-dot: #d9d9dc;
+  --desktop-font-size-body: 13px;
+  --desktop-font-size-control: 12px;
+  --desktop-font-size-meta: 11px;
+  --desktop-control-height: 34px;
+  --desktop-control-radius: 9px;
+  --desktop-control-bg: var(--surface);
+  --desktop-control-border: color-mix(in srgb, var(--border-control) 92%, transparent);
+  --desktop-control-border-hover: color-mix(in srgb, var(--border-control-hover) 94%, transparent);
+  --desktop-control-shadow: 0 1px 2px rgba(20, 20, 24, 0.045);
+  --desktop-control-shadow-hover: 0 1px 3px rgba(20, 20, 24, 0.075);
+  --desktop-control-focus: color-mix(in srgb, var(--accent) 20%, transparent);
+  --desktop-button-hover: color-mix(in srgb, var(--surface) 86%, var(--control));
+  --desktop-button-pressed: color-mix(in srgb, var(--surface) 72%, var(--control-active));
+  --desktop-button-prominent: #303135;
+  --desktop-button-prominent-hover: #222327;
+  --desktop-button-prominent-text: #ffffff;
+  --desktop-danger-bg: color-mix(in srgb, var(--error-bg) 82%, var(--surface));
+  --desktop-danger-border: color-mix(in srgb, var(--error-text) 20%, var(--border-control));
+}
+
+:root[data-theme='dark'] {
+  color: #ededee;
+  background: #1c1c1e;
+  --navigation-hover: rgb(255 255 255 / 6%);
+  --navigation-selected: rgb(255 255 255 / 14%);
+  --sidebar: #242426;
+  --surface: #1c1c1e;
+  --surface-muted: #252527;
+  --workspace: #1c1c1e;
+  --surface-soft: #252527;
+  --surface-card: #29292c;
+  --surface-card-hover: #303033;
+  --surface-elevated: rgba(30, 30, 32, 0.97);
+  --surface-command: rgba(30, 30, 32, 0.96);
+  --panel: var(--surface);
+  --panel-strong: var(--surface);
+  --toolbar: #222224;
+  --control: #2c2c2f;
+  --control-hover: rgba(255, 255, 255, 0.08);
+  --control-hover-soft: rgba(255, 255, 255, 0.055);
+  --control-active: #38383c;
+  --border: #39393d;
+  --border-soft: #303034;
+  --border-control: #414146;
+  --border-control-hover: #505056;
+  --border-strong: #505056;
+  --text: #ededee;
+  --text-strong: #f7f7f8;
+  --text-body: #d9d9dc;
+  --text-muted: #a8a8ae;
+  --text-soft: #7f8086;
+  --text-faint: #929399;
+  --editor-text: #f0f0f2;
+  --syntax-property: #91a8c2;
+  --syntax-string: #82b59d;
+  --syntax-number: #d1a267;
+  --syntax-literal: #c48aa2;
+  --syntax-keyword: #c59ad9;
+  --syntax-type: #83b8d7;
+  --syntax-function: #82aad4;
+  --syntax-comment: #8c978b;
+  --syntax-operator: #b0b1b7;
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  --danger: #e28c7d;
+  --warning: #d5aa65;
+  --error-text: #e28c7d;
+  --error-bg: #3a2523;
+  --success-text: #82c8a6;
+  --success-bg: #20352c;
+  --tooltip-bg: #ededf0;
+  --tooltip-text: #242426;
+  --shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
+  --shadow-color: rgba(0, 0, 0, 0.4);
+  --shadow-soft: rgba(0, 0, 0, 0.24);
+  --pattern-dot: #39393d;
+  --desktop-control-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --desktop-control-shadow-hover: 0 2px 5px rgba(0, 0, 0, 0.26);
+  --desktop-button-prominent: #eeeeef;
+  --desktop-button-prominent-hover: #ffffff;
+  --desktop-button-prominent-text: #242426;
+}
+
+:root[data-accent] {
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+body {
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  line-height: 1.45;
+}
+
+button,
+select,
+input,
+textarea {
+  letter-spacing: -0.005em;
+}
+
+button,
+select {
+  font-weight: 600;
+}
+
+:root .cm-editor,
+:root textarea {
+  font-weight: var(--editor-font-weight);
+}
+
+:root .app-shell {
+  grid-template-columns: var(--navigation-width) minmax(0, 1fr);
+  background: var(--surface);
+}
+
+:root .app-shell--compact {
+  grid-template-columns: 84px minmax(0, 1fr);
+}
+
+:root .app-shell--immersive-tool .window-drag-region {
+  left: var(--navigation-width);
+}
+
+:root .app-shell--immersive-tool.app-shell--compact .window-drag-region {
+  left: 84px;
+}
+
+:root .workspace,
+:root .view-layer {
+  background: var(--workspace);
+}
+
+:root .sidebar {
+  padding: 18px 14px 16px;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border-soft);
+}
+
+:root .toolbar-spacer {
+  height: 34px;
+  flex: 0 0 34px;
+}
+
+:root .sidebar-actions {
+  position: absolute;
+  z-index: 21;
+  top: 18px;
+  right: 14px;
+  display: flex;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}
+
+:root .sidebar-scroll {
+  flex: 1;
+  min-height: 0;
+  margin: 10px -6px 0;
+  padding: 0 6px 12px;
+  overflow: auto;
+  scrollbar-width: none;
+}
+
+:root .sidebar-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+:root .tool-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0;
+}
+
+:root .nav-group,
+:root .tool-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 18px;
+}
+
+:root .nav-group h2,
+:root .recent-group h2,
+:root .tool-group h2,
+:root .section-title {
+  margin: 0 10px 5px;
+  padding: 0;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+  text-transform: none;
+}
+
+:root .nav-button,
+:root .tool-button,
+:root .recent-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  height: auto;
+  min-height: 36px;
+  padding: 0 10px;
+  color: var(--text-body);
+  background: transparent;
+  border: 0;
+  border-radius: var(--navigation-radius);
+  box-shadow: none;
+  font-size: var(--app-font-size);
+  font-weight: var(--navigation-weight);
+  line-height: 1.35;
+}
+
+:root .nav-button span,
+:root .tool-button span,
+:root .recent-item span {
+  color: inherit;
+  font-size: var(--app-font-size);
+  font-weight: inherit;
+}
+
+:root .nav-button:hover,
+:root .tool-button:hover,
+:root .recent-item:hover,
+:root[data-theme='dark'] .nav-button:hover,
+:root[data-theme='dark'] .icon-button:hover {
+  color: var(--text-strong);
+  background: var(--navigation-hover);
+}
+
+:root .nav-button--active,
+:root .nav-button--active:hover,
+:root .tool-button--active,
+:root .tool-button-row > .tool-button--active,
+:root[data-theme='dark'] .nav-button--active,
+:root[data-theme='dark'] .nav-button--active:hover {
+  color: var(--navigation-selected-text);
+  background: var(--navigation-selected);
+  font-weight: var(--navigation-weight);
+}
+
+:root .recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+:root .recent-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border: 1px solid var(--text-soft);
+  border-radius: 999px;
+}
+
+:root .recent-dot--blue {
+  border-color: var(--blue);
+  background: var(--blue);
+}
+
+:root .sidebar-footer {
+  min-height: 0;
+  margin-top: auto;
+  padding: 8px 0 0;
+  border-top: 0;
+}
+
+:root .brand-lockup,
+:root .brand-mark {
+  gap: 8px;
+  color: var(--text-strong);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+:root .sidebar .brand-symbol {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+:root .home-logo-button .brand-symbol,
+:root .brand-symbol--large {
+  width: 104px;
+  height: 104px;
+  border-radius: 24px;
+}
+
+:root .icon-button,
+:root .icon-ghost {
+  width: 30px;
+  height: 30px;
+  flex-basis: 30px;
+  color: var(--text-muted);
+  background: transparent;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+:root .sidebar .icon-button:hover,
+:root .icon-ghost:hover {
+  color: var(--text-strong);
+  background: var(--control-hover);
+}
+
+:root .app-shell--compact .sidebar {
+  padding-right: 10px;
+  padding-left: 10px;
+}
+
+:root .app-shell--compact .sidebar-actions {
+  position: static;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+:root .app-shell--compact .sidebar-group-manage,
+:root .app-shell--compact .nav-group h2,
+:root .app-shell--compact .recent-group,
+:root .app-shell--compact .brand-lockup span {
+  display: none;
+}
+
+:root .app-shell--compact .nav-button,
+:root .app-shell--compact .tool-button {
+  justify-content: center;
+  padding: 0;
+}
+
+:root .app-shell--compact .sidebar-footer {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+:root .app-shell--compact .footer-actions {
+  display: grid;
+  grid-template-columns: 30px;
+  justify-items: center;
+}
+
+:root .app-shell--nav-card .nav-button--active,
+:root .app-shell--nav-card .tool-button--active {
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  box-shadow: var(--desktop-control-shadow);
+}
+
+:root .primary-button,
+:root .secondary-button,
+:root .conversion-actions button,
+:root .danger-button {
+  min-height: var(--desktop-control-height);
+  padding: 0 12px;
+  border-radius: var(--desktop-control-radius);
+  box-shadow: var(--desktop-control-shadow);
+  font-size: var(--desktop-font-size-control);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+:root .primary-button {
+  color: var(--desktop-button-prominent-text);
+  background: var(--desktop-button-prominent);
+  border: 1px solid var(--desktop-button-prominent);
+}
+
+:root .primary-button:hover:not(:disabled) {
+  color: var(--desktop-button-prominent-text);
+  background: var(--desktop-button-prominent-hover);
+  border-color: var(--desktop-button-prominent-hover);
+}
+
+:root .secondary-button,
+:root .conversion-actions button,
+:root[data-theme='dark'] .secondary-button,
+:root[data-theme='dark'] .conversion-actions button {
+  color: var(--text-body);
+  background: var(--desktop-control-bg);
+  border: 1px solid var(--desktop-control-border);
+}
+
+:root .secondary-button:hover:not(:disabled),
+:root .conversion-actions button:hover:not(:disabled),
+:root[data-theme='dark'] .secondary-button:hover,
+:root[data-theme='dark'] .conversion-actions button:hover {
+  color: var(--text-strong);
+  background: var(--desktop-button-hover);
+  border-color: var(--desktop-control-border-hover);
+}
+
+:root .danger-button {
+  color: var(--error-text);
+  background: var(--desktop-danger-bg);
+  border: 1px solid var(--desktop-danger-border);
+}
+
+:root .utility-workbench {
+  position: relative;
+  padding: 0;
+  gap: 0;
+  background: var(--workspace);
+}
+
+:root .utility-header {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:root .utility-toolbar,
+:root .json-toolbar,
+:root .text-diff-toolbar,
+:root .code-runtime-toolbar,
+:root .quick-note-main-toolbar,
+:root .host-toolbar,
+:root .variables-toolbar,
+:root .pdf-toolbar,
+:root .image-toolbar {
+  align-items: center;
+  min-height: 48px;
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--toolbar);
+  border-bottom: 1px solid var(--border-soft);
+  gap: 8px;
+}
+
+:root .utility-toolbar .primary-button,
+:root .utility-toolbar .secondary-button,
+:root .json-toolbar .primary-button,
+:root .json-toolbar .secondary-button {
+  min-height: var(--desktop-control-height);
+  padding-inline: 12px;
+  font-size: 13px;
+}
+
+:root .workspace .icon-button:not(.icon-ghost) {
+  width: var(--desktop-control-height);
+  height: var(--desktop-control-height);
+  flex-basis: var(--desktop-control-height);
+  color: var(--text-muted);
+  background: var(--control);
+  border-radius: var(--desktop-control-radius);
+}
+
+:root .workspace .icon-button:not(.icon-ghost):hover {
+  color: var(--text-strong);
+  background: var(--control-active);
+}
+
+:root .utility-segments {
+  padding: 3px;
+  background: var(--control);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 1px color-mix(in srgb, var(--shadow-color) 28%, transparent);
+}
+
+:root .utility-segment {
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+:root .utility-segment:hover {
+  color: var(--text-body);
+}
+
+:root .utility-segment--active,
+:root .utility-segment--active:hover {
+  background: var(--surface);
+  color: var(--text-strong);
+  box-shadow: var(--desktop-control-shadow-hover);
+  font-weight: 600;
+}
+
+:root .utility-toolbar > .utility-segments[role='tablist'],
+:root .network-tabs,
+:root .pdf-tabs,
+:root .translation-tabs,
+:root .variables-tabs {
+  align-self: flex-end;
+  padding: 0 0 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:root .utility-toolbar > .utility-segments[role='tablist'] .utility-segment,
+:root .network-tabs .utility-segment,
+:root .pdf-tabs .utility-segment,
+:root .translation-tabs .utility-segment,
+:root .variables-tabs .utility-segment {
+  height: 37px;
+  border-radius: 6px 6px 0 0;
+  font-size: 13px;
+}
+
+:root .utility-toolbar > .utility-segments[role='tablist'] .utility-segment--active,
+:root .network-tabs .utility-segment--active,
+:root .pdf-tabs .utility-segment--active,
+:root .translation-tabs .utility-segment--active,
+:root .variables-tabs .utility-segment--active {
+  background: transparent;
+  box-shadow: inset 0 -2px 0 var(--accent-strong);
+  color: var(--text-strong);
+}
+
+:root .utility-select,
+:root select:not([multiple]) {
+  min-height: 32px;
+  color: var(--text-body);
+  background: var(--desktop-control-bg);
+  border: 1px solid var(--desktop-control-border);
+  border-radius: var(--desktop-control-radius);
+  box-shadow: var(--desktop-control-shadow);
+  font-size: var(--desktop-font-size-control);
+}
+
+:root .utility-editor-card,
+:root .runtime-output-card,
+:root .http-request-card,
+:root .http-response-card,
+:root .qrcode-preview-card,
+:root .color-hero-card,
+:root .settings-section,
+:root .settings-about-card,
+:root .home-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 5px 18px var(--shadow-soft);
+}
+
+:root .utility-editor-card > header {
+  min-height: 36px;
+  background: var(--toolbar);
+  color: var(--text-strong);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+:root .shared-code-editor .cm-editor,
+:root .json-editor .cm-editor,
+:root .text-diff-editor .cm-editor,
+:root .editor-lab-editor .cm-editor {
+  color: var(--editor-text);
+  background: var(--workspace);
+  font-weight: var(--editor-font-weight);
+}
+
+:root .shared-code-editor .cm-gutters,
+:root .json-editor .cm-gutters,
+:root .text-diff-editor .cm-gutters,
+:root .editor-lab-editor .cm-gutters {
+  background: var(--workspace);
+  border-right-color: transparent;
+  color: var(--text-faint);
+}
+
+:root .shared-code-editor .cm-activeLine,
+:root .shared-code-editor .cm-activeLineGutter,
+:root .json-editor .cm-activeLine,
+:root .json-editor .cm-activeLineGutter,
+:root .text-diff-editor .cm-activeLine,
+:root .text-diff-editor .cm-activeLineGutter {
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+:root .shared-code-editor .cm-editor.cm-focused,
+:root .json-editor .cm-editor.cm-focused,
+:root .text-diff-editor .cm-editor.cm-focused {
+  outline: 2px solid var(--desktop-control-focus);
+}
+
+:root .command-palette {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--surface-command);
+  box-shadow: 0 18px 54px var(--shadow-color);
+}
+
+:root .command-result--selected {
+  background: var(--navigation-selected);
+  color: var(--text-strong);
+}
+
+:root .shared-dialog,
+:root .desktop-dialog,
+:root .command-palette {
+  backdrop-filter: blur(18px);
+}
+
+:root .shared-dialog,
+:root .desktop-dialog {
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+:root .shared-dialog-backdrop,
+:root .desktop-dialog-backdrop,
+:root .command-palette-backdrop {
+  background: rgba(18, 18, 20, 0.24);
+  backdrop-filter: blur(7px);
+}
+
+:root .settings-surface {
+  background: var(--surface);
+}
+
+:root .settings-header {
+  padding: 28px 24px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+:root .settings-header h1 {
+  color: var(--text-strong);
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+:root .settings-category-nav {
+  padding: 14px 10px;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+}
+
+:root .settings-category-nav__item {
+  min-height: 35px;
+  border-radius: 7px;
+  color: var(--text-body);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+:root .settings-category-nav__item span {
+  font-size: 13px;
+}
+
+:root .settings-category-nav__item:hover {
+  background: var(--control-hover-soft);
+  color: var(--text-strong);
+}
+
+:root .settings-category-nav__item--active,
+:root .settings-category-nav__item--active:hover {
+  color: var(--text-strong);
+  background: var(--control-active);
+  font-weight: 600;
+}
+
+:root .settings-row {
+  min-height: 54px;
+  color: var(--text-body);
+  font-size: 13px;
+  border-bottom-color: var(--border-soft);
+}
+
+:root .settings-segmented {
+  padding: 3px;
+  background: var(--control);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+}
+
+:root .settings-segmented button {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 7px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+:root .settings-segmented button.settings-segmented--active {
+  background: var(--surface);
+  color: var(--text-strong);
+  box-shadow: var(--desktop-control-shadow-hover);
+  font-weight: 600;
+}
+
+:root .settings-section h2 {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+:root .settings-section h2 svg {
+  color: var(--text-muted);
+}
+
+:root .home-page {
+  height: 100%;
+  width: min(1040px, calc(100% - 72px));
+  padding: 64px 0 48px;
+}
+
+:root .home-hero {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  align-items: center;
+  gap: 26px;
+  padding: 12px 0 34px;
+}
+
+:root .home-product-row h1 {
+  color: var(--text-strong);
+  font-size: 32px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+:root .home-tagline {
+  color: var(--text-body);
+}
+
+:root .home-author,
+:root .home-version {
+  color: var(--text-muted);
+}
+
+:root .home-section {
+  border-top-color: var(--border-soft);
+}
+
+:root .home-section h2 {
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+:root .home-about-copy p,
+:root .home-link-list button,
+:root .home-inline-link {
+  color: var(--text-body);
+}
+
+:root .home-hero p {
+  margin: 0;
+}
+
+:root .accent-swatch--blue { background: #4f83cc; }
+:root .accent-swatch--yellow { background: #e0b22b; }
+:root .accent-swatch--coral { background: #de8f7d; }
+:root .accent-swatch--green { background: #4e9275; }
+:root .accent-swatch--red { background: #c96761; }
+:root .accent-swatch--purple { background: #8a72b5; }
+
+:root .notice-toast {
+  color: var(--text-strong);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-control);
+  border-radius: 10px;
+  box-shadow: 0 12px 30px var(--shadow-color);
+}
+
+button:disabled,
+select:disabled {
+  opacity: 0.42;
+}

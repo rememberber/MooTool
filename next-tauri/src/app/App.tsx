@@ -1,11 +1,11 @@
 import {
   Boxes,
   ChevronDown,
-  Command,
   FolderCog,
   History,
   Languages,
   PanelLeftClose,
+  PanelLeftOpen,
   Search,
   Star,
   Settings
@@ -99,7 +99,6 @@ export function App() {
   const { t, toolTitle, groupTitle } = useI18n()
   const [activeTool, setActiveTool] = useState<ToolId>('home')
   const [visitedTools, setVisitedTools] = useState<ReadonlySet<ToolId>>(() => new Set(['home']))
-  const [query, setQuery] = useState('')
   const [runtimeInfo, setRuntimeInfo] = useState<RuntimeInfo>()
   const [notice, setNotice] = useState('')
   const [customGroupsOpen, setCustomGroupsOpen] = useState(false)
@@ -249,22 +248,15 @@ export function App() {
 
   const visibleGroups = useMemo(() => toolGroups.map((group) => ({
     group,
-    tools: navigationToolCatalog.filter((tool) => !hiddenTools.has(tool.id) && tool.group === group && (
-      !query.trim()
-      || `${tool.title} ${toolTitle(tool)} ${tool.keywords.join(' ')}`
-        .toLowerCase()
-        .includes(query.trim().toLowerCase())
-    ))
-  })).filter(({ tools }) => tools.length > 0), [query, settings.layout.hiddenTools, toolTitle])
+    tools: navigationToolCatalog.filter((tool) => !hiddenTools.has(tool.id) && tool.group === group)
+  })).filter(({ tools }) => tools.length > 0), [settings.layout.hiddenTools, toolTitle])
   const visibleCustomGroups = useMemo(() => settings.layout.customGroups.map((group) => ({
     ...group,
     tools: group.toolIds
       .map((toolId) => productToolCatalog.find((tool) => tool.id === toolId))
       .filter((tool): tool is NonNullable<typeof tool> => Boolean(tool))
       .filter((tool) => !hiddenTools.has(tool.id))
-      .filter((tool) => !query.trim() || `${tool.title} ${toolTitle(tool)} ${tool.keywords.join(' ')}`
-        .toLowerCase().includes(query.trim().toLowerCase()))
-  })).filter((group) => group.tools.length > 0), [query, settings.layout.customGroups, settings.layout.hiddenTools, toolTitle])
+  })).filter((group) => group.tools.length > 0), [settings.layout.customGroups, settings.layout.hiddenTools, toolTitle])
 
   function openTool(toolId: ToolId): void {
     const tool = toolCatalog.find((item) => item.id === toolId)
@@ -358,35 +350,31 @@ export function App() {
     <main className={shellClassName}>
       <div className="window-drag-region" data-tauri-drag-region />
       <aside className="sidebar">
-        <div className="sidebar-toolbar">
+        <div className="toolbar-spacer" data-tauri-drag-region />
+        <div className="sidebar-actions">
           <button
-            className="icon-button"
+            className="icon-button icon-ghost"
             type="button"
             aria-label={sidebarCompact ? t('shell.expand') : t('shell.collapse')}
+            aria-pressed={sidebarCompact}
             onClick={toggleSidebar}
           >
-            <PanelLeftClose />
+            {sidebarCompact ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
           </button>
           <button
-            className="icon-button compact-search-button"
+            className="icon-button icon-ghost"
             type="button"
             aria-label={t('shell.search')}
             onClick={() => setCommandPaletteOpen(true)}
           >
-            <Search />
+            <Search size={17} />
           </button>
-          <label className="search-control">
-            <Search />
-            <input
-              id="tool-search"
-              value={query}
-              placeholder={t('shell.search')}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-            <kbd><Command />K</kbd>
-          </label>
+          <button className="icon-button icon-ghost sidebar-group-manage" type="button" aria-label={t('shell.groups')} onClick={() => setCustomGroupsOpen(true)}>
+            <FolderCog size={17} />
+          </button>
         </div>
 
+        <div className="sidebar-scroll">
         <nav className="tool-nav" aria-label={t('shell.navigation')}>
           <NavButton
             icon={homeTool.icon}
@@ -403,7 +391,7 @@ export function App() {
             onClick={() => setHistoryOpen(true)}
           />
           {favorites.length > 0 && (
-            <section className="nav-group nav-group--favorites">
+            <section className="nav-group tool-group nav-group--favorites">
               {settings.layout.showGroupTitles && <h2><Star />{t('shell.favorites')}</h2>}
               {favorites.map((tool) => (
                 <NavButton
@@ -420,7 +408,7 @@ export function App() {
             </section>
           )}
           {visibleCustomGroups.map((group) => (
-            <section className="nav-group nav-group--custom" key={group.id}>
+            <section className="nav-group tool-group tool-group--custom nav-group--custom" key={group.id}>
               {settings.layout.showGroupTitles && <h2><FolderCog />{group.name}</h2>}
               {group.tools.map((tool) => (
                 <NavButton
@@ -437,7 +425,7 @@ export function App() {
             </section>
           ))}
           {visibleGroups.map(({ group, tools }) => (
-            <section className="nav-group" key={group}>
+            <section className="nav-group tool-group" key={group}>
               {settings.layout.showGroupTitles && <h2>{groupTitle(group)}</h2>}
               {tools.map((tool) => (
                 <NavButton
@@ -455,40 +443,41 @@ export function App() {
             </section>
           ))}
 
-          {!query && recent.length > 0 && (
-            <section className="recent-group">
-              <h2>{t('shell.recent')} <ChevronDown /></h2>
-              {recent.map((toolId) => {
+          {recent.length > 0 && (
+            <section className="recent-group recent-section">
+              <h2 className="section-title">{t('shell.recent')} <ChevronDown size={14} /></h2>
+              <div className="recent-list">
+              {recent.map((toolId, index) => {
                 const tool = toolCatalog.find((item) => item.id === toolId)
                 return tool && (
-                  <button type="button" key={toolId} onClick={() => openTool(toolId)}>
-                    {toolTitle(tool)}
+                  <button className="recent-item" type="button" key={toolId} onClick={() => openTool(toolId)}>
+                    <span className={index === 0 ? 'recent-dot recent-dot--blue' : 'recent-dot'} />
+                    <span>{toolTitle(tool)}</span>
                   </button>
                 )
               })}
+              </div>
             </section>
           )}
         </nav>
+        </div>
 
         <footer className="sidebar-footer">
-          <div className="brand-lockup">
+          <div className="brand-lockup brand-mark">
             <img className="brand-symbol" src={brandLogo} alt="" aria-hidden="true" draggable={false} />
-            <span>MooTool <small>Tauri</small></span>
+            <span>MooTool</span>
           </div>
-          <div className="footer-actions">
-            <button className="icon-button" type="button" aria-label={t('shell.groups')} onClick={() => setCustomGroupsOpen(true)}>
-              <FolderCog />
-            </button>
-            <button className="icon-button" type="button" aria-label={t('shell.language')} onClick={cycleLanguage}>
-              <Languages />
+          <div className="footer-actions footer-controls">
+            <button className="icon-button icon-ghost" type="button" aria-label={t('shell.language')} onClick={cycleLanguage}>
+              <Languages size={14} />
             </button>
             <button
-              className="icon-button"
+              className="icon-button icon-ghost sidebar-settings-button"
               type="button"
               aria-label={t('shell.settings')}
               onClick={() => void openWindow().catch((cause: unknown) => setNotice(errorMessage(cause)))}
             >
-              <Settings />
+              <Settings size={17} />
             </button>
           </div>
         </footer>
@@ -589,9 +578,9 @@ function NavButton({
 }) {
   const { t } = useI18n()
   return (
-    <div className={onToggleFavorite && !compact ? 'nav-button-row nav-button-row--favoritable' : 'nav-button-row'}>
+    <div className={onToggleFavorite && !compact ? 'nav-button-row tool-button-row nav-button-row--favoritable' : 'nav-button-row tool-button-row'}>
       <button
-        className={`nav-button ${active ? 'nav-button--active' : ''}`}
+        className={`nav-button tool-button ${active ? 'nav-button--active tool-button--active' : ''}`}
         type="button"
         aria-label={label}
         aria-current={active ? 'page' : undefined}

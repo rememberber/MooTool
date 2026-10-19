@@ -14,7 +14,7 @@ import {
   type AppSettings
 } from '../../platform/contracts/settings'
 import { errorMessage } from '../../shared/errors'
-import { resolveTheme } from './appearance'
+import { accentPresets, electronInterfaceFontFamily, resolveTheme } from './appearance'
 
 interface SettingsContextValue {
   settings: AppSettings
@@ -129,11 +129,17 @@ function applyDocumentAppearance(settings: AppSettings): () => void {
   const media = window.matchMedia('(prefers-color-scheme: dark)')
   const applyTheme = () => {
     const resolved = resolveTheme(settings.appearance.theme, media.matches)
+    const accent = accentPresets[settings.appearance.accentColor]
     root.dataset.theme = resolved
     root.dataset.accent = settings.appearance.accentColor
+    root.dataset.interfaceStyle = 'modern'
     root.dataset.density = settings.layout.density
     root.lang = settings.general.language
     root.style.colorScheme = resolved
+    root.style.setProperty('--accent', accent.value)
+    root.style.setProperty('--accent-strong', accent.strong)
+    root.style.setProperty('--accent-contrast', accent.contrast)
+    root.style.setProperty('--app-font-size', '13px')
     root.style.setProperty('--editor-font-size', `${settings.editor.fontSize}px`)
     root.style.setProperty('--json-editor-font-size', `${settings.editor.jsonFontSize}px`)
     root.style.setProperty('--quick-note-editor-font-size', `${settings.editor.quickNoteFontSize}px`)
@@ -142,7 +148,7 @@ function applyDocumentAppearance(settings: AppSettings): () => void {
     root.style.setProperty('--editor-tab-size', String(settings.editor.tabSize))
     root.style.setProperty('--interface-font-family', settings.appearance.fontFamily === 'mono'
       ? 'var(--font-mono)'
-      : 'Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif')
+      : electronInterfaceFontFamily)
     root.style.setProperty('--interface-scale', String(settings.appearance.uiScale / 100))
     if (window.__TAURI_INTERNALS__) {
       void import('@tauri-apps/api/window')

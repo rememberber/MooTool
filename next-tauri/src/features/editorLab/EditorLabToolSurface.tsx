@@ -1,10 +1,6 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { json } from '@codemirror/lang-json'
-import {
-  bracketMatching,
-  defaultHighlightStyle,
-  syntaxHighlighting
-} from '@codemirror/language'
+import { bracketMatching } from '@codemirror/language'
 import { EditorState } from '@codemirror/state'
 import {
   findNext,
@@ -26,6 +22,7 @@ import {
 import { Braces, CaseSensitive, MousePointer2, Search, TextCursorInput } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toolWebviewApis } from '../../platform/api/toolWebviewApi'
+import { electronCodeHighlighting } from '../../shared/codeHighlight'
 import {
   describeEditorLabState,
   type EditorLabSessionState
@@ -90,7 +87,7 @@ export function EditorLabToolSurface() {
           bracketMatching(),
           json(),
           search({ top: false }),
-          syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+          electronCodeHighlighting(),
           keymap.of([
             ...searchKeymap,
             ...defaultKeymap,

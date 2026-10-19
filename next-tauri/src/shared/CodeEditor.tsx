@@ -1,5 +1,5 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language'
+import { bracketMatching } from '@codemirror/language'
 import { EditorState, type Extension } from '@codemirror/state'
 import { openSearchPanel, search, searchKeymap } from '@codemirror/search'
 import {
@@ -12,6 +12,7 @@ import {
 } from '@codemirror/view'
 import { useEffect, useRef } from 'react'
 import { useI18n } from '../app/i18n'
+import { electronCodeHighlighting } from './codeHighlight'
 
 interface CodeEditorProps {
   ariaLabel: string
@@ -57,7 +58,7 @@ export function CodeEditor({
           highlightActiveLineGutter(),
           bracketMatching(),
           search({ top: false }),
-          syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+          electronCodeHighlighting(),
           keymap.of([
             ...searchKeymap,
             ...defaultKeymap,

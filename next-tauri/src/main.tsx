@@ -9,6 +9,7 @@ import { SettingsSurface } from './features/settings/SettingsSurface'
 import { ToolProbePage } from './features/webviewLab/ToolProbePage'
 import { DesktopDialogProvider } from './shared/DesktopDialogProvider'
 import './styles.css'
+import './styles/electronAppearance.css'
 
 const surface = new URLSearchParams(window.location.search).get('surface')
 const EditorLabToolSurface = lazy(async () => {

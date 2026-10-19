@@ -1,10 +1,6 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { json } from '@codemirror/lang-json'
-import {
-  bracketMatching,
-  defaultHighlightStyle,
-  syntaxHighlighting
-} from '@codemirror/language'
+import { bracketMatching } from '@codemirror/language'
 import { Compartment, EditorState } from '@codemirror/state'
 import { openSearchPanel, search, searchKeymap } from '@codemirror/search'
 import {
@@ -54,6 +50,7 @@ import type {
   VaultGitOperation,
   VaultSnapshot
 } from '../../platform/contracts/vault'
+import { electronCodeHighlighting } from '../../shared/codeHighlight'
 import { errorMessage } from '../../shared/errors'
 import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import { ResizableThreeColumns } from '../../shared/ResizableThreeColumns'
@@ -175,7 +172,7 @@ export function JsonToolSurface() {
           bracketMatching(),
           json(),
           search({ top: false }),
-          syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+          electronCodeHighlighting(),
           keymap.of([
             ...searchKeymap,
             ...defaultKeymap,
