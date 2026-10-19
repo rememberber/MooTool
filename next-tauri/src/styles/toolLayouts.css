@@ -281,3 +281,129 @@
   grid-column: 2;
   grid-row: 1 / span 2;
 }
+
+/* Remaining tools share Electron's full-height columns instead of floating cards. */
+.utility-workbench,
+.text-diff-workbench {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.utility-workbench > .encode-layout,
+.utility-workbench > .config-layout,
+.utility-workbench > .cron-content,
+.utility-workbench > .ua-content,
+.utility-workbench > .time-content,
+.utility-workbench > .translation-main,
+.utility-workbench > .protobuf-grid,
+.utility-workbench > .color-grid,
+.utility-workbench > .pdf-table-wrap,
+.utility-workbench > .host-layout,
+.utility-workbench > .code-runtime-layout,
+.utility-workbench > .reformat-editor-grid,
+.utility-workbench > .network-tab-content,
+.utility-workbench > .regex-test,
+.text-diff-workbench > .text-diff-editors,
+.crypto-workbench .crypto-editor-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.encode-layout,
+.config-layout,
+.crypto-editor-grid {
+  grid-template-columns: minmax(0, 1fr) 158px minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px;
+}
+
+.encode-actions,
+.config-actions,
+.crypto-actions,
+.protobuf-actions {
+  align-self: center;
+  gap: 8px;
+}
+
+.encode-actions button,
+.config-actions button,
+.crypto-actions button,
+.protobuf-actions button {
+  min-height: 34px;
+  color: var(--text-body);
+  background: var(--control);
+  border: 1px solid var(--border-control);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.regex-grid,
+.cron-content,
+.ua-content,
+.reformat-editor-grid,
+.text-diff-editors,
+.translation-editor-grid {
+  gap: 0;
+  min-height: 0;
+}
+
+.regex-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.38fr);
+}
+
+.cron-content {
+  grid-template-columns: minmax(460px, 1.6fr) minmax(260px, 0.8fr);
+}
+
+.ua-content,
+.reformat-editor-grid,
+.text-diff-editors,
+.translation-editor-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.color-grid {
+  grid-template-columns: minmax(280px, 0.4fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0;
+  padding: 0;
+}
+
+.regex-results,
+.cron-builder,
+.cron-runs,
+.text-diff-editor-pane,
+.utility-editor-card,
+.color-hero-card,
+.color-format-card,
+.color-scale-card,
+.color-library-card,
+.color-contrast-card,
+.encode-pane {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.text-diff-editor-pane + .text-diff-editor-pane,
+.translation-editor-grid > section + section,
+.reformat-editor-grid > section + section {
+  border-left: 1px solid var(--border-soft);
+}
+
+.regex-workbench > .regex-test,
+.crypto-workbench > :has(.crypto-editor-grid),
+.translation-workbench > .translation-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.regex-workbench .regex-grid,
+.translation-workbench .translation-editor-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+}
