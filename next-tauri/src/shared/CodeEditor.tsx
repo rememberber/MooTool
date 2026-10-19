@@ -1,5 +1,5 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { bracketMatching } from '@codemirror/language'
+import { bracketMatching, foldGutter } from '@codemirror/language'
 import { EditorState, type Extension } from '@codemirror/state'
 import { openSearchPanel, search, searchKeymap } from '@codemirror/search'
 import {
@@ -57,6 +57,7 @@ export function CodeEditor({
           highlightActiveLine(),
           highlightActiveLineGutter(),
           bracketMatching(),
+          foldGutter(),
           search({ top: false }),
           electronCodeHighlighting(),
           keymap.of([

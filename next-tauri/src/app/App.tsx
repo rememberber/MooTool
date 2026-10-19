@@ -96,7 +96,7 @@ const toolHosts: Array<{ id: Exclude<ToolId, 'home'>; Host: ComponentType<{ acti
 
 export function App() {
   const { settings, ready: settingsReady, error: settingsError, save, openWindow } = useSettings()
-  const { t, toolTitle, groupTitle } = useI18n()
+  const { locale, t, toolTitle, groupTitle } = useI18n()
   const [activeTool, setActiveTool] = useState<ToolId>('home')
   const [visitedTools, setVisitedTools] = useState<ReadonlySet<ToolId>>(() => new Set(['home']))
   const [runtimeInfo, setRuntimeInfo] = useState<RuntimeInfo>()
@@ -328,12 +328,10 @@ export function App() {
     }).catch((cause: unknown) => setNotice(errorMessage(cause)))
   }
 
-  function cycleLanguage(): void {
-    const languages: AppLanguage[] = ['zh-CN', 'en-US', 'ja-JP']
-    const next = languages[(languages.indexOf(settings.general.language) + 1) % languages.length]
+  function setLanguage(language: AppLanguage): void {
     void save((current) => ({
       ...current,
-      general: { ...current.general, language: next }
+      general: { ...current.general, language }
     })).catch((cause: unknown) => setNotice(errorMessage(cause)))
   }
 
@@ -469,9 +467,18 @@ export function App() {
             <span>MooTool</span>
           </div>
           <div className="footer-actions footer-controls">
-            <button className="icon-button icon-ghost" type="button" aria-label={t('shell.language')} onClick={cycleLanguage}>
-              <Languages size={14} />
-            </button>
+            <label className="language-menu">
+              <Languages size={14} aria-hidden="true" />
+              <select
+                aria-label={t('settings.language')}
+                value={locale}
+                onChange={(event) => setLanguage(event.target.value as AppLanguage)}
+              >
+                <option value="zh-CN">{t('settings.languageZh')}</option>
+                <option value="en-US">{t('settings.languageEn')}</option>
+                <option value="ja-JP">{t('settings.languageJa')}</option>
+              </select>
+            </label>
             <button
               className="icon-button icon-ghost sidebar-settings-button"
               type="button"
