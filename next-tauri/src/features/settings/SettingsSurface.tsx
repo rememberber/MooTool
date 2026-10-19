@@ -36,6 +36,7 @@ import type {
   InterfaceDensity,
   NavigationStyle,
   ProxyMode,
+  InterfaceStyle,
   ThemePreference
 } from '../../platform/contracts/settings'
 import { translationLanguageCodes, translationLanguageLabel } from '../../platform/contracts/translationLanguages'
@@ -90,6 +91,12 @@ export function SettingsSurface() {
   const allowCloseRef = useRef(false)
 
   useEffect(() => setDraft(settings), [settings])
+  useEffect(() => {
+    const root = document.documentElement
+    const fontSize = Math.min(18, Math.max(12, draft.appearance.fontSize || 13))
+    root.dataset.interfaceStyle = draft.appearance.interfaceStyle
+    root.style.setProperty('--app-font-size', `${fontSize}px`)
+  }, [draft.appearance.fontSize, draft.appearance.interfaceStyle])
   useEffect(() => {
     void credentialApi.getProxyStatus().then(setProxyCredential).catch((cause) => {
       setStatus(`${t('settings.proxyCredentialError')}: ${errorMessage(cause)}`)
@@ -300,6 +307,20 @@ export function SettingsSurface() {
         </SettingsSection>
 
         <SettingsSection active={activeCategory === 'appearance'} icon={<MonitorCog />} title={t('settings.appearance')}>
+          <SettingRow label={t('settings.interfaceStyle')}>
+            <select
+              aria-label={t('settings.interfaceStyle')}
+              value={draft.appearance.interfaceStyle}
+              onChange={(event) => setDraft(updateAppearance(draft, { interfaceStyle: event.target.value as InterfaceStyle }))}
+            >
+              <option value="modern">{t('settings.interfaceStyle.modern')}</option>
+              <option value="claude">{t('settings.interfaceStyle.claude')}</option>
+              <option value="quiet">{t('settings.interfaceStyle.quiet')}</option>
+              <option value="hero">{t('settings.interfaceStyle.hero')}</option>
+              <option value="smartisan">{t('settings.interfaceStyle.smartisan')}</option>
+              <option value="miui-v5">{t('settings.interfaceStyle.miuiV5')}</option>
+            </select>
+          </SettingRow>
           <SettingRow label={t('settings.theme')}>
             <Segmented
               value={draft.appearance.theme}
@@ -333,8 +354,27 @@ export function SettingsSurface() {
               <option value="mono">{t('settings.interfaceFontMono')}</option>
             </select>
           </SettingRow>
-          <SettingRow label={t('settings.uiScale')}>
-            <Segmented value={String(draft.appearance.uiScale)} options={[["90", "90%"], ["100", "100%"], ["110", "110%"]]} onChange={(value) => setDraft(updateAppearance(draft, { uiScale: Number(value) as 90 | 100 | 110 }))} />
+          <SettingRow label={t('settings.interfaceFontSize')}>
+            <label className="settings-range">
+              <input
+                type="range"
+                min={12}
+                max={18}
+                step={1}
+                aria-label={t('settings.interfaceFontSize')}
+                value={draft.appearance.fontSize}
+                onChange={(event) => setDraft(updateAppearance(draft, { fontSize: Number(event.target.value) }))}
+              />
+              <output>{draft.appearance.fontSize}</output>
+            </label>
+          </SettingRow>
+          <SettingRow label={t('settings.unifiedBackground')}>
+            <input
+              type="checkbox"
+              checked={draft.appearance.unifiedBackground}
+              aria-label={t('settings.unifiedBackground')}
+              onChange={(event) => setDraft(updateAppearance(draft, { unifiedBackground: event.target.checked }))}
+            />
           </SettingRow>
         </SettingsSection>
 

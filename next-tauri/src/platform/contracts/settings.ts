@@ -1,9 +1,10 @@
-export const SETTINGS_SCHEMA_VERSION = 9 as const
+export const SETTINGS_SCHEMA_VERSION = 10 as const
 
 export type NavigationStyle = 'classic' | 'card' | 'grouped'
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type ThemePreference = 'system' | 'light' | 'dark'
+export type InterfaceStyle = 'modern' | 'quiet' | 'hero' | 'smartisan' | 'miui-v5' | 'claude'
 export type AccentColor =
   | 'blue'
   | 'indigo'
@@ -51,8 +52,11 @@ export interface AppSettings {
   }
   appearance: {
     theme: ThemePreference
+    interfaceStyle: InterfaceStyle
+    unifiedBackground: boolean
     accentColor: AccentColor
     fontFamily: 'system' | 'mono'
+    fontSize: number
     uiScale: 90 | 100 | 110
   }
   layout: {
@@ -145,8 +149,11 @@ export function defaultAppSettings(): AppSettings {
     },
     appearance: {
       theme: 'system',
+      interfaceStyle: 'modern',
+      unifiedBackground: true,
       accentColor: 'blue',
       fontFamily: 'system',
+      fontSize: 13,
       uiScale: 100
     },
     layout: {

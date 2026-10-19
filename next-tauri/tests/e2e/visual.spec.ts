@@ -38,13 +38,13 @@ async function open(
   path: string,
   width = 1366,
   height = 820,
-  appearance: { locale: Locale; theme: Theme; uiScale?: 90 | 100 | 110 } = { locale: 'zh-CN', theme: 'light' }
+  appearance: { locale: Locale; theme: Theme; fontSize?: number } = { locale: 'zh-CN', theme: 'light' }
 ) {
   await page.addInitScript((value) => {
     window.localStorage.clear()
     window.localStorage.setItem('mootool-next-tauri:settings', JSON.stringify({
       general: { language: value.locale },
-      appearance: { theme: value.theme, uiScale: value.uiScale ?? 100 }
+      appearance: { theme: value.theme, fontSize: value.fontSize ?? 13, interfaceStyle: 'modern', unifiedBackground: true }
     }))
   }, appearance)
   await page.setViewportSize({ width, height })
@@ -151,9 +151,9 @@ test('dark theme visual baseline', async ({ page }) => {
   await expect(page.locator('#root')).toHaveScreenshot('json-workbench-dark.png', { maxDiffPixelRatio: 0.01 })
 })
 
-for (const scale of [90, 110] as const) {
-  test(`shell remains usable at ${scale}% interface scale`, async ({ page }) => {
-    await open(page, '/', 1280, 760, { locale: 'zh-CN', theme: 'light', uiScale: scale })
-    await expect(page.locator('.app-shell')).toHaveScreenshot(`shell-scale-${scale}.png`, visualScreenshotOptions)
+for (const fontSize of [12, 18] as const) {
+  test(`shell remains usable at ${fontSize}px interface font size`, async ({ page }) => {
+    await open(page, '/', 1280, 760, { locale: 'zh-CN', theme: 'light', fontSize })
+    await expect(page.locator('.app-shell')).toHaveScreenshot(`shell-font-${fontSize}.png`, visualScreenshotOptions)
   })
 }

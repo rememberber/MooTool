@@ -162,9 +162,11 @@
 }
 
 body {
+  font-size: var(--app-font-size, 13px);
   font-weight: 500;
   letter-spacing: -0.005em;
   line-height: 1.45;
+  zoom: 1;
 }
 
 button,
@@ -204,6 +206,27 @@ select {
 :root .workspace,
 :root .view-layer {
   background: var(--workspace);
+}
+
+:root .app-shell--unified-background .workspace,
+:root .app-shell--unified-background .view-layer {
+  background: var(--surface);
+}
+
+:root .settings-range {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:root .settings-range input[type='range'] {
+  width: 120px;
+}
+
+:root .settings-range output {
+  min-width: 1.5em;
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
 }
 
 :root .sidebar {
@@ -480,7 +503,17 @@ select {
   background: var(--workspace);
 }
 
-:root .utility-header {
+:root .utility-session {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+:root .utility-header:not(:has(button, a, select, input)) {
   position: absolute;
   width: 1px;
   height: 1px;

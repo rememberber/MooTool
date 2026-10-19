@@ -26,7 +26,8 @@
 | 侧栏图标模式 | `hideNavigationTitles` / 紧凑 | `sidebarCompact` | 已对齐（等价交互） |
 | 界面密度、UI 缩放、主题/强调色 | 有 | 已对齐 | 含 Electron 六色 + Tauri 扩展 indigo/teal/orange |
 | 导航 classic/card/grouped + 紧凑/分隔 | `navigationStyle` 等 | 同上 | 2026-09-17 起与 Electron 同级选项 |
-| Hero/Modern 界面风格、统一背景 | 有六种界面风格 | 默认现代主题，控件与 Electron 桌面控件同一套外观 | 已对齐默认现代外观；其余界面风格仍未暴露 |
+| 界面风格 modern / quiet / hero / claude / smartisan / miui-v5、统一背景 | 有 | 设置 → 外观 | 已对齐 |
+| 界面字号 12–18 | 字号滑杆 | 设置 → 外观 | 已对齐 |
 | 设置页分栏可调宽度 | `ResizableColumns` | 已补齐 | 设置窗口 |
 | 设置分类（布局/网络/Vault/快捷键/关于） | 12 类 | 已对齐信息架构 | 2026-09-17 拆分 |
 | macOS 毛玻璃强度 | Chromium 半透明 | 原生标题栏 | **C 级**，ADR-010 |

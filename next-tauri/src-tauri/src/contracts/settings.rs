@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
-pub const SETTINGS_SCHEMA_VERSION: u32 = 9;
+pub const SETTINGS_SCHEMA_VERSION: u32 = 10;
 
 const PRODUCT_TOOL_IDS: [&str; 25] = [
     "quick-note",
@@ -63,6 +63,22 @@ pub enum ThemePreference {
     System,
     Light,
     Dark,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum InterfaceStyle {
+    #[default]
+    Modern,
+    Quiet,
+    Hero,
+    Smartisan,
+    MiuiV5,
+    Claude,
+}
+
+fn default_interface_font_size() -> u8 {
+    13
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -138,8 +154,14 @@ impl Default for GeneralSettings {
 #[serde(default, rename_all = "camelCase")]
 pub struct AppearanceSettings {
     pub theme: ThemePreference,
+    #[serde(default)]
+    pub interface_style: InterfaceStyle,
+    #[serde(default = "default_true")]
+    pub unified_background: bool,
     pub accent_color: AccentColor,
     pub font_family: String,
+    #[serde(default = "default_interface_font_size")]
+    pub font_size: u8,
     pub ui_scale: u8,
 }
 
@@ -147,8 +169,11 @@ impl Default for AppearanceSettings {
     fn default() -> Self {
         Self {
             theme: ThemePreference::default(),
+            interface_style: InterfaceStyle::default(),
+            unified_background: true,
             accent_color: AccentColor::default(),
             font_family: "system".into(),
+            font_size: default_interface_font_size(),
             ui_scale: 100,
         }
     }
@@ -433,6 +458,9 @@ impl AppSettings {
         if self.appearance.font_family != "system" && self.appearance.font_family != "mono" {
             return Err("interface font family is invalid".into());
         }
+        if !(12..=18).contains(&self.appearance.font_size) {
+            return Err("interface font size must be between 12 and 18".into());
+        }
         if ![90, 100, 110].contains(&self.appearance.ui_scale) {
             return Err("interface scale must be 90, 100, or 110".into());
         }
@@ -707,6 +735,9 @@ mod tests {
         assert_eq!(settings.general.language, AppLanguage::SimplifiedChinese);
         assert!(settings.general.auto_check_updates);
         assert_eq!(settings.appearance.theme, ThemePreference::System);
+        assert_eq!(settings.appearance.interface_style, InterfaceStyle::Modern);
+        assert!(settings.appearance.unified_background);
+        assert_eq!(settings.appearance.font_size, 13);
         assert!(settings.layout.custom_groups.is_empty());
         assert_eq!(settings.editor.tab_size, 2);
         assert_eq!(settings.data.history_limit, 500);

@@ -1,0 +1,1873 @@
+/* Interface styles from Next Electron. Quiet restores Electron's base palette;
+ * the other styles override tokens and controls through data-interface-style.
+ */
+
+:root[data-interface-style='quiet'] {
+  color: #242426;
+  background: #f7f7f8;
+  --sidebar: #f1f2f4;
+  --surface: #ffffff;
+  --workspace: #fbfbfb;
+  --surface-soft: #f5f5f5;
+  --surface-card: #f2f2f3;
+  --surface-card-hover: #ececee;
+  --surface-elevated: rgba(255, 255, 255, 0.9);
+  --surface-command: rgba(255, 255, 255, 0.88);
+  --toolbar: #f8f8f9;
+  --control: #eeeeef;
+  --control-hover: rgba(0, 0, 0, 0.055);
+  --control-active: rgba(0, 0, 0, 0.075);
+  --border: #dedee1;
+  --border-soft: #ececef;
+  --border-control: #e1e1e3;
+  --text: #242426;
+  --text-strong: #27272a;
+  --text-body: #45464a;
+  --text-muted: #858589;
+  --text-soft: #a3a3a8;
+  --text-faint: #999a9f;
+  --editor-text: #232428;
+  --shadow: rgba(20, 20, 20, 0.06);
+  --shadow-soft: rgba(20, 20, 20, 0.045);
+  --surface-muted: var(--surface-soft);
+  --muted: var(--text-muted);
+  --subtle: var(--text-soft);
+  --panel: var(--surface);
+  --panel-strong: var(--surface);
+}
+
+:root[data-interface-style='quiet'][data-theme='dark'] {
+  color: #e8e8ea;
+  background: #171719;
+  --sidebar: #202124;
+  --surface: #171719;
+  --workspace: #191a1d;
+  --surface-soft: #27282c;
+  --surface-card: #242529;
+  --surface-card-hover: #2c2d31;
+  --surface-elevated: rgba(31, 32, 35, 0.92);
+  --surface-command: rgba(31, 32, 35, 0.9);
+  --toolbar: #202125;
+  --control: #2b2c31;
+  --control-hover: rgba(255, 255, 255, 0.075);
+  --control-active: rgba(255, 255, 255, 0.095);
+  --border: #33343a;
+  --border-soft: #292a2f;
+  --border-control: #34353a;
+  --text: #e8e8ea;
+  --text-strong: #f2f2f3;
+  --text-body: #d3d3d7;
+  --text-muted: #a0a1a7;
+  --text-soft: #7f8087;
+  --text-faint: #8b8c92;
+  --editor-text: #ececef;
+  --shadow: rgba(0, 0, 0, 0.32);
+  --shadow-soft: rgba(0, 0, 0, 0.22);
+  --surface-muted: var(--surface-soft);
+  --muted: var(--text-muted);
+  --subtle: var(--text-soft);
+  --panel: var(--surface);
+  --panel-strong: var(--surface);
+}
+
+/* Modern interface style: sharper type hierarchy with restrained surfaces. */
+:root[data-interface-style='modern'] {
+  color: #202124;
+  background: #ffffff;
+  --sidebar: #f5f5f6;
+  --surface: #ffffff;
+  --workspace: #ffffff;
+  --surface-soft: #f7f7f8;
+  --surface-card: #f4f4f5;
+  --surface-card-hover: #ededee;
+  --surface-elevated: rgba(255, 255, 255, 0.96);
+  --surface-command: rgba(255, 255, 255, 0.96);
+  --toolbar: #fafafa;
+  --control: #f1f1f2;
+  --control-hover: rgba(0, 0, 0, 0.06);
+  --control-hover-soft: rgba(0, 0, 0, 0.045);
+  --control-active: #e7e7e9;
+  --border: #e2e2e5;
+  --border-soft: #ececef;
+  --border-control: #dcdce0;
+  --border-control-hover: #cccdd1;
+  --text: #202124;
+  --text-strong: #1d1e21;
+  --text-body: #3d3e43;
+  --text-muted: #76787e;
+  --text-soft: #9b9ca1;
+  --text-faint: #8d8f95;
+  --editor-text: #242529;
+  --shadow: rgba(25, 27, 31, 0.1);
+  --shadow-soft: rgba(25, 27, 31, 0.065);
+  --pattern-dot: #d9d9dc;
+}
+
+:root[data-interface-style='modern'][data-theme='dark'] {
+  color: #ededee;
+  background: #1c1c1e;
+  --sidebar: #242426;
+  --surface: #1c1c1e;
+  --workspace: #1c1c1e;
+  --surface-soft: #252527;
+  --surface-card: #29292c;
+  --surface-card-hover: #303033;
+  --surface-elevated: rgba(30, 30, 32, 0.97);
+  --surface-command: rgba(30, 30, 32, 0.96);
+  --toolbar: #222224;
+  --control: #2c2c2f;
+  --control-hover: rgba(255, 255, 255, 0.08);
+  --control-hover-soft: rgba(255, 255, 255, 0.055);
+  --control-active: #38383c;
+  --border: #39393d;
+  --border-soft: #303034;
+  --border-control: #414146;
+  --border-control-hover: #505056;
+  --text: #ededee;
+  --text-strong: #f7f7f8;
+  --text-body: #d9d9dc;
+  --text-muted: #a8a8ae;
+  --text-soft: #7f8086;
+  --text-faint: #929399;
+  --editor-text: #f0f0f2;
+  --shadow: rgba(0, 0, 0, 0.4);
+  --shadow-soft: rgba(0, 0, 0, 0.24);
+  --pattern-dot: #39393d;
+}
+
+:root[data-interface-style='modern'] body {
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+
+:root[data-interface-style='modern'] button {
+  font-weight: 500;
+}
+
+:root[data-interface-style='modern'] .sidebar {
+  border-right-color: var(--border-soft);
+}
+
+:root[data-interface-style='modern'] .tool-group h2,
+:root[data-interface-style='modern'] .section-title {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+:root[data-interface-style='modern'] .settings-nav__item {
+  border-radius: 7px;
+  font-weight: 500;
+}
+:root[data-interface-style='modern'] .settings-nav__item--active {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+:root[data-interface-style='modern'] .tool-page h1,
+:root[data-interface-style='modern'] .placeholder-page h1 {
+  color: var(--text-strong);
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+:root[data-interface-style='modern'] .tool-page__header {
+  margin-bottom: 12px;
+}
+
+:root[data-interface-style='modern'] .editor-shell,
+:root[data-interface-style='modern'] .local-tool-shell,
+:root[data-interface-style='modern'] .quick-note-editor-shell,
+:root[data-interface-style='modern'] .runtime-shell {
+  border-color: var(--border);
+  border-radius: 8px;
+  box-shadow: 0 5px 18px var(--shadow-soft);
+}
+
+:root[data-interface-style='modern'] .editor-toolbar,
+:root[data-interface-style='modern'] .tool-tabs,
+:root[data-interface-style='modern'] .p4-toolbar,
+:root[data-interface-style='modern'] .runtime-toolbar,
+:root[data-interface-style='modern'] .quick-note-toolbar {
+  background: var(--toolbar);
+}
+
+:root[data-interface-style='modern'] .editor-toolbar {
+  min-height: 48px;
+}
+
+:root[data-interface-style='modern'] .toolbar-button {
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+:root[data-interface-style='modern'] .toolbar-button--primary {
+  background: var(--surface);
+  border-color: var(--border-control);
+  box-shadow: 0 1px 3px var(--shadow-soft);
+}
+
+:root[data-interface-style='modern'] .icon-ghost,
+:root[data-interface-style='modern'] .icon-button,
+:root[data-interface-style='modern'] .settings-command,
+:root[data-interface-style='modern'] .dialog-button,
+:root[data-interface-style='modern'] .panel-command,
+:root[data-interface-style='modern'] .primary-command,
+:root[data-interface-style='modern'] textarea,
+:root[data-interface-style='modern'] select {
+  border-radius: var(--desktop-control-radius, 9px);
+}
+
+:root[data-interface-style='modern'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']) {
+  border-radius: var(--desktop-control-radius, 9px);
+}
+
+:root[data-interface-style='modern'] .icon-button,
+:root[data-interface-style='modern'] .settings-command,
+:root[data-interface-style='modern'] .dialog-button,
+:root[data-interface-style='modern'] .panel-command {
+  box-shadow: 0 1px 2px var(--shadow-soft);
+}
+
+:root[data-interface-style='modern'] .inspector-card,
+:root[data-interface-style='modern'] .operation-panel,
+:root[data-interface-style='modern'] .calculator-log,
+:root[data-interface-style='modern'] .common-pattern-list button {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--shadow-soft);
+}
+
+:root[data-interface-style='modern'] .dialog {
+  border-radius: 13px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+:root[data-interface-style='modern'] .command-palette {
+  border-radius: 8px;
+  box-shadow: 0 18px 54px var(--shadow);
+}
+
+:root[data-interface-style='modern'] .settings-content__header h1 {
+  color: var(--text-strong);
+  font-size: 18px;
+  font-weight: 650;
+}
+
+:root[data-interface-style='modern'] .settings-group h2 {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+:root[data-interface-style='modern'] .settings-group__rows {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--shadow-soft);
+  overflow: hidden;
+}
+
+:root[data-interface-style='modern'] .setting-row {
+  min-height: 54px;
+  padding: 0 14px;
+}
+
+:root[data-interface-style='modern'] .setting-row:last-child {
+  border-bottom: 0;
+}
+
+:root[data-interface-style='modern'] .runtime-row:last-child {
+  border-bottom: 0;
+}
+
+:root[data-interface-style='modern'] .segmented {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+
+:root[data-interface-style='modern'] .segmented__item {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+:root[data-interface-style='modern'] .segmented__item--active {
+  box-shadow: 0 1px 3px var(--shadow);
+}
+
+/*
+ * Hero interface style
+ *
+ * HeroUI (formerly NextUI) uses semantic surfaces, generous radii and a
+ * restrained accent color. Keep MooTool's existing components and density,
+ * but map them onto that visual language so every tool inherits the style.
+ */
+:root[data-interface-style='hero'] {
+  color: #18181b;
+  background: #f4f4f5;
+  --sidebar: #fafafa;
+  --surface: #ffffff;
+  --workspace: #f4f4f5;
+  --surface-soft: #fafafa;
+  --surface-card: #f4f4f5;
+  --surface-card-hover: #e4e4e7;
+  --surface-elevated: rgba(255, 255, 255, 0.92);
+  --surface-command: rgba(255, 255, 255, 0.94);
+  --toolbar: rgba(250, 250, 250, 0.9);
+  --control: #f4f4f5;
+  --control-hover: rgba(24, 24, 27, 0.08);
+  --control-hover-soft: rgba(24, 24, 27, 0.055);
+  --control-active: #e4e4e7;
+  --border: #e4e4e7;
+  --border-soft: #f0f0f2;
+  --border-control: #d4d4d8;
+  --border-control-hover: #a1a1aa;
+  --text: #18181b;
+  --text-strong: #09090b;
+  --text-body: #3f3f46;
+  --text-muted: #71717a;
+  --text-soft: #a1a1aa;
+  --text-faint: #8b8b95;
+  --editor-text: #27272a;
+  --success-text: #0e793c;
+  --success-bg: #e8faf0;
+  --error-text: #c20e4d;
+  --error-bg: #fee7ef;
+  --warning-text: #936316;
+  --tooltip-bg: #18181b;
+  --tooltip-text: #fafafa;
+  --shadow: rgba(24, 24, 27, 0.16);
+  --shadow-soft: rgba(24, 24, 27, 0.08);
+  --shadow-popover: 0 18px 48px rgba(24, 24, 27, 0.18);
+  --pattern-dot: #d4d4d8;
+  --sidebar-vibrancy-border: rgba(113, 113, 122, 0.18);
+  --desktop-control-height: 36px;
+  --desktop-control-radius: 12px;
+  --desktop-control-bg: var(--surface);
+  --desktop-control-border: color-mix(in srgb, var(--border-control) 78%, transparent);
+  --desktop-control-border-hover: color-mix(in srgb, var(--border-control-hover) 70%, transparent);
+  --desktop-control-shadow: 0 2px 8px rgba(24, 24, 27, 0.07);
+  --desktop-control-shadow-hover: 0 4px 12px rgba(24, 24, 27, 0.11);
+  --desktop-control-focus: color-mix(in srgb, var(--accent) 24%, transparent);
+  --desktop-button-hover: var(--surface-card);
+  --desktop-button-pressed: var(--surface-card-hover);
+  --desktop-button-prominent: var(--accent-strong);
+  --desktop-button-prominent-hover: color-mix(in srgb, var(--accent-strong) 88%, #000);
+  --desktop-button-prominent-text: var(--accent-contrast);
+}
+
+:root[data-interface-style='hero'][data-theme='dark'] {
+  color: #f4f4f5;
+  background: #09090b;
+  --sidebar: #111113;
+  --surface: #18181b;
+  --workspace: #09090b;
+  --surface-soft: #202023;
+  --surface-card: #27272a;
+  --surface-card-hover: #3f3f46;
+  --surface-elevated: rgba(24, 24, 27, 0.92);
+  --surface-command: rgba(24, 24, 27, 0.94);
+  --toolbar: rgba(24, 24, 27, 0.9);
+  --control: #27272a;
+  --control-hover: rgba(244, 244, 245, 0.11);
+  --control-hover-soft: rgba(244, 244, 245, 0.075);
+  --control-active: #3f3f46;
+  --border: #3f3f46;
+  --border-soft: #2f2f33;
+  --border-control: #52525b;
+  --border-control-hover: #71717a;
+  --text: #f4f4f5;
+  --text-strong: #fafafa;
+  --text-body: #e4e4e7;
+  --text-muted: #a1a1aa;
+  --text-soft: #71717a;
+  --text-faint: #8b8b95;
+  --editor-text: #f4f4f5;
+  --success-text: #45d483;
+  --success-bg: #12351f;
+  --error-text: #f871a0;
+  --error-bg: #3b1022;
+  --warning-text: #f7b750;
+  --tooltip-bg: #f4f4f5;
+  --tooltip-text: #18181b;
+  --shadow: rgba(0, 0, 0, 0.48);
+  --shadow-soft: rgba(0, 0, 0, 0.3);
+  --shadow-popover: 0 20px 54px rgba(0, 0, 0, 0.52);
+  --pattern-dot: #3f3f46;
+  --sidebar-vibrancy-border: rgba(244, 244, 245, 0.12);
+  --desktop-control-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --desktop-control-shadow-hover: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-interface-style='hero'] body {
+  line-height: 1.5;
+  letter-spacing: -0.008em;
+}
+
+:root[data-interface-style='hero'] .app-shell,
+:root[data-interface-style='hero'] .workspace,
+:root[data-interface-style='hero'] .settings-content,
+:root[data-interface-style='hero'] .settings-scroll {
+  background: var(--workspace);
+}
+
+:root[data-interface-style='hero'] .sidebar,
+:root[data-interface-style='hero'] .settings-nav {
+  border-color: var(--border-soft);
+}
+:root[data-interface-style='hero'] .settings-nav__item,
+:root[data-interface-style='hero'] .command-result {
+  border-radius: 10px;
+}
+:root[data-interface-style='hero'] .settings-nav__item--active,
+:root[data-interface-style='hero'] .command-result--selected {
+  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+:root[data-interface-style='hero'][data-theme='dark'] .settings-nav__item--active,
+:root[data-interface-style='hero'][data-theme='dark'] .command-result--selected {
+  color: color-mix(in srgb, var(--accent) 78%, #fff);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+:root[data-interface-style='hero'] .tool-page h1,
+:root[data-interface-style='hero'] .placeholder-page h1 {
+  color: var(--text-strong);
+  font-weight: 700;
+}
+
+:root[data-interface-style='hero'] .editor-shell,
+:root[data-interface-style='hero'] .local-tool-shell,
+:root[data-interface-style='hero'] .quick-note-editor-shell,
+:root[data-interface-style='hero'] .runtime-shell,
+:root[data-interface-style='hero'] .vault-panel,
+:root[data-interface-style='hero'] .quick-note-sidebar,
+:root[data-interface-style='hero'] .quick-replace-panel {
+  background: var(--surface);
+  border-color: var(--border-soft);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px var(--shadow-soft);
+}
+
+:root[data-interface-style='hero'] .inspector-card,
+:root[data-interface-style='hero'] .operation-panel,
+:root[data-interface-style='hero'] .calculator-log,
+:root[data-interface-style='hero'] .common-pattern-list button,
+:root[data-interface-style='hero'] .home-work-list button,
+:root[data-interface-style='hero'] .home-contributors button {
+  background: var(--surface);
+  border-color: var(--border-soft);
+  border-radius: 12px;
+  box-shadow: 0 4px 14px var(--shadow-soft);
+}
+
+:root[data-interface-style='hero'] .editor-toolbar,
+:root[data-interface-style='hero'] .tool-tabs,
+:root[data-interface-style='hero'] .p4-toolbar,
+:root[data-interface-style='hero'] .runtime-toolbar,
+:root[data-interface-style='hero'] .quick-note-toolbar {
+  background: var(--toolbar);
+}
+
+:root[data-interface-style='hero'] .toolbar-button,
+:root[data-interface-style='hero'] .icon-button,
+:root[data-interface-style='hero'] .icon-ghost,
+:root[data-interface-style='hero'] .settings-command,
+:root[data-interface-style='hero'] .dialog-button,
+:root[data-interface-style='hero'] .panel-command,
+:root[data-interface-style='hero'] .io-action-button,
+:root[data-interface-style='hero'] .primary-command,
+:root[data-interface-style='hero'] select,
+:root[data-interface-style='hero'] textarea,
+:root[data-interface-style='hero'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']) {
+  border-radius: 12px;
+}
+
+:root[data-interface-style='hero'] .toolbar-button--primary {
+  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+}
+
+:root[data-interface-style='hero'] .primary-command,
+:root[data-interface-style='hero'] .dialog-button--primary,
+:root[data-interface-style='hero'] .primary-execution-button {
+  color: var(--accent-contrast);
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--accent-strong) 24%, transparent);
+}
+
+:root[data-interface-style='hero'] .settings-content__header {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border-color: var(--border-soft);
+  backdrop-filter: blur(16px);
+}
+
+:root[data-interface-style='hero'] .settings-content__header h1 {
+  color: var(--text-strong);
+  font-weight: 700;
+}
+
+:root[data-interface-style='hero'] .settings-group h2 {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+:root[data-interface-style='hero'] .settings-group__rows {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  box-shadow: 0 5px 18px var(--shadow-soft);
+  overflow: hidden;
+}
+
+:root[data-interface-style='hero'] .setting-row {
+  min-height: 58px;
+  padding: 0 16px;
+}
+
+:root[data-interface-style='hero'] .setting-row:last-child,
+:root[data-interface-style='hero'] .runtime-row:last-child {
+  border-bottom: 0;
+}
+
+:root[data-interface-style='hero'] .segmented {
+  padding: 4px;
+  background: var(--surface-card);
+  border-color: transparent;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+:root[data-interface-style='hero'] .segmented__item {
+  min-height: 30px;
+  border-radius: 10px;
+}
+
+:root[data-interface-style='hero'] .segmented__item--active {
+  color: var(--text-strong);
+  background: var(--surface);
+  box-shadow: 0 3px 10px var(--shadow-soft);
+}
+
+:root[data-interface-style='hero'] .toggle {
+  width: 40px;
+  height: 24px;
+  padding: 2px;
+  border-color: transparent;
+  background: var(--surface-card-hover);
+  box-shadow: none;
+}
+
+:root[data-interface-style='hero'] .toggle span {
+  width: 20px;
+  height: 20px;
+}
+
+:root[data-interface-style='hero'] .toggle--checked {
+  background: var(--accent-strong);
+}
+
+:root[data-interface-style='hero'] .toggle--checked span {
+  transform: translateX(16px);
+}
+
+:root[data-interface-style='hero'] .dialog-backdrop,
+:root[data-interface-style='hero'] .command-palette-backdrop {
+  background: rgba(9, 9, 11, 0.46);
+  backdrop-filter: blur(4px);
+}
+
+:root[data-interface-style='hero'] .dialog,
+:root[data-interface-style='hero'] .command-palette,
+:root[data-interface-style='hero'] .toast,
+:root[data-interface-style='hero'] .sidebar-update-notes {
+  background: var(--surface-elevated);
+  border-color: color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 16px;
+  box-shadow: var(--shadow-popover);
+  backdrop-filter: blur(20px);
+}
+
+:root[data-interface-style='hero'] .tooltip {
+  padding: 7px 10px;
+  border-radius: 9px;
+}
+
+:root[data-interface-style='hero'] .status-pill {
+  color: var(--text-body);
+  background: var(--surface-card);
+}
+
+/*
+ * Smartisan OS interface style
+ *
+ * Warm neutral chrome, fine separators and tactile raised/inset controls echo
+ * Smartisan's deliberately physical UI without changing MooTool's layout.
+ */
+:root[data-interface-style='smartisan'] {
+  color: #3f3b36;
+  background: #dedbd5;
+  --sidebar: #e9e7e2;
+  --surface: #f5f3ef;
+  --workspace: #dedbd5;
+  --surface-soft: #ebe8e2;
+  --surface-card: #e6e3dd;
+  --surface-card-hover: #d9d5ce;
+  --surface-elevated: rgba(246, 244, 240, 0.96);
+  --surface-command: rgba(245, 243, 239, 0.96);
+  --toolbar: #e9e6e0;
+  --control: #e5e1da;
+  --control-hover: rgba(73, 67, 60, 0.09);
+  --control-hover-soft: rgba(73, 67, 60, 0.055);
+  --control-active: #d4d0c8;
+  --border: #c4bfb6;
+  --border-soft: #d6d1c9;
+  --border-control: #bcb6ac;
+  --border-control-hover: #9f988e;
+  --text: #3f3b36;
+  --text-strong: #292622;
+  --text-body: #4f4a44;
+  --text-muted: #777169;
+  --text-soft: #989188;
+  --text-faint: #898279;
+  --editor-text: #37332f;
+  --success-text: #477158;
+  --success-bg: #dce8df;
+  --error-text: #9e3f3b;
+  --error-bg: #eedbd8;
+  --warning-text: #886727;
+  --tooltip-bg: #393632;
+  --tooltip-text: #f5f3ef;
+  --shadow: rgba(64, 57, 49, 0.25);
+  --shadow-soft: rgba(64, 57, 49, 0.13);
+  --shadow-popover: 0 18px 42px rgba(52, 46, 40, 0.28);
+  --pattern-dot: #bdb8af;
+  --sidebar-vibrancy-border: rgba(91, 83, 74, 0.2);
+  --smartisan-red: #9f403c;
+  --smartisan-red-soft: #ead8d5;
+  --smartisan-raised-top: #fffefa;
+  --smartisan-raised-bottom: #ddd9d2;
+  --smartisan-toolbar-top: #f8f6f2;
+  --smartisan-toolbar-bottom: #e2ded7;
+  --smartisan-inset: #d8d4cd;
+  --smartisan-highlight: rgba(255, 255, 255, 0.92);
+  --smartisan-lowlight: rgba(69, 62, 55, 0.2);
+  --desktop-control-height: 34px;
+  --desktop-control-radius: 7px;
+  --desktop-control-bg: var(--surface);
+  --desktop-control-border: var(--border-control);
+  --desktop-control-border-hover: var(--border-control-hover);
+  --desktop-control-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 1px 2px var(--smartisan-lowlight);
+  --desktop-control-shadow-hover:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 2px 4px var(--smartisan-lowlight);
+  --desktop-control-focus: color-mix(in srgb, var(--accent) 22%, transparent);
+  --desktop-button-hover: var(--surface-card);
+  --desktop-button-pressed: var(--control-active);
+  --desktop-button-prominent: var(--accent-strong);
+  --desktop-button-prominent-hover: color-mix(in srgb, var(--accent-strong) 88%, #000);
+  --desktop-button-prominent-text: var(--accent-contrast);
+}
+
+:root[data-interface-style='smartisan'][data-theme='dark'] {
+  color: #dedbd5;
+  background: #171614;
+  --sidebar: #22211f;
+  --surface: #292826;
+  --workspace: #1a1917;
+  --surface-soft: #302f2c;
+  --surface-card: #353431;
+  --surface-card-hover: #403e3a;
+  --surface-elevated: rgba(42, 41, 38, 0.97);
+  --surface-command: rgba(42, 41, 38, 0.96);
+  --toolbar: #2b2a28;
+  --control: #343330;
+  --control-hover: rgba(255, 252, 244, 0.1);
+  --control-hover-soft: rgba(255, 252, 244, 0.065);
+  --control-active: #45433f;
+  --border: #484641;
+  --border-soft: #373632;
+  --border-control: #55524d;
+  --border-control-hover: #706b64;
+  --text: #dedbd5;
+  --text-strong: #f2f0eb;
+  --text-body: #d0ccc5;
+  --text-muted: #aaa49b;
+  --text-soft: #7f7a73;
+  --text-faint: #918b83;
+  --editor-text: #e7e3dc;
+  --success-text: #85b495;
+  --success-bg: #26362b;
+  --error-text: #d8857f;
+  --error-bg: #422b29;
+  --warning-text: #d0ad64;
+  --tooltip-bg: #e9e6e0;
+  --tooltip-text: #292622;
+  --shadow: rgba(0, 0, 0, 0.52);
+  --shadow-soft: rgba(0, 0, 0, 0.32);
+  --shadow-popover: 0 20px 48px rgba(0, 0, 0, 0.58);
+  --pattern-dot: #484641;
+  --sidebar-vibrancy-border: rgba(242, 240, 235, 0.11);
+  --smartisan-red: #b75953;
+  --smartisan-red-soft: #442b29;
+  --smartisan-raised-top: #3d3b38;
+  --smartisan-raised-bottom: #292825;
+  --smartisan-toolbar-top: #34332f;
+  --smartisan-toolbar-bottom: #252422;
+  --smartisan-inset: #1f1e1c;
+  --smartisan-highlight: rgba(255, 255, 255, 0.09);
+  --smartisan-lowlight: rgba(0, 0, 0, 0.55);
+  --desktop-control-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 1px 2px var(--smartisan-lowlight);
+  --desktop-control-shadow-hover:
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    0 2px 5px var(--smartisan-lowlight);
+}
+
+:root[data-interface-style='smartisan'] body {
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-shadow: 0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'][data-theme='dark'] body {
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.72);
+}
+
+:root[data-interface-style='smartisan'] .app-shell,
+:root[data-interface-style='smartisan'] .workspace,
+:root[data-interface-style='smartisan'] .settings-content,
+:root[data-interface-style='smartisan'] .settings-scroll {
+  background-color: var(--workspace);
+  background-image: radial-gradient(
+    circle at 50% -20%,
+    color-mix(in srgb, var(--surface) 56%, transparent),
+    transparent 58%
+  );
+}
+
+:root[data-interface-style='smartisan'] .sidebar,
+:root[data-interface-style='smartisan'] .settings-nav {
+  background-image: linear-gradient(90deg, var(--sidebar), color-mix(in srgb, var(--sidebar) 88%, var(--workspace)));
+  border-color: var(--border);
+  box-shadow: inset -1px 0 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'] .settings-page__header,
+:root[data-interface-style='smartisan'] .settings-content__header {
+  background: linear-gradient(to bottom, var(--smartisan-toolbar-top), var(--smartisan-toolbar-bottom));
+  border-color: var(--border);
+  box-shadow: inset 0 1px 0 var(--smartisan-highlight);
+}
+:root[data-interface-style='smartisan'] .settings-nav__item,
+:root[data-interface-style='smartisan'] .command-result {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 7px;
+}
+:root[data-interface-style='smartisan'] .settings-nav__item:hover,
+:root[data-interface-style='smartisan'] .command-result:hover {
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--smartisan-raised-top) 70%, transparent), var(--smartisan-raised-bottom));
+  border-color: color-mix(in srgb, var(--border) 72%, transparent);
+  box-shadow: inset 0 1px 0 var(--smartisan-highlight);
+}
+:root[data-interface-style='smartisan'] .settings-nav__item--active,
+:root[data-interface-style='smartisan'] .command-result--selected {
+  color: var(--text-strong);
+  background: linear-gradient(to bottom, var(--smartisan-raised-top), var(--smartisan-raised-bottom));
+  border-color: var(--border-control);
+  box-shadow:
+    inset 3px 0 0 var(--smartisan-red),
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 1px 3px var(--smartisan-lowlight);
+}
+:root[data-interface-style='smartisan'] .settings-nav__item--active svg {
+  color: var(--smartisan-red);
+}
+
+:root[data-interface-style='smartisan'] .tool-page h1,
+:root[data-interface-style='smartisan'] .placeholder-page h1,
+:root[data-interface-style='smartisan'] .settings-content__header h1 {
+  color: var(--text-strong);
+  font-weight: 650;
+  text-shadow: 0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'][data-theme='dark'] .tool-page h1,
+:root[data-interface-style='smartisan'][data-theme='dark'] .placeholder-page h1,
+:root[data-interface-style='smartisan'][data-theme='dark'] .settings-content__header h1 {
+  text-shadow: 0 1px 0 #000;
+}
+
+:root[data-interface-style='smartisan'] .editor-shell,
+:root[data-interface-style='smartisan'] .local-tool-shell,
+:root[data-interface-style='smartisan'] .quick-note-editor-shell,
+:root[data-interface-style='smartisan'] .runtime-shell,
+:root[data-interface-style='smartisan'] .vault-panel,
+:root[data-interface-style='smartisan'] .quick-note-sidebar,
+:root[data-interface-style='smartisan'] .quick-replace-panel {
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 7px 18px var(--shadow-soft);
+}
+
+:root[data-interface-style='smartisan'] .inspector-card,
+:root[data-interface-style='smartisan'] .operation-panel,
+:root[data-interface-style='smartisan'] .calculator-log,
+:root[data-interface-style='smartisan'] .common-pattern-list button,
+:root[data-interface-style='smartisan'] .home-work-list button,
+:root[data-interface-style='smartisan'] .home-contributors button {
+  background: linear-gradient(to bottom, var(--smartisan-raised-top), var(--smartisan-raised-bottom));
+  border: 1px solid var(--border-control);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 2px 5px var(--smartisan-lowlight);
+}
+
+:root[data-interface-style='smartisan'] .editor-toolbar,
+:root[data-interface-style='smartisan'] .tool-tabs,
+:root[data-interface-style='smartisan'] .p4-toolbar,
+:root[data-interface-style='smartisan'] .runtime-toolbar,
+:root[data-interface-style='smartisan'] .quick-note-toolbar {
+  background: linear-gradient(to bottom, var(--smartisan-toolbar-top), var(--smartisan-toolbar-bottom));
+  border-color: var(--border);
+  box-shadow: inset 0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'] .toolbar-button,
+:root[data-interface-style='smartisan'] .icon-button,
+:root[data-interface-style='smartisan'] .settings-command,
+:root[data-interface-style='smartisan'] .dialog-button,
+:root[data-interface-style='smartisan'] .panel-command,
+:root[data-interface-style='smartisan'] .io-action-button,
+:root[data-interface-style='smartisan'] .primary-command,
+:root[data-interface-style='smartisan'] select {
+  color: var(--text-body);
+  background: linear-gradient(to bottom, var(--smartisan-raised-top), var(--smartisan-raised-bottom));
+  border: 1px solid var(--border-control);
+  border-radius: 7px;
+  box-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 1px 2px var(--smartisan-lowlight);
+  text-shadow: 0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'][data-theme='dark'] .toolbar-button,
+:root[data-interface-style='smartisan'][data-theme='dark'] .icon-button,
+:root[data-interface-style='smartisan'][data-theme='dark'] .settings-command,
+:root[data-interface-style='smartisan'][data-theme='dark'] .dialog-button,
+:root[data-interface-style='smartisan'][data-theme='dark'] .panel-command,
+:root[data-interface-style='smartisan'][data-theme='dark'] .io-action-button,
+:root[data-interface-style='smartisan'][data-theme='dark'] .primary-command,
+:root[data-interface-style='smartisan'][data-theme='dark'] select {
+  text-shadow: 0 1px 0 #000;
+}
+
+:root[data-interface-style='smartisan'] .toolbar-button:hover:not(:disabled),
+:root[data-interface-style='smartisan'] .icon-button:hover:not(:disabled),
+:root[data-interface-style='smartisan'] .settings-command:hover:not(:disabled),
+:root[data-interface-style='smartisan'] .dialog-button:hover:not(:disabled),
+:root[data-interface-style='smartisan'] .panel-command:hover:not(:disabled),
+:root[data-interface-style='smartisan'] .io-action-button:hover:not(:disabled) {
+  color: var(--text-strong);
+  border-color: var(--border-control-hover);
+  filter: brightness(1.035);
+}
+
+:root[data-interface-style='smartisan'] .toolbar-button:active:not(:disabled),
+:root[data-interface-style='smartisan'] .icon-button:active:not(:disabled),
+:root[data-interface-style='smartisan'] .settings-command:active:not(:disabled),
+:root[data-interface-style='smartisan'] .dialog-button:active:not(:disabled),
+:root[data-interface-style='smartisan'] .panel-command:active:not(:disabled),
+:root[data-interface-style='smartisan'] .io-action-button:active:not(:disabled) {
+  background: linear-gradient(to bottom, var(--smartisan-raised-bottom), var(--smartisan-raised-top));
+  box-shadow: inset 0 2px 4px var(--smartisan-lowlight);
+  transform: translateY(1px);
+}
+
+:root[data-interface-style='smartisan'] .toolbar-button--primary,
+:root[data-interface-style='smartisan'] .primary-command,
+:root[data-interface-style='smartisan'] .dialog-button--primary,
+:root[data-interface-style='smartisan'] .primary-execution-button {
+  color: var(--accent-contrast);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 84%, #fff),
+    var(--accent-strong)
+  );
+  border-color: color-mix(in srgb, var(--accent-strong) 78%, #292622);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--accent) 42%, #fff),
+    0 2px 5px color-mix(in srgb, var(--accent-strong) 30%, transparent);
+  text-shadow: 0 -1px 0 color-mix(in srgb, var(--accent-strong) 74%, #000);
+}
+
+:root[data-interface-style='smartisan'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+:root[data-interface-style='smartisan'] textarea {
+  color: var(--text-body);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 7px;
+  box-shadow:
+    inset 0 2px 4px var(--smartisan-lowlight),
+    0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):focus,
+:root[data-interface-style='smartisan'] textarea:focus,
+:root[data-interface-style='smartisan'] select:focus {
+  border-color: var(--accent-strong);
+  box-shadow:
+    inset 0 2px 4px var(--smartisan-lowlight),
+    0 0 0 2px var(--desktop-control-focus);
+}
+
+:root[data-interface-style='smartisan'] .settings-group h2 {
+  color: var(--text-muted);
+  font-weight: 650;
+}
+
+:root[data-interface-style='smartisan'] .settings-group__rows {
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 5px 13px var(--shadow-soft);
+  overflow: hidden;
+}
+
+:root[data-interface-style='smartisan'] .setting-row {
+  min-height: 56px;
+  padding: 0 14px;
+  border-color: var(--border-soft);
+}
+
+:root[data-interface-style='smartisan'] .setting-row:last-child,
+:root[data-interface-style='smartisan'] .runtime-row:last-child {
+  border-bottom: 0;
+}
+
+:root[data-interface-style='smartisan'] .segmented {
+  padding: 3px;
+  background: var(--smartisan-inset);
+  border: 1px solid var(--border-control);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 2px 4px var(--smartisan-lowlight),
+    0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'] .segmented__item {
+  min-height: 28px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  text-shadow: 0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'] .segmented__item--active {
+  color: var(--text-strong);
+  background: linear-gradient(to bottom, var(--smartisan-raised-top), var(--smartisan-raised-bottom));
+  border-color: var(--border-control);
+  box-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 1px 3px var(--smartisan-lowlight);
+}
+
+:root[data-interface-style='smartisan'] .toggle {
+  width: 40px;
+  height: 24px;
+  padding: 2px;
+  background: var(--smartisan-inset);
+  border: 1px solid var(--border-control);
+  box-shadow:
+    inset 0 2px 4px var(--smartisan-lowlight),
+    0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'] .toggle span {
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(to bottom, var(--smartisan-raised-top), var(--smartisan-raised-bottom));
+  border: 1px solid var(--border-control);
+  box-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 1px 2px var(--smartisan-lowlight);
+}
+
+:root[data-interface-style='smartisan'] .toggle--checked {
+  background: var(--smartisan-red);
+  border-color: color-mix(in srgb, var(--smartisan-red) 78%, #292622);
+}
+
+:root[data-interface-style='smartisan'] .toggle--checked span {
+  transform: translateX(16px);
+}
+
+:root[data-interface-style='smartisan'] .dialog-backdrop,
+:root[data-interface-style='smartisan'] .command-palette-backdrop {
+  background: rgba(35, 31, 27, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+:root[data-interface-style='smartisan'] .dialog,
+:root[data-interface-style='smartisan'] .command-palette,
+:root[data-interface-style='smartisan'] .toast,
+:root[data-interface-style='smartisan'] .sidebar-update-notes {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-control);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    var(--shadow-popover);
+  backdrop-filter: blur(16px);
+}
+
+:root[data-interface-style='smartisan'] .command-palette__search {
+  background: linear-gradient(to bottom, var(--smartisan-toolbar-top), var(--smartisan-toolbar-bottom));
+  border-color: var(--border);
+}
+
+:root[data-interface-style='smartisan'] .tooltip {
+  border: 1px solid color-mix(in srgb, var(--tooltip-text) 14%, transparent);
+  border-radius: 6px;
+  box-shadow: 0 6px 16px var(--shadow);
+}
+
+:root[data-interface-style='smartisan'] .status-pill {
+  color: var(--text-body);
+  background: linear-gradient(to bottom, var(--smartisan-raised-top), var(--smartisan-raised-bottom));
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 var(--smartisan-highlight);
+}
+
+/*
+ * MIUI V5 interface style
+ *
+ * Crisp white content, pale grouped navigation, orange state accents and
+ * lightly dimensional controls mirror MIUI V5's system-app language.
+ */
+:root[data-interface-style='miui-v5'] {
+  color: #333333;
+  background: #e7e7e7;
+  --sidebar: #f2f2f2;
+  --surface: #ffffff;
+  --workspace: #e9e9e9;
+  --surface-soft: #f5f5f5;
+  --surface-card: #eeeeee;
+  --surface-card-hover: #e3e3e3;
+  --surface-elevated: rgba(255, 255, 255, 0.97);
+  --surface-command: rgba(255, 255, 255, 0.97);
+  --toolbar: #f3f3f3;
+  --control: #ececec;
+  --control-hover: rgba(0, 0, 0, 0.07);
+  --control-hover-soft: rgba(0, 0, 0, 0.045);
+  --control-active: #dddddd;
+  --border: #cecece;
+  --border-soft: #e3e3e3;
+  --border-control: #c5c5c5;
+  --border-control-hover: #a7a7a7;
+  --text: #333333;
+  --text-strong: #202020;
+  --text-body: #494949;
+  --text-muted: #777777;
+  --text-soft: #a0a0a0;
+  --text-faint: #929292;
+  --editor-text: #303030;
+  --success-text: #4f7d55;
+  --success-bg: #e5f0e6;
+  --error-text: #b94d43;
+  --error-bg: #f5e4e1;
+  --warning-text: #a86d19;
+  --tooltip-bg: #333333;
+  --tooltip-text: #ffffff;
+  --shadow: rgba(0, 0, 0, 0.2);
+  --shadow-soft: rgba(0, 0, 0, 0.09);
+  --shadow-popover: 0 14px 38px rgba(0, 0, 0, 0.24);
+  --pattern-dot: #c8c8c8;
+  --sidebar-vibrancy-border: rgba(80, 80, 80, 0.18);
+  --miui-orange: #f36c21;
+  --miui-orange-strong: #d95312;
+  --miui-orange-soft: #fff0e6;
+  --miui-raised-top: #ffffff;
+  --miui-raised-bottom: #e8e8e8;
+  --miui-toolbar-top: #fafafa;
+  --miui-toolbar-bottom: #ededed;
+  --miui-inset: #dddddd;
+  --miui-highlight: rgba(255, 255, 255, 0.92);
+  --miui-lowlight: rgba(0, 0, 0, 0.16);
+  --desktop-control-height: 34px;
+  --desktop-control-radius: 4px;
+  --desktop-control-bg: var(--surface);
+  --desktop-control-border: var(--border-control);
+  --desktop-control-border-hover: var(--border-control-hover);
+  --desktop-control-shadow:
+    inset 0 1px 0 var(--miui-highlight),
+    0 1px 2px var(--miui-lowlight);
+  --desktop-control-shadow-hover:
+    inset 0 1px 0 var(--miui-highlight),
+    0 2px 4px var(--miui-lowlight);
+  --desktop-control-focus: color-mix(in srgb, var(--miui-orange) 24%, transparent);
+  --desktop-button-hover: var(--surface-card);
+  --desktop-button-pressed: var(--control-active);
+  --desktop-button-prominent: var(--miui-orange);
+  --desktop-button-prominent-hover: var(--miui-orange-strong);
+  --desktop-button-prominent-text: #ffffff;
+}
+
+:root[data-interface-style='miui-v5'][data-theme='dark'] {
+  color: #e9e9e9;
+  background: #151515;
+  --sidebar: #202020;
+  --surface: #282828;
+  --workspace: #191919;
+  --surface-soft: #303030;
+  --surface-card: #363636;
+  --surface-card-hover: #424242;
+  --surface-elevated: rgba(40, 40, 40, 0.97);
+  --surface-command: rgba(40, 40, 40, 0.96);
+  --toolbar: #2d2d2d;
+  --control: #373737;
+  --control-hover: rgba(255, 255, 255, 0.1);
+  --control-hover-soft: rgba(255, 255, 255, 0.065);
+  --control-active: #484848;
+  --border: #464646;
+  --border-soft: #363636;
+  --border-control: #555555;
+  --border-control-hover: #777777;
+  --text: #e9e9e9;
+  --text-strong: #ffffff;
+  --text-body: #d4d4d4;
+  --text-muted: #a5a5a5;
+  --text-soft: #787878;
+  --text-faint: #909090;
+  --editor-text: #eeeeee;
+  --success-text: #8fbd91;
+  --success-bg: #29382a;
+  --error-text: #e28a80;
+  --error-bg: #422b29;
+  --warning-text: #ddb067;
+  --tooltip-bg: #efefef;
+  --tooltip-text: #282828;
+  --shadow: rgba(0, 0, 0, 0.54);
+  --shadow-soft: rgba(0, 0, 0, 0.34);
+  --shadow-popover: 0 18px 44px rgba(0, 0, 0, 0.6);
+  --pattern-dot: #484848;
+  --sidebar-vibrancy-border: rgba(255, 255, 255, 0.11);
+  --miui-orange: #ff7a2d;
+  --miui-orange-strong: #e85d12;
+  --miui-orange-soft: #442b1e;
+  --miui-raised-top: #414141;
+  --miui-raised-bottom: #2c2c2c;
+  --miui-toolbar-top: #353535;
+  --miui-toolbar-bottom: #292929;
+  --miui-inset: #222222;
+  --miui-highlight: rgba(255, 255, 255, 0.09);
+  --miui-lowlight: rgba(0, 0, 0, 0.58);
+  --desktop-control-shadow:
+    inset 0 1px 0 var(--miui-highlight),
+    0 1px 2px var(--miui-lowlight);
+  --desktop-control-shadow-hover:
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    0 2px 5px var(--miui-lowlight);
+}
+
+:root[data-interface-style='miui-v5'] body {
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+
+:root[data-interface-style='miui-v5'] .app-shell,
+:root[data-interface-style='miui-v5'] .workspace,
+:root[data-interface-style='miui-v5'] .settings-content,
+:root[data-interface-style='miui-v5'] .settings-scroll {
+  background: var(--workspace);
+}
+
+:root[data-interface-style='miui-v5'] .sidebar,
+:root[data-interface-style='miui-v5'] .settings-nav {
+  background: var(--sidebar);
+  border-color: var(--border);
+  box-shadow: inset -1px 0 0 var(--miui-highlight);
+}
+
+:root[data-interface-style='miui-v5'] .settings-page__header,
+:root[data-interface-style='miui-v5'] .settings-content__header {
+  background: linear-gradient(to bottom, var(--miui-toolbar-top), var(--miui-toolbar-bottom));
+  border-color: var(--border);
+  box-shadow:
+    inset 0 1px 0 var(--miui-highlight),
+    inset 0 -2px 0 color-mix(in srgb, var(--miui-orange) 72%, transparent);
+}
+:root[data-interface-style='miui-v5'] .settings-nav__item,
+:root[data-interface-style='miui-v5'] .command-result {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+:root[data-interface-style='miui-v5'] .settings-nav__item:hover,
+:root[data-interface-style='miui-v5'] .command-result:hover {
+  background: var(--surface-card);
+  border-color: var(--border-soft);
+}
+:root[data-interface-style='miui-v5'] .settings-nav__item--active,
+:root[data-interface-style='miui-v5'] .command-result--selected {
+  color: var(--miui-orange-strong);
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow:
+    inset 3px 0 0 var(--miui-orange),
+    0 1px 3px var(--shadow-soft);
+}
+:root[data-interface-style='miui-v5'][data-theme='dark'] .settings-nav__item--active,
+:root[data-interface-style='miui-v5'][data-theme='dark'] .command-result--selected {
+  color: var(--miui-orange);
+}
+:root[data-interface-style='miui-v5'] .settings-nav__item--active svg {
+  color: var(--miui-orange);
+}
+
+:root[data-interface-style='miui-v5'] .tool-page h1,
+:root[data-interface-style='miui-v5'] .placeholder-page h1,
+:root[data-interface-style='miui-v5'] .settings-content__header h1 {
+  color: var(--text-strong);
+  font-weight: 600;
+  text-shadow: none;
+}
+
+:root[data-interface-style='miui-v5'] .tool-group h2,
+:root[data-interface-style='miui-v5'] .section-title,
+:root[data-interface-style='miui-v5'] .settings-group h2 {
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+}
+
+:root[data-interface-style='miui-v5'] .editor-shell,
+:root[data-interface-style='miui-v5'] .local-tool-shell,
+:root[data-interface-style='miui-v5'] .quick-note-editor-shell,
+:root[data-interface-style='miui-v5'] .runtime-shell,
+:root[data-interface-style='miui-v5'] .vault-panel,
+:root[data-interface-style='miui-v5'] .quick-note-sidebar,
+:root[data-interface-style='miui-v5'] .quick-replace-panel {
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 5px;
+  box-shadow:
+    inset 0 1px 0 var(--miui-highlight),
+    0 5px 14px var(--shadow-soft);
+}
+
+:root[data-interface-style='miui-v5'] .inspector-card,
+:root[data-interface-style='miui-v5'] .operation-panel,
+:root[data-interface-style='miui-v5'] .calculator-log,
+:root[data-interface-style='miui-v5'] .common-pattern-list button,
+:root[data-interface-style='miui-v5'] .home-work-list button,
+:root[data-interface-style='miui-v5'] .home-contributors button {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 2px 6px var(--shadow-soft);
+}
+
+:root[data-interface-style='miui-v5'] .editor-toolbar,
+:root[data-interface-style='miui-v5'] .tool-tabs,
+:root[data-interface-style='miui-v5'] .p4-toolbar,
+:root[data-interface-style='miui-v5'] .runtime-toolbar,
+:root[data-interface-style='miui-v5'] .quick-note-toolbar {
+  background: linear-gradient(to bottom, var(--miui-toolbar-top), var(--miui-toolbar-bottom));
+  border-color: var(--border);
+  box-shadow: inset 0 1px 0 var(--miui-highlight);
+}
+
+:root[data-interface-style='miui-v5'] .toolbar-button,
+:root[data-interface-style='miui-v5'] .icon-button,
+:root[data-interface-style='miui-v5'] .settings-command,
+:root[data-interface-style='miui-v5'] .dialog-button,
+:root[data-interface-style='miui-v5'] .panel-command,
+:root[data-interface-style='miui-v5'] .io-action-button,
+:root[data-interface-style='miui-v5'] .primary-command,
+:root[data-interface-style='miui-v5'] select {
+  color: var(--text-body);
+  background: linear-gradient(to bottom, var(--miui-raised-top), var(--miui-raised-bottom));
+  border: 1px solid var(--border-control);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px 0 var(--miui-highlight),
+    0 1px 2px var(--miui-lowlight);
+  text-shadow: none;
+}
+
+:root[data-interface-style='miui-v5'] .toolbar-button:hover:not(:disabled),
+:root[data-interface-style='miui-v5'] .icon-button:hover:not(:disabled),
+:root[data-interface-style='miui-v5'] .settings-command:hover:not(:disabled),
+:root[data-interface-style='miui-v5'] .dialog-button:hover:not(:disabled),
+:root[data-interface-style='miui-v5'] .panel-command:hover:not(:disabled),
+:root[data-interface-style='miui-v5'] .io-action-button:hover:not(:disabled) {
+  color: var(--text-strong);
+  border-color: var(--border-control-hover);
+  filter: brightness(1.035);
+}
+
+:root[data-interface-style='miui-v5'] .toolbar-button:active:not(:disabled),
+:root[data-interface-style='miui-v5'] .icon-button:active:not(:disabled),
+:root[data-interface-style='miui-v5'] .settings-command:active:not(:disabled),
+:root[data-interface-style='miui-v5'] .dialog-button:active:not(:disabled),
+:root[data-interface-style='miui-v5'] .panel-command:active:not(:disabled),
+:root[data-interface-style='miui-v5'] .io-action-button:active:not(:disabled) {
+  background: var(--miui-inset);
+  box-shadow: inset 0 2px 4px var(--miui-lowlight);
+}
+
+:root[data-interface-style='miui-v5'] .toolbar-button--primary,
+:root[data-interface-style='miui-v5'] .primary-command,
+:root[data-interface-style='miui-v5'] .dialog-button--primary,
+:root[data-interface-style='miui-v5'] .primary-execution-button {
+  color: #ffffff;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--miui-orange) 84%, #fff),
+    var(--miui-orange-strong)
+  );
+  border-color: color-mix(in srgb, var(--miui-orange-strong) 82%, #7b310b);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--miui-orange) 46%, #fff),
+    0 2px 4px color-mix(in srgb, var(--miui-orange-strong) 28%, transparent);
+  text-shadow: 0 -1px 0 color-mix(in srgb, var(--miui-orange-strong) 70%, #000);
+}
+
+:root[data-interface-style='miui-v5'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+:root[data-interface-style='miui-v5'] textarea {
+  color: var(--text-body);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 4px;
+  box-shadow: inset 0 1px 3px var(--miui-lowlight);
+}
+
+:root[data-interface-style='miui-v5'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):focus,
+:root[data-interface-style='miui-v5'] textarea:focus,
+:root[data-interface-style='miui-v5'] select:focus {
+  border-color: var(--miui-orange);
+  box-shadow:
+    inset 0 1px 3px var(--miui-lowlight),
+    0 0 0 2px var(--desktop-control-focus);
+}
+
+:root[data-interface-style='miui-v5'] .settings-group__rows {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  box-shadow: 0 3px 10px var(--shadow-soft);
+  overflow: hidden;
+}
+
+:root[data-interface-style='miui-v5'] .setting-row {
+  min-height: 54px;
+  padding: 0 14px;
+  border-color: var(--border-soft);
+}
+
+:root[data-interface-style='miui-v5'] .setting-row:last-child,
+:root[data-interface-style='miui-v5'] .runtime-row:last-child {
+  border-bottom: 0;
+}
+
+:root[data-interface-style='miui-v5'] .segmented {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  padding: 0;
+  background: var(--miui-inset);
+  border: 1px solid var(--border-control);
+  border-radius: 4px;
+  box-shadow: inset 0 1px 3px var(--miui-lowlight);
+  overflow: hidden;
+}
+
+:root[data-interface-style='miui-v5'] .segmented__item {
+  min-height: 32px;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  font-weight: 500;
+  text-shadow: none;
+}
+
+:root[data-interface-style='miui-v5'] .segmented__item:last-child {
+  border-right: 0;
+}
+
+:root[data-interface-style='miui-v5'] .segmented__item--active {
+  color: var(--miui-orange-strong);
+  background: var(--surface);
+  box-shadow:
+    inset 0 -3px 0 var(--miui-orange),
+    0 1px 2px var(--miui-lowlight);
+}
+
+:root[data-interface-style='miui-v5'] .toggle {
+  width: 42px;
+  height: 22px;
+  padding: 2px;
+  background: var(--miui-inset);
+  border: 1px solid var(--border-control);
+  border-radius: 3px;
+  box-shadow: inset 0 1px 3px var(--miui-lowlight);
+}
+
+:root[data-interface-style='miui-v5'] .toggle span {
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(to bottom, var(--miui-raised-top), var(--miui-raised-bottom));
+  border: 1px solid var(--border-control);
+  border-radius: 2px;
+  box-shadow: 0 1px 2px var(--miui-lowlight);
+}
+
+:root[data-interface-style='miui-v5'] .toggle--checked {
+  background: var(--miui-orange);
+  border-color: var(--miui-orange-strong);
+}
+
+:root[data-interface-style='miui-v5'] .toggle--checked span {
+  transform: translateX(20px);
+}
+
+:root[data-interface-style='miui-v5'] input[type='checkbox'],
+:root[data-interface-style='miui-v5'] input[type='radio'],
+:root[data-interface-style='miui-v5'] input[type='range'] {
+  accent-color: var(--miui-orange);
+}
+
+:root[data-interface-style='miui-v5'] .dialog-backdrop,
+:root[data-interface-style='miui-v5'] .command-palette-backdrop {
+  background: rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(2px);
+}
+
+:root[data-interface-style='miui-v5'] .dialog,
+:root[data-interface-style='miui-v5'] .command-palette,
+:root[data-interface-style='miui-v5'] .toast,
+:root[data-interface-style='miui-v5'] .sidebar-update-notes {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-control);
+  border-radius: 5px;
+  box-shadow: var(--shadow-popover);
+  backdrop-filter: blur(14px);
+}
+
+:root[data-interface-style='miui-v5'] .command-palette__search {
+  background: linear-gradient(to bottom, var(--miui-toolbar-top), var(--miui-toolbar-bottom));
+  border-color: var(--border);
+}
+
+:root[data-interface-style='miui-v5'] .tooltip {
+  border-radius: 4px;
+  box-shadow: 0 5px 14px var(--shadow);
+}
+
+:root[data-interface-style='miui-v5'] .status-pill {
+  color: var(--text-body);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 1px 2px var(--shadow-soft);
+}
+
+/* Rounded switches size their thumbs against a borderless track. The shared
+ * desktop border reduced the inner height and made the thumb overflow. */
+:root[data-interface-style='modern'] .toggle,
+:root[data-interface-style='quiet'] .toggle,
+:root[data-interface-style='hero'] .toggle {
+  border: 0;
+}
+
+/*
+ * Claude-inspired interface style
+ *
+ * Warm paper surfaces, restrained borders and a terracotta action color give
+ * this style its editorial, conversational character without using branded
+ * artwork or external assets.
+ */
+:root[data-interface-style='claude'] {
+  color: #2f2b28;
+  background: #f5f3ed;
+  --sidebar: #eeece5;
+  --surface: #fffefa;
+  --workspace: #f7f5ef;
+  --surface-soft: #f3f0e9;
+  --surface-card: #f0ede6;
+  --surface-card-hover: #e8e4dc;
+  --surface-elevated: rgba(255, 254, 250, 0.97);
+  --surface-command: rgba(255, 254, 250, 0.97);
+  --toolbar: #faf8f2;
+  --control: #eeebe4;
+  --control-hover: rgba(76, 65, 58, 0.075);
+  --control-hover-soft: rgba(76, 65, 58, 0.052);
+  --control-active: #e5e0d7;
+  --border: #ded9d0;
+  --border-soft: #ebe7df;
+  --border-control: #d8d2c8;
+  --border-control-hover: #beb6aa;
+  --text: #2f2b28;
+  --text-strong: #25211f;
+  --text-body: #48423d;
+  --text-muted: #777069;
+  --text-soft: #9a938b;
+  --text-faint: #8a837b;
+  --editor-text: #302c29;
+  --success-text: #4f785e;
+  --success-bg: #e5eee7;
+  --error-text: #ad4f43;
+  --error-bg: #f5e5e0;
+  --warning-text: #9c681f;
+  --tooltip-bg: #302b27;
+  --tooltip-text: #fffaf3;
+  --shadow: rgba(67, 55, 47, 0.16);
+  --shadow-soft: rgba(67, 55, 47, 0.075);
+  --shadow-popover: 0 18px 48px rgba(62, 50, 42, 0.2);
+  --pattern-dot: #d8d2c8;
+  --sidebar-vibrancy-border: rgba(91, 78, 68, 0.14);
+  --claude-accent: #d97757;
+  --claude-accent-strong: #bd6348;
+  --claude-accent-soft: #f6e7df;
+  --desktop-control-height: 34px;
+  --desktop-control-radius: 10px;
+  --desktop-control-bg: var(--surface);
+  --desktop-control-border: var(--border-control);
+  --desktop-control-border-hover: var(--border-control-hover);
+  --desktop-control-shadow: 0 1px 2px rgba(67, 55, 47, 0.055);
+  --desktop-control-shadow-hover: 0 2px 6px rgba(67, 55, 47, 0.105);
+  --desktop-control-focus: color-mix(in srgb, var(--claude-accent) 25%, transparent);
+  --desktop-button-hover: var(--surface-soft);
+  --desktop-button-pressed: var(--control-active);
+  --desktop-button-prominent: var(--claude-accent);
+  --desktop-button-prominent-hover: var(--claude-accent-strong);
+  --desktop-button-prominent-text: #ffffff;
+}
+
+:root[data-interface-style='claude'][data-theme='dark'] {
+  color: #eeeae3;
+  background: #1d1b18;
+  --sidebar: #25221e;
+  --surface: #2b2824;
+  --workspace: #201e1b;
+  --surface-soft: #302d28;
+  --surface-card: #35312c;
+  --surface-card-hover: #3e3933;
+  --surface-elevated: rgba(43, 40, 36, 0.97);
+  --surface-command: rgba(43, 40, 36, 0.97);
+  --toolbar: #2e2b27;
+  --control: #37332e;
+  --control-hover: rgba(255, 247, 237, 0.09);
+  --control-hover-soft: rgba(255, 247, 237, 0.06);
+  --control-active: #423d36;
+  --border: #474139;
+  --border-soft: #38342f;
+  --border-control: #514a41;
+  --border-control-hover: #6b6257;
+  --text: #eeeae3;
+  --text-strong: #fffaf2;
+  --text-body: #ded8cf;
+  --text-muted: #aaa198;
+  --text-soft: #817970;
+  --text-faint: #938b82;
+  --editor-text: #f1ece5;
+  --success-text: #8db497;
+  --success-bg: #29372d;
+  --error-text: #e49886;
+  --error-bg: #462d28;
+  --warning-text: #d8ad70;
+  --tooltip-bg: #f4eee5;
+  --tooltip-text: #2d2925;
+  --shadow: rgba(0, 0, 0, 0.52);
+  --shadow-soft: rgba(0, 0, 0, 0.27);
+  --shadow-popover: 0 20px 52px rgba(0, 0, 0, 0.58);
+  --pattern-dot: #4a443d;
+  --sidebar-vibrancy-border: rgba(255, 244, 232, 0.1);
+  --claude-accent: #e78a6c;
+  --claude-accent-strong: #d57457;
+  --claude-accent-soft: #4a3129;
+  --desktop-control-shadow: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --desktop-control-shadow-hover: 0 2px 7px rgba(0, 0, 0, 0.34);
+}
+
+:root[data-interface-style='claude'] body {
+  font-weight: 400;
+  line-height: 1.48;
+  letter-spacing: -0.006em;
+}
+
+:root[data-interface-style='claude'] .app-shell,
+:root[data-interface-style='claude'] .workspace,
+:root[data-interface-style='claude'] .settings-page,
+:root[data-interface-style='claude'] .settings-content,
+:root[data-interface-style='claude'] .settings-scroll {
+  background: var(--workspace);
+}
+
+:root[data-interface-style='claude'] .sidebar,
+:root[data-interface-style='claude'] .settings-nav {
+  background: var(--sidebar);
+  border-color: var(--border);
+  box-shadow: inset -1px 0 0 color-mix(in srgb, var(--surface) 58%, transparent);
+}
+
+:root[data-interface-style='claude'] .settings-page__header,
+:root[data-interface-style='claude'] .settings-content__header {
+  background: color-mix(in srgb, var(--surface) 88%, var(--workspace));
+  border-color: var(--border-soft);
+}
+
+:root[data-interface-style='claude'] .settings-page__header {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+:root[data-interface-style='claude'] .settings-nav__item,
+:root[data-interface-style='claude'] .command-result {
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-weight: 450;
+}
+:root[data-interface-style='claude'] .settings-nav__item:hover,
+:root[data-interface-style='claude'] .command-result:hover {
+  background: var(--control-hover);
+}
+:root[data-interface-style='claude'] .settings-nav__item--active,
+:root[data-interface-style='claude'] .command-result--selected {
+  color: var(--claude-accent-strong);
+  background: var(--claude-accent-soft);
+  border-color: color-mix(in srgb, var(--claude-accent) 16%, transparent);
+  font-weight: 550;
+}
+:root[data-interface-style='claude'][data-theme='dark'] .settings-nav__item--active,
+:root[data-interface-style='claude'][data-theme='dark'] .command-result--selected {
+  color: #f2a087;
+}
+:root[data-interface-style='claude'] .settings-nav__item--active svg {
+  color: var(--claude-accent);
+}
+
+:root[data-interface-style='claude'] .tool-page h1,
+:root[data-interface-style='claude'] .placeholder-page h1,
+:root[data-interface-style='claude'] .settings-content__header h1 {
+  color: var(--text-strong);
+  font-weight: 560;
+  letter-spacing: -0.025em;
+}
+
+:root[data-interface-style='claude'] .tool-group h2,
+:root[data-interface-style='claude'] .section-title,
+:root[data-interface-style='claude'] .settings-group h2 {
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.015em;
+}
+
+:root[data-interface-style='claude'] .editor-shell,
+:root[data-interface-style='claude'] .local-tool-shell,
+:root[data-interface-style='claude'] .quick-note-editor-shell,
+:root[data-interface-style='claude'] .runtime-shell,
+:root[data-interface-style='claude'] .vault-panel,
+:root[data-interface-style='claude'] .quick-note-sidebar,
+:root[data-interface-style='claude'] .quick-replace-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 6px 22px var(--shadow-soft);
+}
+
+:root[data-interface-style='claude'] .inspector-card,
+:root[data-interface-style='claude'] .operation-panel,
+:root[data-interface-style='claude'] .calculator-log,
+:root[data-interface-style='claude'] .common-pattern-list button,
+:root[data-interface-style='claude'] .home-work-list button,
+:root[data-interface-style='claude'] .home-contributors button {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  box-shadow: 0 2px 9px var(--shadow-soft);
+}
+
+:root[data-interface-style='claude'] .editor-toolbar,
+:root[data-interface-style='claude'] .tool-tabs,
+:root[data-interface-style='claude'] .p4-toolbar,
+:root[data-interface-style='claude'] .runtime-toolbar,
+:root[data-interface-style='claude'] .quick-note-toolbar {
+  background: var(--toolbar);
+  border-color: var(--border-soft);
+}
+
+:root[data-interface-style='claude'] .toolbar-button,
+:root[data-interface-style='claude'] .icon-button,
+:root[data-interface-style='claude'] .settings-command,
+:root[data-interface-style='claude'] .dialog-button,
+:root[data-interface-style='claude'] .panel-command,
+:root[data-interface-style='claude'] .io-action-button,
+:root[data-interface-style='claude'] .primary-command,
+:root[data-interface-style='claude'] select {
+  border-radius: var(--desktop-control-radius);
+}
+
+:root[data-interface-style='claude'] .toolbar-button--primary {
+  color: var(--claude-accent-strong);
+  background: var(--claude-accent-soft);
+  border-color: color-mix(in srgb, var(--claude-accent) 20%, var(--border-soft));
+}
+
+:root[data-interface-style='claude'] .primary-command,
+:root[data-interface-style='claude'] .dialog-button--primary,
+:root[data-interface-style='claude'] .primary-execution-button {
+  color: #ffffff;
+  background: var(--claude-accent);
+  border-color: var(--claude-accent);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--claude-accent-strong) 24%, transparent);
+}
+
+:root[data-interface-style='claude'] .primary-command:hover:not(:disabled),
+:root[data-interface-style='claude'] .dialog-button--primary:hover:not(:disabled),
+:root[data-interface-style='claude'] .primary-execution-button:hover:not(:disabled) {
+  color: #ffffff;
+  background: var(--claude-accent-strong);
+  border-color: var(--claude-accent-strong);
+}
+
+:root[data-interface-style='claude'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+:root[data-interface-style='claude'] textarea {
+  color: var(--text-body);
+  background: var(--surface);
+  border-color: var(--border-control);
+  border-radius: var(--desktop-control-radius);
+}
+
+:root[data-interface-style='claude'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):focus,
+:root[data-interface-style='claude'] textarea:focus,
+:root[data-interface-style='claude'] select:focus {
+  border-color: var(--claude-accent);
+  box-shadow: 0 0 0 3px var(--desktop-control-focus);
+}
+
+:root[data-interface-style='claude'] .settings-group__rows {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 3px 14px var(--shadow-soft);
+  overflow: hidden;
+}
+
+:root[data-interface-style='claude'] .setting-row {
+  min-height: 58px;
+  padding: 0 15px;
+  border-color: var(--border-soft);
+}
+
+:root[data-interface-style='claude'] .setting-row:last-child,
+:root[data-interface-style='claude'] .runtime-row:last-child {
+  border-bottom: 0;
+}
+
+:root[data-interface-style='claude'] .segmented {
+  gap: 2px;
+  padding: 3px;
+  background: var(--control);
+  border: 1px solid var(--border-soft);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+:root[data-interface-style='claude'] .segmented__item {
+  min-height: 30px;
+  border-radius: 8px;
+  font-weight: 450;
+}
+
+:root[data-interface-style='claude'] .segmented__item--active {
+  color: var(--text-strong);
+  background: var(--surface);
+  box-shadow: 0 1px 3px var(--shadow-soft);
+}
+
+:root[data-interface-style='claude'] .toggle {
+  width: 40px;
+  height: 24px;
+  padding: 2px;
+  background: var(--border-control);
+  border: 0;
+  border-radius: 999px;
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--shadow) 34%, transparent);
+}
+
+:root[data-interface-style='claude'] .toggle span {
+  width: 20px;
+  height: 20px;
+  background: #fffefa;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(57, 45, 37, 0.24);
+}
+
+:root[data-interface-style='claude'] .toggle--checked {
+  background: var(--claude-accent);
+}
+
+:root[data-interface-style='claude'] .toggle--checked span {
+  transform: translateX(16px);
+}
+
+:root[data-interface-style='claude'] input[type='checkbox'],
+:root[data-interface-style='claude'] input[type='radio'],
+:root[data-interface-style='claude'] input[type='range'] {
+  accent-color: var(--claude-accent);
+}
+
+:root[data-interface-style='claude'] .dialog-backdrop,
+:root[data-interface-style='claude'] .command-palette-backdrop {
+  background: rgba(45, 37, 32, 0.34);
+  backdrop-filter: blur(3px);
+}
+
+:root[data-interface-style='claude'] .dialog,
+:root[data-interface-style='claude'] .command-palette,
+:root[data-interface-style='claude'] .toast,
+:root[data-interface-style='claude'] .sidebar-update-notes {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-popover);
+  backdrop-filter: blur(18px);
+}
+
+:root[data-interface-style='claude'] .command-palette__search {
+  background: var(--toolbar);
+  border-color: var(--border-soft);
+}
+
+:root[data-interface-style='claude'] .tooltip {
+  border-radius: 8px;
+  box-shadow: 0 7px 20px var(--shadow);
+}
+
+:root[data-interface-style='claude'] .status-pill {
+  color: var(--claude-accent-strong);
+  background: var(--claude-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--claude-accent) 18%, transparent);
+  border-radius: 999px;
+}
+
+:root[data-interface-style] {
+  --surface-muted: var(--surface-soft);
+  --muted: var(--text-muted);
+  --subtle: var(--text-soft);
+  --panel: var(--surface);
+  --panel-strong: var(--surface);
+}

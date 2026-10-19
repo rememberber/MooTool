@@ -1,0 +1,283 @@
+/* Tool page skeletons aligned with Next Electron workspaces. */
+
+.tool-page.p3-tool {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--workspace);
+}
+
+.calculator-workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.calculator-workspace > .calculator-layout {
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) minmax(320px, 1fr);
+  flex: 1;
+  gap: 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.calculator-workspace .calculator-controls {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  padding: 0 18px 30px;
+  overflow: auto;
+  border-right: 1px solid var(--border-soft);
+}
+
+.calculator-section {
+  padding: 18px 0 22px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.calculator-section:last-child {
+  border-bottom: 0;
+}
+
+.calculator-section h2,
+.calculator-log h2 {
+  margin: 0 0 12px;
+  color: var(--text-body);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.calculator-expression-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.calculator-expression-row input {
+  min-width: 0;
+  height: 48px;
+  padding: 0 13px;
+  color: var(--editor-text);
+  background: var(--workspace);
+  border: 1px solid var(--border-control);
+  border-radius: 6px;
+  outline: none;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 22px;
+}
+
+.calculator-base-grid {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px 12px;
+}
+
+.calculator-base-grid > label {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.calculator-base-grid > input {
+  min-width: 0;
+  height: 36px;
+  padding: 0 10px;
+  color: var(--text-body);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 5px;
+  outline: none;
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.calculator-base-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: center;
+  gap: 10px;
+}
+
+.calculator-operation-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(140px, auto);
+  align-items: end;
+  gap: 10px;
+}
+
+.labeled-input {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.labeled-input span {
+  color: var(--text-faint);
+  font-size: 10px;
+}
+
+.labeled-input input {
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  color: var(--text-body);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 5px;
+  outline: none;
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.calculator-output-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  gap: 10px;
+  padding: 14px;
+  background: var(--surface-soft);
+}
+
+.calculator-result {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 8px 14px;
+  color: var(--accent-strong);
+  background: var(--workspace);
+  border: 1px solid var(--border-control);
+  border-radius: 6px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 26px;
+  overflow-wrap: anywhere;
+}
+
+.calculator-log {
+  min-height: 0;
+  padding: 14px;
+  overflow: auto;
+  background: var(--workspace);
+  border: 1px solid var(--border-control);
+  border-radius: 6px;
+}
+
+.calculator-log p {
+  margin: 0;
+  padding: 7px 0;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-soft);
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.primary-command,
+.panel-command {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: var(--desktop-control-radius, 9px);
+  cursor: pointer;
+}
+
+.primary-command {
+  color: var(--desktop-button-prominent-text, #fff);
+  background: var(--desktop-button-prominent, #303135);
+  border: 1px solid var(--desktop-button-prominent, #303135);
+}
+
+.panel-command {
+  color: var(--text-body);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+}
+
+.http-workbench,
+.image-workbench,
+.quick-note-workbench,
+.message-board-workbench {
+  padding: 0;
+  gap: 0;
+  background: var(--workspace);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.http-workbench {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.http-workbench .http-workspace-layout,
+.http-workbench .http-editor-grid,
+.image-workbench .image-layout,
+.image-workbench .image-preview,
+.quick-note-workbench .quick-note-layout,
+.quick-note-workbench .quick-note-editor,
+.message-board-workbench .message-display-layout {
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.http-workbench .http-collection-panel,
+.image-workbench .image-library,
+.quick-note-workbench .quick-note-sidebar {
+  background: var(--surface-soft);
+  border-right: 1px solid var(--border-soft);
+}
+
+.image-workbench .image-layout {
+  grid-template-columns: 230px minmax(0, 1fr);
+}
+
+.quick-note-workbench .quick-note-editor {
+  background: var(--workspace);
+}
+
+.message-board-workbench .message-display-layout {
+  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(120px, 180px);
+  gap: 0;
+  height: 100%;
+  padding: 0;
+}
+
+.message-board-workbench .message-display-controls,
+.message-board-workbench .message-display-saved,
+.message-board-workbench .message-display-preview {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.message-board-workbench .message-display-controls {
+  grid-column: 1;
+  grid-row: 1;
+  background: var(--surface);
+  border-right: 1px solid var(--border-soft);
+}
+
+.message-board-workbench .message-display-saved {
+  grid-column: 1;
+  grid-row: 2;
+  background: var(--surface-soft);
+  border-top: 1px solid var(--border-soft);
+  border-right: 1px solid var(--border-soft);
+}
+
+.message-board-workbench .message-display-preview {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}

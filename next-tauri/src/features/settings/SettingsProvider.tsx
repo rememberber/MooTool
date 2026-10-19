@@ -130,16 +130,18 @@ function applyDocumentAppearance(settings: AppSettings): () => void {
   const applyTheme = () => {
     const resolved = resolveTheme(settings.appearance.theme, media.matches)
     const accent = accentPresets[settings.appearance.accentColor]
+    const fontSize = Math.min(18, Math.max(12, settings.appearance.fontSize || 13))
     root.dataset.theme = resolved
     root.dataset.accent = settings.appearance.accentColor
-    root.dataset.interfaceStyle = 'modern'
+    root.dataset.interfaceStyle = settings.appearance.interfaceStyle
     root.dataset.density = settings.layout.density
     root.lang = settings.general.language
     root.style.colorScheme = resolved
     root.style.setProperty('--accent', accent.value)
     root.style.setProperty('--accent-strong', accent.strong)
     root.style.setProperty('--accent-contrast', accent.contrast)
-    root.style.setProperty('--app-font-size', '13px')
+    root.style.setProperty('--app-font-size', `${fontSize}px`)
+    root.style.setProperty('--interface-scale', '1')
     root.style.setProperty('--editor-font-size', `${settings.editor.fontSize}px`)
     root.style.setProperty('--json-editor-font-size', `${settings.editor.jsonFontSize}px`)
     root.style.setProperty('--quick-note-editor-font-size', `${settings.editor.quickNoteFontSize}px`)
@@ -149,7 +151,6 @@ function applyDocumentAppearance(settings: AppSettings): () => void {
     root.style.setProperty('--interface-font-family', settings.appearance.fontFamily === 'mono'
       ? 'var(--font-mono)'
       : electronInterfaceFontFamily)
-    root.style.setProperty('--interface-scale', String(settings.appearance.uiScale / 100))
     if (window.__TAURI_INTERNALS__) {
       void import('@tauri-apps/api/window')
         .then(({ getCurrentWindow }) => getCurrentWindow().setTheme(resolved))

@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Equal, History, RotateCcw } from 'lucide-react'
+import { ArrowDown, ArrowUp, Equal, RotateCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey } from '../../app/localizedMessages'
 import {
@@ -98,65 +98,67 @@ export function CalculatorPage({ onStateChange }: {
   }
 
   return (
-    <section className="tool-page">
-      <header className="tool-header">
-        <div>
-          <h1 className="visually-hidden">{t('title')}</h1>
-        </div>
-        <button className="secondary-button" type="button" onClick={() => setHistory([])}>
-          <RotateCcw />{t('action.clearHistory')}
+    <section className="tool-page p3-tool">
+      <header className="tool-page__header">
+        <h1 className="visually-hidden">{t('title')}</h1>
+        <button className="toolbar-button" type="button" onClick={() => setHistory([])}>
+          <RotateCcw size={14} />{t('action.clearHistory')}
         </button>
       </header>
 
+      <div className="local-tool-shell calculator-workspace">
       <div className="calculator-layout">
         <div className="calculator-controls">
-          <section className="tool-card calculator-expression">
+          <section className="calculator-section calculator-arithmetic">
             <h2>{t('arithmetic.title')}</h2>
-            <div className="expression-row">
-              <label className="sr-only" htmlFor="calculator-expression">{t('expression.label')}</label>
+            <div className="calculator-expression-row">
               <input
                 id="calculator-expression"
+                aria-label={t('expression.label')}
                 value={expression}
                 onChange={(event) => setExpression(event.target.value)}
                 onKeyDown={(event) => { if (event.key === 'Enter') evaluate() }}
               />
-              <button className="primary-button" type="button" onClick={evaluate}>
-                <Equal />{t('action.calculate')}
+              <button className="primary-command calculator-evaluate-button" type="button" aria-label={t('action.calculate')} onClick={evaluate}>
+                <Equal size={16} />
               </button>
             </div>
-            {error && <p className="error-message" role="alert">{errorText}</p>}
+            {error && <p className="calculator-hint error-message" role="alert">{errorText}</p>}
           </section>
 
-          <section className="tool-card">
+          <section className="calculator-section calculator-base-panel">
             <h2>{t('base.title')}</h2>
-            <div className="base-grid">
-              <BaseInput label={t('base.hex')} value={hex} onChange={setHex} />
-              <div className="conversion-actions">
-                <button type="button" onClick={() => run('hexToDec', hex, () => {
+            <div className="calculator-base-grid">
+              <label htmlFor="calculator-hex">{t('base.hex')}</label>
+              <input id="calculator-hex" value={hex} onChange={(event) => setHex(event.target.value)} />
+              <div className="calculator-base-actions">
+                <button className="panel-command" type="button" onClick={() => run('hexToDec', hex, () => {
                   const value = convertBase(hex, 16, 10)
                   setDecimal(value)
                   return value
-                })}><ArrowDown />HEX → DEC</button>
-                <button type="button" onClick={() => run('decToHex', decimal, () => {
+                })}><ArrowDown size={15} />HEX → DEC</button>
+                <button className="panel-command" type="button" onClick={() => run('decToHex', decimal, () => {
                   const value = convertBase(decimal, 10, 16)
                   setHex(value)
                   return value
-                })}><ArrowUp />DEC → HEX</button>
+                })}><ArrowUp size={15} />DEC → HEX</button>
               </div>
-              <BaseInput label={t('base.decimal')} value={decimal} onChange={setDecimal} />
-              <div className="conversion-actions">
-                <button type="button" onClick={() => run('decToBin', decimal, () => {
+              <label htmlFor="calculator-decimal">{t('base.decimal')}</label>
+              <input id="calculator-decimal" value={decimal} onChange={(event) => setDecimal(event.target.value)} />
+              <div className="calculator-base-actions">
+                <button className="panel-command" type="button" onClick={() => run('decToBin', decimal, () => {
                   const value = convertBase(decimal, 10, 2)
                   setBinary(value)
                   return value
-                })}><ArrowDown />DEC → BIN</button>
-                <button type="button" onClick={() => run('binToDec', binary, () => {
+                })}><ArrowDown size={15} />DEC → BIN</button>
+                <button className="panel-command" type="button" onClick={() => run('binToDec', binary, () => {
                   const value = convertBase(binary, 2, 10)
                   setDecimal(value)
                   return value
-                })}><ArrowUp />BIN → DEC</button>
+                })}><ArrowUp size={15} />BIN → DEC</button>
               </div>
-              <BaseInput label={t('base.binary')} value={binary} onChange={setBinary} />
+              <label htmlFor="calculator-binary">{t('base.binary')}</label>
+              <input id="calculator-binary" value={binary} onChange={(event) => setBinary(event.target.value)} />
             </div>
           </section>
 
@@ -192,13 +194,10 @@ export function CalculatorPage({ onStateChange }: {
           />
         </div>
 
-        <aside className="calculator-output">
-          <div className="result-panel">
-            <span>{t('result.title')}</span>
-            <output>{result}</output>
-          </div>
-          <div className="history-panel">
-            <h2><History />{t('history.title')}</h2>
+        <section className="calculator-output-panel">
+          <output className="calculator-result" aria-label={t('result.title')}>{result}</output>
+          <div className="calculator-log">
+            <h2>{t('history.title')}</h2>
             {history.length === 0
               ? <p className="empty-state">{t('history.empty')}</p>
               : history.map((item, index) => (
@@ -207,22 +206,10 @@ export function CalculatorPage({ onStateChange }: {
                   </p>
                 ))}
           </div>
-        </aside>
+        </section>
+      </div>
       </div>
     </section>
-  )
-}
-
-function BaseInput({ label, value, onChange }: {
-  label: string
-  value: string
-  onChange(value: string): void
-}) {
-  return (
-    <label className="base-input">
-      <span>{label}</span>
-      <input value={value} onChange={(event) => onChange(event.target.value)} />
-    </label>
   )
 }
 
@@ -237,11 +224,11 @@ function IntegerOperation({ title, labels, values, onChange, action, onRun }: {
   const { t } = useLocalizedMessages(calculatorMessages)
   const resolvedLabels = labels ?? [t('integer.value1'), t('integer.value2')]
   return (
-    <section className="tool-card operation-card">
+    <section className="calculator-section calculator-operation-panel">
       <h2>{title}</h2>
-      <div className="operation-row">
+      <div className="calculator-operation-row">
         {values.map((value, index) => (
-          <label key={resolvedLabels[index]}>
+          <label className="labeled-input" key={resolvedLabels[index]}>
             <span>{resolvedLabels[index]}</span>
             <input
               value={value}
@@ -249,7 +236,7 @@ function IntegerOperation({ title, labels, values, onChange, action, onRun }: {
             />
           </label>
         ))}
-        <button className="secondary-button" type="button" onClick={onRun}>{action}</button>
+        <button className="panel-command" type="button" onClick={onRun}>{action}</button>
       </div>
     </section>
   )

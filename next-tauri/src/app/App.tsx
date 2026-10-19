@@ -342,6 +342,7 @@ export function App() {
     sidebarCompact ? 'app-shell--compact' : '',
     settings.layout.compactNavigation ? 'app-shell--compact-nav' : '',
     settings.layout.showSeparators ? 'app-shell--nav-separators' : '',
+    settings.appearance.unifiedBackground ? 'app-shell--unified-background' : '',
     activeTool !== 'home' ? 'app-shell--immersive-tool' : '',
     `app-shell--nav-${settings.layout.navigationStyle}`
   ].filter(Boolean).join(' ')
