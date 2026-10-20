@@ -6,8 +6,10 @@ import {
   Sparkles,
   TriangleAlert
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
+import { clipboardApi } from '../../platform/api/clipboardApi'
+import type { AppLanguage } from '../../platform/contracts/settings'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useSettings } from '../settings/SettingsProvider'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
@@ -16,6 +18,7 @@ import { parseOperationMetadata, useOperationRestore } from '../history/operatio
 import { ToolFavoriteBar } from '../favorites/ToolFavoriteBar'
 import {
   buildCron,
+  commonCronExpressions,
   cronPresets,
   defaultCronFields,
   describeCron,
@@ -24,6 +27,7 @@ import {
   CronToolError,
   type CronFields
 } from './cronTools'
+import { CronFieldEditor } from './CronFieldEditor'
 import { cronMessages } from './cronMessages'
 
 type CronMessageKey = LocalizedMessageKey<typeof cronMessages>
@@ -58,6 +62,9 @@ export function CronSurface() {
   const [fields, setFields] = useState(defaultCronFields)
   const [expression, setExpression] = useState(() => buildCron(defaultCronFields))
   const [timeZone, setTimeZone] = useState(systemZone)
+  const [descriptionLanguage, setDescriptionLanguage] = useState<AppLanguage>(settings.general.language)
+  const [activeField, setActiveField] = useState<keyof CronFields>('second')
+  const [examplesOpen, setExamplesOpen] = useState(false)
   const [runs, setRuns] = useState<string[]>([])
   const [description, setDescription] = useState('')
   const [error, setError] = useState<CronError>()
@@ -88,6 +95,26 @@ export function CronSurface() {
   })
   const zoneOptions = Array.from(new Set([systemZone, ...timezones]))
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        setRuns(nextCronRuns(expression, timeZone, 10))
+        setDescription(describeCron(expression, descriptionLanguage))
+        setError(undefined)
+      } catch (cause) {
+        setError(cronError(cause))
+        setRuns([])
+        setDescription('')
+      }
+    }, 180)
+    return () => window.clearTimeout(timer)
+  }, [descriptionLanguage, expression, timeZone])
+
+  function updateExpression(value: string): void {
+    setExpression(value)
+    try { setFields(splitCron(value)) } catch { /* The expression can be partial while editing. */ }
+  }
+
   function calculate(nextExpression = expression): void {
     try {
       const nextFields = splitCron(nextExpression)
@@ -115,10 +142,37 @@ export function CronSurface() {
 
   function updateField(key: keyof CronFields, value: string): void {
     const next = { ...fields, [key]: value }
+    if (key === 'day') next.week = value === '?' ? '*' : '?'
+    if (key === 'week') next.day = value === '?' ? '*' : '?'
     setFields(next)
     try {
       setExpression(buildCron(next))
       setError(undefined)
+    } catch (cause) {
+      setError(cronError(cause))
+    }
+  }
+
+  function resolveFields(): void {
+    try {
+      setFields(splitCron(expression))
+      describeCron(expression, descriptionLanguage)
+      setError(undefined)
+    } catch (cause) {
+      setError(cronError(cause))
+    }
+  }
+
+  function convertDescription(): void {
+    try {
+      const text = describeCron(expression, descriptionLanguage)
+      setDescription(text)
+      setError(undefined)
+      recordOperation(t('action.convert'), text, 'success', {
+        inputText: expression,
+        outputText: text,
+        metadata: { timeZone, descriptionLanguage }
+      })
     } catch (cause) {
       setError(cronError(cause))
     }
@@ -144,12 +198,20 @@ export function CronSurface() {
             id="cron-expression"
             value={expression}
             spellCheck={false}
-            onChange={(event) => setExpression(event.target.value)}
+            onChange={(event) => updateExpression(event.target.value)}
             onKeyDown={(event) => event.key === 'Enter' && calculate()}
           />
           <select value={timeZone} onChange={(event) => setTimeZone(event.target.value)}>
             {zoneOptions.map((zone) => <option key={zone} value={zone}>{zone}</option>)}
           </select>
+          <select aria-label={t('description.locale')} value={descriptionLanguage} onChange={(event) => setDescriptionLanguage(event.target.value as AppLanguage)}>
+            <option value="zh-CN">中文</option>
+            <option value="en-US">English</option>
+            <option value="ja-JP">日本語</option>
+          </select>
+          <button className="secondary-button" type="button" onClick={resolveFields}>{t('action.resolve')}</button>
+          <button className="secondary-button" type="button" onClick={convertDescription}>{t('action.convert')}</button>
+          <button className="secondary-button" type="button" onClick={() => void clipboardApi.writeText(expression)}>{t('action.copy')}</button>
           <button className="primary-button" type="button" onClick={() => calculate()}>
             <Play />{t('action.parse')}
           </button>
@@ -206,6 +268,13 @@ export function CronSurface() {
               </label>
             ))}
           </div>
+          <div className="cron-field-tabs" role="tablist">
+            {fieldLabels.map(([key, label]) => (
+              <button type="button" role="tab" aria-selected={activeField === key} key={key} onClick={() => setActiveField(key)}>{t(label)}</button>
+            ))}
+          </div>
+          <CronFieldEditor key={activeField} field={activeField} value={fields[activeField]} language={descriptionLanguage} onChange={(value) => updateField(activeField, value)} />
+          <button className="secondary-button" type="button" onClick={() => setExamplesOpen(true)}>{t('action.examples')}</button>
           <div className={error ? 'cron-description cron-description--error' : 'cron-description'}>
             {error
               ? <><TriangleAlert />{errorText}</>
@@ -231,6 +300,25 @@ export function CronSurface() {
         <code>{session.summary}</code>
       </footer>
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
+      {examplesOpen && (
+        <div className="quick-note-git-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setExamplesOpen(false) }}>
+          <section className="cron-examples" role="dialog" aria-modal="true" aria-label={t('action.examples')}>
+            <header><strong>{t('action.examples')}</strong><button type="button" onClick={() => setExamplesOpen(false)}>×</button></header>
+            <div className="cron-example-list">
+              {commonCronExpressions.map((value) => (
+                <button type="button" key={value} onClick={() => { updateExpression(value); setExamplesOpen(false) }}>
+                  <code>{value}</code>
+                  <span>{exampleDescription(value, descriptionLanguage)}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   )
+}
+
+function exampleDescription(expression: string, language: AppLanguage): string {
+  try { return describeCron(expression, language) } catch { return '' }
 }

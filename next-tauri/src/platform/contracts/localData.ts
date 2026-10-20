@@ -7,8 +7,12 @@ export interface QuickNote {
   folderPath: string
   editorFont: 'default' | 'mono' | 'serif'
   lineHeight: 'compact' | 'normal' | 'relaxed'
+  fontSize: number
+  fontName: string
+  lineSpacing: number
+  relativePath: string
   lineWrapping: boolean
-  syntax: 'markdown' | 'plain' | 'json' | 'yaml'
+  syntax: 'markdown' | 'plain' | 'json' | 'yaml' | 'java' | 'javascript' | 'typescript' | 'python' | 'html' | 'xml' | 'sql'
   pinned: boolean
   createdAt: number
   updatedAt: number
@@ -36,6 +40,9 @@ export interface QuickNoteAttachment {
   mimeType: string
   sizeBytes: number
   createdAt: number
+  relativePath?: string
+  markdown?: string
+  dataUrl?: string
 }
 
 export type BoardMessageColor = 'blue' | 'green' | 'yellow' | 'pink' | 'purple' | 'gray'
@@ -53,6 +60,8 @@ export interface LocalDataApi {
   listNotes(): Promise<QuickNote[]>
   saveNote(note: QuickNote): Promise<QuickNote>
   deleteNote(id: string): Promise<boolean>
+  revealNoteEntry(relativePath: string): Promise<void>
+  openNoteVault(): Promise<void>
   listNoteFolders(): Promise<QuickNoteFolder[]>
   saveNoteFolder(folder: QuickNoteFolder): Promise<QuickNoteFolder>
   renameNoteFolder(path: string, nextPath: string, updatedAt: number): Promise<QuickNoteFolder[]>

@@ -39,7 +39,7 @@ import {
   parseHexColor,
   randomColor,
   rgbToHex,
-  themeShadeColumns
+  standardColors
 } from './colorTools'
 import { colorMessages } from './colorMessages'
 
@@ -81,7 +81,7 @@ export function ColorSurface() {
   const scale = useMemo(() => createColorScale(parsed), [parsed])
   const ratio = useMemo(() => contrastRatio(parsed, comparison), [comparison, parsed])
   const selectedTheme = colorThemes.find((theme) => theme.id === themeId) ?? colorThemes[0]
-  const themeShades = useMemo(() => themeShadeColumns(selectedTheme.colors), [selectedTheme])
+  const themeShades = selectedTheme.shades
   const noticeText = 'raw' in notice ? notice.raw : t(notice.key, notice.values)
   const session = useMemo(() => ({
     digest: JSON.stringify({
@@ -302,8 +302,21 @@ export function ColorSurface() {
             </label>
             <span>{t('library.hint')}</span>
           </header>
+          <div className="color-library-main" aria-label={t('library.standard')}>
+            {standardColors.map((value) => (
+              <button
+                type="button"
+                key={value}
+                className={value === formats.hex || value === colorFormats(comparison).hex ? 'color-library-swatch color-library-swatch--active' : 'color-library-swatch'}
+                style={{ background: value }}
+                title={t('library.select', { value })}
+                aria-label={t('library.select', { value })}
+                onClick={(event) => selectLibraryColor(value, event.shiftKey)}
+              />
+            ))}
+          </div>
           <div className="color-library-main" aria-label={t('library.mainColors')}>
-            {selectedTheme.colors.map((value) => (
+            {selectedTheme.main.map((value) => (
               <button
                 type="button"
                 key={value}
@@ -330,7 +343,7 @@ export function ColorSurface() {
           <div className="color-operation-bar">
             <span className="color-operation-preview" style={{ background: formats.hex }}><code>{formats.hex}</code></span>
             <select aria-label={t('operation.label')} value={operation} onChange={(event) => setOperation(event.target.value as ColorOperation)}>
-              {(['average', 'multiply', 'add', 'difference', 'invert'] as ColorOperation[]).map((item) => <option key={item} value={item}>{t(`operation.${item}`)}</option>)}
+              {(['invert', 'intersect', 'add', 'difference', 'average'] as ColorOperation[]).map((item) => <option key={item} value={item}>{t(`operation.${item}`)}</option>)}
             </select>
             <button type="button" className="secondary-button" onClick={runColorOperation}>{t('operation.apply')}</button>
             <button type="button" className="icon-button" aria-label={t('operation.swap')} title={t('operation.swap')} onClick={swapColors}><ArrowLeftRight /></button>

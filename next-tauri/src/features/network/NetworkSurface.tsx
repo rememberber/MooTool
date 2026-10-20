@@ -1,16 +1,13 @@
 import {
-  Binary,
   CheckCircle2,
-  Clipboard,
-  Copy,
+  ClipboardCopy,
   Globe2,
   Network,
   Play,
-  Radio,
   RefreshCw,
-  ScanLine,
-  Server,
+  Search,
   Square,
+  Trash2,
   TriangleAlert
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -23,7 +20,8 @@ import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import { networkMessages } from './networkMessages'
-import { analyzeIpv4Cidr, integerToIpv4, NetworkToolError, type Ipv4Category } from './networkTools'
+import { formatOpenPorts, parseIpv4Range, parsePortSpec } from './networkCommand'
+import { analyzeIpv4Cidr, integerToIpv4, ipv4ToLong, NetworkToolError, type Ipv4Category } from './networkTools'
 
 type NetworkMessageKey = LocalizedMessageKey<typeof networkMessages>
 type NetworkNotice = { key: NetworkMessageKey; values?: MessageValues } | { raw: string }
@@ -33,6 +31,15 @@ export function NetworkSurface() {
   const dialog = useDesktopDialog()
   const { t, locale } = useLocalizedMessages(networkMessages)
   const [input, setInput] = useState('192.168.1.10/24')
+  const [ipv4, setIpv4] = useState('127.0.0.1')
+  const [longValue, setLongValue] = useState('2130706433')
+  const [output, setOutput] = useState('')
+  const [pingTarget, setPingTarget] = useState('127.0.0.1')
+  const [ipRange, setIpRange] = useState('192.168.10')
+  const [portHost, setPortHost] = useState('127.0.0.1')
+  const [portSpec, setPortSpec] = useState('')
+  const [resolveHost, setResolveHost] = useState('localhost')
+  const [whoisTarget, setWhoisTarget] = useState('example.com')
   const [integerInput, setIntegerInput] = useState('3232235777')
   const [result, setResult] = useState(() => analyzeIpv4Cidr('192.168.1.10/24'))
   const [integerResult, setIntegerResult] = useState('192.168.1.1')
@@ -97,9 +104,7 @@ export function NetworkSurface() {
     setFailed(false)
   })
 
-  useEffect(() => {
-    if (tab === 'interfaces' && !interfaces.length) void loadInterfaces()
-  }, [tab])
+  useEffect(() => { void loadInterfaces(false) }, [])
 
   function analyze(): void {
     try {
@@ -112,12 +117,24 @@ export function NetworkSurface() {
     }
   }
 
+  function convertAddress(): void {
+    try {
+      const next = String(ipv4ToLong(ipv4))
+      setLongValue(next)
+      setIntegerInput(next)
+      succeed('notice.converted')
+    } catch (cause) {
+      fail(cause)
+    }
+  }
+
   function convertInteger(): void {
     try {
-      const next = integerToIpv4(integerInput)
+      const next = integerToIpv4(longValue)
+      setIpv4(next)
       setIntegerResult(next)
       succeed('notice.converted')
-      recordOperation(t('action.convert'), `${integerInput} → ${next}`, 'success', { inputText: integerInput, outputText: next, metadata: { operation: 'integer' } })
+      recordOperation(t('action.convert'), `${longValue} → ${next}`, 'success', { inputText: longValue, outputText: next, metadata: { operation: 'integer' } })
     } catch (cause) {
       fail(cause)
     }
@@ -135,11 +152,12 @@ export function NetworkSurface() {
     }
   }
 
-  async function loadInterfaces(): Promise<void> {
+  async function loadInterfaces(publish = true): Promise<void> {
     setBusy('interfaces')
     try {
       const loaded = await networkToolsApi.interfaces()
       setInterfaces(loaded)
+      if (publish) setOutput(loaded.map((item) => `${item.name}  ${item.addresses.join(' ')}`).join('\n') || t('layout.noOutput'))
       succeed('notice.interfaces', { count: loaded.length })
     } catch (cause) { fail(cause) } finally { setBusy('') }
   }
@@ -149,6 +167,7 @@ export function NetworkSurface() {
     try {
       const loaded = await networkToolsApi.connections()
       setConnections(loaded)
+      setOutput(loaded.map((item) => `${item.protocol}  ${item.localAddress}  ${item.remoteAddress}  ${item.state}  ${item.process}`).join('\n') || t('layout.noOutput'))
       succeed('notice.connections', { count: loaded.length })
     } catch (cause) { fail(cause) } finally { setBusy('') }
   }
@@ -156,18 +175,20 @@ export function NetworkSurface() {
   async function resolveTarget(): Promise<void> {
     setBusy('dns')
     try {
-      const loaded = await networkToolsApi.resolve(target.trim())
+      const loaded = await networkToolsApi.resolve(resolveHost.trim())
       setDnsResults(loaded)
+      setOutput(loaded.join('\n') || t('layout.noOutput'))
       succeed('notice.resolved', { count: loaded.length })
       recordOperation(t('operation.dns'), `${target} · ${loaded.join(', ')}`, 'success', { inputText: target.trim(), outputText: loaded.join('\n'), metadata: { operation: 'dns' } })
     } catch (cause) { fail(cause); recordOperation(t('operation.dns'), String(cause), 'error', { inputText: target.trim(), metadata: { operation: 'dns' } }) } finally { setBusy('') }
   }
 
-  async function pingTarget(): Promise<void> {
+  async function runPing(): Promise<void> {
     setBusy('ping')
     try {
-      const loaded = await networkToolsApi.ping(target.trim())
+      const loaded = await networkToolsApi.ping(pingTarget.trim())
       setPingResult(loaded)
+      setOutput(loaded.output || t('layout.noOutput'))
       succeed(loaded.success ? 'notice.pingComplete' : 'notice.pingFailed')
       recordOperation(t('operation.ping'), `${target} · ${loaded.durationMs} ms`, loaded.success ? 'success' : 'error', { inputText: target.trim(), outputText: loaded.output, metadata: { operation: 'ping', durationMs: loaded.durationMs, success: loaded.success } })
     } catch (cause) { fail(cause); recordOperation(t('operation.ping'), String(cause), 'error', { inputText: target.trim(), metadata: { operation: 'ping' } }) } finally { setBusy('') }
@@ -177,19 +198,40 @@ export function NetworkSurface() {
     const requestId = crypto.randomUUID()
     setTaskId(requestId)
     setBusy('scan')
+    setOutput(t('layout.running'))
     try {
-      const loaded = await networkToolsApi.scanPorts(requestId, target.trim(), startPort, endPort, 500)
+      const ports = parsePortSpec(portSpec)
+      const start = ports[0] ?? 1
+      const end = ports.at(-1) ?? start
+      if (end - start + 1 !== ports.length) throw new Error('Native port lists require the Tauri desktop app')
+      const loaded = await networkToolsApi.scanPorts(requestId, portHost.trim(), start, end, 500)
       setScanResult(loaded)
+      setOutput(formatOpenPorts(portHost.trim(), ports, loaded.openPorts))
       succeed(loaded.cancelled ? 'notice.scanCancelled' : 'notice.scanComplete', { count: loaded.openPorts.length })
-      recordOperation(t('operation.scan'), `${target}:${startPort}-${endPort} · ${loaded.openPorts.join(', ') || '—'}`, 'success', { inputText: target.trim(), outputText: loaded.openPorts.join(','), metadata: { operation: 'scan', startPort, endPort, resolvedAddress: loaded.resolvedAddress, durationMs: loaded.durationMs } })
-    } catch (cause) { fail(cause); recordOperation(t('operation.scan'), String(cause), 'error', { inputText: target.trim(), metadata: { operation: 'scan', startPort, endPort } }) } finally { setBusy(''); setTaskId('') }
+    } catch (cause) {
+      setOutput(cause instanceof Error ? cause.message : String(cause))
+      fail(cause)
+    } finally { setBusy(''); setTaskId('') }
+  }
+
+  async function probeRange(): Promise<void> {
+    setBusy('range')
+    setOutput(t('layout.running'))
+    try {
+      parseIpv4Range(ipRange)
+      setOutput('Native ping range requires the Tauri desktop app')
+    } catch (cause) {
+      setOutput(cause instanceof Error ? cause.message : String(cause))
+      fail(cause)
+    } finally { setBusy('') }
   }
 
   async function queryWhois(): Promise<void> {
     setBusy('whois')
     try {
-      const loaded = await networkToolsApi.whois(target.trim())
+      const loaded = await networkToolsApi.whois(whoisTarget.trim())
       setWhoisResult(loaded)
+      setOutput(loaded.output || t('layout.noOutput'))
       succeed('notice.whois', { server: loaded.server })
       recordOperation(t('operation.whois'), `${loaded.query} · ${loaded.server}`, 'success', { inputText: loaded.query, outputText: loaded.output, metadata: { operation: 'whois', server: loaded.server, durationMs: loaded.durationMs } })
     } catch (cause) { fail(cause); recordOperation(t('operation.whois'), String(cause), 'error', { inputText: target.trim(), metadata: { operation: 'whois' } }) } finally { setBusy('') }
@@ -259,50 +301,28 @@ export function NetworkSurface() {
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 
-      <nav className="utility-segments network-tabs" aria-label={t('tabs.aria')}>
-        {(['calculator', 'interfaces', 'diagnostics'] as const).map((value) => <button className={tab === value ? 'utility-segment utility-segment--active' : 'utility-segment'} type="button" key={value} onClick={() => setTab(value)}>{t(`tab.${value}`)}</button>)}
-      </nav>
-
-      {tab === 'calculator' && <section className="network-tab-content network-calculator"><section className="network-inputs">
-        <label><Network /><span>IPv4 / CIDR</span><input value={input} onChange={(event) => setInput(event.target.value)} />
-          <button className="primary-button" type="button" onClick={analyze}><Play />{t('action.calculate')}</button>
-        </label>
-        <label><Binary /><span>{t('field.integer')}</span><input value={integerInput} onChange={(event) => setIntegerInput(event.target.value)} />
-          <button className="secondary-button" type="button" onClick={convertInteger}>{t('action.convert')}</button>
-          <code>{integerResult}</code>
-        </label>
+      <section className="network-workspace">
+        <section className="network-output-panel">
+          <header>
+            <button type="button" disabled={Boolean(busy)} onClick={() => void loadInterfaces()}><Network />{navigator.userAgent.includes('Windows') ? 'ipconfig /all' : navigator.userAgent.includes('Linux') ? 'ip address' : 'ifconfig'}</button>
+            <button type="button" disabled={Boolean(busy)} onClick={() => void loadConnections()}><Globe2 />netstat</button>
+            {busy && <button type="button" onClick={() => void cancelScan()}><Square />{t('action.stop')}</button>}
+            <button type="button" aria-label={t('action.copyOutput')} disabled={!output} onClick={() => void copy(output)}><ClipboardCopy /></button>
+            <button type="button" aria-label={t('action.clearOutput')} disabled={!output} onClick={() => setOutput('')}><Trash2 /></button>
+          </header>
+          <pre>{output || t('layout.outputPlaceholder')}</pre>
+        </section>
+        <section className="network-actions">
+          <section><h2>{t('layout.ipv4Long')}</h2><label><span>IPv4</span><input aria-label="IPv4" value={ipv4} onChange={(event) => setIpv4(event.target.value)} /></label><div><button type="button" onClick={convertAddress}>{t('action.convert')} ↓</button><button type="button" onClick={convertInteger}>↑ {t('action.convert')}</button></div><label><span>Long</span><input aria-label="Long" value={longValue} onChange={(event) => setLongValue(event.target.value)} /></label></section>
+          <section><h2>{t('layout.ping')}</h2><div className="network-command-row"><Search /><input aria-label={t('layout.ping')} value={pingTarget} onChange={(event) => setPingTarget(event.target.value)} /><button type="button" disabled={Boolean(busy)} onClick={() => void runPing()}><Play />PING</button></div></section>
+          <section><h2>{t('layout.ipRange')}</h2><div className="network-command-row"><Search /><input aria-label={t('layout.ipRange')} placeholder={t('layout.ipRangePlaceholder')} value={ipRange} onChange={(event) => setIpRange(event.target.value)} /><button type="button" disabled={Boolean(busy)} onClick={() => void probeRange()}><Play />{t('layout.scan')}</button></div><p>{t('layout.ipRangeHint')}</p></section>
+          <section><h2>{t('layout.portScan')}</h2><div className="network-command-row"><Search /><input aria-label={t('layout.portHostPlaceholder')} placeholder={t('layout.portHostPlaceholder')} value={portHost} onChange={(event) => setPortHost(event.target.value)} /><input aria-label={t('layout.portSpecPlaceholder')} placeholder={t('layout.portSpecPlaceholder')} value={portSpec} onChange={(event) => setPortSpec(event.target.value)} /><button type="button" disabled={Boolean(busy)} onClick={() => void scanTarget()}><Play />{t('layout.scan')}</button></div><p>{t('layout.portScanHint')}</p></section>
+          <section><h2>{t('layout.resolve')}</h2><div className="network-command-row"><Search /><input aria-label={t('layout.resolve')} value={resolveHost} onChange={(event) => setResolveHost(event.target.value)} /><button type="button" disabled={Boolean(busy)} onClick={() => void resolveTarget()}><Play />{t('layout.resolveAction')}</button></div></section>
+          <section><h2>{t('layout.whois')}</h2><div className="network-command-row"><Search /><input aria-label={t('layout.whois')} value={whoisTarget} onChange={(event) => setWhoisTarget(event.target.value)} /><button type="button" disabled={Boolean(busy)} onClick={() => void queryWhois()}><Play />{t('layout.query')}</button></div></section>
+          <section><h2>{t('layout.dns')}</h2><button type="button" disabled={Boolean(busy)} onClick={() => void flushDns()}><RefreshCw />{t('action.flushDns')}</button></section>
+          <section><h2>{t('layout.localAddresses')}</h2><div className="network-local-addresses"><label><span>IPv4</span><textarea readOnly aria-label="IPv4" value={interfaces.flatMap((item) => item.addresses).filter((address) => address.includes('.')).join('\n')} /></label><label><span>IPv6</span><textarea readOnly aria-label="IPv6" value={interfaces.flatMap((item) => item.addresses).filter((address) => address.includes(':')).join('\n')} /></label></div><button type="button" aria-label={t('action.refresh')} onClick={() => void loadInterfaces()}><RefreshCw /></button></section>
+        </section>
       </section>
-
-      <section className="network-results">
-        <header>
-          <div><Globe2 /><strong>{result.address}/{result.prefix}</strong><span>{category}</span></div>
-          <button className="utility-copy" type="button" onClick={() => void copy(`${result.address}/${result.prefix}`)}>
-            {copied === `${result.address}/${result.prefix}` ? <Clipboard /> : <Copy />}{t('action.copyCidr')}
-          </button>
-        </header>
-        <div>
-          {facts.map(([label, value]) => (
-            <button type="button" key={label} onClick={() => void copy(value)}>
-              <span>{label}</span><code>{value}</code><Copy />
-            </button>
-          ))}
-        </div>
-      </section></section>}
-
-      {tab === 'interfaces' && <section className="network-native-panel">
-        <header><div><Server /><strong>{t('interfaces.title')}</strong></div><span><button className="secondary-button" type="button" disabled={Boolean(busy)} onClick={() => void loadConnections()}><Radio />{t('action.connections')}</button><button className="secondary-button" type="button" disabled={Boolean(busy)} onClick={() => void flushDns()}><RefreshCw />{t('action.flushDns')}</button><button className="secondary-button" type="button" disabled={Boolean(busy)} onClick={() => void loadInterfaces()}><RefreshCw />{t('action.refresh')}</button></span></header>
-        <div className="network-interface-list">{interfaces.length ? interfaces.map((item) => <article key={item.name}><header><strong>{item.name}</strong><code>{item.macAddress}</code></header><p>{item.addresses.join(' · ') || '—'}</p><dl><div><dt>MTU</dt><dd>{item.mtu}</dd></div><div><dt>{t('interfaces.received')}</dt><dd>{formatBytes(item.receivedBytes)}</dd></div><div><dt>{t('interfaces.transmitted')}</dt><dd>{formatBytes(item.transmittedBytes)}</dd></div></dl></article>) : <p>{t('interfaces.empty')}</p>}</div>
-        {!!connections.length && <section className="network-connections"><header><strong>{t('connections.title', { count: visibleConnections.length })}</strong><label><input value={connectionQuery} placeholder={t('connections.search')} onChange={(event) => setConnectionQuery(event.target.value)} /></label></header><div>{visibleConnections.map((item, index) => <article key={`${item.protocol}-${item.localAddress}-${item.remoteAddress}-${index}`}><strong>{item.protocol}</strong><code>{item.localAddress}</code><span>→</span><code>{item.remoteAddress}</code><em>{item.state || '—'}</em><small>{item.process}</small></article>)}</div></section>}
-      </section>}
-
-      {tab === 'diagnostics' && <section className="network-native-panel network-diagnostics">
-        <header><div><Radio /><strong>{t('diagnostics.title')}</strong></div></header>
-        <label className="network-target"><span>{t('diagnostics.host')}</span><input value={target} spellCheck={false} onChange={(event) => setTarget(event.target.value)} /></label>
-        <div className="network-diagnostic-actions"><button className="secondary-button" type="button" disabled={Boolean(busy) || !target.trim()} onClick={() => void resolveTarget()}><Globe2 />{t('action.dns')}</button><button className="secondary-button" type="button" disabled={Boolean(busy) || !target.trim()} onClick={() => void pingTarget()}><Radio />{t('action.ping')}</button><button className="secondary-button" type="button" disabled={Boolean(busy) || !target.trim()} onClick={() => void queryWhois()}><Server />WHOIS</button></div>
-        <section className="network-scan"><header><ScanLine /><strong>{t('scan.title')}</strong></header><label>{t('scan.start')}<input type="number" min="1" max="65535" value={startPort} onChange={(event) => setStartPort(event.target.valueAsNumber)} /></label><label>{t('scan.end')}<input type="number" min="1" max="65535" value={endPort} onChange={(event) => setEndPort(event.target.valueAsNumber)} /></label>{busy === 'scan' ? <button className="primary-button" type="button" onClick={() => void cancelScan()}><Square />{t('action.cancel')}</button> : <button className="primary-button" type="button" disabled={Boolean(busy) || !target.trim()} onClick={() => void scanTarget()}>{t('action.scan')}</button>}</section>
-        <section className="network-scan network-range-scan"><header><Network /><strong>{t('range.title')}</strong></header><label>CIDR<input value={rangeCidr} spellCheck={false} onChange={(event) => setRangeCidr(event.target.value)} /></label><label>{t('range.ports')}<input value={rangePorts} spellCheck={false} onChange={(event) => setRangePorts(event.target.value)} /></label>{busy === 'range' ? <button className="primary-button" type="button" onClick={() => void cancelScan()}><Square />{t('action.cancel')}</button> : <button className="primary-button" type="button" disabled={Boolean(busy) || !rangeCidr.trim()} onClick={() => void scanRange()}>{t('action.scanRange')}</button>}</section>
-        <div className="network-diagnostic-results">{dnsResults.length > 0 && <article><strong>DNS</strong><code>{dnsResults.join('\n')}</code></article>}{pingResult && <article><strong>Ping · {pingResult.durationMs} ms</strong><pre>{pingResult.output}</pre></article>}{whoisResult && <article><strong>WHOIS · {whoisResult.server}</strong><pre>{whoisResult.output}</pre><small>{whoisResult.durationMs} ms</small></article>}{scanResult && <article><strong>{t('scan.openPorts', { count: scanResult.openPorts.length })}</strong><code>{scanResult.openPorts.join(', ') || '—'}</code><small>{scanResult.resolvedAddress} · {scanResult.durationMs} ms</small></article>}{rangeResult && <article><strong>{t('range.result', { count: rangeResult.reachableHosts.length, total: rangeResult.scannedHosts })}</strong><pre>{rangeResult.reachableHosts.map((host) => `${host.address}\t${host.openPorts.join(', ')}`).join('\n') || '—'}</pre><small>{rangeResult.durationMs} ms</small></article>}</div>
-      </section>}
 
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}>
         <span>{failed ? <TriangleAlert /> : <CheckCircle2 />}{noticeText}</span>

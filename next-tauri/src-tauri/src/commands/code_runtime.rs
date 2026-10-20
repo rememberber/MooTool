@@ -368,7 +368,7 @@ fn configured_runtime(settings: &RuntimeSettings, runtime: CodeRuntimeId) -> Opt
     (!value.trim().is_empty()).then_some(value.trim())
 }
 
-fn resolve_runtime(
+pub(crate) fn resolve_runtime(
     settings: &RuntimeSettings,
     runtime: CodeRuntimeId,
     candidates: &[&str],

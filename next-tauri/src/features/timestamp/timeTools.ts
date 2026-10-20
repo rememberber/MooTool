@@ -35,9 +35,10 @@ export const quickTimezones = [
   { label: 'UTC', zone: 'UTC' },
   { label: '+8', zone: 'Asia/Shanghai' },
   { label: '+9', zone: 'Asia/Tokyo' },
-  { label: '-5/-4', zone: 'America/New_York' },
-  { label: '-8/-7', zone: 'America/Los_Angeles' },
-  { label: '+1/+2', zone: 'Europe/Paris' }
+  { label: '-5', zone: 'America/New_York' },
+  { label: '-8', zone: 'America/Los_Angeles' },
+  { label: '+1', zone: 'Europe/Paris' },
+  { label: '+3', zone: 'Europe/Moscow' }
 ] as const
 
 export interface TimeConversion {

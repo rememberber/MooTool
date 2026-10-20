@@ -5,6 +5,7 @@ use serde::Serialize;
 use sha2::{Digest, Sha256, Sha384, Sha512};
 use tauri_plugin_dialog::DialogExt;
 
+use super::file_digest::{Md5, Sha1, Sm3, StreamingDigest};
 use crate::{contracts::error::AppResult, repositories::settings::SettingsRepository};
 
 const MAX_TEXT_BYTES: u64 = 5 * 1024 * 1024;
@@ -31,8 +32,11 @@ pub async fn digest_user_file(
     app: tauri::AppHandle,
     algorithm: String,
 ) -> AppResult<Option<UserFileDigest>> {
-    if !matches!(algorithm.as_str(), "sha256" | "sha384" | "sha512") {
-        return Err("file digest supports SHA-256, SHA-384, or SHA-512".into());
+    if !matches!(
+        algorithm.as_str(),
+        "md5" | "sha1" | "sha256" | "sha384" | "sha512" | "sm3"
+    ) {
+        return Err("file digest supports MD5, SHA-1, SHA-256, SHA-384, SHA-512, or SM3".into());
     }
     let selection = app.dialog().file().blocking_pick_file();
     let Some(selection) = selection else {
@@ -66,7 +70,7 @@ pub(super) fn digest_path(path: &Path, algorithm: &str) -> Result<String, String
     let mut file =
         fs::File::open(path).map_err(|error| format!("failed to open digest file: {error}"))?;
     let mut buffer = [0_u8; 64 * 1024];
-    macro_rules! hash_file {
+    macro_rules! read_file {
         ($hasher:expr) => {{
             let mut hasher = $hasher;
             loop {
@@ -78,13 +82,16 @@ pub(super) fn digest_path(path: &Path, algorithm: &str) -> Result<String, String
                 }
                 hasher.update(&buffer[..count]);
             }
-            format!("{:x}", hasher.finalize())
+            hasher
         }};
     }
     Ok(match algorithm {
-        "sha256" => hash_file!(Sha256::new()),
-        "sha384" => hash_file!(Sha384::new()),
-        "sha512" => hash_file!(Sha512::new()),
+        "md5" => read_file!(Md5::default()).finalize(),
+        "sha1" => read_file!(Sha1::default()).finalize(),
+        "sha256" => format!("{:x}", read_file!(Sha256::new()).finalize()),
+        "sha384" => format!("{:x}", read_file!(Sha384::new()).finalize()),
+        "sha512" => format!("{:x}", read_file!(Sha512::new()).finalize()),
+        "sm3" => read_file!(Sm3::default()).finalize(),
         _ => return Err("unsupported file digest algorithm".into()),
     })
 }

@@ -39,7 +39,7 @@ import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { useOperationRestore } from '../history/operationRestore'
 import { httpMessages } from './httpMessages'
-import { buildCurl, cookie, emptyHttpRequest, entry, HttpToolError, parseCurl, type HttpMethod } from './httpTools'
+import { buildCurl, cookie, emptyHttpRequest, entry, formatHttpBody, HttpToolError, parseCurl, type HttpMethod } from './httpTools'
 
 type RequestTab = 'params' | 'headers' | 'cookies' | 'body'
 type ResponseTab = 'body' | 'headers' | 'cookies'
@@ -246,11 +246,10 @@ export function HttpSurface() {
     } catch (cause) { fail(cause) }
   }
 
-  function formatBody() {
+  async function formatBody() {
     try {
       if (!request.body.trim()) return
-      if (!request.bodyType.toLowerCase().includes('json')) throw new HttpLocalizedError('error.jsonOnly')
-      setRequest({ ...request, body: JSON.stringify(JSON.parse(request.body), null, 2) })
+      setRequest({ ...request, body: await formatHttpBody(request.body, request.bodyType) })
       succeed('notice.bodyFormatted')
     } catch (cause) { fail(cause) }
   }
@@ -304,7 +303,7 @@ export function HttpSurface() {
             {requestTab === 'params' && <EntryEditor values={request.params} onChange={(params) => setRequest({ ...request, params })} />}
             {requestTab === 'headers' && <EntryEditor values={request.headers} onChange={(headers) => setRequest({ ...request, headers })} />}
             {requestTab === 'cookies' && <CookieEditor values={request.cookies} onChange={(cookies) => setRequest({ ...request, cookies })} />}
-            {requestTab === 'body' && <div className="http-body-pane"><header><select value={request.bodyType} onChange={(event) => setRequest({ ...request, bodyType: event.target.value })}>{['application/json', 'text/plain', 'application/xml', 'text/xml', 'text/html', 'application/javascript'].map((value) => <option key={value}>{value}</option>)}</select><button type="button" disabled={!request.body.trim()} onClick={formatBody}><Braces />{t('action.format')}</button><button type="button" disabled={!request.body} onClick={() => setRequest({ ...request, body: '' })}><Eraser />{t('action.clear')}</button></header><CodeEditor ariaLabel={t('aria.requestBody')} value={request.body} onChange={(body) => setRequest({ ...request, body })} className="utility-code-editor" lineWrapping={false} /></div>}
+            {requestTab === 'body' && <div className="http-body-pane"><header><select value={request.bodyType} onChange={(event) => setRequest({ ...request, bodyType: event.target.value })}>{['application/json', 'text/plain', 'application/xml', 'text/xml', 'text/html', 'application/javascript'].map((value) => <option key={value}>{value}</option>)}</select><button type="button" disabled={!request.body.trim()} onClick={() => void formatBody()}><Braces />{t('action.format')}</button><button type="button" disabled={!request.body} onClick={() => setRequest({ ...request, body: '' })}><Eraser />{t('action.clear')}</button></header><CodeEditor ariaLabel={t('aria.requestBody')} value={request.body} onChange={(body) => setRequest({ ...request, body })} className="utility-code-editor" lineWrapping={false} /></div>}
           </section>
           <section className="http-response-card">
             <header><Tabs values={['body', 'headers', 'cookies']} active={responseTab} labels={[t('tab.responseBody'), t('tab.responseHeaders'), t('tab.cookies')]} onChange={(value) => setResponseTab(value as ResponseTab)} /><div className="http-response-meta">{response && <><span className={response.status < 400 ? 'http-status http-status--ok' : 'http-status http-status--error'}>{response.status}</span><span>{formatBytes(response.sizeBytes)} · {response.durationMs} ms{response.truncated ? ` · ${t('response.truncated')}` : ''}</span><label><Search /><input value={responseSearch} placeholder={t('search.response')} onChange={(event) => setResponseSearch(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); navigateResponseMatch(event.shiftKey ? -1 : 1) } }} /><em>{responseSearch ? `${responseMatchIndex < 0 ? 0 : responseMatchIndex + 1}/${responseMatches.length}` : ''}</em></label><button type="button" disabled={!responseMatches.length} title={t('action.previousMatch')} aria-label={t('action.previousMatch')} onClick={() => navigateResponseMatch(-1)}><ChevronUp /></button><button type="button" disabled={!responseMatches.length} title={t('action.nextMatch')} aria-label={t('action.nextMatch')} onClick={() => navigateResponseMatch(1)}><ChevronDown /></button><button type="button" title={t('action.copyResponse')} onClick={() => void clipboardApi.writeText(responseOutput).catch(fail)}><Copy /></button></>}</div></header>

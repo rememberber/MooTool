@@ -27,6 +27,7 @@ import { ImageHost } from '../features/image/ImageHost'
 import { JsonHost } from '../features/json/JsonHost'
 import { MessageBoardHost } from '../features/messageBoard/MessageBoardHost'
 import { NetworkHost } from '../features/network/NetworkHost'
+import { FilePreviewHost } from '../features/filePreview/FilePreviewHost'
 import { PdfHost } from '../features/pdf/PdfHost'
 import { ProtobufHost } from '../features/protobuf/ProtobufHost'
 import { QrcodeHost } from '../features/qrcode/QrcodeHost'
@@ -86,6 +87,7 @@ const toolHosts: Array<{ id: Exclude<ToolId, 'home'>; Host: ComponentType<{ acti
   { id: 'translation', Host: TranslationHost },
   { id: 'image', Host: ImageHost },
   { id: 'pdf', Host: PdfHost },
+  { id: 'file-preview', Host: FilePreviewHost },
   { id: 'network', Host: NetworkHost },
   { id: 'ua', Host: UaHost },
   { id: 'variables', Host: VariablesHost },

@@ -70,8 +70,12 @@ impl LocalDataRepository {
                     tags: serde_json::from_str(&row.get::<_, String>(3)?).unwrap_or_default(),
                     color: row.get(4)?,
                     folder_path: row.get(5)?,
+                    relative_path: String::new(),
                     editor_font: row.get(6)?,
                     line_height: row.get(7)?,
+                    font_size: 14,
+                    font_name: String::new(),
+                    line_spacing: 1.2,
                     line_wrapping: row.get(8)?,
                     syntax: row.get(9)?,
                     pinned: row.get(10)?,
@@ -378,6 +382,9 @@ impl LocalDataRepository {
                     mime_type: row.get(3)?,
                     size_bytes: row.get::<_, i64>(4)?.try_into().unwrap_or_default(),
                     created_at: row.get(5)?,
+                    relative_path: String::new(),
+                    markdown: String::new(),
+                    data_url: String::new(),
                 })
             })
             .map_err(database_error)?;
@@ -451,6 +458,9 @@ impl LocalDataRepository {
                             mime_type: row.get(3)?,
                             size_bytes: row.get::<_, i64>(4)?.try_into().unwrap_or_default(),
                             created_at: row.get(5)?,
+                            relative_path: String::new(),
+                            markdown: String::new(),
+                            data_url: String::new(),
                         },
                         row.get(6)?,
                     ))
@@ -810,6 +820,8 @@ impl LocalDataRepository {
                     target_lang: row.get(4)?,
                     provider: if provider == "bing" {
                         TranslationProvider::Bing
+                    } else if provider == "deepl" {
+                        TranslationProvider::DeepL
                     } else {
                         TranslationProvider::Google
                     },
@@ -840,6 +852,7 @@ impl LocalDataRepository {
                     match history.provider {
                         TranslationProvider::Google => "google",
                         TranslationProvider::Bing => "bing",
+                        TranslationProvider::DeepL => "deepl",
                     },
                     history.created_at
                 ],
@@ -1164,6 +1177,7 @@ impl LocalDataRepository {
                         match history.provider {
                             TranslationProvider::Google => "google",
                             TranslationProvider::Bing => "bing",
+                            TranslationProvider::DeepL => "deepl",
                         },
                         history.created_at
                     ],
@@ -1617,8 +1631,12 @@ mod tests {
             tags: Vec::new(),
             color: "default".into(),
             folder_path: String::new(),
+            relative_path: String::new(),
             editor_font: "default".into(),
             line_height: "normal".into(),
+            font_size: 14,
+            font_name: String::new(),
+            line_spacing: 1.0,
             line_wrapping: true,
             syntax: "markdown".into(),
             pinned,
@@ -1734,6 +1752,9 @@ mod tests {
             mime_type: "text/plain".into(),
             size_bytes: 4,
             created_at: 11,
+            relative_path: String::new(),
+            markdown: String::new(),
+            data_url: String::new(),
         };
 
         repository

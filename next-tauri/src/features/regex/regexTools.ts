@@ -38,7 +38,7 @@ export const commonRegexes = [
   { id: 'float', pattern: '^-?(?:0|[1-9]\\d*)\\.\\d+$' }
 ] as const
 
-const maxMatches = 10_000
+const maxMatches = 5_000
 
 export function regexFlags(options: RegexOptions): string {
   return `${options.global ? 'g' : ''}${options.ignoreCase ? 'i' : ''}${options.multiline ? 'm' : ''}${options.dotAll ? 's' : ''}${options.unicode ? 'u' : ''}`

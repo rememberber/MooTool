@@ -128,6 +128,22 @@ export function unescapeJsonString(input: string): string {
   return value
 }
 
+export function escapeJavaString(input: string): string {
+  return input
+    .replaceAll('\\', '\\\\')
+    .replaceAll('\b', '\\b')
+    .replaceAll('\f', '\\f')
+    .replaceAll('\n', '\\n')
+    .replaceAll('\r', '\\r')
+    .replaceAll('\t', '\\t')
+    .replaceAll('"', '\\"')
+}
+
+export function unescapeJsonText(input: string): string {
+  const quoted = input.replace(/\\[\s\S]|"/g, (token) => token === '"' ? '\\"' : token)
+  return JSON.parse(`"${quoted}"`) as string
+}
+
 export function swapJsonKeysAndValues(input: string, indent = 2): string {
   const value = parseJson(input)
   if (!isJsonObject(value) || Object.values(value).some((item) => !['string', 'number', 'boolean'].includes(typeof item))) {

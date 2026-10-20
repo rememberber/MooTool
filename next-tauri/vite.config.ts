@@ -3,6 +3,10 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
+  assetsInclude: ['**/*.wasm'],
+  optimizeDeps: {
+    exclude: ['prettier-plugin-java', 'web-tree-sitter']
+  },
   resolve: {
     alias: {
       string_decoder: 'string_decoder/'

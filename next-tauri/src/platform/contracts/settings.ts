@@ -1,4 +1,4 @@
-export const SETTINGS_SCHEMA_VERSION = 10 as const
+export const SETTINGS_SCHEMA_VERSION = 12 as const
 
 export type NavigationStyle = 'classic' | 'card' | 'grouped'
 
@@ -19,7 +19,7 @@ export type CloseBehavior = 'ask' | 'minimizeToTray' | 'quit'
 export type InterfaceDensity = 'compact' | 'comfortable'
 export type ProxyMode = 'system' | 'direct' | 'manual'
 export type RuntimeSettingsId = 'java' | 'groovy' | 'python' | 'node'
-export type TranslationProvider = 'google' | 'bing'
+export type TranslationProvider = 'google' | 'bing' | 'deepl'
 
 export interface RuntimeRunOption {
   argumentsText: string
@@ -35,7 +35,7 @@ export interface CustomToolGroup {
 const PRODUCT_TOOL_IDS = new Set([
   'quick-note', 'text-diff', 'reformat', 'json', 'config', 'runtime', 'protobuf', 'variables',
   'http', 'host', 'network', 'ua', 'encode', 'crypto', 'regex', 'cron', 'qrcode', 'timestamp',
-  'message-board', 'translation', 'calculator', 'color', 'image', 'pdf', 'system'
+  'message-board', 'translation', 'calculator', 'color', 'image', 'pdf', 'file-preview', 'system'
 ])
 
 export interface AppSettings {
@@ -79,6 +79,7 @@ export interface AppSettings {
     jsonFontSize: number
     quickNoteFontFamily: 'system' | 'mono'
     quickNoteFontSize: number
+    sqlDialect: string
   }
   network: {
     timeoutSeconds: number
@@ -105,6 +106,12 @@ export interface AppSettings {
   vault: {
     autoCommit: boolean
     rootDirectory: string | null
+    gitRemote: string
+    gitUsername: string
+    autoCommitIdleSeconds: number
+    autoCommitInactiveSeconds: number
+    autoPullMinutes: number
+    hideGitignoredFiles: boolean
   }
   shortcuts: {
     globalSearch: string
@@ -175,7 +182,8 @@ export function defaultAppSettings(): AppSettings {
       jsonFontFamily: 'mono',
       jsonFontSize: 13,
       quickNoteFontFamily: 'system',
-      quickNoteFontSize: 13
+      quickNoteFontSize: 13,
+      sqlDialect: 'Standard SQL'
     },
     network: {
       timeoutSeconds: 30,
@@ -206,7 +214,13 @@ export function defaultAppSettings(): AppSettings {
     },
     vault: {
       autoCommit: false,
-      rootDirectory: null
+      rootDirectory: null,
+      gitRemote: '',
+      gitUsername: '',
+      autoCommitIdleSeconds: 30,
+      autoCommitInactiveSeconds: 120,
+      autoPullMinutes: 0,
+      hideGitignoredFiles: true
     },
     shortcuts: {
       globalSearch: 'CommandOrControl+K',
@@ -225,6 +239,19 @@ export function defaultAppSettings(): AppSettings {
     }
   }
 }
+
+export const sqlDialects = [
+  'Standard SQL',
+  'MySQL',
+  'MariaDB',
+  'PostgreSQL',
+  'Oracle PL/SQL',
+  'SQL Server Transact-SQL',
+  'IBM DB2',
+  'Couchbase N1QL',
+  'Amazon Redshift',
+  'Spark'
+] as const
 
 const NAVIGATION_STYLES: NavigationStyle[] = ['classic', 'card', 'grouped']
 

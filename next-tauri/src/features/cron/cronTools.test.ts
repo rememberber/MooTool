@@ -44,5 +44,14 @@ describe('Cron tools', () => {
     )[0]).toContain('2028-01-01')
     expect(describeCron('0 0 9 ? * MON-FRI', 'en-US')).toContain('09:00')
     expect(describeCron('0 0 9 ? * MON-FRI', 'zh-CN')).toBeTruthy()
+    expect(nextCronRuns(
+      '0 0 9 1W * ?',
+      'Asia/Shanghai',
+      1,
+      new Date('2026-07-31T01:00:00.000Z')
+    )[0]).toBe('2026-08-03 09:00:00 GMT+8')
+    expect(nextCronRuns('0 0 9 L-3 * ?', 'UTC', 1, new Date('2026-02-01T00:00:00Z'))[0]).toContain('2026-02-25 09:00:00')
+    expect(nextCronRuns('0 0 9 31W 2 ?', 'UTC', 1, new Date('2026-02-01T00:00:00Z'))).toEqual([])
+    expect(() => nextCronRuns('0 0 9 L-31 * ?', 'UTC', 1, new Date('2026-02-01T00:00:00Z'))).toThrow('CRON_TOOL_lastOffset')
   })
 })

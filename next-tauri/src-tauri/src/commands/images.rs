@@ -33,10 +33,15 @@ pub fn save_image_asset(
     input: ImageAssetInput,
 ) -> AppResult<ImageAssetSummary> {
     let (mime_type, bytes) = decode_data_url(&input.data_url)?;
+    let name = if input.create_only {
+        unique_image_name(&repository, &input.name, mime_type)?
+    } else {
+        input.name.clone()
+    };
     Ok(persist_image_bytes(
         &app,
         &repository,
-        &input.name,
+        &name,
         mime_type,
         input.width,
         input.height,

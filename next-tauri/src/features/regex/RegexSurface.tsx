@@ -7,10 +7,11 @@ import {
   Search,
   TriangleAlert
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalizedMessages } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
-import { CodeEditor } from '../../shared/CodeEditor'
+import { javaRegexApi } from '../../platform/api/javaRegexApi'
+import { DiffCodeEditor, type DiffEditorDecoration, type DiffEditorHandle } from '../../shared/DiffCodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { ToolFavoriteBar } from '../favorites/ToolFavoriteBar'
@@ -18,7 +19,6 @@ import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import {
   commonRegexes,
-  matchRegex,
   regexFlags,
   replaceRegex,
   type RegexMatch,
@@ -27,7 +27,9 @@ import {
 import { regexMessages } from './regexMessages'
 
 type RegexTab = 'test' | 'common'
+type RegexEngine = 'java' | 'javascript'
 
+const regexDraftKey = 'mootool.regex.draft'
 const defaultOptions: RegexOptions = {
   global: true,
   ignoreCase: false,
@@ -36,15 +38,55 @@ const defaultOptions: RegexOptions = {
   unicode: true
 }
 
+function readRegexDraft(): { pattern: string; source: string; replacement: string; options: RegexOptions; engine: RegexEngine } {
+  const fallback = {
+    pattern: '(moo)(\\d+)',
+    source: 'moo1\nMOO22\nmoo333',
+    replacement: '$1-$2',
+    options: defaultOptions,
+    engine: 'javascript' as const
+  }
+  try {
+    const value = JSON.parse(window.localStorage.getItem(regexDraftKey) ?? 'null') as {
+      pattern?: unknown
+      source?: unknown
+      replacement?: unknown
+      engine?: unknown
+      options?: Partial<RegexOptions>
+    } | null
+    if (!value || typeof value.pattern !== 'string' || typeof value.source !== 'string') return fallback
+    return {
+      pattern: value.pattern,
+      source: value.source,
+      replacement: typeof value.replacement === 'string' ? value.replacement : fallback.replacement,
+      engine: value.engine === 'java' ? 'java' : 'javascript',
+      options: {
+        global: value.options?.global !== false,
+        ignoreCase: value.options?.ignoreCase === true,
+        multiline: value.options?.multiline === true,
+        dotAll: value.options?.dotAll === true,
+        unicode: value.options?.unicode !== false
+      }
+    }
+  } catch {
+    return fallback
+  }
+}
+
 export function RegexSurface() {
   const { t } = useLocalizedMessages(regexMessages)
+  const initialDraft = useMemo(readRegexDraft, [])
   const [tab, setTab] = useState<RegexTab>('test')
-  const [pattern, setPattern] = useState('(?<name>moo)(\\d+)')
-  const [source, setSource] = useState('moo1\nMOO22\nmoo333\nMooTool Next Tauri')
-  const [replacement, setReplacement] = useState('$<name>-$2')
-  const [options, setOptions] = useState(defaultOptions)
+  const [pattern, setPattern] = useState(initialDraft.pattern)
+  const [source, setSource] = useState(initialDraft.source)
+  const [replacement, setReplacement] = useState(initialDraft.replacement)
+  const [options, setOptions] = useState(initialDraft.options)
+  const [engine, setEngine] = useState<RegexEngine>(initialDraft.engine)
   const [matches, setMatches] = useState<RegexMatch[]>([])
   const [error, setError] = useState('')
+  const [limited, setLimited] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [selected, setSelected] = useState(-1)
   const [hasRun, setHasRun] = useState(false)
   const [patternFilter, setPatternFilter] = useState('')
   const [copied, setCopied] = useState(false)
@@ -71,6 +113,35 @@ export function RegexSurface() {
   }), [error, matches.length, options, pattern, replacement, source, t])
   const { sessionId, reportError } = useToolSessionReport('regex', session.digest, session.summary)
   const recordOperation = useOperationHistory('regex')
+  const editorRef = useRef<DiffEditorHandle>(null)
+  const requestSeq = useRef(0)
+  const workerRef = useRef<Worker | null>(null)
+  const decorations = useMemo<DiffEditorDecoration[]>(() => matches.filter((match) => match.value.length).map((match) => ({
+    from: match.index,
+    to: match.index + match.value.length,
+    type: 'mark',
+    className: 'regex-match-highlight'
+  })), [matches])
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(regexDraftKey, JSON.stringify({ pattern, source, replacement, options, engine }))
+      } catch {
+        // Draft persistence is best effort when storage is unavailable.
+      }
+    }, 250)
+    return () => window.clearTimeout(timer)
+  }, [engine, options, pattern, replacement, source])
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void run(false) }, 300)
+    return () => {
+      window.clearTimeout(timer)
+      requestSeq.current += 1
+      workerRef.current?.terminate()
+      workerRef.current = null
+      void javaRegexApi.cancel()
+    }
+  }, [engine, options, pattern, source])
   useOperationRestore('regex', (entry) => {
     const metadata = parseOperationMetadata(entry)
     if (typeof metadata.pattern === 'string') setPattern(metadata.pattern)
@@ -87,31 +158,78 @@ export function RegexSurface() {
     || `${t(`common.${item.id}`)} ${item.pattern}`.toLowerCase().includes(patternFilter.trim().toLowerCase())
   ))
 
-  function run(): void {
+  async function run(saveHistory = true): Promise<void> {
+    const version = ++requestSeq.current
+    setBusy(true)
     try {
-      const result = matchRegex(pattern, source, options)
+      let result: RegexMatch[]
+      let reachedLimit = false
+      if (engine === 'java') {
+        const javaResult = await javaRegexApi.match({ pattern, source, options })
+        result = javaResult.matches.map((match) => ({
+          index: match.index,
+          end: match.index + match.value.length,
+          value: match.value,
+          groups: match.groups,
+          namedGroups: {}
+        }))
+        reachedLimit = javaResult.limited
+      } else {
+        const scriptResult = await matchJavaScriptRegex(pattern, source, options, workerRef)
+        result = scriptResult.matches
+        reachedLimit = scriptResult.limited
+      }
+      if (version !== requestSeq.current) return
       setMatches(result)
+      setSelected(-1)
+      setLimited(reachedLimit)
       setError('')
       setHasRun(true)
-      recordOperation(t('action.run'), `/${pattern}/${regexFlags(options)} · ${result.length}`, 'success', {
-        inputText: source,
-        outputText: replacementPreview,
-        metadata: { pattern, replacement, options }
-      })
+      if (saveHistory) {
+        let outputText = source
+        try { outputText = replaceRegex(pattern, source, replacement, options) } catch { outputText = source }
+        recordOperation(t('action.run'), `/${pattern}/${regexFlags(options)} · ${result.length}`, 'success', {
+          inputText: source,
+          outputText,
+          metadata: { pattern, replacement, options, engine }
+        })
+      }
     } catch (cause) {
+      if (version !== requestSeq.current) return
+      const message = cause instanceof Error ? cause.message : String(cause)
+      if (message.includes('REGEX_CANCELLED')) return
+      const timedOut = message.includes('REGEX_TIMEOUT')
+      const display = timedOut
+        ? t('match.timeout')
+        : message.includes('浏览器预览不能运行 Java')
+          ? t('engine.hint')
+          : message
       setMatches([])
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setSelected(-1)
+      setLimited(false)
+      setError(timedOut ? 'REGEX_TIMEOUT' : display)
       setHasRun(true)
-      recordOperation(t('action.run'), `/${pattern}/${regexFlags(options)} · ${cause instanceof Error ? cause.message : String(cause)}`, 'error', {
-        inputText: source,
-        metadata: { pattern, replacement, options }
-      })
+      if (saveHistory) {
+        recordOperation(t('action.run'), `/${pattern}/${regexFlags(options)} · ${display}`, 'error', {
+          inputText: source,
+          metadata: { pattern, replacement, options, engine }
+        })
+      }
+    } finally {
+      if (version === requestSeq.current) setBusy(false)
     }
+  }
+
+  function focusMatch(index: number): void {
+    if (!matches.length) return
+    const next = (index + matches.length) % matches.length
+    const match = matches[next]
+    setSelected(next)
+    editorRef.current?.selectRange(match.index, match.index + match.value.length)
   }
 
   function setOption(key: keyof RegexOptions, checked: boolean): void {
     setOptions((current) => ({ ...current, [key]: checked }))
-    setHasRun(false)
   }
 
   async function copyPattern(): Promise<void> {
@@ -207,44 +325,68 @@ export function RegexSurface() {
                   <button className="secondary-button" type="button" onClick={() => void copyPattern()}>
                     <Copy />{t(copied ? 'action.copied' : 'action.copy')}
                   </button>
-                  <button className="primary-button" type="button" onClick={run}>
+                  <button className="primary-button" type="button" onClick={() => run()}>
                     <Play />{t('action.run')}
                   </button>
                 </div>
               </div>
               <div className="regex-flags" aria-label={t('aria.flags')}>
+                <label className="regex-engine">{t('engine.label')}
+                  <select aria-label={t('engine.label')} value={engine} onChange={(event) => setEngine(event.target.value as RegexEngine)}>
+                    <option value="java">{t('engine.java')}</option>
+                    <option value="javascript">{t('engine.javascript')}</option>
+                  </select>
+                </label>
                 <Flag label={t('flag.global')} checked={options.global} onChange={(value) => setOption('global', value)} />
                 <Flag label={t('flag.ignoreCase')} checked={options.ignoreCase} onChange={(value) => setOption('ignoreCase', value)} />
                 <Flag label={t('flag.multiline')} checked={options.multiline} onChange={(value) => setOption('multiline', value)} />
                 <Flag label={t('flag.dotAll')} checked={options.dotAll} onChange={(value) => setOption('dotAll', value)} />
                 <Flag label="u · Unicode" checked={options.unicode} onChange={(value) => setOption('unicode', value)} />
               </div>
+              {engine === 'java' && <p className="regex-engine-hint">{t('engine.hint')}</p>}
               <div className="regex-grid">
                 <section className="utility-editor-card regex-source">
                   <header><span>{t('pane.source')}</span><code>{t('pane.characters', { count: source.length })}</code></header>
-                  <CodeEditor
+                  <DiffCodeEditor
+                    ref={editorRef}
                     ariaLabel={t('aria.source')}
+                    className="utility-code-editor regex-source-editor"
+                    decorations={decorations}
+                    readOnly={false}
                     value={source}
-                    onChange={(value) => {
-                      setSource(value)
-                      setHasRun(false)
-                    }}
-                    className="utility-code-editor"
+                    onChange={(value) => setSource(value)}
                   />
                 </section>
                 <section className="regex-results">
                   <header className={error ? 'regex-results__status regex-results__status--error' : 'regex-results__status'}>
                     {error
-                      ? <><TriangleAlert />{t('result.invalid', { error })}</>
-                      : <><CheckCircle2 />{hasRun ? t('result.matches', { count: matches.length }) : t('result.waiting')}</>}
+                      ? <><TriangleAlert />{error === 'REGEX_TIMEOUT' ? t('match.timeout') : t('result.invalid', { error })}</>
+                      : <><CheckCircle2 />{busy ? t('match.working') : hasRun ? t('result.matches', { count: matches.length }) : t('result.waiting')}</>}
                   </header>
+                  <div className="regex-navigation">
+                    <button type="button" disabled={!matches.length} onClick={() => focusMatch(selected < 0 ? matches.length - 1 : selected - 1)}>{t('match.previous')}</button>
+                    <button type="button" disabled={!matches.length} onClick={() => focusMatch(selected + 1)}>{t('match.next')}</button>
+                  </div>
+                  {limited && <p role="status">{t('match.limited')}</p>}
                   <div className="regex-match-list">
                     {hasRun && !error && matches.length === 0 && (
                       <p className="regex-empty">{t('result.empty')}</p>
                     )}
                     {!hasRun && <p className="regex-empty">{t('result.instructions')}</p>}
                     {matches.map((match, index) => (
-                      <article key={`${match.index}:${match.end}:${index}`}>
+                      <article
+                        className={selected === index ? 'regex-match--selected' : undefined}
+                        key={`${match.index}:${match.end}:${index}`}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => focusMatch(index)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            focusMatch(index)
+                          }
+                        }}
+                      >
                         <span>#{index + 1} · {match.index}–{match.end}</span>
                         <strong>{match.value || '∅'}</strong>
                         {match.groups.length > 0 && (
@@ -324,6 +466,38 @@ export function RegexSurface() {
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
     </main>
   )
+}
+
+function matchJavaScriptRegex(
+  pattern: string,
+  source: string,
+  options: RegexOptions,
+  workerRef: { current: Worker | null }
+): Promise<{ matches: RegexMatch[]; limited: boolean }> {
+  workerRef.current?.terminate()
+  return new Promise((resolve, reject) => {
+    const task = new Worker(new URL('./regex.worker.ts', import.meta.url), { type: 'module' })
+    workerRef.current = task
+    const timer = window.setTimeout(() => {
+      task.terminate()
+      if (workerRef.current === task) workerRef.current = null
+      reject(new Error('REGEX_TIMEOUT'))
+    }, 2000)
+    task.onmessage = (event: MessageEvent<{ matches?: RegexMatch[]; limited?: boolean; error?: string }>) => {
+      window.clearTimeout(timer)
+      task.terminate()
+      if (workerRef.current === task) workerRef.current = null
+      if (event.data.error) reject(new Error(event.data.error))
+      else resolve({ matches: event.data.matches ?? [], limited: Boolean(event.data.limited) })
+    }
+    task.onerror = (event) => {
+      window.clearTimeout(timer)
+      task.terminate()
+      if (workerRef.current === task) workerRef.current = null
+      reject(new Error(event.message || 'REGEX_WORKER'))
+    }
+    task.postMessage({ pattern, source, options })
+  })
 }
 
 function Flag({ label, checked, onChange }: {

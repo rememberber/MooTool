@@ -3,7 +3,10 @@ import { defineMessages } from '../../app/localizedMessages'
 export const cryptoMessages = defineMessages({
   'zh-CN': {
     'title': '加解密 / 随机', 'session.label': '会话', 'session.summary': '{tab} · {count} 字符输出',
-    'tab.digest': '摘要 / HMAC', 'tab.aes': 'AES-GCM', 'tab.rsa': 'RSA', 'tab.compatibility': '兼容算法', 'tab.base': 'Base 编码', 'tab.random': '安全随机', 'notice.ready': '{tab}已就绪',
+    'tab.digest': '摘要', 'action.textDigest': '文本摘要', 'digest.input': '摘要输入', 'digest.result': '摘要结果', 'tab.aes': 'AES-GCM', 'tab.rsa': 'RSA', 'tab.compatibility': '兼容算法', 'tab.base': 'Base 编码', 'tab.random': '安全随机',
+    'tab.symmetric': '对称加密', 'tab.asymmetric': '非对称加密', 'field.key': '密钥', 'field.public': '公钥', 'field.private': '私钥', 'hint.aesKey': 'AES 密钥必须为 16、24 或 32 个 UTF-8 字节，不截断、不补零。', 'hint.symmetricKey': '请输入符合算法长度要求的密钥', 'option.legacyAes': '旧 Electron 密钥处理（仅解密）',
+    'notice.symmetricEncrypted': '加密完成', 'notice.symmetricDecrypted': '解密完成', 'notice.keyPairGenerated': '密钥对已生成', 'notice.asymmetricEncrypted': '加密完成', 'notice.asymmetricDecrypted': '解密完成', 'notice.signedContent': '签名完成', 'notice.signatureValid': '签名有效', 'notice.signatureInvalid': '签名无效', 'action.privateEncrypt': '私钥加密', 'action.publicDecrypt': '公钥解密',
+    'notice.ready': '{tab}已就绪',
     'notice.hmacDone': 'HMAC-SHA256 计算完成', 'notice.digestDone': '{algorithm} 摘要计算完成',
     'notice.encrypted': 'AES-256-GCM 加密完成', 'notice.decrypted': 'AES-256-GCM 解密并校验完成',
     'notice.uuid': 'UUID v4 已生成', 'notice.random': '安全随机值已生成', 'error.clipboard': '复制失败，请检查剪贴板权限',
@@ -22,7 +25,7 @@ export const cryptoMessages = defineMessages({
     'field.keySize': '密钥位数', 'field.publicKey': '公钥（SPKI PEM）', 'field.privateKey': '私钥（PKCS#8 PEM）', 'field.encoding': '编码',
     'field.compatibilityAlgorithm': '算法', 'field.compatibilityKey': '兼容密钥', 'field.sm2PublicKey': 'SM2 公钥（Base64）', 'field.sm2PrivateKey': 'SM2 私钥（Base64）',
     'compatibility.warning': '兼容模式仅用于对接旧系统；DES/ECB 不适合保护新数据。',
-    'random.password': '强密码', 'random.alphanumeric': '字母数字', 'random.digits': '纯数字', 'field.length': '长度',
+    'random.uuid': 'UUID', 'random.digits': '随机数字', 'random.string': '随机字符串', 'random.password': '随机密码', 'field.length': '长度',
     'pane.settings': '生成设置', 'pane.aesInput': '明文或密文', 'pane.source': '原文', 'random.secure': '使用系统加密安全随机源',
     'random.detail': '拒绝取模偏差，生成结果仅在本机内存中处理。', 'action.generate': '立即生成',
     'aria.input': '加解密输入', 'action.calculate': '计算', 'action.fileDigest': '文件摘要', 'action.encrypt': '加密', 'action.decrypt': '解密',
@@ -33,12 +36,15 @@ export const cryptoMessages = defineMessages({
     'pane.output': '输出', 'action.copied': '已复制', 'action.copy': '复制', 'aria.output': '加解密输出',
     'operation.digest': '文本摘要', 'operation.fileDigest': '文件摘要', 'operation.encrypt': '加密', 'operation.decrypt': '解密',
     'operation.encode': '编码', 'operation.decode': '解码', 'operation.keyPair': '生成密钥对', 'operation.sign': '签名', 'operation.verify': '验签', 'operation.random': '生成随机值',
-    'footer.capabilities': 'Web Crypto · AES-256-GCM · RSA-OAEP/PSS · SM2/SM3/SM4 · DES 兼容 · 流式文件 SHA-2',
+    'footer.capabilities': 'AES / DES / SM4 十六进制 · RSA PKCS#1 · SM2 · MD5 / SHA / SM3 · Base64 / Base32',
     'report.error': '加密状态上报失败：{error}', 'host.loading': '正在加载加解密 / 随机…'
   },
   'en-US': {
     'title': 'Crypto / Random', 'session.label': 'Session', 'session.summary': '{tab} · {count} output chars',
-    'tab.digest': 'Digest / HMAC', 'tab.aes': 'AES-GCM', 'tab.rsa': 'RSA', 'tab.compatibility': 'Compatibility', 'tab.base': 'Base encoding', 'tab.random': 'Secure Random', 'notice.ready': '{tab} ready',
+    'tab.digest': 'Digest', 'action.textDigest': 'Text digest', 'digest.input': 'Digest input', 'digest.result': 'Digest result', 'tab.aes': 'AES-GCM', 'tab.rsa': 'RSA', 'tab.compatibility': 'Compatibility', 'tab.base': 'Base encoding', 'tab.random': 'Secure Random',
+    'tab.symmetric': 'Symmetric', 'tab.asymmetric': 'Asymmetric', 'field.key': 'Key', 'field.public': 'Public key', 'field.private': 'Private key', 'hint.aesKey': 'AES requires exactly 16, 24 or 32 UTF-8 bytes, without truncation or padding.', 'hint.symmetricKey': 'Enter a key with the length required by the algorithm', 'option.legacyAes': 'Legacy Electron key handling (decrypt only)',
+    'notice.symmetricEncrypted': 'Encrypted', 'notice.symmetricDecrypted': 'Decrypted', 'notice.keyPairGenerated': 'Key pair generated', 'notice.asymmetricEncrypted': 'Encrypted', 'notice.asymmetricDecrypted': 'Decrypted', 'notice.signedContent': 'Signed', 'notice.signatureValid': 'Signature is valid', 'notice.signatureInvalid': 'Signature is invalid', 'action.privateEncrypt': 'Private-key encrypt', 'action.publicDecrypt': 'Public-key decrypt',
+    'notice.ready': '{tab} ready',
     'notice.hmacDone': 'HMAC-SHA256 completed', 'notice.digestDone': '{algorithm} digest completed',
     'notice.encrypted': 'AES-256-GCM encryption completed', 'notice.decrypted': 'AES-256-GCM decryption and verification completed',
     'notice.uuid': 'UUID v4 generated', 'notice.random': 'Secure random value generated', 'error.clipboard': 'Copy failed; check clipboard permission',
@@ -57,7 +63,7 @@ export const cryptoMessages = defineMessages({
     'field.keySize': 'Key size', 'field.publicKey': 'Public key (SPKI PEM)', 'field.privateKey': 'Private key (PKCS#8 PEM)', 'field.encoding': 'Encoding',
     'field.compatibilityAlgorithm': 'Algorithm', 'field.compatibilityKey': 'Compatibility key', 'field.sm2PublicKey': 'SM2 public key (Base64)', 'field.sm2PrivateKey': 'SM2 private key (Base64)',
     'compatibility.warning': 'Compatibility mode is for legacy integration only; DES/ECB must not protect new data.',
-    'random.password': 'Strong password', 'random.alphanumeric': 'Alphanumeric', 'random.digits': 'Digits only', 'field.length': 'Length',
+    'random.uuid': 'UUID', 'random.digits': 'Random digits', 'random.string': 'Random string', 'random.password': 'Random password', 'field.length': 'Length',
     'pane.settings': 'Generation settings', 'pane.aesInput': 'Plaintext or ciphertext', 'pane.source': 'Source', 'random.secure': 'Uses the system cryptographic random source',
     'random.detail': 'Avoids modulo bias; generated values stay in local memory.', 'action.generate': 'Generate now',
     'aria.input': 'Crypto input', 'action.calculate': 'Calculate', 'action.fileDigest': 'File digest', 'action.encrypt': 'Encrypt', 'action.decrypt': 'Decrypt',
@@ -68,12 +74,15 @@ export const cryptoMessages = defineMessages({
     'pane.output': 'Output', 'action.copied': 'Copied', 'action.copy': 'Copy', 'aria.output': 'Crypto output',
     'operation.digest': 'Text digest', 'operation.fileDigest': 'File digest', 'operation.encrypt': 'Encrypt', 'operation.decrypt': 'Decrypt',
     'operation.encode': 'Encode', 'operation.decode': 'Decode', 'operation.keyPair': 'Generate key pair', 'operation.sign': 'Sign', 'operation.verify': 'Verify', 'operation.random': 'Generate random value',
-    'footer.capabilities': 'Web Crypto · AES-256-GCM · RSA-OAEP/PSS · SM2/SM3/SM4 · Legacy DES · Streaming file SHA-2',
+    'footer.capabilities': 'AES / DES / SM4 hex · RSA PKCS#1 · SM2 · MD5 / SHA / SM3 · Base64 / Base32',
     'report.error': 'Crypto status reporting failed: {error}', 'host.loading': 'Loading Crypto / Random…'
   },
   'ja-JP': {
     'title': '暗号化 / ランダム', 'session.label': 'セッション', 'session.summary': '{tab} · 出力 {count} 文字',
-    'tab.digest': 'ダイジェスト / HMAC', 'tab.aes': 'AES-GCM', 'tab.rsa': 'RSA', 'tab.compatibility': '互換アルゴリズム', 'tab.base': 'Base エンコード', 'tab.random': '安全な乱数', 'notice.ready': '{tab} の準備ができました',
+    'tab.digest': 'ダイジェスト', 'action.textDigest': 'テキストダイジェスト', 'digest.input': '入力', 'digest.result': 'ダイジェスト結果', 'tab.aes': 'AES-GCM', 'tab.rsa': 'RSA', 'tab.compatibility': '互換アルゴリズム', 'tab.base': 'Base エンコード', 'tab.random': '安全な乱数',
+    'tab.symmetric': '共通鍵暗号', 'tab.asymmetric': '公開鍵暗号', 'field.key': 'キー', 'field.public': '公開鍵', 'field.private': '秘密鍵', 'hint.aesKey': 'AES キーは UTF-8 で 16、24、32 バイトです。切り詰めや補完は行いません。', 'hint.symmetricKey': 'アルゴリズムに合う長さのキーを入力してください', 'option.legacyAes': '旧 Electron のキー処理（復号のみ）',
+    'notice.symmetricEncrypted': '暗号化しました', 'notice.symmetricDecrypted': '復号しました', 'notice.keyPairGenerated': '鍵ペアを生成しました', 'notice.asymmetricEncrypted': '暗号化しました', 'notice.asymmetricDecrypted': '復号しました', 'notice.signedContent': '署名しました', 'notice.signatureValid': '署名は有効です', 'notice.signatureInvalid': '署名は無効です', 'action.privateEncrypt': '秘密鍵で暗号化', 'action.publicDecrypt': '公開鍵で復号',
+    'notice.ready': '{tab} の準備ができました',
     'notice.hmacDone': 'HMAC-SHA256 の計算が完了しました', 'notice.digestDone': '{algorithm} ダイジェストの計算が完了しました',
     'notice.encrypted': 'AES-256-GCM の暗号化が完了しました', 'notice.decrypted': 'AES-256-GCM の復号と検証が完了しました',
     'notice.uuid': 'UUID v4 を生成しました', 'notice.random': '安全なランダム値を生成しました', 'error.clipboard': 'コピーに失敗しました。クリップボード権限を確認してください',
@@ -92,7 +101,7 @@ export const cryptoMessages = defineMessages({
     'field.keySize': '鍵サイズ', 'field.publicKey': '公開鍵（SPKI PEM）', 'field.privateKey': '秘密鍵（PKCS#8 PEM）', 'field.encoding': 'エンコード',
     'field.compatibilityAlgorithm': 'アルゴリズム', 'field.compatibilityKey': '互換キー', 'field.sm2PublicKey': 'SM2 公開鍵（Base64）', 'field.sm2PrivateKey': 'SM2 秘密鍵（Base64）',
     'compatibility.warning': '互換モードは旧システム連携専用です。DES/ECB は新しいデータの保護に使用しないでください。',
-    'random.password': '強力なパスワード', 'random.alphanumeric': '英数字', 'random.digits': '数字のみ', 'field.length': '長さ',
+    'random.uuid': 'UUID', 'random.digits': 'ランダム数字', 'random.string': 'ランダム文字列', 'random.password': 'ランダムパスワード', 'field.length': '長さ',
     'pane.settings': '生成設定', 'pane.aesInput': '平文または暗号文', 'pane.source': '原文', 'random.secure': 'システムの暗号学的乱数源を使用',
     'random.detail': '剰余バイアスを避け、生成結果はローカルメモリ内だけで処理します。', 'action.generate': '今すぐ生成',
     'aria.input': '暗号入力', 'action.calculate': '計算', 'action.fileDigest': 'ファイルダイジェスト', 'action.encrypt': '暗号化', 'action.decrypt': '復号',
@@ -103,7 +112,7 @@ export const cryptoMessages = defineMessages({
     'pane.output': '出力', 'action.copied': 'コピー済み', 'action.copy': 'コピー', 'aria.output': '暗号出力',
     'operation.digest': 'テキストダイジェスト', 'operation.fileDigest': 'ファイルダイジェスト', 'operation.encrypt': '暗号化', 'operation.decrypt': '復号',
     'operation.encode': 'エンコード', 'operation.decode': 'デコード', 'operation.keyPair': '鍵ペアを生成', 'operation.sign': '署名', 'operation.verify': '検証', 'operation.random': 'ランダム値を生成',
-    'footer.capabilities': 'Web Crypto · AES-256-GCM · RSA-OAEP/PSS · SM2/SM3/SM4 · DES 互換 · ストリーミング SHA-2',
+    'footer.capabilities': 'AES / DES / SM4 十六進 · RSA PKCS#1 · SM2 · MD5 / SHA / SM3 · Base64 / Base32',
     'report.error': '暗号状態の報告に失敗しました：{error}', 'host.loading': '暗号化 / ランダムを読み込み中…'
   }
 })

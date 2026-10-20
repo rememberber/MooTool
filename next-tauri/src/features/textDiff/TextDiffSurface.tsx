@@ -1,381 +1,380 @@
-import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { EditorState } from '@codemirror/state'
-import { openSearchPanel, search, searchKeymap } from '@codemirror/search'
-import {
-  drawSelection,
-  EditorView,
-  highlightActiveLine,
-  keymap,
-  lineNumbers
-} from '@codemirror/view'
-import {
-  ArrowLeftRight,
-  CheckCircle2,
-  Clipboard,
-  Copy,
-  ChevronDown,
-  ChevronUp,
-  Eraser,
-  FileDiff,
-  Search,
-  Sparkles
-} from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowLeftRight, ChevronDown, ChevronUp, Copy, History, Play, Trash2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalizedMessages } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import { DiffCodeEditor, type DiffEditorDecoration, type DiffEditorHandle, type DiffEditorScroll } from '../../shared/DiffCodeEditor'
+import { ResizableColumns } from '../../shared/ResizableColumns'
+import { HistoryPanel } from '../history/HistoryPanel'
+import { useOperationHistory } from '../history/useOperationHistory'
+import { useSettings } from '../settings/SettingsProvider'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import {
-  collapseUnchangedRows,
   compareText,
-  createUnifiedDiff,
-  limitRenderedRows,
-  type DiffRow,
-  type DiffSide,
-  type TextDiffOptions
-} from './textDiff'
+  type DiffResult,
+  type DiffSegment,
+  type UnifiedDiffView,
+  type UnifiedSpanType
+} from './diffSegments'
 import { describeTextDiffSession } from './textDiffSession'
 import { textDiffMessages } from './textDiffMessages'
 
+type DiffMode = 'side' | 'unified'
+type HighlightMode = 'both' | 'characters' | 'lines'
+type StatusState =
+  | { kind: 'ready' | 'enterText' | 'complete' | 'cleared' | 'swapped' | 'copied' | 'noCopy' }
+  | { kind: 'navigation'; current: number; total: number }
+
+const textDiffDraftKey = 'mootool:text-diff:draft'
+
 export function TextDiffSurface() {
   const { t } = useLocalizedMessages(textDiffMessages)
-  const samples = useRef({ left: t('sample.left'), right: t('sample.right') })
-  const leftEditor = useRef<EditorView | undefined>(undefined)
-  const rightEditor = useRef<EditorView | undefined>(undefined)
-  const [left, setLeft] = useState(samples.current.left)
-  const [right, setRight] = useState(samples.current.right)
-  const [options, setOptions] = useState<TextDiffOptions>({
-    ignoreCase: false,
-    ignoreWhitespace: false
-  })
-  const [context, setContext] = useState(3)
-  const [viewMode, setViewMode] = useState<'split' | 'unified'>('split')
-  const [activeDifference, setActiveDifference] = useState(-1)
-  const [copied, setCopied] = useState(false)
+  const { settings } = useSettings()
+  const recordOperation = useOperationHistory('text-diff')
+  const initialDraft = useMemo(readTextDiffDraft, [])
+  const initialResult = useMemo(() => compareText('', '', false), [])
+  const [left, setLeft] = useState(initialDraft.left)
+  const [right, setRight] = useState(initialDraft.right)
+  const [mode, setMode] = useState<DiffMode>('side')
+  const [highlightMode, setHighlightMode] = useState<HighlightMode>('both')
+  const [ignoreWhitespace, setIgnoreWhitespace] = useState(false)
+  const [completed, setCompleted] = useState<DiffResult>(() => compareText(initialDraft.left, initialDraft.right, false))
+  const [status, setStatus] = useState<StatusState>(initialDraft.left || initialDraft.right ? { kind: 'complete' } : { kind: 'ready' })
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [calculating, setCalculating] = useState(false)
   const [actionError, setActionError] = useState('')
-  const resultHost = useRef<HTMLElement>(null)
-
-  const result = useMemo(() => compareText(left, right, options), [left, options, right])
-  const visibleRows = useMemo(
-    () => limitRenderedRows(collapseUnchangedRows(result.rows, context)),
-    [context, result.rows]
+  const leftEditorRef = useRef<DiffEditorHandle>(null)
+  const rightEditorRef = useRef<DiffEditorHandle>(null)
+  const syncingScroll = useRef(false)
+  const navigationIndex = useRef(-1)
+  const timerRef = useRef<number | undefined>(undefined)
+  const highlightModeRef = useRef(highlightMode)
+  highlightModeRef.current = highlightMode
+  const result = completed.leftText === left && completed.rightText === right ? completed : initialResult
+  const visibleSegments = useMemo(
+    () => highlightMode === 'characters' ? result.segments.filter((segment) => !segment.wholeLine) : result.segments,
+    [highlightMode, result.segments]
   )
-  const differenceIndexes = useMemo(() => {
-    const indexes = new Map<DiffRow, number>()
-    let index = 0
-    for (const row of result.rows) {
-      if (row.kind === 'equal') continue
-      indexes.set(row, index)
-      index += 1
-    }
-    return indexes
-  }, [result.rows])
-  const differenceCount = differenceIndexes.size
+  const leftDecorations = useMemo(
+    () => createSideDecorations(result.leftText, visibleSegments, 'left', highlightMode),
+    [highlightMode, result.leftText, visibleSegments]
+  )
+  const rightDecorations = useMemo(
+    () => createSideDecorations(result.rightText, visibleSegments, 'right', highlightMode),
+    [highlightMode, result.rightText, visibleSegments]
+  )
+  const unifiedDecorations = useMemo(
+    () => createUnifiedDecorations(result.unifiedView, highlightMode),
+    [highlightMode, result.unifiedView]
+  )
   const session = useMemo(() => describeTextDiffSession({
     left,
     right,
-    options,
-    context,
-    result
-  }), [context, left, options, result, right])
-  const sessionSummary = t('session.summary', session.stats)
-  const { sessionId, reportError } = useToolSessionReport(
-    'text-diff',
-    session.digest,
-    sessionSummary
-  )
+    ignoreWhitespace,
+    added: result.added,
+    removed: result.removed,
+    changed: result.changed
+  }), [ignoreWhitespace, left, result.added, result.changed, result.removed, right])
+  const { reportError } = useToolSessionReport('text-diff', session.digest, t('summary.line', {
+    added: String(result.added),
+    removed: String(result.removed),
+    changed: String(result.changed)
+  }))
 
-  async function copyUnifiedDiff(): Promise<void> {
+  const compareNow = useCallback((saveHistory: boolean) => {
+    const next = compareText(left, right, ignoreWhitespace)
+    setCompleted(next)
+    navigationIndex.current = -1
+    setStatus(left || right ? { kind: 'complete' } : { kind: 'enterText' })
+    if (saveHistory && (left || right)) {
+      recordOperation(
+        t('action.compare'),
+        t('summary.line', { added: String(next.added), removed: String(next.removed), changed: String(next.changed) }),
+        'success',
+        { inputText: left, outputText: right, metadata: { ignoreWhitespace, highlightMode: highlightModeRef.current } }
+      )
+    }
+  }, [ignoreWhitespace, left, recordOperation, right, t])
+
+  useEffect(() => {
+    setCalculating(true)
+    timerRef.current = window.setTimeout(() => {
+      compareNow(false)
+      setCalculating(false)
+    }, 160)
+    return () => window.clearTimeout(timerRef.current)
+  }, [compareNow])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(textDiffDraftKey, JSON.stringify({ left, right }))
+      } catch {
+        // Draft persistence is best effort when storage is unavailable.
+      }
+    }, 250)
+    return () => window.clearTimeout(timer)
+  }, [left, right])
+
+  function syncEditorScroll(scroll: DiffEditorScroll, target: DiffEditorHandle | null): void {
+    if (!target || syncingScroll.current) return
+    syncingScroll.current = true
+    target.syncScroll(scroll.scrollTop, scroll.scrollLeft)
+    window.requestAnimationFrame(() => { syncingScroll.current = false })
+  }
+
+  function clear(): void {
+    window.clearTimeout(timerRef.current)
+    setCalculating(false)
+    setLeft('')
+    setRight('')
+    setCompleted(compareText('', '', ignoreWhitespace))
+    setStatus({ kind: 'cleared' })
+    navigationIndex.current = -1
+  }
+
+  function swap(): void {
+    window.clearTimeout(timerRef.current)
+    setCalculating(false)
+    setLeft(right)
+    setRight(left)
+    setStatus({ kind: 'swapped' })
+  }
+
+  async function copyDiff(): Promise<void> {
+    if (!result.unified) {
+      setStatus({ kind: 'noCopy' })
+      return
+    }
     try {
-      await clipboardApi.writeText(createUnifiedDiff('before', 'after', result))
-      setCopied(true)
+      await clipboardApi.writeText(result.unified)
       setActionError('')
-      window.setTimeout(() => setCopied(false), 1200)
+      setStatus({ kind: 'copied' })
     } catch {
       setActionError(t('error.clipboard'))
     }
   }
 
-  function swap(): void {
-    setLeft(right)
-    setRight(left)
-  }
-
-  function navigateDifference(direction: 1 | -1): void {
-    if (!differenceCount) return
-    const next = activeDifference < 0
-      ? direction > 0 ? 0 : differenceCount - 1
-      : (activeDifference + direction + differenceCount) % differenceCount
-    setActiveDifference(next)
+  function navigateDifference(step: number): void {
+    if (visibleSegments.length === 0) return
+    const nextNavigation = (navigationIndex.current + step + visibleSegments.length) % visibleSegments.length
+    const segment = visibleSegments[nextNavigation]
+    navigationIndex.current = nextNavigation
     window.requestAnimationFrame(() => {
-      resultHost.current?.querySelector<HTMLElement>(`[data-diff-index="${next}"]`)?.scrollIntoView({ block: 'center' })
+      focusSegment(leftEditorRef.current, left, segment.leftStart, segment.leftEnd)
+      focusSegment(rightEditorRef.current, right, segment.rightStart, segment.rightEnd)
     })
+    setStatus({ kind: 'navigation', current: nextNavigation + 1, total: visibleSegments.length })
   }
 
-  useEffect(() => {
-    setActiveDifference(-1)
-  }, [left, options, right])
+  const editors = (
+    <ResizableColumns id="text-diff" className="diff-editor-grid" initialPrimary={480} minPrimary={240} minSecondary={240}>
+      <div className="diff-editor-pane">
+        <span>{t('pane.original')}</span>
+        <DiffCodeEditor
+          ref={leftEditorRef}
+          ariaLabel={t('pane.original')}
+          className="diff-editor"
+          decorations={leftDecorations}
+          readOnly={false}
+          value={left}
+          onChange={setLeft}
+          onScroll={(scroll) => syncEditorScroll(scroll, rightEditorRef.current)}
+        />
+      </div>
+      <div className="diff-editor-pane">
+        <span>{t('pane.right')}</span>
+        <DiffCodeEditor
+          ref={rightEditorRef}
+          ariaLabel={t('pane.right')}
+          className="diff-editor"
+          decorations={rightDecorations}
+          readOnly={false}
+          value={right}
+          onChange={setRight}
+          onScroll={(scroll) => syncEditorScroll(scroll, leftEditorRef.current)}
+        />
+      </div>
+    </ResizableColumns>
+  )
 
   return (
     <main className="text-diff-workbench">
-      <header className="text-diff-header">
-        <h1 className="visually-hidden">{t('title')}</h1>
-        <span className="text-diff-session">{t('session.label')} <code>{sessionId}</code></span>
-      </header>
-
-      <section className="text-diff-toolbar" aria-label={t('aria.options')}>
-        <button
-          className="secondary-button"
-          type="button"
-          onClick={() => {
-            setLeft(samples.current.left)
-            setRight(samples.current.right)
-          }}
-        >
-          <Sparkles />{t('action.sample')}
-        </button>
-        <button className="secondary-button" type="button" onClick={swap}>
-          <ArrowLeftRight />{t('action.swap')}
-        </button>
-        <button
-          className="secondary-button"
-          type="button"
-          onClick={() => {
-            openSearchPanel(leftEditor.current!)
-            openSearchPanel(rightEditor.current!)
-          }}
-        >
-          <Search />{t('action.find')}
-        </button>
-        <label>
-          <input
-            type="checkbox"
-            checked={options.ignoreWhitespace}
-            onChange={(event) => setOptions((current) => ({
-              ...current,
-              ignoreWhitespace: event.target.checked
-            }))}
-          />
-          {t('option.whitespace')}
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={options.ignoreCase}
-            onChange={(event) => setOptions((current) => ({
-              ...current,
-              ignoreCase: event.target.checked
-            }))}
-          />
-          {t('option.case')}
-        </label>
-        <label className="text-diff-context">
-          {t('option.context')}
-          <select value={context} onChange={(event) => setContext(Number(event.target.value))}>
-            {[0, 1, 3, 5].map((count) => <option value={count} key={count}>{t('unit.lines', { count })}</option>)}
-            <option value={-1}>{t('option.all')}</option>
-          </select>
-        </label>
-        <div className="utility-segments text-diff-view-toggle" aria-label={t('aria.viewMode')}>
-          <button className={viewMode === 'split' ? 'utility-segment utility-segment--active' : 'utility-segment'} type="button" onClick={() => setViewMode('split')}>{t('view.split')}</button>
-          <button className={viewMode === 'unified' ? 'utility-segment utility-segment--active' : 'utility-segment'} type="button" onClick={() => setViewMode('unified')}>{t('view.unified')}</button>
+      <div className="local-tool-shell diff-workspace">
+        <div className="diff-toolbar">
+          <div className="diff-toolbar__commands">
+            <button className="primary-execution-button" type="button" onClick={() => compareNow(true)}><Play size={14} />{t('action.compare')}</button>
+            {calculating && <button type="button" onClick={() => { window.clearTimeout(timerRef.current); setCalculating(false) }}>{t('action.cancel')}</button>}
+            <button type="button" onClick={clear}><Trash2 size={14} />{t('action.clearShort')}</button>
+            <button type="button" onClick={swap}><ArrowLeftRight size={14} />{t('action.swap')}</button>
+            <button type="button" onClick={() => void copyDiff()}><Copy size={14} />{t('action.copy')}</button>
+          </div>
+          <div className="diff-toolbar__navigation">
+            <button type="button" disabled={visibleSegments.length === 0} onClick={() => navigateDifference(-1)}>
+              <ChevronUp size={14} />{t('action.previousDifference')}
+            </button>
+            <button type="button" disabled={visibleSegments.length === 0} onClick={() => navigateDifference(1)}>
+              <ChevronDown size={14} />{t('action.nextDifference')}
+            </button>
+          </div>
+          <div className="diff-toolbar__options">
+            <label>
+              <input type="checkbox" checked={ignoreWhitespace} onChange={(event) => setIgnoreWhitespace(event.target.checked)} />
+              {t('option.whitespaceDiff')}
+            </label>
+            <select aria-label={t('highlight.mode')} value={highlightMode} onChange={(event) => {
+              setHighlightMode(event.target.value as HighlightMode)
+              navigationIndex.current = -1
+              setStatus(left || right ? { kind: 'complete' } : { kind: 'enterText' })
+            }}>
+              <option value="both">{t('highlight.both')}</option>
+              <option value="characters">{t('highlight.characters')}</option>
+              <option value="lines">{t('highlight.lines')}</option>
+            </select>
+            <select aria-label={t('display.mode')} value={mode} onChange={(event) => setMode(event.target.value as DiffMode)}>
+              <option value="side">{t('display.side')}</option>
+              <option value="unified">{t('display.unified')}</option>
+            </select>
+          </div>
+          <div className="diff-toolbar__tail">
+            <span className="diff-status" aria-live="polite">{calculating ? t('status.processing') : statusText(status, highlightMode, visibleSegments.length, t)}</span>
+            <button type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('action.history')}</button>
+          </div>
         </div>
-        <div className="text-diff-navigation">
-          <button type="button" disabled={!differenceCount} aria-label={t('action.previousDifference')} title={t('action.previousDifference')} onClick={() => navigateDifference(-1)}><ChevronUp /></button>
-          <span>{differenceCount ? `${activeDifference < 0 ? 0 : activeDifference + 1}/${differenceCount}` : '0/0'}</span>
-          <button type="button" disabled={!differenceCount} aria-label={t('action.nextDifference')} title={t('action.nextDifference')} onClick={() => navigateDifference(1)}><ChevronDown /></button>
+        <div className={mode === 'unified' ? 'diff-content diff-content--unified' : 'diff-content'}>
+          {editors}
+          {mode === 'unified' && (
+            <div className="diff-unified-pane">
+              <span>{t('unified.panel')}</span>
+              <DiffCodeEditor
+                ariaLabel={t('unified.panel')}
+                className="unified-diff"
+                decorations={unifiedDecorations}
+                readOnly
+                value={result.unified}
+              />
+            </div>
+          )}
         </div>
-        <button className="secondary-button" type="button" onClick={() => void copyUnifiedDiff()}>
-          {copied ? <Clipboard /> : <Copy />}{copied ? t('action.copied') : t('action.copyDiff')}
-        </button>
-        <button
-          className="icon-button text-diff-clear"
-          type="button"
-          aria-label={t('action.clear')}
-          onClick={() => {
-            setLeft('')
-            setRight('')
-          }}
-        >
-          <Eraser />
-        </button>
-      </section>
-
-      <section className="text-diff-editors">
-        <EditorPane
-          label={t('pane.original')}
-          value={left}
-          onChange={setLeft}
-          onReady={(view) => {
-            leftEditor.current = view
+      </div>
+      {(reportError || actionError) && <p className="tool-surface-report-error">{actionError || t('report.error', { error: reportError })}</p>}
+      {historyOpen && (
+        <HistoryPanel
+          limit={settings.data.historyLimit}
+          toolId="text-diff"
+          onClose={() => setHistoryOpen(false)}
+          onRestore={(entry) => {
+            setLeft(entry.inputText)
+            setRight(entry.outputText)
+            setHistoryOpen(false)
           }}
         />
-        <EditorPane
-          label={t('pane.target')}
-          value={right}
-          onChange={setRight}
-          onReady={(view) => {
-            rightEditor.current = view
-          }}
-        />
-      </section>
-
-      <section className="text-diff-summary" aria-label={t('aria.summary')}>
-        <span className={result.identical ? 'text-diff-identical' : ''}>
-          {result.identical ? <CheckCircle2 /> : <FileDiff />}
-          {result.identical ? t('summary.identical') : t('summary.different')}
-        </span>
-        <span><i className="diff-dot diff-dot--changed" />{t('summary.changed')} <strong>{result.stats.changed}</strong></span>
-        <span><i className="diff-dot diff-dot--added" />{t('summary.added')} <strong>{result.stats.added}</strong></span>
-        <span><i className="diff-dot diff-dot--removed" />{t('summary.removed')} <strong>{result.stats.removed}</strong></span>
-        <span>{t('summary.unchanged')} <strong>{result.stats.unchanged}</strong></span>
-      </section>
-
-      <section ref={resultHost} className={`text-diff-result text-diff-result--${viewMode}`} aria-label={t('aria.result')}>
-        {viewMode === 'split' ? <>
-          <div className="text-diff-result__heading">
-            <span>{t('pane.original')}</span>
-            <span>{t('pane.target')}</span>
-          </div>
-          <div className="text-diff-rows">
-            {visibleRows.map((row, index) => row.kind === 'collapsed'
-              ? <CollapsedRow row={row} key={`collapsed-${index}`} />
-              : <DiffResultRow row={row} diffIndex={differenceIndexes.get(row)} active={differenceIndexes.get(row) === activeDifference} key={`${row.left?.lineNumber ?? '-'}:${row.right?.lineNumber ?? '-'}`} />)}
-            {visibleRows.length === 0 && <div className="text-diff-empty">{t('result.empty')}</div>}
-          </div>
-        </> : <>
-          <div className="text-diff-result__heading text-diff-result__heading--unified"><span>{t('view.unifiedHeading')}</span></div>
-          <div className="text-diff-rows text-diff-unified-rows">
-            {visibleRows.map((row, index) => row.kind === 'collapsed'
-              ? <CollapsedRow row={row} key={`collapsed-${index}`} />
-              : <UnifiedDiffRow row={row} diffIndex={differenceIndexes.get(row)} active={differenceIndexes.get(row) === activeDifference} key={`${row.left?.lineNumber ?? '-'}:${row.right?.lineNumber ?? '-'}`} />)}
-            {visibleRows.length === 0 && <div className="text-diff-empty">{t('result.empty')}</div>}
-          </div>
-        </>}
-      </section>
-
-      <footer className="text-diff-footer">
-        <span>{t('footer.capabilities')}</span>
-        <code>{sessionSummary}</code>
-      </footer>
-
-      {(reportError || actionError) && (
-        <p className="tool-surface-report-error">
-          {actionError || t('report.error', { error: reportError })}
-        </p>
       )}
     </main>
   )
 }
 
-function EditorPane({ label, value, onChange, onReady }: {
-  label: string
-  value: string
-  onChange(value: string): void
-  onReady(view: EditorView): void
-}) {
-  const { t } = useLocalizedMessages(textDiffMessages)
-  const hostRef = useRef<HTMLDivElement>(null)
-  const viewRef = useRef<EditorView | undefined>(undefined)
-  const onChangeRef = useRef(onChange)
-  const onReadyRef = useRef(onReady)
-  onChangeRef.current = onChange
-  onReadyRef.current = onReady
-
-  useEffect(() => {
-    if (!hostRef.current) return
-    const view = new EditorView({
-      parent: hostRef.current,
-      state: EditorState.create({
-        doc: value,
-        extensions: [
-          history(),
-          lineNumbers(),
-          drawSelection(),
-          highlightActiveLine(),
-          search({ top: false }),
-          EditorView.lineWrapping,
-          keymap.of([
-            ...searchKeymap,
-            ...defaultKeymap,
-            ...historyKeymap,
-            indentWithTab
-          ]),
-          EditorView.contentAttributes.of({
-            'aria-label': label,
-            spellcheck: 'false',
-            autocapitalize: 'off',
-            autocomplete: 'off'
-          }),
-          EditorView.updateListener.of((update) => {
-            if (update.docChanged) onChangeRef.current(update.state.doc.toString())
-          })
-        ]
-      })
-    })
-    viewRef.current = view
-    onReadyRef.current(view)
-    return () => {
-      viewRef.current = undefined
-      view.destroy()
+function createSideDecorations(
+  text: string,
+  segments: DiffSegment[],
+  side: 'left' | 'right',
+  highlightMode: HighlightMode
+): DiffEditorDecoration[] {
+  const decorations: DiffEditorDecoration[] = []
+  for (const segment of segments) {
+    const from = side === 'left' ? segment.leftStart : segment.rightStart
+    const to = side === 'left' ? segment.leftEnd : segment.rightEnd
+    if (from < 0 || to < 0) continue
+    const name = segment.type === 'insert' ? 'added' : segment.type === 'delete' ? 'removed' : 'changed'
+    if (highlightMode !== 'characters' && to > from) {
+      decorations.push({ type: 'line', from: lineStartAt(text, from), className: `cm-diff-line-${name}` })
     }
-  }, [label])
-
-  useEffect(() => {
-    const view = viewRef.current
-    if (!view || view.state.doc.toString() === value) return
-    view.dispatch({
-      changes: { from: 0, to: view.state.doc.length, insert: value }
-    })
-  }, [value])
-
-  return (
-    <article className="text-diff-editor-pane">
-      <header>{label}<span>{t('pane.characters', { count: value.length })}</span></header>
-      <div ref={hostRef} className="text-diff-editor" />
-    </article>
-  )
-}
-
-function CollapsedRow({ row }: { row: { kind: 'collapsed'; hiddenRows: number; reason: 'unchanged' | 'limit' } }) {
-  const { t } = useLocalizedMessages(textDiffMessages)
-  return <div className="text-diff-collapsed">{row.reason === 'limit' ? t('result.limit', { count: row.hiddenRows }) : t('result.collapsed', { count: row.hiddenRows })}</div>
-}
-
-function DiffResultRow({ row, diffIndex, active }: { row: DiffRow; diffIndex?: number; active: boolean }) {
-  const { t } = useLocalizedMessages(textDiffMessages)
-  return (
-    <div className={`text-diff-row text-diff-row--${row.kind}${active ? ' text-diff-row--active' : ''}`} data-diff-index={diffIndex}>
-      <DiffCell side={row.left} emptyLabel={row.kind === 'added' ? t('row.added') : ''} />
-      <DiffCell side={row.right} emptyLabel={row.kind === 'removed' ? t('row.removed') : ''} />
-    </div>
-  )
-}
-
-function UnifiedDiffRow({ row, diffIndex, active }: { row: DiffRow; diffIndex?: number; active: boolean }) {
-  const lines = row.kind === 'changed'
-    ? [{ prefix: '-', side: row.left }, { prefix: '+', side: row.right }]
-    : row.kind === 'removed'
-      ? [{ prefix: '-', side: row.left }]
-      : row.kind === 'added'
-        ? [{ prefix: '+', side: row.right }]
-        : [{ prefix: ' ', side: row.left }]
-  return <div className={`text-diff-unified-row text-diff-unified-row--${row.kind}${active ? ' text-diff-row--active' : ''}`} data-diff-index={diffIndex}>{lines.map((line, index) => <div key={index}><span>{line.side?.lineNumber ?? ''}</span><b>{line.prefix}</b><code>{line.side?.text ?? ''}</code></div>)}</div>
-}
-
-function DiffCell({ side, emptyLabel }: { side?: DiffSide; emptyLabel: string }) {
-  if (!side) {
-    return <div className="text-diff-cell text-diff-cell--empty"><span /><em>{emptyLabel}</em></div>
+    if (highlightMode !== 'lines' && to > from) {
+      decorations.push({ type: 'mark', from, to, className: `cm-diff-character-${name}` })
+    }
   }
-  return (
-    <div className="text-diff-cell">
-      <span>{side.lineNumber}</span>
-      <code>
-        {side.segments.map((segment, index) => (
-          <mark className={segment.kind === 'changed' ? 'text-diff-inline-change' : ''} key={index}>
-            {segment.text}
-          </mark>
-        ))}
-      </code>
-    </div>
-  )
+  return decorations
+}
+
+function createUnifiedDecorations(unifiedView: UnifiedDiffView, highlightMode: HighlightMode): DiffEditorDecoration[] {
+  const decorations: DiffEditorDecoration[] = unifiedView.lineSpans.map((span) => ({
+    type: 'line',
+    from: lineStartAt(unifiedView.text, span.start),
+    className: unifiedLineClass(span.type)
+  }))
+  if (highlightMode !== 'lines') {
+    decorations.push(...unifiedView.characterSpans.map((span) => ({
+      type: 'mark' as const,
+      from: span.start,
+      to: span.end,
+      className: unifiedCharacterClass(span.type)
+    })))
+  }
+  return decorations
+}
+
+function unifiedLineClass(type: UnifiedSpanType): string {
+  if (type === 'add-line') return 'cm-diff-line-added'
+  if (type === 'delete-line') return 'cm-diff-line-removed'
+  if (type === 'hunk-line') return 'cm-diff-line-changed'
+  return 'cm-diff-line-header'
+}
+
+function unifiedCharacterClass(type: UnifiedSpanType): string {
+  if (type === 'add-character') return 'cm-diff-character-added'
+  if (type === 'delete-character') return 'cm-diff-character-removed'
+  return 'cm-diff-character-changed'
+}
+
+function focusSegment(editor: DiffEditorHandle | null, text: string, start: number, end: number): void {
+  if (!editor || start < 0 || end < 0) return
+  const middle = Math.floor((start + end) / 2)
+  const lineStart = lineStartAt(text, middle)
+  editor.selectRange(lineStart, lineStart)
+}
+
+function lineStartAt(text: string, offset: number): number {
+  const position = Math.max(0, Math.min(offset, text.length))
+  if (position === 0) return 0
+  return text.lastIndexOf('\n', position - 1) + 1
+}
+
+function statusText(
+  status: StatusState,
+  highlightMode: HighlightMode,
+  differenceCount: number,
+  t: (key: 'status.navigation' | 'status.characterComplete' | 'status.complete' | 'status.ready' | 'status.enterText' | 'status.cleared' | 'status.swapped' | 'status.copied' | 'status.noCopy', values?: Record<string, string | number>) => string
+): string {
+  if (status.kind === 'navigation') return t('status.navigation', { current: String(status.current), total: String(status.total) })
+  if (status.kind === 'complete') {
+    return highlightMode === 'characters'
+      ? t('status.characterComplete', { count: String(differenceCount) })
+      : t('status.complete', { count: String(differenceCount) })
+  }
+  const statusKeys = {
+    ready: 'status.ready',
+    enterText: 'status.enterText',
+    cleared: 'status.cleared',
+    swapped: 'status.swapped',
+    copied: 'status.copied',
+    noCopy: 'status.noCopy'
+  } as const
+  return t(statusKeys[status.kind])
+}
+
+function readTextDiffDraft(): { left: string; right: string } {
+  const fallback = {
+    left: 'MooTool\nquiet desktop tools\nold line\n',
+    right: 'MooTool\nquiet desktop toolkit\nnew line\n'
+  }
+  try {
+    const value = JSON.parse(window.localStorage.getItem(textDiffDraftKey) ?? '') as unknown
+    if (!value || typeof value !== 'object') return fallback
+    const draft = value as Record<string, unknown>
+    return {
+      left: typeof draft.left === 'string' ? draft.left : fallback.left,
+      right: typeof draft.right === 'string' ? draft.right : fallback.right
+    }
+  } catch {
+    return fallback
+  }
 }

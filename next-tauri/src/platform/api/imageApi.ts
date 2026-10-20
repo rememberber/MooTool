@@ -20,8 +20,25 @@ export const imageApi: ImageApi = typeof window !== 'undefined' && window.__TAUR
         .sort((left, right) => right.updatedAt - left.updatedAt),
       save: async (input) => {
         const mimeType = input.dataUrl.match(/^data:([^;]+);base64,/)?.[1] ?? 'image/png'
+        const extension = mimeType === 'image/jpeg' ? 'jpg' : mimeType === 'image/webp' ? 'webp' : mimeType === 'image/gif' ? 'gif' : 'png'
+        const dot = input.name.lastIndexOf('.')
+        const stem = dot > 0 ? input.name.slice(0, dot) : input.name
+        const currentExtension = dot > 0 ? input.name.slice(dot + 1).toLowerCase() : ''
+        const normalized = currentExtension === extension || (extension === 'jpg' && currentExtension === 'jpeg')
+          ? input.name
+          : `${stem}.${extension}`
+        let name = normalized
+        if (input.createOnly) {
+          const parts = normalized.match(/^(.*?)(\.[^.]+)$/)
+          const base = parts?.[1] ?? normalized
+          const ext = parts?.[2] ?? ''
+          for (let index = 1; previewAssets.has(name); index += 1) {
+            const suffix = `-${index + 1}`
+            name = `${base.slice(0, 160 - suffix.length - ext.length)}${suffix}${ext}`
+          }
+        }
         const summary: ImageAssetSummary = {
-          name: input.name,
+          name,
           mimeType,
           width: input.width,
           height: input.height,

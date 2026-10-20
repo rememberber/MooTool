@@ -25,15 +25,11 @@ import { useSettings } from '../settings/SettingsProvider'
 import {
   compatibilityDecrypt,
   compatibilityEncrypt,
-  decodeBase,
   decryptAesGcm,
-  encodeBase,
   encryptAesGcm,
   generateRsaKeyPair,
-  generateRandom,
   generateSm2KeyPair,
   hashText,
-  hmacSha256,
   rsaDecrypt,
   rsaEncrypt,
   rsaSign,
@@ -45,23 +41,50 @@ import {
   CryptoToolError,
   type BaseAlgorithm,
   type CompatibilityAlgorithm,
-  type HashAlgorithm,
-  type RandomKind
+  type HashAlgorithm
 } from './cryptoTools'
+import {
+  asymmetricDecrypt,
+  asymmetricEncrypt,
+  generateAsymmetricKeyPair,
+  privateEncrypt,
+  publicDecrypt,
+  decodeBase as decodeElectronBase,
+  encodeBase as encodeElectronBase,
+  randomDigits,
+  randomPassword,
+  randomString,
+  randomUuid,
+  signContent,
+  symmetricDecrypt,
+  symmetricEncrypt,
+  verifySignature,
+  type AsymmetricAlgorithm,
+  type SymmetricAlgorithm
+} from './electronCrypto'
 import { cryptoMessages } from './cryptoMessages'
 
-type CryptoTab = 'digest' | 'aes' | 'rsa' | 'compatibility' | 'base' | 'random'
+type CryptoTab = 'symmetric' | 'asymmetric' | 'digest' | 'aes' | 'rsa' | 'compatibility' | 'base' | 'random'
 type CryptoMessageKey = LocalizedMessageKey<typeof cryptoMessages>
 type CryptoNotice = { key: CryptoMessageKey; values?: MessageValues } | { raw: string }
 
 export function CryptoSurface() {
   const { t } = useLocalizedMessages(cryptoMessages)
   const { settings, ready: settingsReady, save: saveSettings } = useSettings()
-  const [tab, setTab] = useState<CryptoTab>('digest')
-  const [source, setSource] = useState('MooTool Next Tauri')
+  const [tab, setTab] = useState<CryptoTab>('symmetric')
+  const [source, setSource] = useState('MooTool parity')
+  const [symAlgorithm, setSymAlgorithm] = useState<SymmetricAlgorithm>('AES')
+  const [symKey, setSymKey] = useState('')
+  const [legacyAes, setLegacyAes] = useState(false)
+  const [asymAlgorithm, setAsymAlgorithm] = useState<AsymmetricAlgorithm>('RSA')
+  const [publicKey, setPublicKey] = useState('')
+  const [privateKey, setPrivateKey] = useState('')
+  const [asymBusy, setAsymBusy] = useState(false)
   const [output, setOutput] = useState('')
   const [hashAlgorithm, setHashAlgorithm] = useState<HashAlgorithm>('sha256')
-  const [hmacSecret, setHmacSecret] = useState('')
+  const [digestInput, setDigestInput] = useState('MooTool')
+  const [digestOutput, setDigestOutput] = useState('')
+  const [digestFileName, setDigestFileName] = useState('')
   const [baseAlgorithm, setBaseAlgorithm] = useState<BaseAlgorithm>('base64')
   const [passphrase, setPassphrase] = useState('')
   const [rsaBits, setRsaBits] = useState<2048 | 3072 | 4096>(2048)
@@ -72,8 +95,11 @@ export function CryptoSurface() {
   const [compatibilityKey, setCompatibilityKey] = useState('1234567890abcdef')
   const [sm2PublicKey, setSm2PublicKey] = useState('')
   const [sm2PrivateKey, setSm2PrivateKey] = useState('')
-  const [randomKind, setRandomKind] = useState<RandomKind>('password')
   const [randomLength, setRandomLength] = useState(32)
+  const [uuid, setUuid] = useState('')
+  const [digits, setDigits] = useState('')
+  const [randomText, setRandomText] = useState('')
+  const [password, setPassword] = useState('')
   const [notice, setNotice] = useState<CryptoNotice>({ key: 'notice.ready', values: { tab: 'SHA-256' } })
   const [failed, setFailed] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -97,25 +123,36 @@ export function CryptoSurface() {
   useOperationRestore('crypto', (entry) => {
     const metadata = parseOperationMetadata(entry)
     const nextTab = metadata.tab
-    if (nextTab === 'digest' || nextTab === 'base' || nextTab === 'random' || nextTab === 'compatibility') setTab(nextTab)
+    if (nextTab === 'digest' || nextTab === 'base' || nextTab === 'random' || nextTab === 'compatibility' || nextTab === 'symmetric' || nextTab === 'asymmetric' || nextTab === 'aes' || nextTab === 'rsa') setTab(nextTab)
     if (typeof metadata.hashAlgorithm === 'string') setHashAlgorithm(metadata.hashAlgorithm as HashAlgorithm)
     if (typeof metadata.baseAlgorithm === 'string') setBaseAlgorithm(metadata.baseAlgorithm as BaseAlgorithm)
-    if (typeof metadata.randomKind === 'string') setRandomKind(metadata.randomKind as RandomKind)
     if (typeof metadata.randomLength === 'number') setRandomLength(metadata.randomLength)
+    if (typeof metadata.randomKind === 'string') {
+      if (metadata.randomKind === 'uuid') setUuid(entry.outputText)
+      else if (metadata.randomKind === 'digits') setDigits(entry.outputText)
+      else if (metadata.randomKind === 'password') setPassword(entry.outputText)
+      else if (metadata.randomKind === 'string' || metadata.randomKind === 'alphanumeric') setRandomText(entry.outputText)
+    }
     if (metadata.compatibilityAlgorithm === 'des' || metadata.compatibilityAlgorithm === 'sm4' || metadata.compatibilityAlgorithm === 'sm2') setCompatibilityAlgorithm(metadata.compatibilityAlgorithm)
-    setSource(entry.inputText)
-    setOutput(entry.outputText)
+    if (metadata.tab === 'digest') {
+      setDigestInput(entry.inputText)
+      setDigestOutput(entry.outputText)
+    } else {
+      setSource(entry.inputText)
+      setOutput(entry.outputText)
+    }
     setFailed(false)
   })
 
   function runDigest(): void {
     try {
-      const result = hmacSecret ? hmacSha256(source, hmacSecret) : hashText(source, hashAlgorithm)
-      setOutput(result)
-      succeed(hmacSecret ? 'notice.hmacDone' : 'notice.digestDone', hmacSecret ? undefined : { algorithm: hashAlgorithm.toUpperCase() })
-      recordOperation(t('operation.digest'), `${hmacSecret ? 'HMAC-SHA256' : hashAlgorithm.toUpperCase()} · ${source.length}`, 'success', hmacSecret
-        ? { metadata: { tab: 'digest', sensitive: true } }
-        : { inputText: source, outputText: result, metadata: { tab: 'digest', hashAlgorithm } })
+      const result = hashText(digestInput, hashAlgorithm)
+      setDigestOutput(result)
+      setDigestFileName('')
+      succeed('notice.digestDone', { algorithm: hashAlgorithm.toUpperCase() })
+      recordOperation(t('operation.digest'), `${hashAlgorithm.toUpperCase()} · ${digestInput.length}`, 'success', {
+        inputText: digestInput, outputText: result, metadata: { tab: 'digest', hashAlgorithm }
+      })
     } catch (cause) {
       fail(cause)
     }
@@ -125,7 +162,8 @@ export function CryptoSurface() {
     try {
       const result = await fileDigestApi.digest(hashAlgorithm)
       if (!result) return
-      setOutput(result.digest)
+      setDigestOutput(result.digest)
+      setDigestFileName(result.name)
       succeed('notice.fileDigest', { name: result.name, algorithm: hashAlgorithm.toUpperCase() })
       recordOperation(t('operation.fileDigest'), `${result.name} · ${hashAlgorithm.toUpperCase()} · ${result.digest}`, 'success', {
         outputText: result.digest, metadata: { tab: 'digest', operation: 'fileDigest', fileName: result.name, hashAlgorithm }
@@ -148,9 +186,59 @@ export function CryptoSurface() {
     }
   }
 
+  function runSymmetric(mode: 'encrypt' | 'decrypt'): void {
+    try {
+      const result = mode === 'encrypt'
+        ? symmetricEncrypt(symAlgorithm, source, symKey)
+        : symmetricDecrypt(symAlgorithm, source, symKey, legacyAes)
+      setOutput(result)
+      succeed(mode === 'encrypt' ? 'notice.symmetricEncrypted' : 'notice.symmetricDecrypted')
+      recordOperation(t(mode === 'encrypt' ? 'action.encrypt' : 'action.decrypt'), `${symAlgorithm} · ${result.length}`, 'success', {
+        inputText: source, outputText: result, metadata: { tab: 'symmetric', algorithm: symAlgorithm, sensitive: true }
+      })
+    } catch (cause) { fail(cause) }
+  }
+
+  function generateAsymKeys(): void {
+    setAsymBusy(true)
+    try {
+      const pair = generateAsymmetricKeyPair(asymAlgorithm, rsaBits)
+      setPublicKey(pair.publicKey)
+      setPrivateKey(pair.privateKey)
+      succeed('notice.keyPairGenerated')
+      recordOperation(t('action.generateKeys'), asymAlgorithm, 'success', { metadata: { tab: 'asymmetric', algorithm: asymAlgorithm, sensitive: true } })
+    } catch (cause) { fail(cause) } finally { setAsymBusy(false) }
+  }
+
+  function runAsymmetric(mode: 'publicEncrypt' | 'privateDecrypt' | 'privateEncrypt' | 'publicDecrypt' | 'sign' | 'verify'): void {
+    try {
+      if (mode === 'verify') {
+        const valid = verifySignature(asymAlgorithm, source, output, publicKey)
+        succeed(valid ? 'notice.signatureValid' : 'notice.signatureInvalid')
+        recordOperation(t('action.verify'), `${asymAlgorithm} · ${valid}`, valid ? 'success' : 'error', { metadata: { tab: 'asymmetric', sensitive: true } })
+        return
+      }
+      const result = mode === 'publicEncrypt'
+        ? asymmetricEncrypt(asymAlgorithm, source, publicKey)
+        : mode === 'privateDecrypt'
+          ? asymmetricDecrypt(asymAlgorithm, source, privateKey)
+          : mode === 'privateEncrypt'
+            ? privateEncrypt(source, privateKey)
+            : mode === 'publicDecrypt'
+              ? publicDecrypt(source, publicKey)
+              : signContent(asymAlgorithm, source, privateKey, publicKey)
+      setOutput(result)
+      succeed(mode === 'sign' ? 'notice.signedContent' : mode.endsWith('Encrypt') ? 'notice.asymmetricEncrypted' : 'notice.asymmetricDecrypted')
+      recordOperation(t(`action.${mode}`), asymAlgorithm, 'success', {
+        inputText: source, outputText: result, metadata: { tab: 'asymmetric', algorithm: asymAlgorithm, sensitive: true }
+      })
+    } catch (cause) { fail(cause) }
+  }
+
   function runBase(mode: 'encode' | 'decode'): void {
     try {
-      const result = mode === 'encode' ? encodeBase(source, baseAlgorithm) : decodeBase(source, baseAlgorithm)
+      const algorithm = baseAlgorithm === 'base32' ? 'Base32' : 'Base64'
+      const result = mode === 'encode' ? encodeElectronBase(algorithm, source) : decodeElectronBase(algorithm, source)
       setOutput(result)
       succeed(mode === 'encode' ? 'notice.encoded' : 'notice.decoded', { algorithm: baseAlgorithm.toUpperCase() })
       recordOperation(t(mode === 'encode' ? 'operation.encode' : 'operation.decode'), `${baseAlgorithm.toUpperCase()} · ${source.length}`, 'success', {
@@ -228,16 +316,34 @@ export function CryptoSurface() {
     } catch (cause) { fail(cause) }
   }
 
-  function runRandom(): void {
+  function generateRandomValue(kind: 'uuid' | 'digits' | 'string' | 'password'): void {
     try {
-      const result = generateRandom(randomKind, randomLength)
+      const length = Math.min(4096, Math.max(1, Math.round(randomLength) || 1))
+      if (length !== randomLength) setRandomLength(length)
+      const result = kind === 'uuid' ? randomUuid() : kind === 'digits' ? randomDigits(length) : kind === 'string' ? randomString(length) : randomPassword(length)
+      if (kind === 'uuid') setUuid(result)
+      else if (kind === 'digits') setDigits(result)
+      else if (kind === 'string') setRandomText(result)
+      else setPassword(result)
       setOutput(result)
-      succeed(randomKind === 'uuid' ? 'notice.uuid' : 'notice.random')
-      recordOperation(t('operation.random'), `${randomKind} · ${randomKind === 'uuid' ? 36 : randomLength}`, 'success', {
-        outputText: result, metadata: { tab: 'random', randomKind, randomLength }
+      succeed(kind === 'uuid' ? 'notice.uuid' : 'notice.random')
+      recordOperation(t('operation.random'), `${kind} · ${kind === 'uuid' ? 36 : length}`, 'success', {
+        outputText: result, metadata: { tab: 'random', randomKind: kind, randomLength: length }
       })
+      if (settingsReady && length !== settings.tools.randomStringLength) void saveSettings({ ...settings, tools: { ...settings.tools, randomStringLength: length } })
     } catch (cause) {
       fail(cause)
+    }
+  }
+
+  async function copyRandom(value: string): Promise<void> {
+    try {
+      await clipboardApi.writeText(value)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1200)
+    } catch {
+      setNotice({ key: 'error.clipboard' })
+      setFailed(true)
     }
   }
 
@@ -271,7 +377,7 @@ export function CryptoSurface() {
 
       <section className="utility-toolbar">
         <div className="utility-segments" role="tablist">
-          {(['digest', 'aes', 'rsa', 'compatibility', 'base', 'random'] as const).map((item) => (
+          {(['symmetric', 'asymmetric', 'digest', 'base', 'random'] as const).map((item) => (
             <button
               className={tab === item ? 'utility-segment utility-segment--active' : 'utility-segment'}
               type="button"
@@ -284,7 +390,7 @@ export function CryptoSurface() {
                 succeed('notice.ready', { tab: tabLabel(item) })
               }}
             >
-              {item === 'digest' ? <ShieldCheck /> : item === 'aes' || item === 'rsa' || item === 'compatibility' ? <KeyRound /> : item === 'base' ? <RefreshCw /> : <Dices />}
+              {item === 'digest' ? <ShieldCheck /> : item === 'symmetric' || item === 'asymmetric' ? <KeyRound /> : item === 'base' ? <RefreshCw /> : <Dices />}
               {tabLabel(item)}
             </button>
           ))}
@@ -293,129 +399,128 @@ export function CryptoSurface() {
           <>
             <label className="utility-select">
               {t('field.digest')}
-              <select
-                value={hashAlgorithm}
-                disabled={Boolean(hmacSecret)}
-                onChange={(event) => setHashAlgorithm(event.target.value as HashAlgorithm)}
-              >
+              <select aria-label={t('field.digest')} value={hashAlgorithm} onChange={(event) => setHashAlgorithm(event.target.value as HashAlgorithm)}>
+                <option value="md5">MD5</option>
+                <option value="sha1">SHA-1</option>
                 <option value="sha256">SHA-256</option>
                 <option value="sha384">SHA-384</option>
                 <option value="sha512">SHA-512</option>
-                <option value="sha1">SHA-1 ({t('option.compatible')})</option>
-                <option value="md5">MD5 ({t('option.compatible')})</option>
                 <option value="sm3">SM3</option>
               </select>
             </label>
-            <button className="secondary-button crypto-file-digest" type="button" disabled={!['sha256', 'sha384', 'sha512'].includes(hashAlgorithm) || Boolean(hmacSecret)} onClick={() => void runFileDigest()}><FileSearch />{t('action.fileDigest')}</button>
-            <label className="crypto-inline-field">
-              {t('field.hmac')}
-              <input
-                type="password"
-                value={hmacSecret}
-                placeholder={t('placeholder.hmac')}
-                onChange={(event) => setHmacSecret(event.target.value)}
-              />
+            <button className="primary-button" type="button" onClick={runDigest}><Play />{t('action.textDigest')}</button>
+            <button className="secondary-button crypto-file-digest" type="button" onClick={() => void runFileDigest()}><FileSearch />{t('action.fileDigest')}</button>
+            {digestFileName && <span className="selected-file-name">{digestFileName}</span>}
+          </>
+        )}
+        {tab === 'symmetric' && (
+          <>
+            <label className="utility-select">
+              {t('field.compatibilityAlgorithm')}
+              <select value={symAlgorithm} onChange={(event) => { setSymAlgorithm(event.target.value as SymmetricAlgorithm); setOutput('') }}>
+                <option value="AES">AES</option>
+                <option value="DES">DES</option>
+                <option value="SM4">SM4</option>
+              </select>
             </label>
+            <label className="crypto-inline-field">
+              {t('field.key')}
+              <input value={symKey} placeholder={symAlgorithm === 'AES' ? t('hint.aesKey') : t('hint.symmetricKey')} onChange={(event) => setSymKey(event.target.value)} />
+            </label>
+            {symAlgorithm === 'AES' && (
+              <label className="crypto-inline-field">
+                <input type="checkbox" checked={legacyAes} onChange={(event) => setLegacyAes(event.target.checked)} />
+                {t('option.legacyAes')}
+              </label>
+            )}
           </>
         )}
-        {tab === 'aes' && (
-          <label className="crypto-inline-field">
-            {t('field.passphrase')}
-            <input
-              type="password"
-              value={passphrase}
-              placeholder={t('placeholder.passphrase')}
-              onChange={(event) => setPassphrase(event.target.value)}
-            />
-          </label>
-        )}
-        {tab === 'rsa' && (
+        {tab === 'asymmetric' && (
           <>
-            <label className="utility-select">{t('field.keySize')}<select value={rsaBits} onChange={(event) => setRsaBits(Number(event.target.value) as 2048 | 3072 | 4096)}><option value={2048}>2048</option><option value={3072}>3072</option><option value={4096}>4096</option></select></label>
-            <button className="primary-button" type="button" disabled={rsaBusy} onClick={() => void generateKeys()}><KeyRound />{t(rsaBusy ? 'action.generating' : 'action.generateKeys')}</button>
-            <details className="crypto-key-store"><summary className="secondary-button">{t('action.keys')}</summary><div><label>{t('field.publicKey')}<textarea value={rsaPublicKey} spellCheck={false} onChange={(event) => setRsaPublicKey(event.target.value)} /></label><label>{t('field.privateKey')}<textarea value={rsaPrivateKey} spellCheck={false} onChange={(event) => setRsaPrivateKey(event.target.value)} /></label></div></details>
-          </>
-        )}
-        {tab === 'compatibility' && (
-          <>
-            <label className="utility-select">{t('field.compatibilityAlgorithm')}<select value={compatibilityAlgorithm} onChange={(event) => { setCompatibilityAlgorithm(event.target.value as CompatibilityAlgorithm); setOutput('') }}><option value="sm4">SM4</option><option value="sm2">SM2</option><option value="des">DES ({t('option.compatible')})</option></select></label>
-            {compatibilityAlgorithm === 'sm2' ? <><button className="primary-button" type="button" onClick={generateSm2Keys}><KeyRound />{t('action.generateKeys')}</button><details className="crypto-key-store"><summary className="secondary-button">{t('action.keys')}</summary><div><label>{t('field.sm2PublicKey')}<textarea value={sm2PublicKey} spellCheck={false} onChange={(event) => setSm2PublicKey(event.target.value)} /></label><label>{t('field.sm2PrivateKey')}<textarea value={sm2PrivateKey} spellCheck={false} onChange={(event) => setSm2PrivateKey(event.target.value)} /></label></div></details></> : <label className="crypto-inline-field">{t('field.compatibilityKey')}<input type="password" value={compatibilityKey} onChange={(event) => setCompatibilityKey(event.target.value)} /></label>}
-            <span className="crypto-compatibility-warning"><TriangleAlert />{t('compatibility.warning')}</span>
+            <label className="utility-select">
+              {t('field.compatibilityAlgorithm')}
+              <select value={asymAlgorithm} onChange={(event) => { setAsymAlgorithm(event.target.value as AsymmetricAlgorithm); setOutput('') }}>
+                <option value="RSA">RSA</option>
+                <option value="SM2">SM2</option>
+              </select>
+            </label>
+            {asymAlgorithm === 'RSA' && (
+              <label className="utility-select">{t('field.keySize')}<select value={rsaBits} onChange={(event) => setRsaBits(Number(event.target.value) as 2048 | 3072 | 4096)}><option value={2048}>2048</option><option value={3072}>3072</option><option value={4096}>4096</option></select></label>
+            )}
+            <button className="primary-button" type="button" disabled={asymBusy} onClick={generateAsymKeys}><KeyRound />{t(asymBusy ? 'action.generating' : 'action.generateKeys')}</button>
           </>
         )}
         {tab === 'base' && <label className="utility-select">{t('field.encoding')}<select value={baseAlgorithm} onChange={(event) => setBaseAlgorithm(event.target.value as BaseAlgorithm)}><option value="base64">Base64</option><option value="base32">Base32</option></select></label>}
-        {tab === 'random' && (
-          <>
-            <label className="utility-select">
-              {t('field.type')}
-              <select value={randomKind} onChange={(event) => setRandomKind(event.target.value as RandomKind)}>
-                <option value="password">{t('random.password')}</option>
-                <option value="alphanumeric">{t('random.alphanumeric')}</option>
-                <option value="digits">{t('random.digits')}</option>
-                <option value="hex">Hex</option>
-                <option value="uuid">UUID v4</option>
-              </select>
-            </label>
-            <label className="crypto-inline-field crypto-length-field">
-              {t('field.length')}
-              <input
-                type="number"
-                min={1}
-                max={4096}
-                disabled={randomKind === 'uuid'}
-                value={randomLength}
-                onChange={(event) => setRandomLength(Number(event.target.value))}
-                onBlur={() => {
-                  const nextLength = Math.min(4096, Math.max(1, Math.round(randomLength) || 1))
-                  setRandomLength(nextLength)
-                  if (settingsReady && nextLength !== settings.tools.randomStringLength) void saveSettings({ ...settings, tools: { ...settings.tools, randomStringLength: nextLength } })
-                }}
-              />
-            </label>
-          </>
-        )}
       </section>
 
+      {tab === 'asymmetric' && (
+        <section className="crypto-key-pair">
+          <label>
+            {t('field.public')}
+            <textarea value={publicKey} spellCheck={false} onChange={(event) => setPublicKey(event.target.value)} />
+          </label>
+          <label>
+            {t('field.private')}
+            <textarea value={privateKey} spellCheck={false} onChange={(event) => setPrivateKey(event.target.value)} />
+          </label>
+        </section>
+      )}
+
+      {tab === 'digest' ? (
+        <div className="digest-panel">
+          <CodeEditor ariaLabel={t('digest.input')} value={digestInput} onChange={setDigestInput} className="utility-code-editor" lineWrapping />
+          <label className="digest-output"><span>{t('digest.result')}</span><output>{digestOutput || '—'}</output><button type="button" aria-label={t('action.copy')} disabled={!digestOutput} onClick={() => void copyRandom(digestOutput)}><Copy /></button></label>
+        </div>
+      ) : tab === 'random' ? (
+        <div className="random-generator">
+          <label className="random-length">{t('field.length')}<input type="number" min={1} max={4096} value={randomLength} onChange={(event) => setRandomLength(Number(event.target.value))} onBlur={() => {
+            const nextLength = Math.min(4096, Math.max(1, Math.round(randomLength) || 1))
+            setRandomLength(nextLength)
+            if (settingsReady && nextLength !== settings.tools.randomStringLength) void saveSettings({ ...settings, tools: { ...settings.tools, randomStringLength: nextLength } })
+          }} /></label>
+          {([
+            ['uuid', t('random.uuid'), uuid],
+            ['digits', t('random.digits'), digits],
+            ['string', t('random.string'), randomText],
+            ['password', t('random.password'), password]
+          ] as const).map(([kind, label, value]) => (
+            <section className="random-row" key={kind}>
+              <span>{label}</span>
+              <output>{value || '—'}</output>
+              <button type="button" aria-label={t('action.copy')} disabled={!value} onClick={() => void copyRandom(value)}><Copy /></button>
+              <button type="button" onClick={() => generateRandomValue(kind)}><RefreshCw />{t('action.generate')}</button>
+            </section>
+          ))}
+        </div>
+      ) : (
       <section className="utility-editor-grid crypto-editor-grid">
         <section className="utility-editor-card">
-          <header><span>{t(tab === 'random' ? 'pane.settings' : tab === 'aes' ? 'pane.aesInput' : tab === 'rsa' ? 'pane.rsaInput' : tab === 'compatibility' ? 'pane.compatibilityInput' : 'pane.source')}</span></header>
-          {tab === 'random' ? (
-            <div className="crypto-random-hero">
-              <Dices />
-              <strong>{t('random.secure')}</strong>
-              <span>{t('random.detail')}</span>
-              <button className="primary-button" type="button" onClick={runRandom}>
-                <RefreshCw />{t('action.generate')}
-              </button>
-            </div>
-          ) : (
-            <CodeEditor
-              ariaLabel={t('aria.input')}
-              value={source}
-              onChange={setSource}
-              className="utility-code-editor"
-              lineWrapping
-            />
-          )}
+          <header><span>{t(tab === 'symmetric' || tab === 'asymmetric' ? 'pane.aesInput' : 'pane.source')}</span></header>
+          <CodeEditor
+            ariaLabel={t('aria.input')}
+            value={source}
+            onChange={setSource}
+            className="utility-code-editor"
+            lineWrapping
+          />
         </section>
 
         <section className="crypto-actions">
-          {tab === 'digest' && (
-            <button type="button" onClick={runDigest}><Play />{t('action.calculate')}</button>
-          )}
-          {tab === 'aes' && (
+          {tab === 'symmetric' && (
             <>
-              <button type="button" onClick={() => void runAes('encrypt')}><LockKeyhole />{t('action.encrypt')}</button>
-              <button type="button" onClick={() => void runAes('decrypt')}><UnlockKeyhole />{t('action.decrypt')}</button>
+              <button type="button" onClick={() => runSymmetric('encrypt')}><LockKeyhole />{t('action.encrypt')}</button>
+              <button type="button" onClick={() => runSymmetric('decrypt')}><UnlockKeyhole />{t('action.decrypt')}</button>
             </>
           )}
-          {tab === 'rsa' && (
-            <><button type="button" onClick={() => void runRsa('encrypt')}><LockKeyhole />{t('action.publicEncrypt')}</button><button type="button" onClick={() => void runRsa('decrypt')}><UnlockKeyhole />{t('action.privateDecrypt')}</button><button type="button" onClick={() => void runRsa('sign')}><KeyRound />{t('action.sign')}</button><button type="button" disabled={!output} onClick={() => void runRsa('verify')}><ShieldCheck />{t('action.verify')}</button></>
-          )}
-          {tab === 'compatibility' && (
-            compatibilityAlgorithm === 'sm2'
-              ? <><button type="button" onClick={() => runCompatibility('encrypt')}><LockKeyhole />{t('action.publicEncrypt')}</button><button type="button" onClick={() => runCompatibility('decrypt')}><UnlockKeyhole />{t('action.privateDecrypt')}</button><button type="button" onClick={() => runCompatibility('sign')}><KeyRound />{t('action.sign')}</button><button type="button" disabled={!output} onClick={() => runCompatibility('verify')}><ShieldCheck />{t('action.verify')}</button></>
-              : <><button type="button" onClick={() => runCompatibility('encrypt')}><LockKeyhole />{t('action.encrypt')}</button><button type="button" onClick={() => runCompatibility('decrypt')}><UnlockKeyhole />{t('action.decrypt')}</button></>
+          {tab === 'asymmetric' && (
+            <>
+              <button type="button" onClick={() => runAsymmetric('publicEncrypt')}><LockKeyhole />{t('action.publicEncrypt')}</button>
+              <button type="button" onClick={() => runAsymmetric('privateDecrypt')}><UnlockKeyhole />{t('action.privateDecrypt')}</button>
+              <button type="button" disabled={asymAlgorithm !== 'RSA'} onClick={() => runAsymmetric('privateEncrypt')}><LockKeyhole />{t('action.privateEncrypt')}</button>
+              <button type="button" disabled={asymAlgorithm !== 'RSA'} onClick={() => runAsymmetric('publicDecrypt')}><UnlockKeyhole />{t('action.publicDecrypt')}</button>
+              <button type="button" onClick={() => runAsymmetric('sign')}><KeyRound />{t('action.sign')}</button>
+              <button type="button" disabled={!output} onClick={() => runAsymmetric('verify')}><ShieldCheck />{t('action.verify')}</button>
+            </>
           )}
           {tab === 'base' && (
             <><button type="button" onClick={() => runBase('encode')}><LockKeyhole />{t('action.encode')}</button><button type="button" onClick={() => runBase('decode')}><UnlockKeyhole />{t('action.decode')}</button></>
@@ -438,6 +543,7 @@ export function CryptoSurface() {
           />
         </section>
       </section>
+      )}
 
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}>
         <span>{failed ? <TriangleAlert /> : <CheckCircle2 />}{noticeText}</span>
@@ -450,5 +556,7 @@ export function CryptoSurface() {
 }
 
 function tabMessageKey(tab: CryptoTab): CryptoMessageKey {
-  return { digest: 'tab.digest', aes: 'tab.aes', rsa: 'tab.rsa', compatibility: 'tab.compatibility', base: 'tab.base', random: 'tab.random' }[tab] as CryptoMessageKey
+  return {
+    symmetric: 'tab.symmetric', asymmetric: 'tab.asymmetric', digest: 'tab.digest', aes: 'tab.aes', rsa: 'tab.rsa', compatibility: 'tab.compatibility', base: 'tab.base', random: 'tab.random'
+  }[tab] as CryptoMessageKey
 }

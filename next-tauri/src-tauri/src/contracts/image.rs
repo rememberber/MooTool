@@ -7,6 +7,8 @@ pub struct ImageAssetInput {
     pub data_url: String,
     pub width: u32,
     pub height: u32,
+    #[serde(default)]
+    pub create_only: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]

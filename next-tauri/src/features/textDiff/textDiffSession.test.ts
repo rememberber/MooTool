@@ -1,18 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { compareText } from './textDiff'
+import { compareText } from './diffSegments'
 import { describeTextDiffSession } from './textDiffSession'
 
 describe('text diff session', () => {
   it('uses compact fingerprints instead of reporting document content', () => {
-    const options = { ignoreCase: false, ignoreWhitespace: false }
     const left = 'secret-before'
     const right = 'secret-after'
+    const result = compareText(left, right, false)
     const description = describeTextDiffSession({
       left,
       right,
-      options,
-      context: 3,
-      result: compareText(left, right, options)
+      ignoreWhitespace: false,
+      added: result.added,
+      removed: result.removed,
+      changed: result.changed
     })
 
     expect(description.digest).not.toContain(left)

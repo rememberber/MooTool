@@ -55,6 +55,7 @@ export type ToolId =
   | 'color'
   | 'image'
   | 'pdf'
+  | 'file-preview'
   | 'system'
   | 'editor-lab'
   | 'webview-lab'
@@ -148,6 +149,7 @@ export const toolCatalog: ToolDefinition[] = [
   },
   { ...tool('image', '图片工具', '实用工具', Image, ['capture', 'resize']), ready: true },
   { ...tool('pdf', 'PDF', '实用工具', FileImage, ['pdf', 'merge']), ready: true },
+  { ...tool('file-preview', '文件预览', '实用工具', FileText, ['preview', 'file']), ready: true },
   {
     ...tool('system', '硬件与系统', '系统工具', HardDrive, ['hardware', 'system']),
     ready: true

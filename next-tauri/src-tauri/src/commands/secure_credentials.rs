@@ -5,6 +5,8 @@ use crate::contracts::error::AppResult;
 
 const CREDENTIAL_SERVICE: &str = "com.rememberber.mootool.next.tauri";
 const PROXY_PASSWORD_ACCOUNT: &str = "network.proxy.password";
+const GIT_TOKEN_ACCOUNT: &str = "vault.git.token";
+const DEEPL_API_KEY_ACCOUNT: &str = "translation.deepl.apiKey";
 const MAX_PASSWORD_BYTES: usize = 4_096;
 
 #[derive(Serialize)]
@@ -55,6 +57,52 @@ pub async fn set_proxy_password(password: String) -> AppResult<ProxyCredentialSt
     .map_err(|error| format!("proxy credential task failed: {error}"))??)
 }
 
+#[tauri::command]
+pub async fn get_git_credential_status() -> AppResult<ProxyCredentialStatus> {
+    Ok(tauri::async_runtime::spawn_blocking(|| credential_status(GIT_TOKEN_ACCOUNT))
+        .await
+        .map_err(|error| format!("git credential task failed: {error}"))??)
+}
+
+#[tauri::command]
+pub async fn set_git_token(token: String) -> AppResult<ProxyCredentialStatus> {
+    validate_password(&token)?;
+    Ok(tauri::async_runtime::spawn_blocking(move || store_secret(GIT_TOKEN_ACCOUNT, &token))
+        .await
+        .map_err(|error| format!("git credential task failed: {error}"))??)
+}
+
+#[tauri::command]
+pub async fn get_deepl_credential_status() -> AppResult<ProxyCredentialStatus> {
+    Ok(tauri::async_runtime::spawn_blocking(|| credential_status(DEEPL_API_KEY_ACCOUNT))
+        .await
+        .map_err(|error| format!("DeepL credential task failed: {error}"))??)
+}
+
+#[tauri::command]
+pub async fn set_deepl_api_key(api_key: String) -> AppResult<ProxyCredentialStatus> {
+    validate_password(&api_key)?;
+    Ok(tauri::async_runtime::spawn_blocking(move || store_secret(DEEPL_API_KEY_ACCOUNT, &api_key))
+        .await
+        .map_err(|error| format!("DeepL credential task failed: {error}"))??)
+}
+
+pub fn load_git_token() -> Result<Option<String>, String> {
+    load_secret(GIT_TOKEN_ACCOUNT, "git token")
+}
+
+pub fn load_deepl_api_key() -> Result<Option<String>, String> {
+    load_secret(DEEPL_API_KEY_ACCOUNT, "DeepL API key")
+}
+
+fn load_secret(account: &str, label: &str) -> Result<Option<String>, String> {
+    match credential_entry(account)?.get_password() {
+        Ok(secret) => Ok(Some(secret)),
+        Err(KeyringError::NoEntry) => Ok(None),
+        Err(error) => Err(format!("failed to read {label} from OS credential store: {error}")),
+    }
+}
+
 pub async fn load_proxy_password() -> Result<Option<String>, String> {
     tauri::async_runtime::spawn_blocking(|| match proxy_entry()?.get_password() {
         Ok(password) => Ok(Some(password)),
@@ -69,6 +117,36 @@ pub async fn load_proxy_password() -> Result<Option<String>, String> {
 
 fn proxy_entry() -> Result<Entry, String> {
     credential_entry(PROXY_PASSWORD_ACCOUNT)
+}
+
+fn credential_status(account: &str) -> Result<ProxyCredentialStatus, String> {
+    let stored = match credential_entry(account)?.get_password() {
+        Ok(_) => true,
+        Err(KeyringError::NoEntry) => false,
+        Err(error) => return Err(format!("failed to read OS credential store: {error}")),
+    };
+    Ok(ProxyCredentialStatus {
+        stored,
+        secure_store: secure_store_name().into(),
+    })
+}
+
+fn store_secret(account: &str, secret: &str) -> Result<ProxyCredentialStatus, String> {
+    let entry = credential_entry(account)?;
+    if secret.is_empty() {
+        match entry.delete_credential() {
+            Ok(()) | Err(KeyringError::NoEntry) => {}
+            Err(error) => return Err(format!("failed to clear OS credential: {error}")),
+        }
+    } else {
+        entry
+            .set_password(secret)
+            .map_err(|error| format!("failed to save secret in OS credential store: {error}"))?;
+    }
+    Ok(ProxyCredentialStatus {
+        stored: !secret.is_empty(),
+        secure_store: secure_store_name().into(),
+    })
 }
 
 fn credential_entry(account: &str) -> Result<Entry, String> {

@@ -2,9 +2,9 @@ use std::collections::{BTreeMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
-pub const SETTINGS_SCHEMA_VERSION: u32 = 10;
+pub const SETTINGS_SCHEMA_VERSION: u32 = 12;
 
-const PRODUCT_TOOL_IDS: [&str; 25] = [
+const PRODUCT_TOOL_IDS: [&str; 26] = [
     "quick-note",
     "text-diff",
     "reformat",
@@ -29,6 +29,7 @@ const PRODUCT_TOOL_IDS: [&str; 25] = [
     "color",
     "image",
     "pdf",
+    "file-preview",
     "system",
 ];
 
@@ -231,6 +232,7 @@ pub struct EditorSettings {
     pub json_font_size: u8,
     pub quick_note_font_family: String,
     pub quick_note_font_size: u8,
+    pub sql_dialect: String,
 }
 
 impl Default for EditorSettings {
@@ -243,6 +245,7 @@ impl Default for EditorSettings {
             json_font_size: 13,
             quick_note_font_family: "system".into(),
             quick_note_font_size: 13,
+            sql_dialect: "Standard SQL".into(),
         }
     }
 }
@@ -324,11 +327,32 @@ impl Default for DataSettings {
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct VaultSettings {
     pub auto_commit: bool,
     pub root_directory: Option<String>,
+    pub git_remote: String,
+    pub git_username: String,
+    pub auto_commit_idle_seconds: u32,
+    pub auto_commit_inactive_seconds: u32,
+    pub auto_pull_minutes: u32,
+    pub hide_gitignored_files: bool,
+}
+
+impl Default for VaultSettings {
+    fn default() -> Self {
+        Self {
+            auto_commit: false,
+            root_directory: None,
+            git_remote: String::new(),
+            git_username: String::new(),
+            auto_commit_idle_seconds: 30,
+            auto_commit_inactive_seconds: 120,
+            auto_pull_minutes: 0,
+            hide_gitignored_files: true,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -441,6 +465,22 @@ impl AppSettings {
         if ![2, 4, 8].contains(&self.editor.tab_size) {
             return Err("editor tab size must be 2, 4, or 8".into());
         }
+        if ![
+            "Standard SQL",
+            "MySQL",
+            "MariaDB",
+            "PostgreSQL",
+            "Oracle PL/SQL",
+            "SQL Server Transact-SQL",
+            "IBM DB2",
+            "Couchbase N1QL",
+            "Amazon Redshift",
+            "Spark",
+        ]
+        .contains(&self.editor.sql_dialect.as_str())
+        {
+            return Err("unsupported SQL dialect".into());
+        }
         if !(1..=300).contains(&self.network.timeout_seconds) {
             return Err("network timeout must be between 1 and 300 seconds".into());
         }
@@ -492,6 +532,26 @@ impl AppSettings {
             })
         {
             return Err("pane sizes contain an invalid entry".into());
+        }
+        if !(5..=3600).contains(&self.vault.auto_commit_idle_seconds)
+            || !(5..=3600).contains(&self.vault.auto_commit_inactive_seconds)
+            || self.vault.auto_pull_minutes > 1440
+        {
+            return Err("vault git schedule is outside the supported range".into());
+        }
+        if self.vault.git_remote.len() > 2048
+            || self.vault.git_username.len() > 120
+            || self.vault.git_remote.chars().any(char::is_control)
+            || self.vault.git_username.chars().any(char::is_control)
+            || !(self.vault.git_remote.is_empty()
+                || self.vault.git_remote.starts_with("https://")
+                || self.vault.git_remote.starts_with("http://")
+                || self.vault.git_remote.starts_with("ssh://")
+                || self.vault.git_remote.starts_with("git://")
+                || self.vault.git_remote.starts_with("git@")
+                || self.vault.git_remote.starts_with("file://"))
+        {
+            return Err("vault git remote or username is invalid".into());
         }
         if self.vault.root_directory.as_ref().is_some_and(|path| {
             path.trim().is_empty()
@@ -584,7 +644,7 @@ fn validate_tool_defaults(settings: &ToolSettings) -> Result<(), String> {
     if !(120..=2_000).contains(&settings.qr_code_size)
         || !matches!(settings.qr_error_correction.as_str(), "L" | "M" | "Q" | "H")
         || !(1..=4_096).contains(&settings.random_string_length)
-        || !matches!(settings.translation_provider.as_str(), "google" | "bing")
+        || !matches!(settings.translation_provider.as_str(), "google" | "bing" | "deepl")
         || settings.translation_source_lang.is_empty()
         || settings.translation_source_lang.len() > 32
         || settings.translation_target_lang.is_empty()
@@ -711,7 +771,7 @@ fn validate_custom_groups(groups: &[CustomToolGroup]) -> Result<(), String> {
             return Err("custom group name must contain 1 to 40 safe characters".into());
         }
         if group.tool_ids.is_empty() || group.tool_ids.len() > PRODUCT_TOOL_IDS.len() {
-            return Err("custom group must contain between 1 and 25 tools".into());
+            return Err("custom group must contain between 1 and 26 tools".into());
         }
         let mut tool_ids = HashSet::new();
         if group.tool_ids.iter().any(|tool_id| {

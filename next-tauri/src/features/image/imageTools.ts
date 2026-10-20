@@ -1,6 +1,7 @@
 export type ImageFormat = 'auto' | 'png' | 'jpeg'
+export type ImageOutputMode = 'keep' | 'overwrite'
 export type WatermarkPosition = 'top-left' | 'top-right' | 'center' | 'bottom-left' | 'bottom-right' | 'tile'
-export type ImageToolErrorCode = 'invalidBase64' | 'watermarkText' | 'imageRead' | 'canvas'
+export type ImageToolErrorCode = 'invalidBase64' | 'watermarkText' | 'imageRead' | 'canvas' | 'resizeInvalid' | 'resizeTooLarge'
 
 export class ImageToolError extends Error {
   constructor(readonly code: ImageToolErrorCode) {
@@ -24,12 +25,81 @@ export interface WatermarkOptions {
   diagonal: boolean
 }
 
-export function processedImageName(name: string, suffix: 'compressed' | 'watermarked', format: ImageFormat = 'auto'): string {
+export interface ResizeImageOptions {
+  width: number | null
+  height: number | null
+  fit: 'fit' | 'fill' | 'stretch'
+  shrinkOnly: boolean
+  format: ImageFormat
+}
+
+export interface ResizeGeometry {
+  width: number
+  height: number
+  source: { x: number; y: number; width: number; height: number }
+}
+
+export function resizeGeometry(width: number, height: number, options: ResizeImageOptions): ResizeGeometry {
+  if (![width, height].every((value) => Number.isSafeInteger(value) && value > 0)
+    || !['fit', 'fill', 'stretch'].includes(options.fit)
+    || !['auto', 'png', 'jpeg'].includes(options.format)
+    || typeof options.shrinkOnly !== 'boolean'
+    || (options.width === null && options.height === null)
+    || [options.width, options.height].some((value) => value !== null && (!Number.isInteger(value) || value < 1 || value > 16384))) {
+    throw new ImageToolError('resizeInvalid')
+  }
+  const targetWidth = options.width ?? Math.max(1, Math.round(width * options.height! / height))
+  const targetHeight = options.height ?? Math.max(1, Math.round(height * options.width! / width))
+  let outputWidth = targetWidth
+  let outputHeight = targetHeight
+  let source = { x: 0, y: 0, width, height }
+  if (options.fit === 'fit') {
+    const scale = Math.min(targetWidth / width, targetHeight / height, options.shrinkOnly ? 1 : Infinity)
+    outputWidth = Math.max(1, Math.round(width * scale))
+    outputHeight = Math.max(1, Math.round(height * scale))
+  } else if (options.fit === 'fill') {
+    const boxScale = options.shrinkOnly ? Math.min(1, width / targetWidth, height / targetHeight) : 1
+    outputWidth = Math.max(1, Math.round(targetWidth * boxScale))
+    outputHeight = Math.max(1, Math.round(targetHeight * boxScale))
+    const scale = Math.max(outputWidth / width, outputHeight / height)
+    source = { x: (width - outputWidth / scale) / 2, y: (height - outputHeight / scale) / 2, width: outputWidth / scale, height: outputHeight / scale }
+  } else if (options.shrinkOnly) {
+    outputWidth = Math.min(width, targetWidth)
+    outputHeight = Math.min(height, targetHeight)
+  }
+  if (outputWidth > 16384 || outputHeight > 16384 || outputWidth * outputHeight > 32_000_000) throw new ImageToolError('resizeTooLarge')
+  return { width: outputWidth, height: outputHeight, source }
+}
+
+export async function resizeImage(dataUrl: string, options: ResizeImageOptions): Promise<string> {
+  const image = await loadImage(dataUrl)
+  const geometry = resizeGeometry(image.naturalWidth, image.naturalHeight, options)
+  const canvas = createCanvas(geometry.width, geometry.height)
+  const context = context2d(canvas)
+  context.imageSmoothingEnabled = true
+  context.imageSmoothingQuality = 'high'
+  const mime = options.format === 'jpeg' || (options.format === 'auto' && dataUrl.startsWith('data:image/jpeg')) ? 'image/jpeg' : 'image/png'
+  if (mime === 'image/jpeg') {
+    context.fillStyle = '#FFFFFF'
+    context.fillRect(0, 0, geometry.width, geometry.height)
+  }
+  const source = geometry.source
+  context.drawImage(image, source.x, source.y, source.width, source.height, 0, 0, geometry.width, geometry.height)
+  return canvas.toDataURL(mime, 0.92)
+}
+
+export function processedImageName(name: string, suffix: 'compressed' | 'watermarked' | 'resized', format: ImageFormat = 'auto'): string {
   const dot = name.lastIndexOf('.')
   const base = dot > 0 ? name.slice(0, dot) : name
   const sourceExtension = dot > 0 ? name.slice(dot + 1).toLowerCase() : 'png'
   const extension = format === 'jpeg' ? 'jpg' : format === 'png' ? 'png' : ['jpg', 'jpeg'].includes(sourceExtension) ? 'jpg' : 'png'
   return `${base}_${suffix}.${extension}`
+}
+
+export function overwriteImageName(name: string, format: ImageFormat = 'auto'): string {
+  if (format === 'auto') return /\.(?:png|jpe?g)$/i.test(name) ? name : `${name.replace(/\.[^.]+$/, '')}.png`
+  const base = name.replace(/\.[^.]+$/, '')
+  return `${base}.${format === 'jpeg' ? 'jpg' : 'png'}`
 }
 
 export function scaledDimensions(width: number, height: number, scale: number): { width: number; height: number } {

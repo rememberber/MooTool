@@ -62,6 +62,7 @@ import { describeJsonSession } from './jsonSession'
 import { jsonMessages } from './jsonMessages'
 import {
   analyzeJson,
+  escapeJavaString,
   escapeJsonString,
   findDuplicateJsonKeys,
   formatJson,
@@ -73,6 +74,7 @@ import {
   queryJsonPath,
   swapJsonKeysAndValues,
   unescapeJsonString,
+  unescapeJsonText,
   validateJson,
   xmlToJson,
   JsonToolError
@@ -787,6 +789,8 @@ export function JsonToolSurface() {
             <button type="button" onClick={() => void copyContent()}>{copied ? <Clipboard /> : <Copy />}{copied ? t('action.copied') : t('action.copy')}</button>
             <button type="button" onClick={() => runTransform(() => escapeJsonString(metrics.content), 'notice.escaped')}><Braces />{t('action.escape')}</button>
             <button type="button" onClick={() => runTransform(() => unescapeJsonString(metrics.content), 'notice.unescaped')}><CodeXml />{t('action.unescape')}</button>
+            <button type="button" onClick={() => runTransform(() => escapeJavaString(metrics.content), 'notice.escapedText')}><Braces />{t('action.escapeText')}</button>
+            <button type="button" onClick={() => runTransform(() => unescapeJsonText(metrics.content), 'notice.unescapedText')}><CodeXml />{t('action.unescapeText')}</button>
             <button type="button" onClick={() => runTransform(() => swapJsonKeysAndValues(metrics.content, indent), 'notice.swapped')}><ArrowLeftRight />{t('action.swap')}</button>
             <button type="button" onClick={() => runTransform(() => jsonToXml(metrics.content), 'notice.toXml')}><CodeXml />{t('action.toXml')}</button>
             <button type="button" onClick={() => runTransform(() => xmlToJson(metrics.content, indent), 'notice.toJson')}><Braces />{t('action.toJson')}</button>

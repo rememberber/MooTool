@@ -18,6 +18,7 @@ pub fn run() {
         .manage(state::ToolWebviewManager::default())
         .manage(commands::http::HttpRequestManager::default())
         .manage(commands::code_runtime::CodeExecutionManager::default())
+        .manage(commands::java_regex::JavaRegexManager::default())
         .manage(commands::translation::TranslationManager::default())
         .manage(commands::native_desktop::NativeDesktopManager::default())
         .manage(commands::network_tools::NetworkTaskManager::default())
@@ -84,6 +85,7 @@ pub fn run() {
                 native_acceptance.is_none(),
             )?;
             if let Some(config) = native_acceptance {
+                app.manage(config.clone());
                 commands::native_acceptance::start(app.handle().clone(), config);
             }
             Ok(())
@@ -119,10 +121,20 @@ pub fn run() {
             commands::settings::open_settings_window,
             commands::secure_credentials::get_proxy_credential_status,
             commands::secure_credentials::set_proxy_password,
+            commands::secure_credentials::get_git_credential_status,
+            commands::secure_credentials::set_git_token,
+            commands::secure_credentials::get_deepl_credential_status,
+            commands::secure_credentials::set_deepl_api_key,
             commands::desktop::resolve_close_request,
             commands::local_data::list_quick_notes,
             commands::local_data::save_quick_note,
             commands::local_data::delete_quick_note,
+            commands::local_data::reveal_quick_note_entry,
+            commands::local_data::open_quick_note_vault,
+            commands::quick_note_git::quick_note_git_status,
+            commands::quick_note_git::quick_note_git_history,
+            commands::quick_note_git::quick_note_git_diff,
+            commands::quick_note_git::quick_note_git_action,
             commands::local_data::list_quick_note_folders,
             commands::local_data::save_quick_note_folder,
             commands::local_data::rename_quick_note_folder,
@@ -135,6 +147,7 @@ pub fn run() {
             commands::local_data::import_quick_note_attachment_data,
             commands::local_data::export_quick_note_attachment,
             commands::local_data::delete_quick_note_attachment,
+            commands::local_data::read_quick_note_attachment_file,
             commands::local_data::list_board_messages,
             commands::local_data::save_board_message,
             commands::local_data::delete_board_message,
@@ -178,6 +191,8 @@ pub fn run() {
             commands::code_runtime::detect_code_runtimes,
             commands::code_runtime::run_code,
             commands::code_runtime::cancel_code_run,
+            commands::java_regex::match_java_regex,
+            commands::java_regex::cancel_java_regex,
             commands::translation::translate_text,
             commands::translation::cancel_translation,
             commands::images::list_image_assets,

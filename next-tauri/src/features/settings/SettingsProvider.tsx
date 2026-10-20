@@ -8,6 +8,7 @@ import {
   useState,
   type PropsWithChildren
 } from 'react'
+import { quickNoteGitApi } from '../../platform/api/quickNoteGitApi'
 import { settingsApi } from '../../platform/api/settingsApi'
 import {
   defaultAppSettings,
@@ -105,6 +106,14 @@ export function SettingsProvider({ children }: PropsWithChildren) {
       throw new Error(message)
     }
   }, [])
+
+  useEffect(() => {
+    if (!ready || !settings.vault.autoPullMinutes || !window.__TAURI_INTERNALS__) return
+    const timer = window.setInterval(() => {
+      void quickNoteGitApi.action({ action: 'pull' }).catch(() => undefined)
+    }, settings.vault.autoPullMinutes * 60_000)
+    return () => window.clearInterval(timer)
+  }, [ready, settings.vault.autoPullMinutes])
 
   const value = useMemo<SettingsContextValue>(() => ({
     settings,

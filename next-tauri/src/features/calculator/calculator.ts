@@ -3,13 +3,15 @@ export type CalculatorToolErrorCode =
   | 'nonFinite'
   | 'valueRequired'
   | 'baseMismatch'
+  | 'repeatingFraction'
+  | 'floatDigits'
   | 'integerRequired'
   | 'countRange'
   | 'expressionFormat'
   | 'parenthesesMismatch'
 
 export class CalculatorToolError extends Error {
-  constructor(readonly code: CalculatorToolErrorCode) {
+  constructor(readonly code: CalculatorToolErrorCode, readonly values?: Record<string, string | number>) {
     super(code)
     this.name = 'CalculatorToolError'
   }
@@ -29,16 +31,56 @@ export function evaluateExpression(expression: string): string {
 export function convertBase(value: string, from: 2 | 10 | 16, to: 2 | 10 | 16): string {
   const normalized = value.trim()
   if (!normalized) throw new CalculatorToolError('valueRequired')
-
-  const negative = normalized.startsWith('-')
-  const unsigned = normalized.replace(/^[+-]/, '')
-  const valid = from === 2 ? /^[01]+$/ : from === 10 ? /^\d+$/ : /^[\da-f]+$/i
+  const sign = normalized.startsWith('-') ? -1n : 1n
+  let unsigned = normalized.replace(/^[+-]/, '')
+  if (from === 16) unsigned = unsigned.replace(/^0x/i, '')
+  if (from === 2) unsigned = unsigned.replace(/^0b/i, '')
+  const valid = from === 2 ? /^(?:[01]+(?:\.[01]*)?|\.[01]+)$/ : from === 10 ? /^(?:\d+(?:\.\d*)?|\.\d+)$/ : /^(?:[\da-f]+(?:\.[\da-f]*)?|\.[\da-f]+)$/i
   if (!valid.test(unsigned)) throw new CalculatorToolError('baseMismatch')
+  const [integer, fraction = ''] = unsigned.split('.')
+  const digits = `${integer || '0'}${fraction}`
+  const parsed = from === 10 ? BigInt(digits) : BigInt(`${from === 2 ? '0b' : '0x'}${digits}`)
+  if (!fraction) return `${sign < 0 ? '-' : ''}${parsed.toString(to)}`
+  let denominator = BigInt(from) ** BigInt(fraction.length)
+  const divisor = gcdBigInt(parsed, denominator)
+  const numerator = parsed / divisor
+  denominator /= divisor
 
-  const parsed = from === 10
-    ? BigInt(unsigned)
-    : BigInt(`${from === 2 ? '0b' : '0x'}${unsigned}`)
-  return `${negative ? '-' : ''}${parsed.toString(to)}`
+  let remaining = denominator
+  const base = BigInt(to)
+  while (remaining !== 1n) {
+    const factor = gcdBigInt(remaining, base)
+    if (factor === 1n) throw new CalculatorToolError('repeatingFraction')
+    remaining /= factor
+  }
+  let output = (numerator / denominator).toString(to)
+  let remainder = numerator % denominator
+  if (remainder !== 0n) output += '.'
+  while (remainder !== 0n) {
+    remainder *= base
+    output += (remainder / denominator).toString(to)
+    remainder %= denominator
+  }
+  return `${sign < 0 ? '-' : ''}${output}`
+}
+
+export function hexFloatToDecimal(value: string, bits: 32 | 64, byteOrder: 'big' | 'little' = 'big'): string {
+  const hex = value.trim().replace(/^0x/i, '').replace(/\s+/g, '')
+  const length = bits / 4
+  if (!new RegExp(`^[\\da-f]{${length}}$`, 'i').test(hex)) {
+    throw new CalculatorToolError('floatDigits', { bits, digits: length })
+  }
+  const bytes = new DataView(new ArrayBuffer(bits / 8))
+  for (let index = 0; index < hex.length; index += 2) bytes.setUint8(index / 2, Number.parseInt(hex.slice(index, index + 2), 16))
+  const result = bits === 32 ? bytes.getFloat32(0, byteOrder === 'little') : bytes.getFloat64(0, byteOrder === 'little')
+  if (Object.is(result, -0)) return '-0.0'
+  const output = String(result)
+  return Number.isFinite(result) && !/[.e]/i.test(output) ? `${output}.0` : output
+}
+
+function gcdBigInt(a: bigint, b: bigint): bigint {
+  while (b !== 0n) [a, b] = [b, a % b]
+  return a
 }
 
 export function greatestCommonDivisor(left: string, right: string): string {

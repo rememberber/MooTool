@@ -490,8 +490,12 @@ fn measure_data_performance(
             tags: vec!["performance".into()],
             color: "default".into(),
             folder_path: format!("Performance/{:02}", index % 100),
+            relative_path: String::new(),
             editor_font: "default".into(),
             line_height: "normal".into(),
+            font_size: 14,
+            font_name: String::new(),
+            line_spacing: 1.0,
             line_wrapping: true,
             syntax: "markdown".into(),
             pinned: index % 50 == 0,
@@ -755,7 +759,7 @@ mod tests {
 
     #[test]
     fn product_acceptance_list_excludes_engineering_surfaces() {
-        assert_eq!(PRODUCT_TOOLS.len(), 25);
+        assert_eq!(PRODUCT_TOOLS.len(), 26);
         assert!(!PRODUCT_TOOLS.contains(&ManagedToolId::EditorLab));
         assert!(!PRODUCT_TOOLS.contains(&ManagedToolId::WebviewProbe));
     }

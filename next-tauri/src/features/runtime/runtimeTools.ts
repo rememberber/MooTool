@@ -39,18 +39,9 @@ export async function formatRuntimeSource(value: string, runtime: 'java' | 'groo
       singleQuote: true
     })).trimEnd()
   }
-  if (runtime === 'java' || runtime === 'groovy') {
-    const { default: beautify } = await import('js-beautify')
-    return beautify.js(value, {
-      indent_size: 4,
-      indent_char: ' ',
-      indent_with_tabs: false,
-      brace_style: 'collapse',
-      preserve_newlines: true,
-      max_preserve_newlines: 2,
-      wrap_line_length: 120,
-      end_with_newline: false
-    }).trimEnd()
+  if (runtime === 'java') {
+    const { formatCode } = await import('../reformat/reformatTools')
+    return formatCode(value, 'java')
   }
   return value
     .replace(/\t/g, '    ')

@@ -1,24 +1,23 @@
 import { contentFingerprint } from '../../shared/fingerprint'
-import type { TextDiffOptions, TextDiffResult } from './textDiff'
 
 export function describeTextDiffSession(input: {
   left: string
   right: string
-  options: TextDiffOptions
-  context: number
-  result: TextDiffResult
-}): { digest: string; stats: TextDiffResult['stats'] } {
-  const { left, right, options, context, result } = input
+  ignoreWhitespace: boolean
+  added: number
+  removed: number
+  changed: number
+}): { digest: string; stats: { added: number; removed: number; changed: number } } {
+  const stats = { added: input.added, removed: input.removed, changed: input.changed }
   return {
     digest: JSON.stringify({
-      leftLength: left.length,
-      leftHash: contentFingerprint(left),
-      rightLength: right.length,
-      rightHash: contentFingerprint(right),
-      options,
-      context,
-      stats: result.stats
+      leftLength: input.left.length,
+      leftHash: contentFingerprint(input.left),
+      rightLength: input.right.length,
+      rightHash: contentFingerprint(input.right),
+      ignoreWhitespace: input.ignoreWhitespace,
+      stats
     }),
-    stats: result.stats
+    stats
   }
 }

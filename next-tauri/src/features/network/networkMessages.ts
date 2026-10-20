@@ -8,7 +8,7 @@ export const networkMessages = defineMessages({
     'error.prefixRange': 'CIDR 前缀必须在 0–32 之间', 'error.integerFormat': 'IPv4 整数必须是十进制非负整数',
     'error.integerRange': 'IPv4 整数必须在 0–4294967295 之间', 'category.private': '私有地址', 'category.loopback': '环回地址',
     'category.linkLocal': '链路本地地址', 'category.multicast': '组播地址', 'category.limitedBroadcast': '受限广播地址',
-    'category.publicReserved': '公网 / 保留地址', 'action.calculate': '计算', 'field.integer': '整数转 IPv4', 'action.convert': '转换',
+    'category.publicReserved': '公网 / 保留地址', 'action.calculate': '计算', 'action.toInteger': '转为整数', 'field.integer': '整数转 IPv4', 'action.convert': '转换',
     'action.copyCidr': '复制 CIDR', 'fact.address': 'IP 地址', 'fact.category': '地址类型', 'fact.netmask': '子网掩码',
     'fact.wildcard': '通配掩码', 'fact.network': '网络地址', 'fact.broadcast': '广播地址', 'fact.firstHost': '首个主机',
     'fact.lastHost': '最后主机', 'fact.total': '地址总数', 'fact.usable': '可用主机', 'fact.integer': '无符号整数',
@@ -19,6 +19,7 @@ export const networkMessages = defineMessages({
     'operation.dns': 'DNS 查询', 'operation.ping': 'Ping', 'operation.scan': '端口扫描', 'operation.range': '网段扫描', 'operation.whois': 'WHOIS 查询', 'interfaces.title': '本机网络接口', 'interfaces.received': '累计接收', 'interfaces.transmitted': '累计发送', 'interfaces.empty': '未发现网络接口',
     'diagnostics.title': 'DNS、WHOIS、Ping 与 TCP 扫描', 'diagnostics.host': '主机名或 IP', 'action.refresh': '刷新', 'action.connections': '活动连接', 'action.flushDns': '刷新 DNS 缓存', 'confirm.flushDns': '刷新操作系统 DNS 缓存？部分系统可能要求管理员权限。', 'action.dns': 'DNS 查询', 'action.ping': 'Ping', 'scan.title': 'TCP 端口范围（最多 1024 个）', 'scan.start': '起始端口', 'scan.end': '结束端口', 'action.scan': '开始扫描', 'action.cancel': '取消', 'scan.openPorts': '{count} 个开放端口',
     'connections.title': '活动连接（{count}）', 'connections.search': '筛选地址、状态或进程', 'range.title': 'IPv4 网段探测（最多 /24）', 'range.ports': '探测端口', 'action.scanRange': '扫描网段', 'range.result': '{count}/{total} 个主机开放探测端口',
+    'layout.outputPlaceholder': '在左侧运行网络命令，结果会显示在这里', 'layout.ipv4Long': 'IPv4 地址与 Long 值互转', 'layout.ping': 'PING', 'layout.ipRange': 'IP 段存活探测', 'layout.ipRangePlaceholder': '例如 192.168.10', 'layout.ipRangeHint': '探测该网段的 .1 到 .254，仅输出可 Ping 通的 IP', 'layout.portScan': 'TCP 端口扫描', 'layout.portHostPlaceholder': '目标 IP 或主机名', 'layout.portSpecPlaceholder': '留空扫描常用端口', 'layout.portScanHint': '自动识别 SSH、MySQL 等常用服务；也可输入 22,80,3306 或 1-1024（最多 4096 个）', 'layout.scan': '扫描', 'layout.resolve': '通过域名获取 IP', 'layout.resolveAction': '解析', 'layout.whois': 'WHOIS 查询', 'layout.query': '查询', 'layout.dns': 'DNS', 'layout.localAddresses': '本机 IP 地址', 'layout.running': '正在执行…', 'layout.noOutput': '命令没有输出', 'action.stop': '停止', 'action.copyOutput': '复制', 'action.clearOutput': '清空',
     'report.error': '网络状态上报失败：{error}', 'host.loading': '正在加载网络 / IP 工具…'
   },
   'en-US': {
@@ -28,7 +29,7 @@ export const networkMessages = defineMessages({
     'error.prefixRange': 'CIDR prefix must be from 0 to 32', 'error.integerFormat': 'IPv4 integer must be a non-negative decimal integer',
     'error.integerRange': 'IPv4 integer must be from 0 to 4294967295', 'category.private': 'Private address', 'category.loopback': 'Loopback address',
     'category.linkLocal': 'Link-local address', 'category.multicast': 'Multicast address', 'category.limitedBroadcast': 'Limited broadcast address',
-    'category.publicReserved': 'Public / reserved address', 'action.calculate': 'Calculate', 'field.integer': 'Integer to IPv4', 'action.convert': 'Convert',
+    'category.publicReserved': 'Public / reserved address', 'action.calculate': 'Calculate', 'action.toInteger': 'To integer', 'field.integer': 'Integer to IPv4', 'action.convert': 'Convert',
     'action.copyCidr': 'Copy CIDR', 'fact.address': 'IP address', 'fact.category': 'Address type', 'fact.netmask': 'Netmask',
     'fact.wildcard': 'Wildcard mask', 'fact.network': 'Network address', 'fact.broadcast': 'Broadcast address', 'fact.firstHost': 'First host',
     'fact.lastHost': 'Last host', 'fact.total': 'Total addresses', 'fact.usable': 'Usable hosts', 'fact.integer': 'Unsigned integer',
@@ -39,6 +40,7 @@ export const networkMessages = defineMessages({
     'operation.dns': 'DNS lookup', 'operation.ping': 'Ping', 'operation.scan': 'Port scan', 'operation.range': 'Range scan', 'operation.whois': 'WHOIS lookup', 'interfaces.title': 'Local network interfaces', 'interfaces.received': 'Total received', 'interfaces.transmitted': 'Total transmitted', 'interfaces.empty': 'No network interfaces found',
     'diagnostics.title': 'DNS, WHOIS, ping, and TCP scans', 'diagnostics.host': 'Host name or IP', 'action.refresh': 'Refresh', 'action.connections': 'Connections', 'action.flushDns': 'Flush DNS cache', 'confirm.flushDns': 'Flush the operating system DNS cache? Some systems may require administrator permission.', 'action.dns': 'DNS lookup', 'action.ping': 'Ping', 'scan.title': 'TCP port range (up to 1024)', 'scan.start': 'Start port', 'scan.end': 'End port', 'action.scan': 'Scan', 'action.cancel': 'Cancel', 'scan.openPorts': '{count} open ports',
     'connections.title': 'Active connections ({count})', 'connections.search': 'Filter address, state, or process', 'range.title': 'IPv4 range probe (up to /24)', 'range.ports': 'Probe ports', 'action.scanRange': 'Scan range', 'range.result': '{count}/{total} hosts expose a probe port',
+    'layout.outputPlaceholder': 'Run a network command to view its output here', 'layout.ipv4Long': 'IPv4 and Long Conversion', 'layout.ping': 'PING', 'layout.ipRange': 'IP Range Reachability', 'layout.ipRangePlaceholder': 'For example, 192.168.10', 'layout.ipRangeHint': 'Probes .1 through .254 and lists only hosts that respond to ping', 'layout.portScan': 'TCP Port Scan', 'layout.portHostPlaceholder': 'Target IP or host name', 'layout.portSpecPlaceholder': 'Blank scans common ports', 'layout.portScanHint': 'Recognizes common services such as SSH and MySQL; enter 22,80,3306 or 1-1024 for a custom scan (up to 4096)', 'layout.scan': 'Scan', 'layout.resolve': 'Resolve Host to IP', 'layout.resolveAction': 'Resolve', 'layout.whois': 'WHOIS Lookup', 'layout.query': 'Query', 'layout.dns': 'DNS', 'layout.localAddresses': 'Local IP Addresses', 'layout.running': 'Running…', 'layout.noOutput': 'The command produced no output', 'action.stop': 'Stop', 'action.copyOutput': 'Copy', 'action.clearOutput': 'Clear',
     'report.error': 'Network status reporting failed: {error}', 'host.loading': 'Loading Network / IP tools…'
   },
   'ja-JP': {
@@ -48,7 +50,7 @@ export const networkMessages = defineMessages({
     'error.prefixRange': 'CIDR プレフィックスは 0～32 にしてください', 'error.integerFormat': 'IPv4 整数は 10 進の非負整数にしてください',
     'error.integerRange': 'IPv4 整数は 0～4294967295 にしてください', 'category.private': 'プライベートアドレス', 'category.loopback': 'ループバックアドレス',
     'category.linkLocal': 'リンクローカルアドレス', 'category.multicast': 'マルチキャストアドレス', 'category.limitedBroadcast': '制限付きブロードキャストアドレス',
-    'category.publicReserved': 'パブリック / 予約済みアドレス', 'action.calculate': '計算', 'field.integer': '整数から IPv4', 'action.convert': '変換',
+    'category.publicReserved': 'パブリック / 予約済みアドレス', 'action.calculate': '計算', 'action.toInteger': '整数へ', 'field.integer': '整数から IPv4', 'action.convert': '変換',
     'action.copyCidr': 'CIDR をコピー', 'fact.address': 'IP アドレス', 'fact.category': 'アドレス種別', 'fact.netmask': 'サブネットマスク',
     'fact.wildcard': 'ワイルドカードマスク', 'fact.network': 'ネットワークアドレス', 'fact.broadcast': 'ブロードキャストアドレス', 'fact.firstHost': '最初のホスト',
     'fact.lastHost': '最後のホスト', 'fact.total': '総アドレス数', 'fact.usable': '利用可能ホスト', 'fact.integer': '符号なし整数',
@@ -59,6 +61,7 @@ export const networkMessages = defineMessages({
     'operation.dns': 'DNS 検索', 'operation.ping': 'Ping', 'operation.scan': 'ポートスキャン', 'operation.range': '範囲スキャン', 'operation.whois': 'WHOIS 検索', 'interfaces.title': 'ローカルネットワークインターフェース', 'interfaces.received': '累計受信', 'interfaces.transmitted': '累計送信', 'interfaces.empty': 'ネットワークインターフェースが見つかりません',
     'diagnostics.title': 'DNS、WHOIS、Ping、TCP スキャン', 'diagnostics.host': 'ホスト名または IP', 'action.refresh': '更新', 'action.connections': '接続一覧', 'action.flushDns': 'DNS キャッシュ消去', 'confirm.flushDns': 'OS の DNS キャッシュを消去しますか？管理者権限が必要な場合があります。', 'action.dns': 'DNS 検索', 'action.ping': 'Ping', 'scan.title': 'TCP ポート範囲（最大 1024）', 'scan.start': '開始ポート', 'scan.end': '終了ポート', 'action.scan': 'スキャン', 'action.cancel': 'キャンセル', 'scan.openPorts': '開放ポート {count} 件',
     'connections.title': 'アクティブ接続（{count}）', 'connections.search': 'アドレス、状態、プロセスを絞り込み', 'range.title': 'IPv4 範囲プローブ（最大 /24）', 'range.ports': 'プローブポート', 'action.scanRange': '範囲をスキャン', 'range.result': '{count}/{total} ホストでプローブポートを検出',
+    'layout.outputPlaceholder': 'ネットワークコマンドの結果がここに表示されます', 'layout.ipv4Long': 'IPv4 と Long の変換', 'layout.ping': 'PING', 'layout.ipRange': 'IP 範囲の到達確認', 'layout.ipRangePlaceholder': '例: 192.168.10', 'layout.ipRangeHint': '.1 から .254 を確認し、Ping に応答した IP のみ表示します', 'layout.portScan': 'TCP ポートスキャン', 'layout.portHostPlaceholder': '対象 IP またはホスト名', 'layout.portSpecPlaceholder': '空欄で一般的なポート', 'layout.portScanHint': 'SSH、MySQL などの一般的なサービスを識別します。22,80,3306 または 1-1024 も指定可能（最大 4096）', 'layout.scan': 'スキャン', 'layout.resolve': 'ホスト名から IP を取得', 'layout.resolveAction': '解決', 'layout.whois': 'WHOIS 検索', 'layout.query': '検索', 'layout.dns': 'DNS', 'layout.localAddresses': 'ローカル IP アドレス', 'layout.running': '実行中…', 'layout.noOutput': 'コマンドの出力はありません', 'action.stop': '停止', 'action.copyOutput': 'コピー', 'action.clearOutput': 'クリア',
     'report.error': 'ネットワーク状態の報告に失敗しました：{error}', 'host.loading': 'ネットワーク / IP ツールを読み込み中…'
   }
 })

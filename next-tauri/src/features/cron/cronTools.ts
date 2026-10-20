@@ -15,7 +15,7 @@ export interface CronFields {
   week: string
   year: string
 }
-export type CronToolErrorCode = 'requiredFields' | 'fieldCount' | 'runCount' | 'invalidZone' | 'insufficientRuns'
+export type CronToolErrorCode = 'requiredFields' | 'fieldCount' | 'runCount' | 'invalidZone' | 'insufficientRuns' | 'lastOffset'
 
 export class CronToolError extends Error {
   constructor(readonly code: CronToolErrorCode, readonly values?: Record<string, string>) {
@@ -79,6 +79,9 @@ export function nextCronRuns(
     throw new CronToolError('runCount')
   }
   const fields = splitCron(expression)
+  if (/^(\d{1,2})W$/.test(fields.day) || fields.day === 'LW' || /^L-\d{1,2}$/.test(fields.day)) {
+    return nextNearestWeekdayRuns(fields, timeZone, count, currentDate)
+  }
   const normalized = [
     fields.second,
     fields.minute,
@@ -108,12 +111,102 @@ export function nextCronRuns(
 }
 
 export function describeCron(expression: string, language: AppLanguage): string {
+  const value = expression.trim()
+  const day = value.split(/\s+/)[3]
+  const lastOffset = day ? /^L-(\d{1,2})$/.exec(day) : null
+  if (lastOffset && Number(lastOffset[1]) > 30) throw new CronToolError('lastOffset')
   const locale = language === 'zh-CN' ? 'zh_CN' : language === 'ja-JP' ? 'ja' : 'en'
-  return cronstrue.toString(expression, {
+  return cronstrue.toString(value, {
     locale,
+    dayOfWeekStartIndexZero: value.split(/\s+/).length === 5,
     use24HourTimeFormat: true,
     throwExceptionOnParseError: true
   })
+}
+
+export const commonCronExpressions = [
+  '0 0 2 1 * ? *',
+  '0 15 10 ? * MON-FRI',
+  '0 15 10 ? * 6L 2002-2006',
+  '0 0 10,14,16 * * ?',
+  '0 0/30 9-17 * * ?',
+  '0 0 12 ? * WED',
+  '0 0 12 * * ?',
+  '0 15 10 ? * *',
+  '0 15 10 * * ?',
+  '0 15 10 * * ? *',
+  '0 15 10 * * ? 2005',
+  '0 * 14 * * ?',
+  '0 0/5 14 * * ?',
+  '0 0/5 14,18 * * ?',
+  '0 0-5 14 * * ?',
+  '0 10,44 14 ? 3 WED',
+  '0 15 10 15 * ?',
+  '0 15 10 L * ?',
+  '0 15 10 ? * 6L',
+  '0 15 10 ? * 6L 2002-2005',
+  '0 15 10 ? * 6#3',
+  '0 15 10 * * ? 2017'
+] as const
+
+function nextNearestWeekdayRuns(
+  fields: CronFields,
+  timeZone: string,
+  count: number,
+  currentDate: Date
+): string[] {
+  const now = DateTime.fromJSDate(currentDate, { zone: timeZone })
+  if (!now.isValid) throw new CronToolError('invalidZone', { zone: timeZone })
+  const lastOffsetMatch = /^L-(\d{1,2})$/.exec(fields.day)
+  const lastOffset = lastOffsetMatch ? Number(lastOffsetMatch[1]) : null
+  if (lastOffset !== null && lastOffset > 30) throw new CronToolError('lastOffset')
+  const requested = fields.day === 'LW' || lastOffset !== null ? null : Number(/^(\d{1,2})W$/.exec(fields.day)?.[1])
+  if (requested !== null && (requested < 1 || requested > 31)) throw new CronToolError('insufficientRuns')
+  const allowedMonths = CronExpressionParser.parse(`0 0 0 1 ${fields.month} *`, { currentDate }).fields.month.values
+  const runs: string[] = []
+  for (let year = Math.max(1970, now.year); year <= 2199 && runs.length < count; year += 1) {
+    if (!matchesYear(year, fields.year)) continue
+    for (let month = 1; month <= 12 && runs.length < count; month += 1) {
+      if (!allowedMonths.some((allowed) => allowed === month)) continue
+      const start = DateTime.fromObject({ year, month, day: 1 }, { zone: timeZone })
+      const end = start.endOf('month')
+      if (!start.isValid || end.toMillis() <= now.toMillis()) continue
+      const days = start.daysInMonth
+      const day = lastOffset === null
+        ? nearestWeekday(start, requested ?? days ?? 0)
+        : days === undefined || days - lastOffset < 1 ? null : days - lastOffset
+      if (!day) continue
+      const normalized = [
+        fields.second,
+        fields.minute,
+        fields.hour,
+        String(day),
+        fields.month,
+        fields.week === '?' ? '*' : normalizeWeek(fields.week)
+      ].join(' ')
+      const interval = CronExpressionParser.parse(normalized, {
+        currentDate: new Date(Math.max(now.toMillis(), start.toMillis() - 1)),
+        endDate: end.toJSDate(),
+        tz: timeZone
+      })
+      while (runs.length < count && interval.hasNext()) {
+        const display = DateTime.fromJSDate(interval.next().toDate()).setZone(timeZone)
+        if (!display.isValid) throw new CronToolError('invalidZone', { zone: timeZone })
+        runs.push(display.toFormat('yyyy-MM-dd HH:mm:ss ZZZZ'))
+      }
+    }
+  }
+  return runs
+}
+
+function nearestWeekday(start: DateTime, day: number): number | null {
+  const days = start.daysInMonth
+  if (days === undefined || day < 1 || day > days) return null
+  let resolved = day
+  const weekday = start.set({ day }).weekday
+  if (weekday === 6) resolved += resolved === 1 ? 2 : -1
+  if (weekday === 7) resolved += resolved === days ? -2 : 1
+  return resolved
 }
 
 function normalizeWeek(value: string): string {

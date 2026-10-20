@@ -42,7 +42,6 @@ export function parseCurl(command: string, timeoutMs = 30_000): HttpRequestSpec 
     if (['-X', '--request'].includes(token) && next) { method = next.toUpperCase() as HttpMethod; index += 1; continue }
     if (['-H', '--header'].includes(token) && next) {
       const [name, ...parts] = next.split(':')
-      if (!name || !parts.length) throw new HttpToolError('curlHeader')
       const value = parts.join(':').trim()
       headers.push(entry(name.trim(), value))
       if (name.toLowerCase() === 'content-type') bodyType = value
@@ -74,14 +73,58 @@ export function parseCurl(command: string, timeoutMs = 30_000): HttpRequestSpec 
 }
 
 export function buildCurl(request: HttpRequestSpec): string {
-  const url = new URL(request.url || 'https://example.com')
-  for (const parameter of request.params.filter(active)) url.searchParams.append(parameter.name.trim(), parameter.value)
-  const parts = ['curl', '-X', request.method, shellQuote(url.toString())]
+  const parts = ['curl', '-X', request.method, shellQuote(request.url)]
   for (const header of request.headers.filter(active)) parts.push('-H', shellQuote(`${header.name}: ${header.value}`))
   const cookieValue = request.cookies.filter(active).map((item) => `${item.name}=${item.value}`).join('; ')
   if (cookieValue) parts.push('-b', shellQuote(cookieValue))
   if (request.body) parts.push('--data-raw', shellQuote(request.body))
   return parts.join(' ')
+}
+
+export async function formatHttpBody(content: string, bodyType: string): Promise<string> {
+  if (!content.trim()) return ''
+  const language = httpBodyLanguage(bodyType)
+  if (language === 'json') return JSON.stringify(JSON.parse(content), null, 2)
+  if (language === 'xml') {
+    return formatWithPlugin(content, 'xml', () => import('@prettier/plugin-xml'), { xmlWhitespaceSensitivity: 'preserve' })
+  }
+  if (language === 'html') return formatWithPlugin(content, 'html', () => import('prettier/plugins/html'))
+  if (language === 'javascript') {
+    return formatWithPlugin(content, 'babel', () => import('prettier/plugins/babel'), {}, true)
+  }
+  return content.split(/\r?\n/).map((line) => line.trimEnd()).join('\n').trimEnd()
+}
+
+function httpBodyLanguage(bodyType: string): 'json' | 'xml' | 'html' | 'javascript' | 'text' {
+  const normalized = bodyType.trim().toLocaleLowerCase()
+  if (normalized === 'json' || normalized === 'application/json' || normalized.endsWith('+json')) return 'json'
+  if (normalized === 'xml' || normalized === 'text/xml' || normalized === 'application/xml' || normalized.endsWith('+xml')) return 'xml'
+  if (normalized === 'html' || normalized === 'text/html') return 'html'
+  if (['javascript', 'js', 'text/javascript', 'application/javascript'].includes(normalized)) return 'javascript'
+  return 'text'
+}
+
+async function formatWithPlugin(
+  content: string,
+  parser: string,
+  loadPlugin: () => Promise<{ default: import('prettier').Plugin }>,
+  parserOptions: Record<string, unknown> = {},
+  needsEstree = false
+): Promise<string> {
+  const [{ format }, parserPlugin, estreePlugin] = await Promise.all([
+    import('prettier/standalone'),
+    loadPlugin(),
+    needsEstree ? import('prettier/plugins/estree') : Promise.resolve(null)
+  ])
+  return (await format(content, {
+    parser,
+    plugins: [parserPlugin.default, ...(estreePlugin ? [estreePlugin.default] : [])],
+    printWidth: 100,
+    tabWidth: 2,
+    useTabs: false,
+    endOfLine: 'lf',
+    ...parserOptions
+  })).trimEnd()
 }
 
 export function entry(name = '', value = ''): HttpEntry {

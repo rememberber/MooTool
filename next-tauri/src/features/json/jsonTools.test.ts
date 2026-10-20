@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   analyzeJson,
   contentFingerprint,
+  escapeJavaString,
   escapeJsonString,
   findDuplicateJsonKeys,
   formatJson,
@@ -13,6 +14,7 @@ import {
   queryJsonPath,
   swapJsonKeysAndValues,
   unescapeJsonString,
+  unescapeJsonText,
   validateJson
 } from './jsonTools'
 
@@ -72,6 +74,23 @@ describe('Tauri JSON tools', () => {
     expect(java).toContain('private java.util.List<Item> items;')
     expect(jsonToJavaBean('{"class":"demo"}', 'Payload')).toContain('private String class_;')
     expect(javaBeanToJson('class User { private String name; private long id; private boolean active; }')).toBe('{\n  "name": "",\n  "id": 0,\n  "active": false\n}')
+  })
+
+  it.each([
+    '{"name":"MooTool","items":[1,2]}',
+    '{\n  "name": "MooTool"\n}',
+    '引号 "quoted"，路径 C:\\Users\\bob\\',
+    'literal \\n and \\u0041; actual \n\r\t\b\f',
+    '\\" and \\\\"',
+    ''
+  ])('restores escaped text exactly: %j', (input) => {
+    expect(unescapeJsonText(escapeJavaString(input))).toBe(input)
+  })
+
+  it('unescapes text with bare quotes and JSON escape sequences', () => {
+    expect(unescapeJsonText('"hello"\\n\\u4e2d\\/')).toBe('"hello"\n中/')
+    expect(() => unescapeJsonText('\\x')).toThrow()
+    expect(() => unescapeJsonText('trailing\\')).toThrow()
   })
 
   it('lists selectable JSONPath entries for nested values', () => {

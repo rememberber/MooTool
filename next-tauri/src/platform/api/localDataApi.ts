@@ -25,6 +25,8 @@ export function createLocalDataApi(invokeCommand: Invoke = invoke): LocalDataApi
     listNotes: () => invokeCommand<QuickNote[]>('list_quick_notes'),
     saveNote: (note) => invokeCommand<QuickNote>('save_quick_note', { note }),
     deleteNote: (id) => invokeCommand<boolean>('delete_quick_note', { id }),
+    revealNoteEntry: (relativePath) => invokeCommand<void>('reveal_quick_note_entry', { relativePath }),
+    openNoteVault: () => invokeCommand<void>('open_quick_note_vault'),
     listNoteFolders: () => invokeCommand<QuickNoteFolder[]>('list_quick_note_folders'),
     saveNoteFolder: (folder) => invokeCommand<QuickNoteFolder>('save_quick_note_folder', { folder }),
     renameNoteFolder: (path, nextPath, updatedAt) => invokeCommand<QuickNoteFolder[]>('rename_quick_note_folder', { path, nextPath, updatedAt }),
@@ -55,6 +57,8 @@ function createBrowserLocalDataApi(): LocalDataApi {
       return note
     },
     deleteNote: async (id) => deleteBrowserItem<QuickNote>(NOTES_KEY, id),
+    revealNoteEntry: async () => { throw new Error('Reveal in the file manager requires the Tauri desktop app') },
+    openNoteVault: async () => { throw new Error('Opening the quick note vault requires the Tauri desktop app') },
     listNoteFolders: async () => readFolderList(),
     saveNoteFolder: async (folder) => {
       const values = readFolderList()
@@ -129,6 +133,18 @@ function createBrowserLocalDataApi(): LocalDataApi {
   }
 }
 
+function clampNoteFontSize(value: number): number {
+  return Number.isFinite(value) ? Math.min(48, Math.max(8, Math.round(value))) : 14
+}
+
+function normalizeLineSpacing(value: number, lineHeight: QuickNote['lineHeight']): number {
+  const choices = [1, 1.2, 1.4, 1.6, 1.8, 2]
+  if (choices.includes(value)) return value
+  if (lineHeight === 'compact') return 1
+  if (lineHeight === 'relaxed') return 1.6
+  return 1.2
+}
+
 function normalizeQuickNote(note: QuickNote): QuickNote {
   return {
     ...note,
@@ -137,8 +153,12 @@ function normalizeQuickNote(note: QuickNote): QuickNote {
     folderPath: typeof note.folderPath === 'string' ? note.folderPath : '',
     editorFont: ['default', 'mono', 'serif'].includes(note.editorFont) ? note.editorFont : 'default',
     lineHeight: ['compact', 'normal', 'relaxed'].includes(note.lineHeight) ? note.lineHeight : 'normal',
+    fontSize: clampNoteFontSize(note.fontSize),
+    fontName: typeof note.fontName === 'string' ? note.fontName.slice(0, 120) : '',
+    lineSpacing: normalizeLineSpacing(note.lineSpacing, note.lineHeight),
+    relativePath: typeof note.relativePath === 'string' ? note.relativePath : '',
     lineWrapping: typeof note.lineWrapping === 'boolean' ? note.lineWrapping : true,
-    syntax: ['markdown', 'plain', 'json', 'yaml'].includes(note.syntax) ? note.syntax : 'markdown'
+    syntax: ['markdown', 'plain', 'json', 'yaml', 'java', 'javascript', 'typescript', 'python', 'html', 'xml', 'sql'].includes(note.syntax) ? note.syntax : 'markdown'
   }
 }
 

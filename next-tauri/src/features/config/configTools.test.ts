@@ -3,9 +3,8 @@ import { ConfigToolError, formatYaml, propertiesToYaml, validateYaml, yamlToProp
 
 describe('YAML and Properties conversion', () => {
   it('flattens nested objects and arrays into property paths', () => {
-    expect(yamlToProperties('server:\n  port: 8080\n  hosts:\n    - api\n    - admin\n')).toBe(
-      'server.port=8080\nserver.hosts[0]=api\nserver.hosts[1]=admin'
-    )
+    expect(yamlToProperties('server:\n  port: 8080\ntags: [a, b]\n')).toBe('server.port=8080\ntags=a,b')
+    expect(yamlToProperties('users:\n  - name: Ada\n  - name: Lin\n')).toBe('users[0].name=Ada\nusers[1].name=Lin')
   })
 
   it('restores nested paths, escapes, Unicode and continuation lines', () => {
@@ -13,10 +12,10 @@ describe('YAML and Properties conversion', () => {
       'server.port=8080\nmessage=hello\\nworld\nname=\\u725b\nlong=first\\\n second\nitems[0]=a\nitems[1]=b'
     )
     expect(yaml).toContain('port: "8080"')
-    expect(yaml).toContain('message: |-\n  hello\n  world')
+    expect(yaml).toContain('message: |-\n    hello\n    world')
     expect(yaml).toContain('name: 牛')
     expect(yaml).toContain('long: first second')
-    expect(yaml).toContain('- a\n  - b')
+    expect(yaml).toContain('- a\n    - b')
   })
 
   it('formats and validates YAML with actionable parser output', () => {

@@ -14,10 +14,18 @@ pub struct QuickNote {
     pub color: String,
     #[serde(default)]
     pub folder_path: String,
+    #[serde(default)]
+    pub relative_path: String,
     #[serde(default = "default_note_editor_font")]
     pub editor_font: String,
     #[serde(default = "default_note_line_height")]
     pub line_height: String,
+    #[serde(default = "default_note_font_size")]
+    pub font_size: u16,
+    #[serde(default)]
+    pub font_name: String,
+    #[serde(default = "default_note_line_spacing")]
+    pub line_spacing: f32,
     #[serde(default = "default_true")]
     pub line_wrapping: bool,
     #[serde(default = "default_note_syntax")]
@@ -53,9 +61,30 @@ impl QuickNote {
             return Err("unsupported note color".into());
         }
         validate_note_folder_path(&self.folder_path, true)?;
+        validate_note_relative_path(&self.relative_path)?;
+        if !(8..=48).contains(&self.font_size)
+            || !(1.0..=2.0).contains(&self.line_spacing)
+            || self.font_name.chars().count() > 120
+            || self.font_name.chars().any(char::is_control)
+        {
+            return Err("unsupported note font settings".into());
+        }
         if !matches!(self.editor_font.as_str(), "default" | "mono" | "serif")
             || !matches!(self.line_height.as_str(), "compact" | "normal" | "relaxed")
-            || !matches!(self.syntax.as_str(), "markdown" | "plain" | "json" | "yaml")
+            || !matches!(
+                self.syntax.as_str(),
+                "markdown"
+                    | "plain"
+                    | "json"
+                    | "yaml"
+                    | "java"
+                    | "javascript"
+                    | "typescript"
+                    | "python"
+                    | "html"
+                    | "xml"
+                    | "sql"
+            )
         {
             return Err("unsupported note editor preferences".into());
         }
@@ -101,6 +130,23 @@ pub fn validate_note_folder_path(path: &str, allow_empty: bool) -> Result<(), St
     Ok(())
 }
 
+fn validate_note_relative_path(path: &str) -> Result<(), String> {
+    if path.is_empty() {
+        return Ok(());
+    }
+    if path.len() > 1024
+        || path.starts_with('/')
+        || path.ends_with('/')
+        || path.contains("//")
+        || path.contains('\\')
+        || path.chars().any(char::is_control)
+        || path.split('/').any(|part| part.is_empty() || part == "." || part == ".." || part.chars().count() > 260)
+    {
+        return Err("invalid note file path".into());
+    }
+    Ok(())
+}
+
 fn default_note_color() -> String {
     "default".into()
 }
@@ -111,6 +157,14 @@ fn default_note_editor_font() -> String {
 
 fn default_note_line_height() -> String {
     "normal".into()
+}
+
+fn default_note_font_size() -> u16 {
+    14
+}
+
+fn default_note_line_spacing() -> f32 {
+    1.0
 }
 
 fn default_note_syntax() -> String {
@@ -130,6 +184,12 @@ pub struct QuickNoteAttachment {
     pub mime_type: String,
     pub size_bytes: u64,
     pub created_at: i64,
+    #[serde(default)]
+    pub relative_path: String,
+    #[serde(default)]
+    pub markdown: String,
+    #[serde(default)]
+    pub data_url: String,
 }
 
 impl QuickNoteAttachment {
@@ -145,7 +205,7 @@ impl QuickNoteAttachment {
         }
         if self.mime_type.is_empty()
             || self.mime_type.len() > 128
-            || self.size_bytes > 10 * 1024 * 1024
+            || self.size_bytes > 20 * 1024 * 1024
         {
             return Err("attachment metadata exceeds local limits".into());
         }
@@ -435,8 +495,12 @@ mod tests {
             tags: vec!["desktop".into()],
             color: "blue".into(),
             folder_path: "work/tauri".into(),
+            relative_path: "work/tauri/Tauri.md".into(),
             editor_font: "mono".into(),
             line_height: "normal".into(),
+            font_size: 14,
+            font_name: String::new(),
+            line_spacing: 1.0,
             line_wrapping: true,
             syntax: "markdown".into(),
             pinned: true,

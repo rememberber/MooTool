@@ -11,34 +11,36 @@ export class PdfPageRangeError extends Error {
   }
 }
 
-export function parsePageSelection(value: string, pageCount: number): number[] {
-  if (!Number.isInteger(pageCount) || pageCount < 1) throw new PdfPageRangeError('invalidPageCount')
-  const normalized = value.trim()
-  if (!normalized) return Array.from({ length: pageCount }, (_, index) => index + 1)
+export function parsePageSelection(expression: string, pageCount: number): number[] {
+  if (!Number.isSafeInteger(pageCount) || pageCount < 1) throw new PdfPageRangeError('invalidPageCount')
+  const value = expression.trim().replace(/[，,]/g, ';').replace(/\s+/g, '')
+  if (!value || !/^\d+(?:-\d+)?(?:;\d+(?:-\d+)?)*$/.test(value)) {
+    throw new PdfPageRangeError('invalidToken', { token: expression.trim() || value })
+  }
   const pages = new Set<number>()
-  for (const rawToken of normalized.split(/[;,，；\s]+/)) {
-    if (!rawToken) continue
-    const range = rawToken.match(/^(\d+)(?:\s*-\s*(\d+))?$/)
-    if (!range) throw new PdfPageRangeError('invalidToken', { token: rawToken })
-    const start = Number(range[1])
-    const end = Number(range[2] ?? range[1])
-    if (start < 1 || end < start || end > pageCount) throw new PdfPageRangeError('outOfRange', { pageCount, token: rawToken })
+  for (const token of value.split(';')) {
+    const [startText, endText = startText] = token.split('-')
+    const start = Number(startText)
+    const end = Number(endText)
+    if (start < 1 || end < start || end > pageCount) throw new PdfPageRangeError('outOfRange', { pageCount, token })
     for (let page = start; page <= end; page += 1) pages.add(page)
   }
-  if (!pages.size) throw new PdfPageRangeError('emptySelection')
-  return [...pages].sort((left, right) => left - right)
+  return [...pages]
 }
 
 export function selectSplitPages(pageRange: string, rule: PdfSplitRule, customRule: string, pageCount: number): number[] {
-  const allowed = new Set(parsePageSelection(pageRange, pageCount))
-  const pages = rule === 'custom'
-    ? parsePageSelection(customRule, pageCount).filter((page) => allowed.has(page))
-    : [...allowed].filter((page) => rule === 'odd' ? page % 2 === 1 : page % 2 === 0)
+  const candidates = parsePageSelection(pageRange, pageCount)
+  const selected = rule === 'custom' ? new Set(parsePageSelection(customRule, pageCount)) : null
+  const pages = candidates.filter((page) => {
+    if (rule === 'odd') return page % 2 === 1
+    if (rule === 'even') return page % 2 === 0
+    return selected?.has(page) ?? false
+  })
   if (!pages.length) throw new PdfPageRangeError('splitEmpty')
   return pages
 }
 
 export function splitOutputName(name: string): string {
-  const base = name.replace(/\.pdf$/i, '')
+  const base = name.replace(/\.pdf$/i, '').toLowerCase()
   return `${base}_split.pdf`
 }

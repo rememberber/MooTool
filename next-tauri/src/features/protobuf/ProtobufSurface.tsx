@@ -1,6 +1,7 @@
 import {
   ArrowLeftRight,
   Binary,
+  Braces,
   CheckCircle2,
   Clipboard,
   Copy,
@@ -22,6 +23,7 @@ import {
   convertProtobufBinary,
   decodeProtobuf,
   encodeProtobuf,
+  formatProtoDefinition,
   inspectProtobufSchema,
   inspectWire,
   ProtobufToolError,
@@ -148,6 +150,12 @@ export function ProtobufSurface() {
     }
   }
 
+  function formatProto(): void {
+    const output = formatProtoDefinition(schema)
+    setSchema(output)
+    succeed('notice.formatted')
+  }
+
   function inspect(): void {
     try {
       setWire(inspectWire(binaryInput, format))
@@ -214,7 +222,7 @@ export function ProtobufSurface() {
 
       <section className="protobuf-grid">
         <section className="utility-editor-card protobuf-schema">
-          <header><span>{t('pane.schema')}</span><code>{t('pane.messages', { count: schemaInfo.messageNames.length })}</code></header>
+          <header><span>{t('pane.schema')}</span><button className="utility-copy" type="button" onClick={formatProto}><Braces />{t('action.format')}</button><code>{t('pane.messages', { count: schemaInfo.messageNames.length })}</code></header>
           <CodeEditor
             ariaLabel="Protobuf schema"
             value={schema}

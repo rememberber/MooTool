@@ -9,6 +9,7 @@ import {
   ImageDown,
   ImageUp,
   Maximize2,
+  Scaling,
   Minus,
   Monitor,
   Pencil,
@@ -43,9 +44,14 @@ import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import {
   compressImage,
   ensureImageDataUrl,
+  resizeGeometry,
+  resizeImage,
   ImageToolError,
   imageDimensions,
+  overwriteImageName,
   processedImageName,
+  type ImageOutputMode,
+  type ResizeImageOptions,
   watermarkImage,
   type ImageFormat,
   type WatermarkPosition
@@ -74,7 +80,14 @@ export function ImageSurface() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<ImageNotice>({ key: 'notice.ready' })
   const [failed, setFailed] = useState(false)
-  const [panel, setPanel] = useState<'compress' | 'watermark' | 'base64-import' | 'base64-export' | 'svg' | null>(null)
+  const [panel, setPanel] = useState<'compress' | 'watermark' | 'resize' | 'base64-import' | 'base64-export' | 'svg' | null>(null)
+  const [resizePreset, setResizePreset] = useState<'small' | 'medium' | 'large' | 'custom'>('medium')
+  const [resizeWidth, setResizeWidth] = useState('1280')
+  const [resizeHeight, setResizeHeight] = useState('720')
+  const [resizeFit, setResizeFit] = useState<ResizeImageOptions['fit']>('fit')
+  const [resizeShrinkOnly, setResizeShrinkOnly] = useState(true)
+  const [resizeFormat, setResizeFormat] = useState<ImageFormat>('auto')
+  const [outputMode, setOutputMode] = useState<ImageOutputMode>('keep')
   const [base64Input, setBase64Input] = useState('')
   const [base64DataUrl, setBase64DataUrl] = useState(true)
   const [quality, setQuality] = useState(0.82)
@@ -315,6 +328,60 @@ export function ImageSurface() {
     } catch (cause) { fail(cause) } finally { setBusy(false) }
   }
 
+  const resizeOptions: ResizeImageOptions = {
+    width: resizeWidth === '' ? null : Number(resizeWidth),
+    height: resizeHeight === '' ? null : Number(resizeHeight),
+    fit: resizeFit,
+    shrinkOnly: resizeShrinkOnly,
+    format: resizeFormat
+  }
+  const resizePreview = processingNames.map((name) => {
+    const asset = assets.find((item) => item.name === name)
+    if (!asset) return { name, output: '—', ready: false }
+    try {
+      const geometry = resizeGeometry(asset.width, asset.height, resizeOptions)
+      return { name, output: `${geometry.width} × ${geometry.height}`, ready: true }
+    } catch (cause) {
+      return { name, output: cause instanceof ImageToolError ? t(`error.${cause.code}`) : '—', ready: false }
+    }
+  })
+  const resizeReady = resizePreview.length > 0 && resizePreview.every((row) => row.ready)
+
+  async function saveProcessed(sourceName: string, dataUrl: string, dimensions: { width: number; height: number }, suffix: 'compressed' | 'watermarked' | 'resized', nextFormat: ImageFormat) {
+    const name = outputMode === 'overwrite' ? overwriteImageName(sourceName, nextFormat) : processedImageName(sourceName, suffix, nextFormat)
+    const saved = await imageApi.save({ name, dataUrl, ...dimensions, createOnly: outputMode === 'keep' || name !== sourceName })
+    if (outputMode === 'overwrite' && saved.name !== sourceName) await imageApi.delete([sourceName])
+    return saved
+  }
+
+  async function resizeSelected() {
+    if (!processingNames.length || !resizeReady) return
+    setBusy(true)
+    let first = ''
+    try {
+      for (const name of processingNames) {
+        const asset = await imageApi.read(name)
+        const dataUrl = await resizeImage(asset.dataUrl, resizeOptions)
+        const dimensions = await imageDimensions(dataUrl)
+        const saved = await saveProcessed(asset.name, dataUrl, dimensions, 'resized', resizeFormat)
+        first ||= saved.name
+      }
+      setPanel(null)
+      await load(first)
+      succeed('notice.processed', { count: processingNames.length })
+      recordOperation(t('operation.resize'), t('operation.imageCount', { count: processingNames.length }), 'success')
+    } catch (cause) { fail(cause) } finally { setBusy(false) }
+  }
+
+  function selectResizePreset(value: 'small' | 'medium' | 'large' | 'custom') {
+    setResizePreset(value)
+    const presets = { small: ['640', '480'], medium: ['1280', '720'], large: ['1920', '1080'] } as const
+    if (value !== 'custom') {
+      setResizeWidth(presets[value][0])
+      setResizeHeight(presets[value][1])
+    }
+  }
+
   async function processSelected(mode: 'compress' | 'watermark') {
     if (!processingNames.length) return
     setBusy(true)
@@ -326,8 +393,7 @@ export function ImageSurface() {
           ? await compressImage(asset.dataUrl, { quality, scale, format })
           : await watermarkImage(asset.dataUrl, { text: watermarkText, opacity: watermarkOpacity, color: watermarkColor, fontSize: watermarkSize, position: watermarkPosition, diagonal: watermarkDiagonal })
         const dimensions = await imageDimensions(dataUrl)
-        const outputName = processedImageName(asset.name, mode === 'compress' ? 'compressed' : 'watermarked', mode === 'compress' ? format : 'auto')
-        const saved = await imageApi.save({ name: outputName, dataUrl, ...dimensions })
+        const saved = await saveProcessed(asset.name, dataUrl, dimensions, mode === 'compress' ? 'compressed' : 'watermarked', mode === 'compress' ? format : 'auto')
         first ||= saved.name
       }
       setPanel(null)
@@ -479,6 +545,7 @@ export function ImageSurface() {
         <input ref={fileInput} hidden multiple type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => { void importFiles([...event.target.files ?? []]); event.target.value = '' }} />
         <span />
         <button type="button" disabled={!processingNames.length || busy} onClick={() => setPanel('compress')}><Minus />{t('action.compress')}</button>
+        <button type="button" disabled={!processingNames.length || busy} onClick={() => setPanel('resize')}><Scaling />{t('action.resize')}</button>
         <button type="button" disabled={!processingNames.length || busy} onClick={() => setPanel('watermark')}><Type />{t('action.watermark')}</button>
         <button type="button" disabled={!processingNames.length || busy} onClick={() => setPanel('svg')}><Shapes />{t('action.vectorize')}</button>
         <button type="button" disabled={!current} onClick={() => void copyImage()}><ClipboardCopy />{t('action.copy')}</button>
@@ -538,10 +605,23 @@ export function ImageSurface() {
               <label>{t('svg.speckle')} <input type="number" min="0" max="128" value={vectorizeOptions.filterSpeckle} onChange={(event) => setVectorizeOptions((value) => ({ ...value, filterSpeckle: Math.min(128, Math.max(0, Number(event.target.value) || 0)) }))} /></label>
               <p className="image-vectorize-hint">{t('svg.hint')}</p>
               <button className="primary-button" type="button" disabled={busy} onClick={() => void vectorizeSelected()}><Shapes />{t('svg.start')}</button>
+            </> : panel === 'resize' ? <>
+              <label>{t('resize.preset')} <select aria-label={t('resize.preset')} value={resizePreset} onChange={(event) => selectResizePreset(event.target.value as 'small' | 'medium' | 'large' | 'custom')}><option value="small">{t('resize.small')} · 640 × 480</option><option value="medium">{t('resize.medium')} · 1280 × 720</option><option value="large">{t('resize.large')} · 1920 × 1080</option><option value="custom">{t('resize.custom')}</option></select></label>
+              <label>{t('resize.width')} <input type="number" min={1} max={16384} placeholder={t('resize.auto')} value={resizeWidth} onChange={(event) => { setResizeWidth(event.target.value); setResizePreset('custom') }} /></label>
+              <label>{t('resize.height')} <input type="number" min={1} max={16384} placeholder={t('resize.auto')} value={resizeHeight} onChange={(event) => { setResizeHeight(event.target.value); setResizePreset('custom') }} /></label>
+              <p>{t('resize.dimensionsHint')}</p>
+              <label>{t('resize.mode')} <select aria-label={t('resize.mode')} value={resizeFit} onChange={(event) => setResizeFit(event.target.value as ResizeImageOptions['fit'])}><option value="fit">{t('resize.fit')}</option><option value="fill">{t('resize.fill')}</option><option value="stretch">{t('resize.stretch')}</option></select></label>
+              <label>{t('compress.format')} <select value={resizeFormat} onChange={(event) => setResizeFormat(event.target.value as ImageFormat)}><option value="auto">{t('compress.auto')}</option><option value="png">PNG</option><option value="jpeg">JPEG</option></select></label>
+              <label><input type="checkbox" checked={resizeShrinkOnly} onChange={(event) => setResizeShrinkOnly(event.target.checked)} />{t('resize.shrinkOnly')}</label>
+              <p>{t(resizeFit === 'fit' ? 'resize.fitHint' : resizeFit === 'fill' ? 'resize.fillHint' : 'resize.stretchHint')}</p>
+              <ul>{resizePreview.map((row) => <li key={row.name}>{row.name} → {row.output ?? '—'}</li>)}</ul>
+              <OutputMode value={outputMode} onChange={setOutputMode} />
+              <button className="primary-button" type="button" disabled={busy || !resizeReady} onClick={() => void resizeSelected()}>{t('resize.start')}</button>
             </> : panel === 'compress' ? <>
               <label>{t('compress.quality')} <input type="range" min="5" max="100" value={Math.round(quality * 100)} onChange={(event) => setQuality(Number(event.target.value) / 100)} /><span>{Math.round(quality * 100)}%</span></label>
               <label>{t('compress.scale')} <input type="range" min="10" max="100" value={Math.round(scale * 100)} onChange={(event) => setScale(Number(event.target.value) / 100)} /><span>{Math.round(scale * 100)}%</span></label>
               <label>{t('compress.format')} <select value={format} onChange={(event) => setFormat(event.target.value as ImageFormat)}><option value="auto">{t('compress.auto')}</option><option value="png">PNG</option><option value="jpeg">JPEG</option></select></label>
+              <OutputMode value={outputMode} onChange={setOutputMode} />
               <button className="primary-button" type="button" disabled={busy} onClick={() => void processSelected('compress')}>{t('action.startCompress')}</button>
             </> : <>
               <label>{t('watermark.text')} <input value={watermarkText} onChange={(event) => setWatermarkText(event.target.value)} /></label>
@@ -550,6 +630,7 @@ export function ImageSurface() {
               <label>{t('watermark.fontSize')} <input type="number" min="12" max="200" value={watermarkSize} onChange={(event) => setWatermarkSize(Number(event.target.value))} /></label>
               <label>{t('watermark.position')} <select value={watermarkPosition} onChange={(event) => setWatermarkPosition(event.target.value as WatermarkPosition)}><option value="bottom-right">{t('watermark.bottomRight')}</option><option value="bottom-left">{t('watermark.bottomLeft')}</option><option value="top-right">{t('watermark.topRight')}</option><option value="top-left">{t('watermark.topLeft')}</option><option value="center">{t('watermark.center')}</option><option value="tile">{t('watermark.tile')}</option></select></label>
               <label><input type="checkbox" checked={watermarkDiagonal} onChange={(event) => setWatermarkDiagonal(event.target.checked)} />{t('watermark.diagonal')}</label>
+              <OutputMode value={outputMode} onChange={setOutputMode} />
               <button className="primary-button" type="button" disabled={busy || !watermarkText.trim()} onClick={() => void processSelected('watermark')}>{t('action.addWatermark')}</button>
             </>}
           </ProcessingPanel>
@@ -650,9 +731,14 @@ function CaptureEditor({ assets, busy, onCancel, onKeepFull, onSave }: {
   )
 }
 
-function ProcessingPanel({ mode, onClose, children }: { mode: 'compress' | 'watermark' | 'base64-import' | 'base64-export' | 'svg'; onClose: () => void; children: ReactNode }) {
+function OutputMode({ value, onChange }: { value: ImageOutputMode; onChange: (value: ImageOutputMode) => void }) {
   const { t } = useLocalizedMessages(imageMessages)
-  const title = mode === 'compress' ? 'panel.compress' : mode === 'watermark' ? 'panel.watermark' : mode === 'base64-import' ? 'panel.base64Import' : mode === 'base64-export' ? 'panel.base64Export' : 'panel.svg'
+  return <fieldset><legend>{t('output.mode')}</legend><label><input type="radio" name="image-output-mode" value="keep" checked={value === 'keep'} onChange={() => onChange('keep')} />{t('output.keep')}</label><label><input type="radio" name="image-output-mode" value="overwrite" checked={value === 'overwrite'} onChange={() => onChange('overwrite')} />{t('output.overwrite')}</label></fieldset>
+}
+
+function ProcessingPanel({ mode, onClose, children }: { mode: 'compress' | 'watermark' | 'resize' | 'base64-import' | 'base64-export' | 'svg'; onClose: () => void; children: ReactNode }) {
+  const { t } = useLocalizedMessages(imageMessages)
+  const title = mode === 'compress' ? 'panel.compress' : mode === 'resize' ? 'panel.resize' : mode === 'watermark' ? 'panel.watermark' : mode === 'base64-import' ? 'panel.base64Import' : mode === 'base64-export' ? 'panel.base64Export' : 'panel.svg'
   return <aside className="image-processing"><header><strong>{t(title)}</strong><button type="button" aria-label={t('panel.close')} onClick={onClose}>×</button></header>{children}</aside>
 }
 

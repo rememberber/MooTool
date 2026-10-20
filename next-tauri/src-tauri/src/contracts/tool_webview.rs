@@ -17,6 +17,7 @@ pub enum ManagedToolId {
     MessageBoard,
     Network,
     Pdf,
+    FilePreview,
     Protobuf,
     QuickNote,
     Qrcode,

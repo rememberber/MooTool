@@ -1,20 +1,11 @@
 import {
-  Bot,
   CheckCircle2,
-  Clipboard,
-  Copy,
-  Cpu,
+  ClipboardPaste,
   Eraser,
-  Globe2,
-  Laptop,
-  MonitorSmartphone,
-  Play,
-  Smartphone,
   TriangleAlert
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey } from '../../app/localizedMessages'
-import { clipboardApi } from '../../platform/api/clipboardApi'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
@@ -31,26 +22,25 @@ const defaultUa = uaPresets[0][1]
 export function UaSurface() {
   const { t } = useLocalizedMessages(uaMessages)
   const [source, setSource] = useState<string>(defaultUa)
-  const [result, setResult] = useState<UaResult>(() => parseUserAgent(defaultUa))
+  const [result, setResult] = useState<UaResult | null>(() => parseUserAgent(defaultUa))
   const [error, setError] = useState<UaError>()
-  const [copied, setCopied] = useState(false)
   const errorText = error ? ('raw' in error ? error.raw : t(error.key)) : ''
-  const deviceType = displayDeviceType(result.deviceType, t)
+  const deviceType = result ? displayDeviceType(result.deviceType, t) : ''
   const session = useMemo(() => ({
     digest: JSON.stringify({
       length: source.length,
       hash: contentFingerprint(source),
-      browser: result.browser,
-      os: result.os,
-      deviceType: result.deviceType,
+      browser: result?.browser ?? '',
+      os: result?.os ?? '',
+      deviceType: result?.deviceType ?? '',
       valid: !error
     }),
     summary: t('session.summary', {
-      browser: displayValue(result.browser, t),
-      os: displayValue(result.os, t),
+      browser: displayValue(result?.browser ?? '', t),
+      os: displayValue(result?.os ?? '', t),
       device: deviceType
     })
-  }), [deviceType, error, result.browser, result.os, source, t])
+  }), [deviceType, error, result, source, t])
   const { sessionId, reportError } = useToolSessionReport('ua', session.digest, session.summary)
   const recordOperation = useOperationHistory('ua')
   useOperationRestore('ua', (entry) => {
@@ -75,13 +65,11 @@ export function UaSurface() {
     }
   }
 
-  async function copy(): Promise<void> {
+  async function paste(): Promise<void> {
     try {
-      await clipboardApi.writeText(source)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1200)
-    } catch {
-      setError({ key: 'error.copyFailed' })
+      setSource(await navigator.clipboard.readText())
+    } catch (cause) {
+      setError({ raw: cause instanceof Error ? cause.message : String(cause) })
     }
   }
 
@@ -92,32 +80,9 @@ export function UaSurface() {
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 
-      <section className="ua-presets">
-        {uaPresets.map(([label, value]) => (
-          <button type="button" key={label} onClick={() => analyze(value)}>{label}</button>
-        ))}
-      </section>
-
       <section className="ua-content">
         <section className="utility-editor-card ua-input">
-          <header>
-            <span>User-Agent</span>
-            <div>
-              <button className="utility-copy" type="button" onClick={() => void copy()}>
-                {copied ? <Clipboard /> : <Copy />}{t(copied ? 'action.copied' : 'action.copy')}
-              </button>
-              <button
-                className="utility-copy ua-clear"
-                type="button"
-                onClick={() => {
-                  setSource('')
-                  setError(undefined)
-                }}
-              >
-                <Eraser />{t('action.clear')}
-              </button>
-            </div>
-          </header>
+          <header><span>{t('input.label')}</span></header>
           <CodeEditor
             ariaLabel={t('input.label')}
             value={source}
@@ -125,43 +90,32 @@ export function UaSurface() {
             className="utility-code-editor"
             lineWrapping
           />
-          <button className="primary-button ua-run" type="button" onClick={() => analyze()}>
-            <Play />{t('action.parse')}
-          </button>
+          <div className="ua-actions">
+            <select aria-label={t('preset')} defaultValue="" onChange={(event) => { if (event.target.value) setSource(event.target.value) }}>
+              <option value="">{t('preset')}</option>
+              {uaPresets.map(([label, value]) => <option key={label} value={value}>{label}</option>)}
+            </select>
+            <button type="button" onClick={() => void paste()}><ClipboardPaste />{t('action.paste')}</button>
+            <button type="button" onClick={() => { setSource(''); setResult(null); setError(undefined) }}><Eraser />{t('action.clear')}</button>
+            <button className="primary-button" type="button" onClick={() => analyze()}>{t('action.parse')}</button>
+          </div>
         </section>
-
-        <section className="ua-result">
-          <header className={error ? 'ua-result__hero ua-result__hero--error' : 'ua-result__hero'}>
-            {error
-              ? <TriangleAlert />
-              : result.bot
-                ? <Bot />
-                : result.mobile
-                  ? <Smartphone />
-                  : <Laptop />}
-            <div>
-              <strong>{errorText || displayValue(result.browser, t)}</strong>
-              <span>{error ? t('result.correct') : `${displayValue(result.browserVersion, t)} · ${deviceType}`}</span>
-            </div>
-            {!error && (
-              <em>{result.bot ? 'BOT' : result.mobile ? 'MOBILE' : 'DESKTOP'}</em>
-            )}
-          </header>
-          {!error && (
-            <dl className="ua-facts">
-              <Fact icon={Globe2} label={t('fact.browser')} value={displayValue(result.browser, t)} detail={displayValue(result.browserVersion, t)} />
-              <Fact icon={Cpu} label={t('fact.engine')} value={displayValue(result.engine, t)} detail={displayValue(result.engineVersion, t)} />
-              <Fact icon={MonitorSmartphone} label={t('fact.os')} value={displayValue(result.os, t)} detail={displayValue(result.osVersion, t)} />
-              <Fact icon={Cpu} label={t('fact.cpu')} value={displayValue(result.cpu, t)} />
-              <Fact icon={Smartphone} label={t('fact.deviceType')} value={deviceType} />
-              <Fact
-                icon={Laptop}
-                label={t('fact.device')}
-                value={displayValue(result.deviceBrand, t)}
-                detail={displayValue(result.deviceModel, t)}
-              />
-            </dl>
-          )}
+        <section className="ua-result" aria-label={t('title')}>
+          {result && ([
+            [t('fact.browser'), result.browser],
+            [t('fact.browserVersion'), result.browserVersion],
+            [t('fact.engine'), result.engine],
+            [t('fact.engineVersion'), result.engineVersion],
+            [t('fact.os'), result.os],
+            [t('fact.osVersion'), result.osVersion],
+            [t('fact.deviceType'), result.deviceType],
+            [t('fact.deviceBrand'), result.deviceBrand],
+            [t('fact.deviceModel'), result.deviceModel],
+            [t('fact.mobile'), result.mobile ? t('value.yes') : t('value.no')],
+            [t('fact.bot'), result.bot ? t('value.yes') : t('value.no')]
+          ] as const).map(([label, value]) => (
+            <div className="ua-result-row" key={label}><span>{label}</span><strong>{displayValue(value, t)}</strong></div>
+          ))}
         </section>
       </section>
 
@@ -189,17 +143,3 @@ function displayDeviceType(value: string, t: (key: UaMessageKey) => string): str
   return known[value] ? t(known[value]) : displayValue(value, t)
 }
 
-function Fact({ icon: Icon, label, value, detail = '' }: {
-  icon: typeof Globe2
-  label: string
-  value: string
-  detail?: string
-}) {
-  return (
-    <div>
-      <dt><Icon />{label}</dt>
-      <dd>{value}</dd>
-      {detail && <small>{detail}</small>}
-    </div>
-  )
-}

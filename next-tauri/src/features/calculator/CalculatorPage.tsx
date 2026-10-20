@@ -8,15 +8,16 @@ import {
   convertBase,
   evaluateExpression,
   greatestCommonDivisor,
+  hexFloatToDecimal,
   leastCommonMultiple,
   permutation
 } from './calculator'
 import { calculatorMessages } from './calculatorMessages'
 
 type CalculatorMessageKey = LocalizedMessageKey<typeof calculatorMessages>
-export type CalculatorOperation = 'expression' | 'hexToDec' | 'decToHex' | 'decToBin' | 'binToDec' | 'gcd' | 'lcm' | 'permutation' | 'combination'
+export type CalculatorOperation = 'expression' | 'hexToDec' | 'decToHex' | 'decToBin' | 'binToDec' | 'floatHexToDec' | 'gcd' | 'lcm' | 'permutation' | 'combination'
 export interface CalculatorHistoryEntry { operation: CalculatorOperation; input: string; output: string }
-export interface CalculatorErrorState { code?: CalculatorToolErrorCode; raw?: string }
+export interface CalculatorErrorState { code?: CalculatorToolErrorCode; raw?: string; values?: Record<string, string | number> }
 
 export interface CalculatorSessionState {
   expression: string
@@ -24,6 +25,10 @@ export interface CalculatorSessionState {
   decimal: string
   hex: string
   binary: string
+  floatHex: string
+  floatDecimal: string
+  floatBits: 32 | 64
+  floatByteOrder: 'big' | 'little'
   gcdValues: string[]
   lcmValues: string[]
   permutationValues: string[]
@@ -41,6 +46,10 @@ export function CalculatorPage({ onStateChange }: {
   const [decimal, setDecimal] = useState('255')
   const [hex, setHex] = useState('ff')
   const [binary, setBinary] = useState('11111111')
+  const [floatHex, setFloatHex] = useState('3F800000')
+  const [floatDecimal, setFloatDecimal] = useState('1.0')
+  const [floatBits, setFloatBits] = useState<32 | 64>(32)
+  const [floatByteOrder, setFloatByteOrder] = useState<'big' | 'little'>('big')
   const [gcdValues, setGcdValues] = useState(['54', '24'])
   const [lcmValues, setLcmValues] = useState(['54', '24'])
   const [permutationValues, setPermutationValues] = useState(['5', '2'])
@@ -49,7 +58,7 @@ export function CalculatorPage({ onStateChange }: {
     { operation: 'expression', input: '2 * (3 + 4)', output: '14' }
   ])
   const [error, setError] = useState<CalculatorErrorState | null>(null)
-  const errorText = error ? error.code ? t(`error.${error.code}`) : error.raw || t('error.unknown') : ''
+  const errorText = error ? error.code ? t(`error.${error.code}`, error.values) : error.raw || t('error.unknown') : ''
 
   useEffect(() => {
     onStateChange?.({
@@ -58,6 +67,10 @@ export function CalculatorPage({ onStateChange }: {
       decimal,
       hex,
       binary,
+      floatHex,
+      floatDecimal,
+      floatBits,
+      floatByteOrder,
       gcdValues,
       lcmValues,
       permutationValues,
@@ -68,6 +81,10 @@ export function CalculatorPage({ onStateChange }: {
   }, [
     binary,
     combinationValues,
+    floatBits,
+    floatByteOrder,
+    floatDecimal,
+    floatHex,
     decimal,
     error,
     expression,
@@ -88,7 +105,7 @@ export function CalculatorPage({ onStateChange }: {
       setHistory((current) => [{ operation: operationId, input, output }, ...current].slice(0, 12))
     } catch (cause) {
       setError(cause instanceof CalculatorToolError
-        ? { code: cause.code }
+        ? { code: cause.code, values: cause.values }
         : { raw: cause instanceof Error ? cause.message : t('error.unknown') })
     }
   }
@@ -128,6 +145,7 @@ export function CalculatorPage({ onStateChange }: {
 
           <section className="calculator-section calculator-base-panel">
             <h2>{t('base.title')}</h2>
+            <p className="calculator-hint">{t('base.hint')}</p>
             <div className="calculator-base-grid">
               <label htmlFor="calculator-hex">{t('base.hex')}</label>
               <input id="calculator-hex" value={hex} onChange={(event) => setHex(event.target.value)} />
@@ -159,6 +177,40 @@ export function CalculatorPage({ onStateChange }: {
               </div>
               <label htmlFor="calculator-binary">{t('base.binary')}</label>
               <input id="calculator-binary" value={binary} onChange={(event) => setBinary(event.target.value)} />
+            </div>
+          </section>
+
+          <section className="calculator-section calculator-float-panel">
+            <h2>{t('float.title')}</h2>
+            <div className="calculator-float-options">
+              <label className="utility-select">
+                <span>{t('float.format')}</span>
+                <select aria-label={t('float.format')} value={String(floatBits)} onChange={(event) => setFloatBits(event.target.value === '64' ? 64 : 32)}>
+                  <option value="32">{t('float.bits32')}</option>
+                  <option value="64">{t('float.bits64')}</option>
+                </select>
+              </label>
+              <label className="utility-select">
+                <span>{t('float.byteOrder')}</span>
+                <select aria-label={t('float.byteOrder')} value={floatByteOrder} onChange={(event) => setFloatByteOrder(event.target.value === 'little' ? 'little' : 'big')}>
+                  <option value="big">{t('float.bigEndian')}</option>
+                  <option value="little">{t('float.littleEndian')}</option>
+                </select>
+              </label>
+            </div>
+            <p className="calculator-hint" id="calculator-float-hint">{t('float.hint', { digits: floatBits / 4 })}</p>
+            <div className="calculator-base-grid">
+              <label htmlFor="calculator-float-hex">{t('base.hex')}</label>
+              <input id="calculator-float-hex" aria-describedby="calculator-float-hint" placeholder={floatBits === 32 ? '3F800000' : '3FF0000000000000'} value={floatHex} onChange={(event) => setFloatHex(event.target.value)} />
+              <div className="calculator-base-actions">
+                <button className="panel-command" type="button" aria-label="IEEE 754 HEX → DEC" onClick={() => run('floatHexToDec', floatHex, () => {
+                  const value = hexFloatToDecimal(floatHex, floatBits, floatByteOrder)
+                  setFloatDecimal(value)
+                  return value
+                })}><ArrowDown size={15} />{t('action.calculate')}</button>
+              </div>
+              <label htmlFor="calculator-float-decimal">{t('base.decimal')}</label>
+              <input id="calculator-float-decimal" value={floatDecimal} readOnly />
             </div>
           </section>
 

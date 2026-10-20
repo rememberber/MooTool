@@ -13,7 +13,7 @@ export function TimestampHost({ active }: { active: boolean }) {
   return (
     <ManagedToolHost active={active} toolId="timestamp" title={t('title')}>
       <Suspense fallback={<div className="tool-webview-placeholder">{t('host.loading')}</div>}>
-        <TimestampSurface />
+        <TimestampSurface active={active} />
       </Suspense>
     </ManagedToolHost>
   )

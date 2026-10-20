@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analyzeIpv4Cidr, integerToIpv4 } from './networkTools'
+import { analyzeIpv4Cidr, integerToIpv4, ipv4ToLong } from './networkTools'
 
 describe('IPv4 and CIDR tools', () => {
   it('calculates a regular subnet', () => {
@@ -24,6 +24,8 @@ describe('IPv4 and CIDR tools', () => {
   })
 
   it('converts unsigned integers and rejects invalid values', () => {
+    expect(ipv4ToLong('127.0.0.1')).toBe(2130706433)
+    expect(integerToIpv4('2130706433')).toBe('127.0.0.1')
     expect(integerToIpv4('3232235777')).toBe('192.168.1.1')
     expect(() => integerToIpv4('4294967296')).toThrow('NETWORK_TOOL_integerRange')
     expect(() => analyzeIpv4Cidr('256.1.1.1/24')).toThrow('NETWORK_TOOL_octetRange')

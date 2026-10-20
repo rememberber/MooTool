@@ -8,7 +8,7 @@ export const textDiffMessages = defineMessages({
     'error.clipboard': '无法写入剪贴板，请检查系统权限', 'aria.options': '文本对比选项', 'action.sample': '示例',
     'action.swap': '交换', 'action.find': '查找', 'option.whitespace': '忽略空白', 'option.case': '忽略大小写',
     'aria.viewMode': '差异视图', 'view.split': '并排', 'view.unified': '统一', 'view.unifiedHeading': '统一差异',
-    'action.previousDifference': '上一个差异', 'action.nextDifference': '下一个差异',
+    'action.previousDifference': '上一处', 'action.nextDifference': '下一处',
     'option.context': '上下文', 'unit.lines': '{count} 行', 'option.all': '全部', 'action.copied': '已复制',
     'action.copyDiff': '复制 Diff', 'action.clear': '清空两侧文本', 'pane.original': '原始文本', 'pane.target': '目标文本',
     'pane.characters': '{count} 字符', 'aria.summary': '对比统计', 'summary.identical': '内容一致', 'summary.different': '发现差异',
@@ -16,6 +16,13 @@ export const textDiffMessages = defineMessages({
     'aria.result': '文本差异结果', 'result.limit': '结果过大，已省略 {count} 行', 'result.collapsed': '已折叠 {count} 行未变内容',
     'result.empty': '在上方输入两份文本以开始对比', 'footer.capabilities': 'Myers 序列差异 · Unicode 词级高亮 · 本地处理',
     'report.error': '文本对比状态上报失败：{error}', 'row.added': '新增行', 'row.removed': '删除行',
+    'action.compare': '对比', 'action.cancel': '取消', 'action.clearShort': '清空', 'action.history': '历史', 'action.copy': '复制差异',
+    'option.whitespaceDiff': '忽略空白差异', 'highlight.mode': '高亮模式', 'highlight.both': '双层高亮', 'highlight.characters': '仅字符', 'highlight.lines': '仅整行',
+    'display.mode': '显示模式', 'display.side': '并排对比', 'display.unified': '统一差异', 'unified.panel': '统一差异格式', 'pane.right': '新文本',
+    'summary.line': '新增 {added} · 删除 {removed} · 变更 {changed}',
+    'status.ready': '准备就绪', 'status.enterText': '请输入要对比的文本', 'status.characterComplete': '字符差异 {count} 处', 'status.complete': '对比完成，共发现 {count} 处差异',
+    'status.cleared': '已清空', 'status.swapped': '已交换文本', 'status.copied': '差异结果已复制到剪贴板', 'status.noCopy': '没有差异结果可复制',
+    'status.navigation': '跳至第 {current}/{total} 处差异', 'status.processing': '处理中…',
     'host.loading': '正在加载文本对比…'
   },
   'en-US': {
@@ -33,6 +40,13 @@ export const textDiffMessages = defineMessages({
     'aria.result': 'Text diff result', 'result.limit': 'Result is too large; omitted {count} lines', 'result.collapsed': 'Collapsed {count} unchanged lines',
     'result.empty': 'Enter two texts above to compare them', 'footer.capabilities': 'Myers sequence diff · Unicode word highlighting · Local processing',
     'report.error': 'Text Diff status reporting failed: {error}', 'row.added': 'Added line', 'row.removed': 'Removed line',
+    'action.compare': 'Compare', 'action.cancel': 'Cancel', 'action.clearShort': 'Clear', 'action.history': 'History', 'action.copy': 'Copy diff',
+    'option.whitespaceDiff': 'Ignore whitespace', 'highlight.mode': 'Highlight mode', 'highlight.both': 'Dual highlight', 'highlight.characters': 'Character only', 'highlight.lines': 'Line only',
+    'display.mode': 'Display mode', 'display.side': 'Side by side', 'display.unified': 'Unified', 'unified.panel': 'Unified diff', 'pane.right': 'New text',
+    'summary.line': 'Added {added} · removed {removed} · changed {changed}',
+    'status.ready': 'Ready', 'status.enterText': 'Enter text to compare', 'status.characterComplete': '{count} character difference(s)', 'status.complete': 'Compare complete, {count} difference(s) found',
+    'status.cleared': 'Cleared', 'status.swapped': 'Texts swapped', 'status.copied': 'Diff copied to clipboard', 'status.noCopy': 'No diff result to copy',
+    'status.navigation': 'Jump to difference {current}/{total}', 'status.processing': 'Processing…',
     'host.loading': 'Loading Text Diff…'
   },
   'ja-JP': {
@@ -50,6 +64,13 @@ export const textDiffMessages = defineMessages({
     'aria.result': 'テキスト差分結果', 'result.limit': '結果が大きすぎるため {count} 行を省略しました', 'result.collapsed': '変更のない {count} 行を折りたたみました',
     'result.empty': '上に 2 つのテキストを入力して比較してください', 'footer.capabilities': 'Myers シーケンス差分 · Unicode 単語ハイライト · ローカル処理',
     'report.error': 'テキスト比較状態の報告に失敗しました：{error}', 'row.added': '追加行', 'row.removed': '削除行',
+    'action.compare': '比較', 'action.cancel': 'キャンセル', 'action.clearShort': 'クリア', 'action.history': '履歴', 'action.copy': '差分をコピー',
+    'option.whitespaceDiff': '空白差分を無視', 'highlight.mode': 'ハイライトモード', 'highlight.both': '二重ハイライト', 'highlight.characters': '文字のみ', 'highlight.lines': '行のみ',
+    'display.mode': '表示モード', 'display.side': '並列表示', 'display.unified': 'Unified 表示', 'unified.panel': '統一差分形式', 'pane.right': '新しいテキスト',
+    'summary.line': '追加 {added} · 削除 {removed} · 変更 {changed}',
+    'status.ready': '準備完了', 'status.enterText': '比較するテキストを入力してください', 'status.characterComplete': '文字差分 {count} 件', 'status.complete': '比較完了、{count} 件の差分があります',
+    'status.cleared': 'クリアしました', 'status.swapped': 'テキストを入れ替えました', 'status.copied': '差分結果をクリップボードにコピーしました', 'status.noCopy': 'コピーできる差分結果がありません',
+    'status.navigation': '差分 {current}/{total} へ移動', 'status.processing': '処理中…',
     'host.loading': 'テキスト比較を読み込み中…'
   }
 })

@@ -5,16 +5,23 @@ import {
   Clipboard,
   Clock3,
   Copy,
+  Expand,
+  History,
   RefreshCw,
-  TriangleAlert
+  TriangleAlert,
+  X
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import type { OperationHistory } from '../../platform/contracts/history'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { HistoryPanel } from '../history/HistoryPanel'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
+import { useSettings } from '../settings/SettingsProvider'
 import {
   commonTimezones,
   formatLocalTime,
@@ -31,8 +38,9 @@ import { timestampMessages } from './timestampMessages'
 type TimestampMessageKey = LocalizedMessageKey<typeof timestampMessages>
 type TimestampNotice = { key: TimestampMessageKey; values?: MessageValues } | { raw: string }
 
-export function TimestampSurface() {
+export function TimestampSurface({ active = true }: { active?: boolean }) {
   const { t, locale } = useLocalizedMessages(timestampMessages)
+  const { settings } = useSettings()
   const systemZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
   const initialNow = Date.now()
   const [now, setNow] = useState(initialNow)
@@ -46,6 +54,8 @@ export function TimestampSurface() {
   const [notice, setNotice] = useState<TimestampNotice>({ key: 'notice.ready' })
   const [error, setError] = useState<TimestampNotice>()
   const [copied, setCopied] = useState('')
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [clockOpen, setClockOpen] = useState(false)
   const noticeText = localizeTimestampNotice(notice, t)
   const errorText = error ? localizeTimestampNotice(error, t) : ''
   const zoneOptions = useMemo(() => Array.from(new Set([systemZone, ...commonTimezones])), [systemZone])
@@ -143,6 +153,13 @@ export function TimestampSurface() {
     }
   }
 
+  function applyHistory(entry: OperationHistory): void {
+    const value = entry.outputText || entry.inputText
+    if (/^[-+]?\d+$/.test(value.trim())) setTimestamp(value)
+    else setLocalTime(value)
+    setHistoryOpen(false)
+  }
+
   function useNow(): void {
     const value = Date.now()
     const nextTimestamp = unit === 'second' ? String(Math.trunc(value / 1000)) : String(value)
@@ -171,12 +188,17 @@ export function TimestampSurface() {
       </header>
 
       <section className="time-current">
-        <div>
-          <Clock3 />
-          <span>{t('current.title', { zone: formatTimezoneLabel(zone, now, t('timezone.invalid')) })}</span>
+        <h2>{t('current.heading')}</h2>
+        <div className="time-current-values">
+          <TimeValue label={t('current.unix')} value={currentSeconds} onCopy={() => void copy('current-seconds', currentSeconds)} copied={copied === 'current-seconds'} />
+          <TimeValue label={`${t('current.local')} · ${zone}`} value={currentLocal} onCopy={() => void copy('current-local', currentLocal)} copied={copied === 'current-local'} />
         </div>
-        <TimeValue label={t('current.unix')} value={currentSeconds} onCopy={() => void copy('current-seconds', currentSeconds)} copied={copied === 'current-seconds'} />
-        <TimeValue label={t('current.local')} value={currentLocal} onCopy={() => void copy('current-local', currentLocal)} copied={copied === 'current-local'} />
+        <div className="time-current-actions">
+          <button type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('action.history')}</button>
+          <button type="button" onClick={() => setClockOpen(true)}><Expand size={14} />{t('action.clock')}</button>
+          <button type="button" onClick={useNow}><RefreshCw size={14} />{t('action.now')}</button>
+          <div className="status-pill"><Clock3 size={14} />{formatTimezoneLabel(zone, now, t('timezone.invalid'))}</div>
+        </div>
       </section>
 
       <section className="time-content">
@@ -213,10 +235,13 @@ export function TimestampSurface() {
                 onChange={(event) => setTimestamp(event.target.value)}
                 onKeyDown={(event) => event.key === 'Enter' && toLocal()}
               />
-              <select value={unit} onChange={(event) => setUnit(event.target.value as TimestampUnit)}>
+              <select aria-label={t('field.timestamp')} value={unit} onChange={(event) => setUnit(event.target.value as TimestampUnit)}>
                 <option value="second">{t('unit.second')}</option>
                 <option value="millisecond">{t('unit.millisecond')}</option>
               </select>
+              <button className="utility-copy" type="button" aria-label={t('action.copy')} onClick={() => void copy('timestamp', timestamp)}>
+                {copied === 'timestamp' ? <Clipboard /> : <Copy />}
+              </button>
             </div>
           </label>
           <div className="time-actions">
@@ -225,9 +250,6 @@ export function TimestampSurface() {
             </button>
             <button className="secondary-button" type="button" onClick={toTimestamp}>
               <ArrowUp />{t('action.toTimestamp')}
-            </button>
-            <button className="secondary-button" type="button" onClick={useNow}>
-              <RefreshCw />{t('action.now')}
             </button>
           </div>
           <label className="time-input-card">
@@ -238,7 +260,10 @@ export function TimestampSurface() {
                 onChange={(event) => setLocalTime(event.target.value)}
                 onKeyDown={(event) => event.key === 'Enter' && toTimestamp()}
               />
-              <code>YYYY-MM-DD HH:mm:ss</code>
+              <span className="time-format-hint">{t('format.hint')}</span>
+              <button className="utility-copy" type="button" aria-label={t('action.copy')} onClick={() => void copy('local-time', localTime)}>
+                {copied === 'local-time' ? <Clipboard /> : <Copy />}
+              </button>
             </div>
           </label>
         </div>
@@ -257,7 +282,37 @@ export function TimestampSurface() {
         <code>{session.summary}</code>
       </footer>
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
+      {historyOpen && (
+        <HistoryPanel
+          limit={settings.data.historyLimit}
+          toolId="timestamp"
+          onClose={() => setHistoryOpen(false)}
+          onRestore={applyHistory}
+        />
+      )}
+      {clockOpen && <ClockOverlay active={active} now={now} zone={zone} onClose={() => setClockOpen(false)} />}
     </main>
+  )
+}
+
+function ClockOverlay({ active, now, zone, onClose }: { active: boolean; now: number; zone: string; onClose: () => void }) {
+  const { t } = useLocalizedMessages(timestampMessages)
+  const [date, time] = formatLocalTime(now, zone).split(' ')
+  useEffect(() => {
+    if (!active) return
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [active, onClose])
+  if (!active) return null
+  return createPortal(
+    <div className="clock-overlay">
+      <button type="button" aria-label={t('action.closeClock')} onClick={onClose}><X size={18} /></button>
+      <span>{zone}</span>
+      <strong>{time}</strong>
+      <time>{date}</time>
+    </div>,
+    document.body
   )
 }
 

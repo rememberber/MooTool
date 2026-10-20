@@ -95,6 +95,7 @@ const HttpSurface = lazy(async () => ({ default: (await import('./features/http/
 const RuntimeSurface = lazy(async () => ({ default: (await import('./features/runtime/RuntimeSurface')).RuntimeSurface }))
 const TranslationSurface = lazy(async () => ({ default: (await import('./features/translation/TranslationSurface')).TranslationSurface }))
 const ImageSurface = lazy(async () => ({ default: (await import('./features/image/ImageSurface')).ImageSurface }))
+const FilePreviewSurface = lazy(async () => ({ default: (await import('./features/filePreview/FilePreviewSurface')).FilePreviewSurface }))
 const PdfSurface = lazy(async () => ({ default: (await import('./features/pdf/PdfSurface')).PdfSurface }))
 
 function SurfaceFallback() {
@@ -230,6 +231,7 @@ createRoot(document.getElementById('root')!).render(
         : surface === 'translation' ? <Suspense fallback={<SurfaceFallback />}><TranslationSurface /></Suspense>
         : surface === 'image' ? <Suspense fallback={<SurfaceFallback />}><ImageSurface /></Suspense>
         : surface === 'pdf' ? <Suspense fallback={<SurfaceFallback />}><PdfSurface /></Suspense>
+        : surface === 'file-preview' ? <Suspense fallback={<SurfaceFallback />}><FilePreviewSurface /></Suspense>
         : surface === 'tool-probe'
           ? <ToolProbePage />
           : <App />}

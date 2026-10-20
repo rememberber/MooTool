@@ -25,7 +25,7 @@ export function propertiesToYaml(source: string): string {
     if (!key) throw new ConfigToolError('emptyKey')
     assignPath(root, tokenizePath(key), decodeProperty(rawValue))
   }
-  return stringify(root, { indent: 2, lineWidth: 0 })
+  return stringify(root, { indent: 4, lineWidth: 0 })
 }
 
 export function yamlToProperties(source: string): string {
@@ -154,7 +154,11 @@ function assignPath(
 function flattenYaml(value: unknown, prefix: string, lines: string[], depth: number): void {
   if (depth > maxDepth) throw new ConfigToolError('maxDepth')
   if (Array.isArray(value)) {
-    value.forEach((item, index) => flattenYaml(item, `${prefix}[${index}]`, lines, depth + 1))
+    if (value.every((item) => item == null || typeof item !== 'object')) {
+      lines.push(`${prefix}=${value.map(encodePropertyValue).join(',')}`)
+    } else {
+      value.forEach((item, index) => flattenYaml(item, `${prefix}[${index}]`, lines, depth + 1))
+    }
   } else if (value && typeof value === 'object') {
     for (const [key, item] of Object.entries(value)) {
       const escapedKey = escapePropertyKey(key)
@@ -173,11 +177,7 @@ function escapePropertyKey(value: string): string {
 }
 
 function encodePropertyValue(value: unknown): string {
-  return String(value ?? '')
-    .replace(/\\/g, '\\\\')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r')
-    .replace(/\t/g, '\\t')
+  return String(value ?? ' ').replace(/\\/g, '\\\\').replace(/\n/g, '\\n')
 }
 
 function decodeProperty(value: string): string {

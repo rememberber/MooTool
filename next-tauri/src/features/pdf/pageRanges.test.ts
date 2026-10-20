@@ -2,18 +2,22 @@ import { describe, expect, it } from 'vitest'
 import { PdfPageRangeError, parsePageSelection, selectSplitPages, splitOutputName } from './pageRanges'
 
 describe('PDF page ranges', () => {
-  it('parses, deduplicates, and orders page selections', () => {
-    expect(parsePageSelection('3,1-2;2,5', 5)).toEqual([1, 2, 3, 5])
-    expect(parsePageSelection('', 3)).toEqual([1, 2, 3])
+  it('parses ranges in source order and rejects malformed selections', () => {
+    expect(parsePageSelection('1-3;2;7;9-10', 10)).toEqual([1, 2, 3, 7, 9, 10])
+    expect(parsePageSelection('1-2, 4，6', 10)).toEqual([1, 2, 4, 6])
+    expect(parsePageSelection('3,1-2', 5)).toEqual([3, 1, 2])
+    expectRangeError(() => parsePageSelection('', 3), 'invalidToken')
+    expectRangeError(() => parsePageSelection('1;;2', 5), 'invalidToken')
     expectRangeError(() => parsePageSelection('0-2', 4), 'outOfRange')
-    expectRangeError(() => parsePageSelection('3-2', 4), 'outOfRange')
+    expectRangeError(() => parsePageSelection('3-1', 4), 'outOfRange')
+    expectRangeError(() => parsePageSelection('1-6', 5), 'outOfRange')
   })
 
   it('selects odd, even, and custom pages inside the input range', () => {
-    expect(selectSplitPages('1-6', 'odd', '', 6)).toEqual([1, 3, 5])
-    expect(selectSplitPages('2-6', 'even', '', 6)).toEqual([2, 4, 6])
-    expect(selectSplitPages('2-6', 'custom', '1,3,6', 6)).toEqual([3, 6])
-    expect(splitOutputName('Quarterly.PDF')).toBe('Quarterly_split.pdf')
+    expect(selectSplitPages('2-8', 'odd', '', 10)).toEqual([3, 5, 7])
+    expect(selectSplitPages('2-8', 'even', '', 10)).toEqual([2, 4, 6, 8])
+    expect(selectSplitPages('2-8', 'custom', '8;3;1', 10)).toEqual([3, 8])
+    expect(splitOutputName('Quarterly.PDF')).toBe('quarterly_split.pdf')
   })
 })
 

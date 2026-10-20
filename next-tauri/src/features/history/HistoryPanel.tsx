@@ -10,7 +10,12 @@ import { errorMessage } from '../../shared/errors'
 import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import { historyMessages } from './historyMessages'
 
-export function HistoryPanel({ limit, onClose, onRestore }: { limit: number; onClose: () => void; onRestore: (entry: OperationHistory) => void }) {
+export function HistoryPanel({ limit, onClose, onRestore, toolId }: {
+  limit: number
+  onClose: () => void
+  onRestore: (entry: OperationHistory) => void
+  toolId?: string
+}) {
   const { toolTitle } = useI18n()
   const { locale, t } = useLocalizedMessages(historyMessages)
   const dialog = useDesktopDialog()
@@ -34,8 +39,8 @@ export function HistoryPanel({ limit, onClose, onRestore }: { limit: number; onC
 
   const visible = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase()
-    return items.filter((item) => (status === 'all' || item.status === status) && (!normalized || [resolveToolTitle(item.toolId), item.action, item.summary].some((value) => value.toLocaleLowerCase().includes(normalized))))
-  }, [items, query, status, toolTitle, t])
+    return items.filter((item) => (!toolId || item.toolId === toolId) && (status === 'all' || item.status === status) && (!normalized || [resolveToolTitle(item.toolId), item.action, item.summary].some((value) => value.toLocaleLowerCase().includes(normalized))))
+  }, [items, query, status, toolId, toolTitle, t])
 
   function resolveToolTitle(toolId: string): string {
     const tool = toolCatalog.find((candidate) => candidate.id === toolId)

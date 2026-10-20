@@ -13,7 +13,7 @@ export const protobufMessages = defineMessages({
     'field.noMessages': '未解析到消息', 'field.noPackage': '无 package', 'pane.schema': '.proto 定义', 'pane.messages': '{count} messages',
     'pane.json': 'JSON 消息', 'action.encode': '编码', 'aria.json': 'Protobuf JSON 输入', 'action.decode': '解码',
     'pane.binary': '{format} 二进制', 'action.copied': '已复制', 'action.copy': '复制', 'aria.binary': 'Protobuf 二进制',
-    'action.inspect': '解析字段', 'wire.empty': '空消息（0 bytes）', 'wire.hint': '编码或粘贴二进制后，可查看无需 schema 的字段号、Wire Type 与字节长度。',
+    'action.format': '格式化', 'notice.formatted': '.proto 定义已格式化', 'action.inspect': '解析字段', 'wire.empty': '空消息（0 bytes）', 'wire.hint': '编码或粘贴二进制后，可查看字段号、Wire Type 和值。',
     'footer.capabilities': 'protobuf.js · proto2 / proto3 · 64-bit 字符串保真', 'report.error': 'Protobuf 状态上报失败：{error}',
     'host.loading': '正在加载 Protobuf 工作台…'
   },
@@ -29,7 +29,7 @@ export const protobufMessages = defineMessages({
     'field.noMessages': 'No messages parsed', 'field.noPackage': 'No package', 'pane.schema': '.proto definition', 'pane.messages': '{count} messages',
     'pane.json': 'JSON message', 'action.encode': 'Encode', 'aria.json': 'Protobuf JSON input', 'action.decode': 'Decode',
     'pane.binary': '{format} binary', 'action.copied': 'Copied', 'action.copy': 'Copy', 'aria.binary': 'Protobuf binary',
-    'action.inspect': 'Parse fields', 'wire.empty': 'Empty message (0 bytes)', 'wire.hint': 'Encode or paste binary to inspect field numbers, Wire Types, and byte lengths without a schema.',
+    'action.format': 'Format', 'notice.formatted': '.proto definition formatted', 'action.inspect': 'Parse fields', 'wire.empty': 'Empty message (0 bytes)', 'wire.hint': 'Encode or paste binary to inspect field numbers, wire types, and values.',
     'footer.capabilities': 'protobuf.js · proto2 / proto3 · Lossless 64-bit strings', 'report.error': 'Protobuf status reporting failed: {error}',
     'host.loading': 'Loading Protobuf workbench…'
   },
@@ -45,7 +45,7 @@ export const protobufMessages = defineMessages({
     'field.noMessages': 'メッセージを解析できませんでした', 'field.noPackage': 'package なし', 'pane.schema': '.proto 定義', 'pane.messages': '{count} messages',
     'pane.json': 'JSON メッセージ', 'action.encode': 'エンコード', 'aria.json': 'Protobuf JSON 入力', 'action.decode': 'デコード',
     'pane.binary': '{format} バイナリ', 'action.copied': 'コピー済み', 'action.copy': 'コピー', 'aria.binary': 'Protobuf バイナリ',
-    'action.inspect': 'フィールドを解析', 'wire.empty': '空のメッセージ（0 bytes）', 'wire.hint': 'バイナリをエンコードまたは貼り付けると、schema なしでフィールド番号、Wire Type、バイト長を確認できます。',
+    'action.format': '整形', 'notice.formatted': '.proto 定義を整形しました', 'action.inspect': 'フィールドを解析', 'wire.empty': '空のメッセージ（0 bytes）', 'wire.hint': 'バイナリをエンコードまたは貼り付けると、フィールド番号、Wire Type、値を確認できます。',
     'footer.capabilities': 'protobuf.js · proto2 / proto3 · 64-bit 文字列を保持', 'report.error': 'Protobuf 状態の報告に失敗しました：{error}',
     'host.loading': 'Protobuf ワークベンチを読み込み中…'
   }

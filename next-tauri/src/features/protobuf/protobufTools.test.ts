@@ -3,6 +3,7 @@ import {
   convertProtobufBinary,
   decodeProtobuf,
   encodeProtobuf,
+  formatProtoDefinition,
   inspectProtobufSchema,
   inspectWire
 } from './protobufTools'
@@ -49,8 +50,17 @@ describe('Protobuf tools', () => {
 
   it('inspects wire fields without a schema', () => {
     const hex = encodeProtobuf(schema, 'mootool.demo.Person', '{"id":"7","name":"Moo"}', 'hex')
-    expect(inspectWire(hex, 'hex')).toContain('field 1 · Varint')
-    expect(inspectWire(hex, 'hex')).toContain('field 2 · Length-delimited')
+    const output = inspectWire(hex, 'hex')
+    expect(output).toContain('field=1')
+    expect(output).toContain('wire_type=0 (Varint)')
+    expect(output).toContain('value=7')
+    expect(output).toContain('field=2')
+    expect(output).toContain('value="Moo"')
+  })
+
+  it('formats compact proto definitions', () => {
+    expect(formatProtoDefinition('syntax = "proto3"; message Person { string name = 1; int32 age = 2; }'))
+      .toContain('message Person {\n  string name = 1;')
   })
 
   it('rejects malformed schema, JSON and binary input', () => {

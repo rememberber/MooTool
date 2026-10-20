@@ -20,7 +20,7 @@ use crate::{
 const MAIN_WINDOW_LABEL: &str = "main";
 const SHELL_WEBVIEW_LABEL: &str = "main";
 
-pub(crate) const PRODUCT_TOOLS: [ManagedToolId; 25] = [
+pub(crate) const PRODUCT_TOOLS: [ManagedToolId; 26] = [
     ManagedToolId::Calculator,
     ManagedToolId::Color,
     ManagedToolId::Config,
@@ -34,6 +34,7 @@ pub(crate) const PRODUCT_TOOLS: [ManagedToolId; 25] = [
     ManagedToolId::MessageBoard,
     ManagedToolId::Network,
     ManagedToolId::Pdf,
+    ManagedToolId::FilePreview,
     ManagedToolId::Protobuf,
     ManagedToolId::QuickNote,
     ManagedToolId::Qrcode,
@@ -423,6 +424,7 @@ impl ManagedToolId {
             Self::MessageBoard => "message-board",
             Self::Network => "network",
             Self::Pdf => "pdf",
+            Self::FilePreview => "file-preview",
             Self::Protobuf => "protobuf",
             Self::QuickNote => "quick-note",
             Self::Qrcode => "qrcode",
@@ -455,6 +457,7 @@ impl ManagedToolId {
             Self::MessageBoard => "tool-message-board",
             Self::Network => "tool-network",
             Self::Pdf => "tool-pdf",
+            Self::FilePreview => "tool-file-preview",
             Self::Protobuf => "tool-protobuf",
             Self::QuickNote => "tool-quick-note",
             Self::Qrcode => "tool-qrcode",
@@ -487,6 +490,7 @@ impl ManagedToolId {
             Self::MessageBoard => "tool-detached-message-board",
             Self::Network => "tool-detached-network",
             Self::Pdf => "tool-detached-pdf",
+            Self::FilePreview => "tool-detached-file-preview",
             Self::Protobuf => "tool-detached-protobuf",
             Self::QuickNote => "tool-detached-quick-note",
             Self::Qrcode => "tool-detached-qrcode",
@@ -519,6 +523,7 @@ impl ManagedToolId {
             Self::MessageBoard => "index.html?surface=message-board",
             Self::Network => "index.html?surface=network",
             Self::Pdf => "index.html?surface=pdf",
+            Self::FilePreview => "index.html?surface=file-preview",
             Self::Protobuf => "index.html?surface=protobuf",
             Self::QuickNote => "index.html?surface=quick-note",
             Self::Qrcode => "index.html?surface=qrcode",
@@ -551,6 +556,7 @@ impl ManagedToolId {
             Self::MessageBoard => "MooTool Message Board",
             Self::Network => "MooTool Network & IP",
             Self::Pdf => "MooTool PDF",
+            Self::FilePreview => "MooTool File Preview",
             Self::Protobuf => "MooTool Protobuf",
             Self::QuickNote => "MooTool Quick Note",
             Self::Qrcode => "MooTool QR Code",
@@ -583,6 +589,7 @@ impl ManagedToolId {
             "tool-message-board" => Some(Self::MessageBoard),
             "tool-network" => Some(Self::Network),
             "tool-pdf" => Some(Self::Pdf),
+            "tool-file-preview" => Some(Self::FilePreview),
             "tool-protobuf" => Some(Self::Protobuf),
             "tool-quick-note" => Some(Self::QuickNote),
             "tool-qrcode" => Some(Self::Qrcode),

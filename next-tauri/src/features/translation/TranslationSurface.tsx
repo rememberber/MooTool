@@ -14,7 +14,9 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import { credentialApi } from '../../platform/api/credentialApi'
 import { localDataApi } from '../../platform/api/localDataApi'
+import { settingsApi } from '../../platform/api/settingsApi'
 import { translationApi } from '../../platform/api/translationApi'
 import type { TranslationHistory, TranslationWord } from '../../platform/contracts/localData'
 import type { TranslationProvider } from '../../platform/contracts/translation'
@@ -30,8 +32,11 @@ import {
   alternateTargetLanguage,
   includesTranslationQuery,
   languageLabel,
+  providerLabel,
+  supportsTranslationLanguage,
   translationLanguages
 } from './translationTools'
+import { formatTranslationName, namingFormats, splitIdentifiers, type NamingFormat } from './translationNaming'
 import { translationMessages } from './translationMessages'
 
 type TranslationTab = 'translate' | 'words' | 'history'
@@ -47,6 +52,7 @@ export function TranslationSurface() {
   const [sourceLang, setSourceLang] = useState('auto')
   const [targetLang, setTargetLang] = useState('zh-CN')
   const [provider, setProvider] = useState<TranslationProvider>('google')
+  const [namingFormat, setNamingFormat] = useState<NamingFormat>('camelCase')
   const [providerUsed, setProviderUsed] = useState<TranslationProvider>()
   const [fallbackUsed, setFallbackUsed] = useState(false)
   const [translating, setTranslating] = useState(false)
@@ -89,7 +95,7 @@ export function TranslationSurface() {
     setTarget(entry.outputText)
     if (typeof metadata.sourceLang === 'string') setSourceLang(metadata.sourceLang)
     if (typeof metadata.targetLang === 'string') setTargetLang(metadata.targetLang)
-    if (metadata.provider === 'google' || metadata.provider === 'bing') setProvider(metadata.provider)
+    if (metadata.provider === 'google' || metadata.provider === 'bing' || metadata.provider === 'deepl') setProvider(metadata.provider)
     setTab('translate')
     setFailed(false)
   })
@@ -118,6 +124,9 @@ export function TranslationSurface() {
     setFailed(false)
     setNotice({ key: 'notice.translating' })
     try {
+      if (provider === 'deepl' && !(await credentialApi.getDeepLStatus()).stored) {
+        throw new Error('DEEPL_KEY_REQUIRED')
+      }
       const result = await translationApi.translate({
         requestId,
         text: value,
@@ -130,15 +139,15 @@ export function TranslationSurface() {
       setTarget(result.text)
       setProviderUsed(result.provider)
       setFallbackUsed(result.fallbackUsed)
-      setNotice({ key: result.fallbackUsed ? 'notice.completeFallback' : 'notice.complete', values: { provider: result.provider === 'google' ? 'Google' : 'Bing' } })
+      setNotice({ key: result.fallbackUsed ? 'notice.completeFallback' : 'notice.complete', values: { provider: providerLabel(result.provider) } })
       recordOperation(t('operation.translate'), `${languageName(sourceLang)} → ${languageName(targetLang)} · ${value.length} · ${result.provider}`, 'success', {
         inputText: value, outputText: result.text, metadata: { sourceLang, targetLang, provider, providerUsed: result.provider }
       })
     } catch (cause) {
       if (sequence !== requestSequence.current) return
       setFailed(true)
-      setNotice({ raw: errorMessage(cause) })
-      recordOperation(t('operation.translate'), `${languageName(sourceLang)} → ${languageName(targetLang)} · ${errorMessage(cause)}`, 'error', {
+      setNotice({ raw: translationErrorMessage(cause, t) })
+      recordOperation(t('operation.translate'), `${languageName(sourceLang)} → ${languageName(targetLang)} · ${translationErrorMessage(cause, t)}`, 'error', {
         inputText: value, metadata: { sourceLang, targetLang, provider }
       })
     } finally {
@@ -150,6 +159,7 @@ export function TranslationSurface() {
   }, [cancelActive, languageName, provider, recordOperation, settings.network.translationTimeoutSeconds, sourceLang, t, targetLang])
 
   useEffect(() => {
+    if (provider === 'deepl') return
     if (suppressNextAutomaticTranslation.current) {
       suppressNextAutomaticTranslation.current = false
       return
@@ -163,7 +173,7 @@ export function TranslationSurface() {
       window.clearTimeout(timer)
       cancelActive()
     }
-  }, [cancelActive, source, translate])
+  }, [cancelActive, provider, source, translate])
 
   function exchange() {
     cancelActive()
@@ -174,6 +184,18 @@ export function TranslationSurface() {
     setSource(target)
     setTarget(source)
     persistDefaults({ translationSourceLang: nextSourceLang, translationTargetLang: nextTargetLang })
+  }
+
+  function updateProvider(nextProvider: TranslationProvider) {
+    let nextSource = sourceLang
+    let nextTarget = targetLang
+    if (!supportsTranslationLanguage(nextProvider, nextSource, true)) nextSource = 'auto'
+    if (!supportsTranslationLanguage(nextProvider, nextTarget, false)) nextTarget = nextSource === 'en' ? 'zh-CN' : 'en'
+    if (nextSource !== 'auto' && nextSource === nextTarget) nextTarget = alternateTargetLanguage(nextSource)
+    setProvider(nextProvider)
+    setSourceLang(nextSource)
+    setTargetLang(nextTarget)
+    persistDefaults({ translationProvider: nextProvider, translationSourceLang: nextSource, translationTargetLang: nextTarget })
   }
 
   function updateSourceLanguage(value: string) {
@@ -240,6 +262,8 @@ export function TranslationSurface() {
     setTab('translate')
   }
 
+  const formattedName = targetLang === 'en' && !translating ? formatTranslationName(target, namingFormat) : ''
+
   return (
     <main className="utility-workbench translation-workbench">
       <header className="utility-header">
@@ -254,18 +278,26 @@ export function TranslationSurface() {
       {tab === 'translate' && (
         <section className="translation-main">
           <div className="translation-toolbar">
-            <LanguageSelect value={sourceLang} includeAuto onChange={updateSourceLanguage} />
+            <LanguageSelect provider={provider} value={sourceLang} includeAuto onChange={updateSourceLanguage} />
             <button type="button" title={t('action.exchange')} onClick={exchange}><ArrowLeftRight /></button>
-            <LanguageSelect value={targetLang} onChange={updateTargetLanguage} />
+            <LanguageSelect provider={provider} value={targetLang} onChange={updateTargetLanguage} />
             <span />
-            <label>{t('option.provider')}<select value={provider} onChange={(event) => { const nextProvider = event.target.value as TranslationProvider; setProvider(nextProvider); persistDefaults({ translationProvider: nextProvider }) }}><option value="google">Google</option><option value="bing">Bing</option></select></label>
+            <label>{t('option.provider')}<select value={provider} onChange={(event) => updateProvider(event.target.value as TranslationProvider)}><option value="google">Google</option><option value="bing">Bing</option><option value="deepl">DeepL</option></select></label>
             <button type="button" disabled={!target} onClick={() => void copyTarget()}><Copy />{t('action.copy')}</button>
             <button type="button" disabled={!source.trim()} onClick={() => void saveCurrentWord()}><Star />{t('action.favorite')}</button>
             <button type="button" onClick={() => { cancelActive(); setSource(''); setTarget('') }}><X />{t('action.clear')}</button>
           </div>
+          <div className="translation-assist-toolbar">
+            <button className="secondary-button" type="button" disabled={!source.trim() || splitIdentifiers(source) === source} onClick={() => setSource(splitIdentifiers(source))}>{t('action.splitIdentifiers')}</button>
+            {provider === 'deepl' && <button className="secondary-button" type="button" disabled={!source.trim() || translating} onClick={() => void translate(source)}>{t('action.translateNow')}</button>}
+            <label>{t('action.namingFormat')}<select aria-label={t('action.namingFormat')} value={namingFormat} onChange={(event) => setNamingFormat(event.target.value as NamingFormat)}>{namingFormats.map((format) => <option key={format}>{format}</option>)}</select></label>
+            <button className="secondary-button" type="button" disabled={!formattedName} title={formattedName || t('action.namingHint')} onClick={() => { void clipboardApi.writeText(formattedName).then(() => { setFailed(false); setNotice({ key: 'notice.copied' }) }).catch(() => { setFailed(true); setNotice({ key: 'notice.copyFailed' }) }) }}><Copy />{t('action.copyName')}</button>
+            {formattedName && <code className="translation-name-preview" title={formattedName}>{formattedName}</code>}
+          </div>
+          {provider === 'deepl' && <div className="translation-engine-hint"><span>{t('deepl.hint')}</span><button className="secondary-button" type="button" onClick={() => { window.localStorage.setItem('mootool-next-tauri:settings-category', 'tools'); void settingsApi.openWindow() }}>{t('deepl.configure')}</button></div>}
           <div className="translation-editor-grid">
             <section><header><strong>{languageName(sourceLang)}</strong><span>{source.length} / 50000</span></header><CodeEditor ariaLabel={t('aria.source')} value={source} onChange={(value) => setSource(value.slice(0, 50_000))} className="utility-code-editor" lineWrapping /></section>
-            <section><header><strong>{languageName(targetLang)}</strong><span>{translating ? t('status.translating') : providerUsed ? `${providerUsed === 'google' ? 'Google' : 'Bing'}${fallbackUsed ? ` · ${t('status.fallback')}` : ''}` : t('status.result')}</span></header><CodeEditor ariaLabel={t('aria.result')} value={translating && !target ? t('status.translating') : target} readOnly className="utility-code-editor" lineWrapping /></section>
+            <section><header><strong>{languageName(targetLang)}</strong><span>{translating ? t('status.translating') : providerUsed ? `${providerLabel(providerUsed)}${fallbackUsed ? ` · ${t('status.fallback')}` : ''}` : t('status.result')}</span></header><CodeEditor ariaLabel={t('aria.result')} value={translating && !target ? t('status.translating') : target} readOnly className="utility-code-editor" lineWrapping /></section>
           </div>
         </section>
       )}
@@ -281,13 +313,21 @@ export function TranslationSurface() {
   )
 }
 
-function LanguageSelect({ value, includeAuto = false, onChange }: { value: string; includeAuto?: boolean; onChange: (value: string) => void }) {
+function LanguageSelect({ provider, value, includeAuto = false, onChange }: { provider: TranslationProvider; value: string; includeAuto?: boolean; onChange: (value: string) => void }) {
   const { t, locale } = useLocalizedMessages(translationMessages)
   return (
     <select aria-label={includeAuto ? t('aria.sourceLanguage') : t('aria.targetLanguage')} value={value} onChange={(event) => onChange(event.target.value)}>
-      {translationLanguages.map((code) => includeAuto || code !== 'auto' ? <option key={code} value={code}>{languageLabel(code, locale, t('language.auto'))}</option> : null)}
+      {translationLanguages.map((code) => includeAuto || code !== 'auto' ? <option key={code} value={code} disabled={!supportsTranslationLanguage(provider, code, includeAuto)}>{languageLabel(code, locale, t('language.auto'))}</option> : null)}
     </select>
   )
+}
+
+const deepLErrorCodes = ['DEEPL_KEY_REQUIRED', 'DEEPL_INVALID_KEY', 'DEEPL_QUOTA_EXCEEDED', 'DEEPL_RATE_LIMITED', 'DEEPL_UNSUPPORTED_LANGUAGE', 'DEEPL_EMPTY_RESPONSE'] as const
+
+function translationErrorMessage(cause: unknown, t: (key: TranslationMessageKey) => string): string {
+  const message = errorMessage(cause)
+  const code = deepLErrorCodes.find((value) => message.includes(value))
+  return code ? t(`error.${code}`) : message
 }
 
 function WordBook({ onApply }: { onApply: (word: TranslationWord) => void }) {

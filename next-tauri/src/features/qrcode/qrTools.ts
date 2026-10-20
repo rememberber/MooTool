@@ -1,4 +1,5 @@
 import { BrowserQRCodeReader } from '@zxing/browser'
+import { DecodeHintType } from '@zxing/library'
 import QRCode from 'qrcode'
 
 export type QrErrorCorrection = 'L' | 'M' | 'Q' | 'H'
@@ -23,11 +24,16 @@ export interface QrOptions {
 }
 
 export const defaultQrOptions: QrOptions = {
-  dark: '#111827',
+  dark: '#111111',
   errorCorrection: 'M',
-  light: '#ffffff',
-  margin: 2,
-  size: 420
+  light: '#FFFFFF',
+  margin: 4,
+  size: 300
+}
+
+export function normalizeQrSize(size: number): number {
+  if (!Number.isFinite(size)) return 300
+  return Math.min(2000, Math.max(120, Math.round(size)))
 }
 
 export async function generateQrSvg(value: string, options: QrOptions): Promise<string> {
@@ -48,35 +54,38 @@ export async function generateQrSvg(value: string, options: QrOptions): Promise<
 
 export async function generateQrPngDataUrl(value: string, options: QrOptions, logoDataUrl = ''): Promise<string> {
   const text = validateContent(value)
-  validateOptions(options)
+  const width = normalizeQrSize(options.size)
   try {
     const dataUrl = await QRCode.toDataURL(text, {
-      type: 'image/png',
-      width: options.size,
-      margin: options.margin,
+      width,
+      margin: 4,
       errorCorrectionLevel: options.errorCorrection,
-      color: { dark: options.dark, light: options.light }
+      color: { dark: '#111111', light: '#FFFFFF' }
     })
     if (!logoDataUrl) return dataUrl
-    const [base, logo] = await Promise.all([loadImage(dataUrl), loadImage(logoDataUrl)])
-    const canvas = document.createElement('canvas')
-    canvas.width = options.size
-    canvas.height = options.size
-    const context = canvas.getContext('2d')
-    if (!context) throw new Error('Canvas is unavailable')
-    context.drawImage(base, 0, 0, options.size, options.size)
-    const logoSize = Math.max(32, Math.round(options.size * 0.2))
-    const padding = Math.max(5, Math.round(logoSize * 0.12))
-    const x = Math.round((options.size - logoSize) / 2)
-    const y = Math.round((options.size - logoSize) / 2)
-    context.fillStyle = options.light
-    context.fillRect(x - padding, y - padding, logoSize + padding * 2, logoSize + padding * 2)
-    context.drawImage(logo, x, y, logoSize, logoSize)
-    return canvas.toDataURL('image/png')
+    return addLogo(dataUrl, logoDataUrl, width)
   } catch (cause) {
     if (cause instanceof QrToolError) throw cause
     throw new QrToolError('generate', { error: cause instanceof Error ? cause.message : String(cause) })
   }
+}
+
+async function addLogo(qrDataUrl: string, logoDataUrl: string, size: number): Promise<string> {
+  const [qrImage, logoImage] = await Promise.all([loadImage(qrDataUrl), loadImage(logoDataUrl)])
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const context = canvas.getContext('2d')
+  if (!context) throw new Error('Canvas is unavailable')
+  context.drawImage(qrImage, 0, 0, size, size)
+  const logoSize = Math.round(size * 0.2)
+  const x = Math.round((size - logoSize) / 2)
+  const y = Math.round((size - logoSize) / 2)
+  const padding = Math.max(4, Math.round(size * 0.015))
+  context.fillStyle = '#FFFFFF'
+  context.fillRect(x - padding, y - padding, logoSize + padding * 2, logoSize + padding * 2)
+  context.drawImage(logoImage, x, y, logoSize, logoSize)
+  return canvas.toDataURL('image/png')
 }
 
 export function svgDataUrl(svg: string): string {
@@ -86,15 +95,31 @@ export function svgDataUrl(svg: string): string {
 export async function decodeQrImage(file: File): Promise<string> {
   if (!file.type.startsWith('image/')) throw new QrToolError('imageType')
   if (file.size > 15 * 1024 * 1024) throw new QrToolError('imageLimit')
-  const url = URL.createObjectURL(file)
+  const dataUrl = await readQrLogo(file)
+  return recognizeQrDataUrl(dataUrl)
+}
+
+export async function recognizeQrDataUrl(dataUrl: string): Promise<string> {
+  if (!/^data:image\//.test(dataUrl)) throw new QrToolError('imageType')
+  const image = await loadImage(dataUrl)
+  const canvas = document.createElement('canvas')
+  canvas.width = image.naturalWidth || image.width
+  canvas.height = image.naturalHeight || image.height
+  const context = canvas.getContext('2d')
+  if (!context) throw new Error('Canvas is unavailable')
+  context.fillStyle = '#FFFFFF'
+  context.fillRect(0, 0, canvas.width, canvas.height)
+  context.drawImage(image, 0, 0, canvas.width, canvas.height)
+  const hints = new Map<DecodeHintType, unknown>([[DecodeHintType.TRY_HARDER, true]])
   try {
-    const result = await new BrowserQRCodeReader(undefined, { delayBetweenScanAttempts: 100 })
-      .decodeFromImageUrl(url)
-    return result.getText()
+    return new BrowserQRCodeReader(hints).decodeFromCanvas(canvas).getText()
   } catch {
-    throw new QrToolError('notFound')
-  } finally {
-    URL.revokeObjectURL(url)
+    try {
+      hints.set(DecodeHintType.PURE_BARCODE, true)
+      return new BrowserQRCodeReader(hints).decodeFromCanvas(canvas).getText()
+    } catch {
+      throw new QrToolError('notFound')
+    }
   }
 }
 
@@ -126,7 +151,7 @@ function loadImage(source: string): Promise<HTMLImageElement> {
 }
 
 function validateOptions(options: QrOptions): void {
-  if (!Number.isInteger(options.size) || options.size < 160 || options.size > 2048) {
+  if (!Number.isInteger(options.size) || options.size < 120 || options.size > 2000) {
     throw new QrToolError('size')
   }
   if (!Number.isInteger(options.margin) || options.margin < 0 || options.margin > 16) {

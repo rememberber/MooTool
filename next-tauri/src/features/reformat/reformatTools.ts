@@ -27,17 +27,18 @@ export async function formatCode(
   const tabWidth = clampIndent(indent)
   if (type === 'nginx') return formatNginx(input, tabWidth)
   if (type === 'java') {
-    const { default: beautify } = await import('js-beautify')
-    return beautify.js(input, {
-      indent_size: tabWidth,
-      indent_char: ' ',
-      indent_with_tabs: false,
-      brace_style: 'collapse',
-      preserve_newlines: true,
-      max_preserve_newlines: 2,
-      wrap_line_length: 120,
-      end_with_newline: false
-    }).trimEnd()
+    const [{ format }, javaPlugin] = await Promise.all([
+      import('prettier/standalone'),
+      import('prettier-plugin-java')
+    ])
+    return (await format(input, {
+      parser: 'java',
+      plugins: [javaPlugin.default],
+      tabWidth,
+      useTabs: false,
+      printWidth: 120,
+      endOfLine: 'lf'
+    })).trimEnd()
   }
 
   const { format } = await import('prettier/standalone')

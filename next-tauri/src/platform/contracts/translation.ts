@@ -1,4 +1,4 @@
-export type TranslationProvider = 'google' | 'bing'
+export type TranslationProvider = 'google' | 'bing' | 'deepl'
 
 export interface TranslationRequest {
   requestId: string

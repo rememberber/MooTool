@@ -34,27 +34,20 @@ interface Pair {
 type EncodeMessageKey = LocalizedMessageKey<typeof encodeMessages>
 type EncodeNotice = { key: EncodeMessageKey; values?: MessageValues } | { raw: string }
 
-const tabLabels: Record<EncodeTab, string> = {
-  unicode: 'Unicode',
-  url: 'URL',
-  base64: 'Base64',
-  hex: 'Hex',
-  ascii: 'ASCII'
+const initialPairs: Record<EncodeTab, Pair> = {
+  unicode: { left: 'MooTool 编码转换', right: '' },
+  url: { left: 'https://mootool.app/search?q=编码', right: '' },
+  hex: { left: 'MooTool', right: '' },
+  ascii: { left: 'MooTool', right: '' }
 }
 
 export function EncodeSurface() {
   const { t } = useLocalizedMessages(encodeMessages)
   const [tab, setTab] = useState<EncodeTab>('unicode')
-  const [pairs, setPairs] = useState<Record<EncodeTab, Pair>>(() => ({
-    unicode: { left: t('sample.unicode'), right: '' },
-    url: { left: t('sample.url'), right: '' },
-    base64: { left: t('sample.base64'), right: '' },
-    hex: { left: t('sample.hex'), right: '' },
-    ascii: { left: t('sample.ascii'), right: '' }
-  }))
+  const [pairs, setPairs] = useState<Record<EncodeTab, Pair>>(initialPairs)
   const [charset, setCharset] = useState<UrlCharset>('utf-8')
   const [asciiFormat, setAsciiFormat] = useState<AsciiFormat>('decimal')
-  const [notice, setNotice] = useState<EncodeNotice>({ key: 'notice.ready', values: { tab: 'Unicode' } })
+  const [notice, setNotice] = useState<EncodeNotice>({ key: 'notice.ready', values: { tab: t('tab.unicode') } })
   const [failed, setFailed] = useState(false)
   const [copiedSide, setCopiedSide] = useState<'left' | 'right' | ''>('')
   const pair = pairs[tab]
@@ -70,7 +63,7 @@ export function EncodeSurface() {
       rightLength: pair.right.length,
       rightHash: contentFingerprint(pair.right)
     }),
-    summary: t('session.summary', { tab: tabLabels[tab], left: pair.left.length, right: pair.right.length })
+    summary: t('session.summary', { tab: t(`tab.${tab}`), left: pair.left.length, right: pair.right.length })
   }), [asciiFormat, charset, pair.left, pair.right, t, tab])
   const { sessionId, reportError } = useToolSessionReport('encode', session.digest, session.summary)
   const recordOperation = useOperationHistory('encode')
@@ -102,7 +95,7 @@ export function EncodeSurface() {
       updatePair(direction === 'forward' ? { right: output } : { left: output })
       setNotice({ key: 'notice.done', values: { action: direction === 'forward' ? labels.forward : labels.reverse } })
       setFailed(false)
-      recordOperation(direction === 'forward' ? labels.forward : labels.reverse, `${tabLabels[tab]} · ${input.length} → ${output.length}`, 'success', {
+      recordOperation(direction === 'forward' ? labels.forward : labels.reverse, `${t(`tab.${tab}`)} · ${input.length} → ${output.length}`, 'success', {
         inputText: input, outputText: output, metadata: { tab, direction, charset, asciiFormat }
       })
     } catch (cause) {
@@ -130,7 +123,7 @@ export function EncodeSurface() {
 
   function activateTab(next: EncodeTab): void {
     setTab(next)
-    setNotice({ key: 'notice.ready', values: { tab: tabLabels[next] } })
+    setNotice({ key: 'notice.ready', values: { tab: t(`tab.${next}`) } })
     setFailed(false)
   }
 
@@ -152,7 +145,7 @@ export function EncodeSurface() {
               key={item}
               onClick={() => activateTab(item)}
             >
-              {tabLabels[item]}
+              {t(`tab.${item}`)}
             </button>
           ))}
         </div>

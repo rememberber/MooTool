@@ -21,26 +21,21 @@ describe('User-Agent analyzer', () => {
       deviceType: 'mobile',
       mobile: true
     })
+    expect(parseUserAgent('Mozilla/5.0 Googlebot/2.1').bot).toBe(true)
+  })
+
+  it('leaves unrecognized clients as Unknown', () => {
     expect(parseUserAgent(uaPresets[5][1])).toMatchObject({
-      deviceType: 'bot',
-      bot: true
-    })
-  })
-
-  it('identifies command-line clients with a fallback token', () => {
-    expect(parseUserAgent('curl/8.7.1')).toMatchObject({
-      browser: 'curl',
+      browser: 'Unknown',
       browserVersion: 'Unknown',
-      deviceType: 'desktop'
+      deviceType: 'desktop',
+      bot: false
     })
   })
 
-  it('rejects empty and oversized input', () => {
+  it('rejects empty input', () => {
     expect(() => parseUserAgent('')).toThrowError(
       expect.objectContaining<Partial<UaToolError>>({ code: 'empty' })
-    )
-    expect(() => parseUserAgent('a'.repeat(16_385))).toThrowError(
-      expect.objectContaining<Partial<UaToolError>>({ code: 'tooLong' })
     )
   })
 })

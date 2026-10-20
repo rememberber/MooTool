@@ -1,3 +1,5 @@
+import type { TranslationProvider } from '../../platform/contracts/translation'
+
 export const translationLanguages = [
   'auto', 'zh-CN', 'cht', 'en', 'jp', 'kor', 'fra', 'de', 'spa', 'it', 'pt', 'ru',
   'ara', 'th', 'vie', 'nl', 'pl', 'swe', 'fin', 'dan', 'cs', 'el', 'hu', 'rom',
@@ -20,6 +22,20 @@ export function languageLabel(code: string, locale = 'en-US', autoLabel = 'Auto 
 
 export function alternateTargetLanguage(code: string): string {
   return code === 'zh-CN' ? 'en' : 'zh-CN'
+}
+
+const deepLExcluded = new Set(['yue', 'wyw'])
+
+export function supportsTranslationLanguage(provider: TranslationProvider, code: string, source: boolean): boolean {
+  if (!source && code === 'auto') return false
+  if (provider === 'deepl' && deepLExcluded.has(code)) return false
+  return translationLanguages.some((language) => language === code)
+}
+
+export function providerLabel(provider: TranslationProvider): string {
+  if (provider === 'google') return 'Google'
+  if (provider === 'bing') return 'Bing'
+  return 'DeepL'
 }
 
 export function includesTranslationQuery(

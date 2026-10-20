@@ -16,6 +16,7 @@ export interface ImageAssetInput {
   dataUrl: string
   width: number
   height: number
+  createOnly?: boolean
 }
 
 export type ImageVectorizePreset = 'poster' | 'photo' | 'bw'

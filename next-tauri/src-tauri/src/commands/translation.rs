@@ -157,8 +157,9 @@ async fn execute_translation(
         .build()
         .map_err(|error| format!("failed to create translation client: {error}"))?;
     let providers = match request.preferred_provider {
-        TranslationProvider::Google => [TranslationProvider::Google, TranslationProvider::Bing],
-        TranslationProvider::Bing => [TranslationProvider::Bing, TranslationProvider::Google],
+        TranslationProvider::Google => vec![TranslationProvider::Google, TranslationProvider::Bing],
+        TranslationProvider::Bing => vec![TranslationProvider::Bing, TranslationProvider::Google],
+        TranslationProvider::DeepL => vec![TranslationProvider::DeepL],
     };
     let mut last_error = String::new();
     for provider in providers {
@@ -168,6 +169,9 @@ async fn execute_translation(
             }
             TranslationProvider::Bing => {
                 translate_bing(manager, &client, request, cancelled.clone()).await
+            }
+            TranslationProvider::DeepL => {
+                translate_deepl(&client, request, cancelled.clone()).await
             }
         };
         match translated {
@@ -188,6 +192,100 @@ async fn execute_translation(
     } else {
         last_error
     })
+}
+
+async fn translate_deepl(
+    client: &Client,
+    request: &TranslationRequest,
+    cancelled: Arc<Notify>,
+) -> Result<String, String> {
+    let key = super::secure_credentials::load_deepl_api_key()?
+        .unwrap_or_default();
+    let key = key.trim();
+    if key.is_empty() {
+        return Err("DEEPL_KEY_REQUIRED".into());
+    }
+    let source = deepl_language(&request.source_lang, true)?;
+    let target = deepl_language(&request.target_lang, false)?;
+    let host = if key.ends_with(":fx") {
+        "https://api-free.deepl.com"
+    } else {
+        "https://api.deepl.com"
+    };
+    let chunks = split_text(&request.text, 12_000)?;
+    let mut output = String::new();
+    for chunk in chunks {
+        let mut body = serde_json::json!({
+            "text": [chunk],
+            "target_lang": target,
+            "preserve_formatting": true
+        });
+        if let Some(source) = source {
+            body["source_lang"] = Value::String(source.into());
+        }
+        let response = tokio::select! {
+            response = client.post(format!("{host}/v2/translate")).header("Authorization", format!("DeepL-Auth-Key {key}")).json(&body).send() => response.map_err(|error| format!("DeepL translation failed: {error}"))?,
+            _ = cancelled.notified() => return Err("translation request cancelled".into()),
+        };
+        let status = response.status();
+        if status.as_u16() == 401 || status.as_u16() == 403 {
+            return Err("DEEPL_INVALID_KEY".into());
+        }
+        if status.as_u16() == 456 {
+            return Err("DEEPL_QUOTA_EXCEEDED".into());
+        }
+        if status.as_u16() == 429 {
+            return Err("DEEPL_RATE_LIMITED".into());
+        }
+        if !status.is_success() {
+            return Err(format!("DeepL HTTP {status}"));
+        }
+        let payload = response
+            .json::<Value>()
+            .await
+            .map_err(|error| format!("invalid DeepL translation response: {error}"))?;
+        let translated = payload
+            .pointer("/translations/0/text")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "DEEPL_EMPTY_RESPONSE".to_string())?;
+        if translated.is_empty() {
+            return Err("DEEPL_EMPTY_RESPONSE".into());
+        }
+        output.push_str(translated);
+    }
+    Ok(output)
+}
+
+fn deepl_language(code: &str, source: bool) -> Result<Option<String>, String> {
+    if code == "yue" || code == "wyw" || (!source && code == "auto") {
+        return Err("DEEPL_UNSUPPORTED_LANGUAGE".into());
+    }
+    if code == "auto" {
+        return Ok(None);
+    }
+    let mapped = if code == "zh-CN" {
+        if source { "ZH" } else { "ZH-HANS" }
+    } else if code == "cht" {
+        if source { "ZH" } else { "ZH-HANT" }
+    } else {
+        match code {
+            "jp" => "JA",
+            "kor" => "KO",
+            "fra" => "FR",
+            "spa" => "ES",
+            "ara" => "AR",
+            "bul" => "BG",
+            "est" => "ET",
+            "dan" => "DA",
+            "fin" => "FI",
+            "rom" => "RO",
+            "slo" => "SL",
+            "swe" => "SV",
+            "vie" => "VI",
+            other => return Ok(Some(other.to_uppercase())),
+        }
+    };
+    Ok(Some(mapped.into()))
 }
 
 async fn translate_google(

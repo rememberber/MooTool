@@ -32,7 +32,8 @@ interface BoardPreferences {
   size: number
 }
 
-const storageKey = 'mootool-next-tauri.message-board.v1'
+const storageKey = 'mootool.message-board.preferences.v1'
+const legacyStorageKey = 'mootool-next-tauri.message-board.v1'
 const maximumMessageLength = 80
 const defaultPreferences: BoardPreferences = {
   message: '',
@@ -43,10 +44,12 @@ const defaultPreferences: BoardPreferences = {
 const presets: Array<{ messageKey: BoardMessageKey; theme: BoardTheme }> = [
   { messageKey: 'preset.away', theme: 'sunbeam' },
   { messageKey: 'preset.closed', theme: 'coral' },
-  { messageKey: 'preset.break', theme: 'paper' },
-  { messageKey: 'preset.focus', theme: 'cobalt' },
+  { messageKey: 'preset.rest', theme: 'paper' },
+  { messageKey: 'preset.busy', theme: 'cobalt' },
   { messageKey: 'preset.meeting', theme: 'forest' },
-  { messageKey: 'preset.quiet', theme: 'midnight' }
+  { messageKey: 'preset.quiet', theme: 'midnight' },
+  { messageKey: 'preset.maintenance', theme: 'cobalt' },
+  { messageKey: 'preset.call', theme: 'forest' }
 ]
 const themes: Array<{ id: BoardTheme; labelKey: BoardMessageKey; colors: [string, string] }> = [
   { id: 'sunbeam', labelKey: 'theme.sunbeam', colors: ['#f4ce57', '#183832'] },
@@ -60,7 +63,7 @@ const themes: Array<{ id: BoardTheme; labelKey: BoardMessageKey; colors: [string
 export function MessageBoardSurface() {
   const dialog = useDesktopDialog()
   const { t } = useLocalizedMessages(messageBoardMessages)
-  const initial = useRef(readPreferences())
+  const initial = useRef(readPreferences(t('preset.away')))
   const [message, setMessage] = useState(initial.current.message)
   const [theme, setTheme] = useState(initial.current.theme)
   const [alignment, setAlignment] = useState(initial.current.alignment)
@@ -293,7 +296,7 @@ export function MessageBoardSurface() {
               <button type="button" aria-pressed={alignment === 'center'} onClick={() => setAlignment('center')}><AlignCenter />{t('align.center')}</button>
             </div>
             <label className="message-display-size">{t('size.label')}
-              <input type="range" min="60" max="140" value={size} onChange={(event) => setSize(Number(event.target.value))} />
+              <input type="range" min="70" max="130" value={size} onChange={(event) => setSize(Number(event.target.value))} />
               <span>{size}%</span>
             </label>
           </section>
@@ -337,8 +340,8 @@ function fitMessage(frame: HTMLElement, label: HTMLElement, size: number): void 
   const availableHeight = frame.clientHeight
   const availableWidth = frame.clientWidth
   if (availableHeight <= 0 || availableWidth <= 0) return
-  let low = 24
-  let high = Math.max(low, Math.min(300, Math.round(availableHeight * 0.72 * size / 100)))
+  let low = 26
+  let high = Math.max(low, Math.min(280, Math.round(availableHeight * 0.72 * size / 100)))
   while (low < high) {
     const candidate = Math.ceil((low + high) / 2)
     label.style.fontSize = `${candidate}px`
@@ -348,17 +351,19 @@ function fitMessage(frame: HTMLElement, label: HTMLElement, size: number): void 
   label.style.fontSize = `${low}px`
 }
 
-function readPreferences(): BoardPreferences {
+function readPreferences(fallbackMessage: string): BoardPreferences {
+  const fallback: BoardPreferences = { ...defaultPreferences, message: fallbackMessage }
   try {
-    const value = JSON.parse(window.localStorage.getItem(storageKey) ?? '{}') as Partial<BoardPreferences>
+    const stored = window.localStorage.getItem(storageKey) ?? window.localStorage.getItem(legacyStorageKey)
+    const value = JSON.parse(stored ?? '') as Partial<BoardPreferences>
     return {
-      message: typeof value.message === 'string' ? value.message.slice(0, maximumMessageLength) : defaultPreferences.message,
-      theme: themes.some((item) => item.id === value.theme) ? value.theme as BoardTheme : defaultPreferences.theme,
-      alignment: value.alignment === 'left' || value.alignment === 'center' ? value.alignment : defaultPreferences.alignment,
-      size: typeof value.size === 'number' ? Math.min(140, Math.max(60, value.size)) : defaultPreferences.size
+      message: typeof value.message === 'string' ? value.message.slice(0, maximumMessageLength) : fallback.message,
+      theme: themes.some((item) => item.id === value.theme) ? value.theme as BoardTheme : fallback.theme,
+      alignment: value.alignment === 'left' || value.alignment === 'center' ? value.alignment : fallback.alignment,
+      size: typeof value.size === 'number' ? Math.min(130, Math.max(70, value.size)) : fallback.size
     }
   } catch {
-    return defaultPreferences
+    return fallback
   }
 }
 

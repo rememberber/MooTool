@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 pub enum TranslationProvider {
     Google,
     Bing,
+    #[serde(rename = "deepl")]
+    DeepL,
 }
 
 #[derive(Clone, Debug, Deserialize)]

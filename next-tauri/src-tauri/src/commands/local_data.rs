@@ -15,16 +15,18 @@ use crate::{
         QuickNoteAttachmentImportRequest, QuickNoteFolder, SystemHostsFile, ToolFavorite,
         TranslationHistory, TranslationWord,
     },
-    repositories::local_data::LocalDataRepository,
+    repositories::{local_data::LocalDataRepository, settings::SettingsRepository},
 };
 
 pub const LOCAL_DATA_CHANGED_EVENT: &str = "mootool://local-data-changed";
 
 #[tauri::command]
 pub fn list_quick_notes(
+    app: tauri::AppHandle,
     repository: tauri::State<'_, LocalDataRepository>,
+    settings: tauri::State<'_, SettingsRepository>,
 ) -> AppResult<Vec<QuickNote>> {
-    Ok(repository.list_notes()?)
+    Ok(super::quick_note_files::list_notes(&app, &repository, settings.snapshot().vault.hide_gitignored_files)?)
 }
 
 #[tauri::command]
@@ -33,9 +35,73 @@ pub fn save_quick_note(
     repository: tauri::State<'_, LocalDataRepository>,
     note: QuickNote,
 ) -> AppResult<QuickNote> {
-    let saved = repository.save_note(note)?;
+    let saved = super::quick_note_files::save_note(&app, &repository, note)?;
     emit_changed(&app, "quick-note")?;
     Ok(saved)
+}
+
+#[tauri::command]
+pub fn open_quick_note_vault(app: tauri::AppHandle) -> AppResult<()> {
+    let vault = super::quick_note_files::open_vault(&app)?;
+    let path = vault.root();
+    if cfg!(target_os = "windows") {
+        std::process::Command::new("explorer")
+            .arg(path)
+            .spawn()
+            .map_err(|error| format!("failed to open quick note vault: {error}"))?;
+        return Ok(());
+    }
+    let status = if cfg!(target_os = "macos") {
+        std::process::Command::new("open").arg(path).status()
+    } else {
+        std::process::Command::new("xdg-open").arg(path).status()
+    }
+    .map_err(|error| format!("failed to open quick note vault: {error}"))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("failed to open quick note vault: {status}"))
+    }
+}
+
+pub fn reveal_quick_note_entry(app: tauri::AppHandle, relative_path: String) -> AppResult<()> {
+    let vault = super::quick_note_files::open_vault(&app)?;
+    let resolved = if let Ok(target) = vault.resolve_entry(&relative_path) {
+        target
+    } else {
+        let file = vault
+            .note_files()?
+            .into_iter()
+            .find(|file| file.metadata.id == relative_path || file.relative_path == relative_path)
+            .ok_or_else(|| "Vault entry does not exist".to_string())?;
+        vault.resolve_entry(&file.relative_path)?
+    };
+    reveal_in_file_manager(&resolved)
+}
+
+fn reveal_in_file_manager(path: &std::path::Path) -> AppResult<()> {
+    let target = path.to_string_lossy().to_string();
+    let mut command = if cfg!(target_os = "macos") {
+        let mut command = std::process::Command::new("open");
+        command.args(["-R", &target]);
+        command
+    } else if cfg!(target_os = "windows") {
+        let mut command = std::process::Command::new("explorer");
+        command.arg(format!("/select,{target}"));
+        command
+    } else {
+        let mut command = std::process::Command::new("xdg-open");
+        command.arg(path.parent().unwrap_or(path));
+        command
+    };
+    let status = command
+        .status()
+        .map_err(|error| format!("failed to reveal vault entry: {error}"))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("failed to reveal vault entry: {status}"))
+    }
 }
 
 #[tauri::command]
@@ -44,7 +110,7 @@ pub fn delete_quick_note(
     repository: tauri::State<'_, LocalDataRepository>,
     id: String,
 ) -> AppResult<bool> {
-    let deleted = repository.delete_note(&id)?;
+    let deleted = super::quick_note_files::delete_note(&app, &repository, &id)?;
     if deleted {
         emit_changed(&app, "quick-note")?;
     }
@@ -53,9 +119,11 @@ pub fn delete_quick_note(
 
 #[tauri::command]
 pub fn list_quick_note_folders(
+    app: tauri::AppHandle,
     repository: tauri::State<'_, LocalDataRepository>,
+    settings: tauri::State<'_, SettingsRepository>,
 ) -> AppResult<Vec<QuickNoteFolder>> {
-    Ok(repository.list_note_folders()?)
+    Ok(super::quick_note_files::list_folders(&app, &repository, settings.snapshot().vault.hide_gitignored_files)?)
 }
 
 #[tauri::command]
@@ -64,7 +132,7 @@ pub fn save_quick_note_folder(
     repository: tauri::State<'_, LocalDataRepository>,
     folder: QuickNoteFolder,
 ) -> AppResult<QuickNoteFolder> {
-    let saved = repository.save_note_folder(folder)?;
+    let saved = super::quick_note_files::save_folder(&app, &repository, folder)?;
     emit_changed(&app, "quick-note-folder")?;
     Ok(saved)
 }
@@ -77,7 +145,7 @@ pub fn rename_quick_note_folder(
     next_path: String,
     updated_at: i64,
 ) -> AppResult<Vec<QuickNoteFolder>> {
-    let renamed = repository.rename_note_folder(&path, &next_path, updated_at)?;
+    let renamed = super::quick_note_files::rename_folder(&app, &repository, &path, &next_path, updated_at)?;
     emit_changed(&app, "quick-note-folder")?;
     Ok(renamed)
 }
@@ -88,7 +156,7 @@ pub fn delete_quick_note_folder(
     repository: tauri::State<'_, LocalDataRepository>,
     path: String,
 ) -> AppResult<usize> {
-    let moved = repository.delete_note_folder(&path, now_millis())?;
+    let moved = super::quick_note_files::delete_folder(&app, &repository, &path, now_millis())?;
     emit_changed(&app, "quick-note-folder")?;
     Ok(moved)
 }
@@ -145,8 +213,8 @@ pub fn import_quick_note_attachment(
     if !metadata.is_file() || metadata.file_type().is_symlink() {
         return Err("attachment source must be a regular file".into());
     }
-    if metadata.len() > 10 * 1024 * 1024 {
-        return Err("attachment cannot exceed 10 MiB".into());
+    if metadata.len() > 20 * 1024 * 1024 {
+        return Err("Attachment exceeds 20 MB limit".into());
     }
     let name = path
         .file_name()
@@ -154,15 +222,12 @@ pub fn import_quick_note_attachment(
         .ok_or_else(|| "attachment filename must be valid UTF-8".to_string())?
         .to_string();
     let data = fs::read(&path).map_err(|error| format!("failed to read attachment: {error}"))?;
-    let attachment = QuickNoteAttachment {
-        id: request.id,
-        note_id: request.note_id,
-        mime_type: attachment_mime_type(&name).into(),
-        name,
-        size_bytes: data.len() as u64,
-        created_at: request.created_at,
-    };
-    let saved = repository.save_note_attachment(attachment, &data)?;
+    let extension = PathBuf::from(&name)
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default()
+        .to_string();
+    let saved = store_vault_attachment(&app, &repository, &request.id, &request.note_id, &extension, request.created_at, &data)?;
     emit_changed(&app, "quick-note-attachment")?;
     Ok(saved)
 }
@@ -173,31 +238,59 @@ pub fn import_quick_note_attachment_data(
     repository: tauri::State<'_, LocalDataRepository>,
     request: QuickNoteAttachmentDataRequest,
 ) -> AppResult<QuickNoteAttachment> {
-    if request.data_base64.len() > 14 * 1024 * 1024 {
-        return Err("attachment cannot exceed 10 MiB".into());
+    if request.data_base64.len() > 28 * 1024 * 1024 {
+        return Err("Attachment exceeds 20 MB limit".into());
     }
     let data = BASE64
         .decode(&request.data_base64)
         .map_err(|_| "attachment data is not valid Base64".to_string())?;
-    if data.is_empty() || data.len() > 10 * 1024 * 1024 {
-        return Err("attachment must contain 1 byte to 10 MiB".into());
+    if data.is_empty() || data.len() > 20 * 1024 * 1024 {
+        return Err("Attachment exceeds 20 MB limit".into());
     }
     let expected_mime_type = attachment_mime_type(&request.name);
     if !request.mime_type.starts_with("image/") || expected_mime_type != request.mime_type {
-        return Err("pasted and dropped attachment data must be a supported image".into());
+        return Err("Unsupported image attachment".into());
     }
     validate_image_attachment_signature(&request.mime_type, &data)?;
-    let attachment = QuickNoteAttachment {
-        id: request.id,
-        note_id: request.note_id,
-        name: request.name,
-        mime_type: request.mime_type,
-        size_bytes: data.len() as u64,
-        created_at: request.created_at,
-    };
-    let saved = repository.save_note_attachment(attachment, &data)?;
+    let extension = PathBuf::from(&request.name)
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default()
+        .to_string();
+    let saved = store_vault_attachment(&app, &repository, &request.id, &request.note_id, &extension, request.created_at, &data)?;
     emit_changed(&app, "quick-note-attachment")?;
     Ok(saved)
+}
+
+fn store_vault_attachment(
+    app: &tauri::AppHandle,
+    repository: &LocalDataRepository,
+    id: &str,
+    note_id: &str,
+    extension: &str,
+    created_at: i64,
+    data: &[u8],
+) -> Result<QuickNoteAttachment, String> {
+    let vault = super::quick_note_files::open_vault(app)?;
+    let stored = vault.store_attachment(data, extension)?;
+    let attachment = QuickNoteAttachment {
+        id: id.into(),
+        note_id: note_id.into(),
+        name: stored.name,
+        mime_type: stored.mime_type.clone(),
+        size_bytes: stored.size_bytes,
+        created_at,
+        relative_path: stored.relative_path.clone(),
+        markdown: stored.markdown,
+        data_url: format!("data:{};base64,{}", stored.mime_type, BASE64.encode(data)),
+    };
+    match repository.save_note_attachment(attachment.clone(), data) {
+        Ok(saved) => Ok(saved),
+        Err(error) => {
+            let _ = vault.delete_attachment(&stored.relative_path);
+            Err(error)
+        }
+    }
 }
 
 fn validate_image_attachment_signature(mime_type: &str, data: &[u8]) -> Result<(), String> {
@@ -206,6 +299,7 @@ fn validate_image_attachment_signature(mime_type: &str, data: &[u8]) -> Result<(
         "image/jpeg" => data.starts_with(&[0xff, 0xd8, 0xff]),
         "image/gif" => data.starts_with(b"GIF87a") || data.starts_with(b"GIF89a"),
         "image/webp" => data.starts_with(b"RIFF") && data.get(8..12) == Some(b"WEBP"),
+        "image/bmp" => data.starts_with(b"BM"),
         _ => false,
     };
     valid
@@ -215,11 +309,16 @@ fn validate_image_attachment_signature(mime_type: &str, data: &[u8]) -> Result<(
 
 #[tauri::command]
 pub fn export_quick_note_attachment(
+    app: tauri::AppHandle,
     repository: tauri::State<'_, LocalDataRepository>,
     id: String,
     destination_path: String,
 ) -> AppResult<()> {
-    let (_, data) = repository.note_attachment_data(&id)?;
+    let (attachment, sqlite_data) = repository.note_attachment_data(&id)?;
+    let data = super::quick_note_files::open_vault(&app)
+        .ok()
+        .and_then(|vault| vault.read_attachment(&format!("attachments/{}", attachment.name)).ok())
+        .unwrap_or(sqlite_data);
     let destination = PathBuf::from(destination_path);
     let parent = destination
         .parent()
@@ -247,11 +346,33 @@ pub fn delete_quick_note_attachment(
     repository: tauri::State<'_, LocalDataRepository>,
     id: String,
 ) -> AppResult<bool> {
+    let existing = repository.note_attachment_data(&id).ok();
     let deleted = repository.delete_note_attachment(&id)?;
     if deleted {
+        if let Some((attachment, _)) = existing {
+            if let Ok(vault) = super::quick_note_files::open_vault(&app) {
+                let _ = vault.delete_attachment(&format!("attachments/{}", attachment.name));
+            }
+        }
         emit_changed(&app, "quick-note-attachment")?;
     }
     Ok(deleted)
+}
+
+#[tauri::command]
+pub fn read_quick_note_attachment_file(
+    app: tauri::AppHandle,
+    relative_path: String,
+) -> AppResult<String> {
+    let vault = super::quick_note_files::open_vault(&app)?;
+    let data = vault.read_attachment(&relative_path)?;
+    let extension = PathBuf::from(&relative_path)
+        .extension()
+        .and_then(|value| value.to_str())
+        .map(|value| format!(".{value}"))
+        .unwrap_or_default();
+    let mime = crate::repositories::quick_note_vault::image_mime(&extension);
+    Ok(format!("data:{mime};base64,{}", BASE64.encode(data)))
 }
 
 fn attachment_mime_type(name: &str) -> &'static str {
@@ -265,6 +386,7 @@ fn attachment_mime_type(name: &str) -> &'static str {
         "png" => "image/png",
         "jpg" | "jpeg" => "image/jpeg",
         "gif" => "image/gif",
+        "bmp" => "image/bmp",
         "webp" => "image/webp",
         "svg" => "image/svg+xml",
         "pdf" => "application/pdf",

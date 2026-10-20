@@ -39,6 +39,7 @@ import type {
   InterfaceStyle,
   ThemePreference
 } from '../../platform/contracts/settings'
+import { sqlDialects } from '../../platform/contracts/settings'
 import { translationLanguageCodes, translationLanguageLabel } from '../../platform/contracts/translationLanguages'
 import { errorMessage } from '../../shared/errors'
 import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
@@ -60,6 +61,8 @@ type SettingsCategory =
   | 'shortcuts'
   | 'about'
 
+const SETTINGS_CATEGORY_KEY = 'mootool-next-tauri:settings-category'
+
 const settingsCategories = [
   { id: 'general', label: 'settings.general', icon: Languages },
   { id: 'appearance', label: 'settings.appearance', icon: MonitorCog },
@@ -74,6 +77,13 @@ const settingsCategories = [
   { id: 'about', label: 'settings.about', icon: Info }
 ] as const
 
+function readInitialCategory(): SettingsCategory {
+  const requested = new URLSearchParams(window.location.search).get('category')
+    ?? window.localStorage.getItem(SETTINGS_CATEGORY_KEY)
+  window.localStorage.removeItem(SETTINGS_CATEGORY_KEY)
+  return settingsCategories.some((category) => category.id === requested) ? requested as SettingsCategory : 'general'
+}
+
 export function SettingsSurface() {
   const { settings, save, reset, error: providerError } = useSettings()
   const { t, toolTitle, locale } = useI18n()
@@ -81,10 +91,16 @@ export function SettingsSurface() {
   const [draft, setDraft] = useState(settings)
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
-  const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general')
+  const [activeCategory, setActiveCategory] = useState<SettingsCategory>(readInitialCategory)
   const [proxyPassword, setProxyPassword] = useState('')
   const [proxyPasswordDirty, setProxyPasswordDirty] = useState(false)
   const [proxyCredential, setProxyCredential] = useState<ProxyCredentialStatus>()
+  const [gitToken, setGitToken] = useState('')
+  const [gitTokenDirty, setGitTokenDirty] = useState(false)
+  const [gitCredential, setGitCredential] = useState<ProxyCredentialStatus>()
+  const [deeplKey, setDeeplKey] = useState('')
+  const [deeplKeyDirty, setDeeplKeyDirty] = useState(false)
+  const [deeplCredential, setDeeplCredential] = useState<ProxyCredentialStatus>()
   const [runtimeStatuses, setRuntimeStatuses] = useState<CodeRuntimeStatus[]>([])
   const [runtimeDetecting, setRuntimeDetecting] = useState(false)
   const [aboutVersion, setAboutVersion] = useState('')
@@ -100,6 +116,12 @@ export function SettingsSurface() {
   useEffect(() => {
     void credentialApi.getProxyStatus().then(setProxyCredential).catch((cause) => {
       setStatus(`${t('settings.proxyCredentialError')}: ${errorMessage(cause)}`)
+    })
+    void credentialApi.getGitStatus().then(setGitCredential).catch((cause) => {
+      setStatus(`${t('settings.gitCredentialError')}: ${errorMessage(cause)}`)
+    })
+    void credentialApi.getDeepLStatus().then(setDeeplCredential).catch((cause) => {
+      setStatus(`${t('settings.deeplCredentialError')}: ${errorMessage(cause)}`)
     })
   }, [t])
   useEffect(() => {
@@ -117,6 +139,7 @@ export function SettingsSurface() {
     () => JSON.stringify({ ...draft, revision: 0 }) !== JSON.stringify({ ...settings, revision: 0 }),
     [draft, settings]
   )
+  const unsaved = dirty || proxyPasswordDirty || gitTokenDirty || deeplKeyDirty
 
   useEffect(() => {
     if (!window.__TAURI_INTERNALS__) return
@@ -125,7 +148,7 @@ export function SettingsSurface() {
     void import('@tauri-apps/api/window').then(async ({ getCurrentWindow }) => {
       const currentWindow = getCurrentWindow()
       dispose = await currentWindow.onCloseRequested(async (event) => {
-        if (allowCloseRef.current || !dirty) return
+        if (allowCloseRef.current || !unsaved) return
         event.preventDefault()
         if (await dialog.confirm(t('settings.discardChanges'), { dangerous: true })) {
           allowCloseRef.current = true
@@ -135,10 +158,10 @@ export function SettingsSurface() {
       if (cancelled) dispose()
     })
     return () => { cancelled = true; dispose?.() }
-  }, [dialog, dirty, t])
+  }, [dialog, t, unsaved])
 
   async function handleClose(): Promise<void> {
-    if (dirty && !await dialog.confirm(t('settings.discardChanges'), { dangerous: true })) return
+    if (unsaved && !await dialog.confirm(t('settings.discardChanges'), { dangerous: true })) return
     allowCloseRef.current = true
     await closeWindow()
   }
@@ -154,6 +177,18 @@ export function SettingsSurface() {
         setProxyPassword('')
         setProxyPasswordDirty(false)
       }
+      if (gitTokenDirty) {
+        const credential = await credentialApi.setGitToken(gitToken)
+        setGitCredential(credential)
+        setGitToken('')
+        setGitTokenDirty(false)
+      }
+      if (deeplKeyDirty) {
+        const credential = await credentialApi.setDeepLApiKey(deeplKey)
+        setDeeplCredential(credential)
+        setDeeplKey('')
+        setDeeplKeyDirty(false)
+      }
       setDraft(saved)
       setStatus(t('settings.saved'))
     } catch (cause) {
@@ -168,10 +203,18 @@ export function SettingsSurface() {
     setStatus('')
     try {
       const credential = await credentialApi.setProxyPassword('')
+      const git = await credentialApi.setGitToken('')
+      const deepl = await credentialApi.setDeepLApiKey('')
       const restored = await reset()
       setProxyCredential(credential)
+      setGitCredential(git)
+      setDeeplCredential(deepl)
       setProxyPassword('')
+      setGitToken('')
+      setDeeplKey('')
       setProxyPasswordDirty(false)
+      setGitTokenDirty(false)
+      setDeeplKeyDirty(false)
       setDraft(restored)
       setStatus(t('settings.saved'))
     } catch (cause) {
@@ -424,6 +467,11 @@ export function SettingsSurface() {
         </SettingsSection>
 
         <SettingsSection active={activeCategory === 'editor'} icon={<SlidersHorizontal />} title={t('settings.editor')}>
+          <SettingRow label={t('settings.sqlDialect')}>
+            <select value={draft.editor.sqlDialect} onChange={(event) => setDraft(updateEditor(draft, { sqlDialect: event.target.value }))}>
+              {sqlDialects.map((dialect) => <option key={dialect} value={dialect}>{dialect}</option>)}
+            </select>
+          </SettingRow>
           <SettingRow label={t('settings.fontSize')}>
             <input
               type="number"
@@ -520,7 +568,20 @@ export function SettingsSurface() {
           <SettingRow label={t('settings.qrCodeSize')}><input type="number" min="120" max="2000" value={draft.tools.qrCodeSize} onChange={(event) => setDraft(updateTools(draft, { qrCodeSize: event.target.valueAsNumber }))} /></SettingRow>
           <SettingRow label={t('settings.qrErrorCorrection')}><select value={draft.tools.qrErrorCorrection} onChange={(event) => setDraft(updateTools(draft, { qrErrorCorrection: event.target.value as AppSettings['tools']['qrErrorCorrection'] }))}>{(['L', 'M', 'Q', 'H'] as const).map((level) => <option key={level}>{level}</option>)}</select></SettingRow>
           <SettingRow label={t('settings.randomStringLength')}><input type="number" min="1" max="4096" value={draft.tools.randomStringLength} onChange={(event) => setDraft(updateTools(draft, { randomStringLength: event.target.valueAsNumber }))} /></SettingRow>
-          <SettingRow label={t('settings.translationProvider')}><select value={draft.tools.translationProvider} onChange={(event) => setDraft(updateTools(draft, { translationProvider: event.target.value as AppSettings['tools']['translationProvider'] }))}><option value="google">Google</option><option value="bing">Bing</option></select></SettingRow>
+          <SettingRow label={t('settings.translationProvider')}><select value={draft.tools.translationProvider} onChange={(event) => setDraft(updateTools(draft, { translationProvider: event.target.value as AppSettings['tools']['translationProvider'] }))}><option value="google">Google</option><option value="bing">Bing</option><option value="deepl">DeepL</option></select></SettingRow>
+          <SettingRow label={t('settings.deeplApiKey')}>
+            <div className="settings-secret-field">
+              <input
+                type="password"
+                value={deeplKey}
+                autoComplete="new-password"
+                placeholder={deeplCredential?.stored && !deeplKeyDirty ? t('settings.deeplApiKeyStored') : t('settings.deeplApiKeyEmpty')}
+                onChange={(event) => { setDeeplKey(event.target.value); setDeeplKeyDirty(true) }}
+              />
+              {(deeplCredential?.stored || deeplKeyDirty) && <button className="secondary-button" type="button" onClick={() => { setDeeplKey(''); setDeeplKeyDirty(true) }}>{t('settings.deeplApiKeyClear')}</button>}
+            </div>
+          </SettingRow>
+          <div className="settings-security-note"><strong>{t('settings.proxyPasswordSecurity')}</strong><span>{t('settings.deeplApiKeySecurityBody', { store: deeplCredential?.secureStore ?? t('settings.proxyPasswordStore') })}</span></div>
           <SettingRow label={t('settings.translationSourceLang')}>
             <select value={draft.tools.translationSourceLang} onChange={(event) => setDraft(updateTools(draft, { translationSourceLang: event.target.value }))}>
               {translationLanguageCodes.map((code) => <option key={code} value={code}>{translationLanguageLabel(code, locale)}</option>)}
@@ -535,13 +596,30 @@ export function SettingsSurface() {
         </SettingsSection>
 
         <SettingsSection active={activeCategory === 'vault'} icon={<FolderGit2 />} title={t('settings.vault')}>
+          <SettingRow label={t('settings.gitRemote')}><input value={draft.vault.gitRemote} placeholder="https://example.com/notes.git" onChange={(event) => setDraft({ ...draft, vault: { ...draft.vault, gitRemote: event.target.value } })} /></SettingRow>
+          <SettingRow label={t('settings.gitUsername')}><input value={draft.vault.gitUsername} onChange={(event) => setDraft({ ...draft, vault: { ...draft.vault, gitUsername: event.target.value } })} /></SettingRow>
           <SettingRow label={t('settings.vaultAutoCommit')}>
             <input type="checkbox" checked={draft.vault.autoCommit} onChange={(event) => setDraft({ ...draft, vault: { ...draft.vault, autoCommit: event.target.checked } })} />
           </SettingRow>
-          <div className="settings-storage-note">
-            <strong>{t('settings.vaultGitTitle')}</strong>
-            <span>{t('settings.vaultGitBody')}</span>
-          </div>
+          <SettingRow label={t('settings.autoCommitIdleSeconds')}><input type="number" min="5" max="3600" value={draft.vault.autoCommitIdleSeconds} onChange={(event) => setDraft({ ...draft, vault: { ...draft.vault, autoCommitIdleSeconds: event.target.valueAsNumber } })} /></SettingRow>
+          <SettingRow label={t('settings.autoCommitInactiveSeconds')}><input type="number" min="5" max="3600" value={draft.vault.autoCommitInactiveSeconds} onChange={(event) => setDraft({ ...draft, vault: { ...draft.vault, autoCommitInactiveSeconds: event.target.valueAsNumber } })} /></SettingRow>
+          <SettingRow label={t('settings.autoPullMinutes')}><input type="number" min="0" max="1440" value={draft.vault.autoPullMinutes} onChange={(event) => setDraft({ ...draft, vault: { ...draft.vault, autoPullMinutes: event.target.valueAsNumber } })} /></SettingRow>
+          <SettingRow label={t('settings.hideGitignoredFiles')}>
+            <input type="checkbox" checked={draft.vault.hideGitignoredFiles} onChange={(event) => setDraft({ ...draft, vault: { ...draft.vault, hideGitignoredFiles: event.target.checked } })} />
+          </SettingRow>
+          <SettingRow label={t('settings.gitToken')}>
+            <div className="settings-secret-field">
+              <input
+                type="password"
+                value={gitToken}
+                autoComplete="new-password"
+                placeholder={gitCredential?.stored && !gitTokenDirty ? t('settings.gitTokenStored') : t('settings.gitTokenEmpty')}
+                onChange={(event) => { setGitToken(event.target.value); setGitTokenDirty(true) }}
+              />
+              {(gitCredential?.stored || gitTokenDirty) && <button className="secondary-button" type="button" onClick={() => { setGitToken(''); setGitTokenDirty(true) }}>{t('settings.gitTokenClear')}</button>}
+            </div>
+          </SettingRow>
+          <div className="settings-security-note"><strong>{t('settings.proxyPasswordSecurity')}</strong><span>{t('settings.gitTokenSecurityBody', { store: gitCredential?.secureStore ?? t('settings.proxyPasswordStore') })}</span></div>
         </SettingsSection>
 
         <SettingsSection active={activeCategory === 'shortcuts'} icon={<Command />} title={t('settings.shortcuts')}>
@@ -603,7 +681,7 @@ export function SettingsSurface() {
         <button className="secondary-button" type="button" disabled={busy} onClick={() => void handleReset()}>
           <RotateCcw /> {t('settings.reset')}
         </button>
-        <button className="primary-button" type="button" disabled={busy || !dirty} onClick={() => void handleSave()}>
+        <button className="primary-button" type="button" disabled={busy || !unsaved} onClick={() => void handleSave()}>
           <Save /> {t('settings.save')}
         </button>
       </footer>

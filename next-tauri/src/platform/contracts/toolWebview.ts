@@ -13,6 +13,7 @@ export type ManagedToolId =
   | 'message-board'
   | 'network'
   | 'pdf'
+  | 'file-preview'
   | 'protobuf'
   | 'quick-note'
   | 'qrcode'
