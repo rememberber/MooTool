@@ -2148,6 +2148,75 @@
               "size": 108695132
             }
           ]
+        },
+        {
+          "version": "1.3.6",
+          "title": "MooTool Next Electron 1.3.6",
+          "notes": "## English\n\n> Product: MooTool Next Electron<br>\n> Version: 1.3.6<br>\n> This release is installed and updated independently from MooTool Java and does not overwrite the Java edition.\n\n### Fixes and improvements\n\n- Installed builds can be chosen in Open With for JSON, JSONC, TXT, LOG, Markdown, XML, YAML, HTML, JavaScript, TypeScript, Java, Python, and SQL files. MooTool does not change the system default by itself. On macOS, move the app into Applications and set it in Finder → Get Info → Open With. On Windows, the NSIS installer registers the types; the portable build does not. On Linux, the deb build can be selected in the file manager; an AppImage needs desktop integration first.\n- Opening a supported file brings MooTool forward and asks whether to add a copy to Quick Notes or the JSON workspace. Duplicate names are numbered, and the source file is never modified. Quick Notes keep the source syntax. The JSON workspace keeps the original text, including incomplete JSON. Several files are handled in order, including files opened while MooTool is starting or already running.\n- Text imports accept UTF-8 and BOM-marked UTF-16 up to 20 MB. Binary, unsupported, missing, or unreadable files show an error and do not block the remaining files.\n\n### Notes\n\n- Installers remain unsigned. On macOS, the app downloads and verifies the new DMG, then asks the user to open it and drag the app into Applications.\n- The Java product line continues to use `v*` tags and its existing update manifest.\n\n## 中文\n\n> 产品线：MooTool Next Electron<br>\n> 版本：1.3.6<br>\n> 本版本与 MooTool Java 独立安装、独立更新，不会覆盖 Java 版本。\n\n### 修复与改进\n\n- 安装版可以作为“打开方式”的候选，支持 JSON、JSONC、TXT、LOG、Markdown、XML、YAML、HTML、JavaScript、TypeScript、Java、Python 和 SQL。应用不会自行改掉系统默认程序。macOS 需要先把应用放进“应用程序”，再在访达的“显示简介 → 打开方式”里选择。Windows 由 NSIS 安装包登记这些类型，便携版不会登记。Linux 可在文件管理器里选择 deb 安装的版本；AppImage 需要先完成桌面集成。\n- 打开受支持的文件时，MooTool 会回到前台，并询问添加到随手记还是 JSON 工作台。导入的是独立副本，同名文件会自动编号，原文件不会被修改。随手记保留源文件的语法。JSON 工作台保留原始文本，包括还不完整的 JSON。多个文件会按顺序处理，启动过程中或应用已在运行时收到的请求也会处理。\n- 文本导入支持 UTF-8 和带 BOM 的 UTF-16，单个文件最大 20 MB。二进制、不支持、缺失或无法读取的文件会提示错误，不影响后面的文件。\n\n### 说明\n\n- 安装包仍未签名。macOS 会下载并校验新版 DMG，随后提示用户打开 DMG 并将应用拖入“应用程序”。\n- Java 产品线继续使用 `v*` tag 和原有更新清单，不受本次发布影响。\n\n## 日本語\n\n> 製品ライン：MooTool Next Electron<br>\n> バージョン：1.3.6<br>\n> このリリースは MooTool Java とは独立してインストール・更新され、Java 版を上書きしません。\n\n### 修正と改善\n\n- インストール版は、JSON、JSONC、TXT、LOG、Markdown、XML、YAML、HTML、JavaScript、TypeScript、Java、Python、SQL の「このアプリケーションで開く」候補になります。システムの既定アプリは自動では変更しません。macOS ではアプリを「アプリケーション」に入れてから、Finder の「情報を見る → このアプリケーションで開く」で選びます。Windows では NSIS インストーラーが種類を登録し、ポータブル版は登録しません。Linux では deb 版をファイルマネージャーから選べます。AppImage は先にデスクトップ統合が必要です。\n- 対応ファイルを開くと MooTool が前面に出て、クイックノートか JSON ワークスペースにコピーを追加するか確認します。同名ファイルには連番が付き、元のファイルは変更しません。クイックノートは元の構文を保持します。JSON ワークスペースは、不完全な JSON を含む元のテキストを保持します。複数ファイルは順番に処理し、起動中や実行中に届いた要求も処理します。\n- テキストの取り込みは UTF-8 と BOM 付き UTF-16 に対応し、1 ファイル最大 20 MB です。バイナリ、未対応、見つからない、読み取れないファイルはエラーを表示し、残りのファイルは続行します。\n\n### 補足\n\n- インストーラーは引き続き未署名です。macOS では新しい DMG をダウンロードして検証し、その後 DMG を開いてアプリを「アプリケーション」へドラッグするよう案内します。\n- Java 製品ラインは引き続き `v*` タグと従来の更新マニフェストを使用し、このリリースの影響を受けません。",
+          "prerelease": false,
+          "releaseUrl": "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.3.6",
+          "assets": [
+            {
+              "platform": "darwin",
+              "architecture": "arm64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.3.6-mac-arm64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.3.6/MooTool-Next-Electron-1.3.6-mac-arm64.dmg",
+              "sha512": "XKdjBWrIlXOqBLf9fKuJsfpsEaYOydTgZbF8+d261nr8iEOrteK8pgKtk3q82A5+0lVyooMVMQIh6gQ6v1MJDw==",
+              "size": 136175568
+            },
+            {
+              "platform": "darwin",
+              "architecture": "x64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.3.6-mac-x64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.3.6/MooTool-Next-Electron-1.3.6-mac-x64.dmg",
+              "sha512": "rM3At0dxSDL8O13/0mXVDZKgNGAT1ybFxjPxN8rRcbEgg9oBkNzd1EU78o/ruy1c5FO8RIib/t3bExowAo+Yog==",
+              "size": 137976336
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "nsis",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.3.6-win-x64-setup.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.3.6/MooTool-Next-Electron-1.3.6-win-x64-setup.exe",
+              "sha512": "iUzs5UCYaBoZRgR/aSqxACAbajQeTGURvshjp6yK32YnXVROQtR8kSu25JPZ7Qzu5NZoIgAWjGMLgPGQ6z1aag==",
+              "size": 109778675
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "portable",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.3.6-win-x64-portable.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.3.6/MooTool-Next-Electron-1.3.6-win-x64-portable.exe",
+              "sha512": "e6GQaVVZWquVAQfxN4+5B8f7xF3ze+m427ii8Njd468AnwHCegRhu5YjhY8lGgu/yJ0IKY/HYosBwM8txZnQDg==",
+              "size": 109589714
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "appimage",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.3.6-linux-x64.AppImage",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.3.6/MooTool-Next-Electron-1.3.6-linux-x64.AppImage",
+              "sha512": "3TU8yIhQx57yuNHMEjzoP1+4suQz3eU1GI+L2t90Kn33kjJt7CtPsnDy9kMh1cca4QfXKn5s29StYnR0OFEj6A==",
+              "size": 143158375
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "deb",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.3.6-linux-x64.deb",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.3.6/MooTool-Next-Electron-1.3.6-linux-x64.deb",
+              "sha512": "zIhJZMXCH5KU9uhjLaT70VgFW0RLxkwmbsx1U5a5AvcdfYrmHUSVk7dWU6F5/lQFCqbmNmVPaYRlq0LBXRB2fQ==",
+              "size": 108594520
+            }
+          ]
         }
       ]
     },
