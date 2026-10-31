@@ -14,6 +14,14 @@ export const languageLabels: Record<Language, string> = {
 
 export const messages = {
   'zh-CN': {
+    'fileOpen.title': '用 MooTool 打开文件',
+    'fileOpen.detail': '选择添加到随手记或 JSON 工作台。将创建独立副本，同名文件会自动编号，原文件不会被修改。',
+    'fileOpen.quickNote': '添加到随手记',
+    'fileOpen.json': '添加到 JSON 工作台',
+    'fileOpen.unsupported': '暂不支持此文件类型，请选择 JSON、文本或代码文件。',
+    'fileOpen.tooLarge': '文件超过 20 MB，无法导入。',
+    'fileOpen.encoding': '无法读取此文本文件，请使用 UTF-8 或带 BOM 的 UTF-16 编码，并确认文件不含二进制内容。',
+    'fileOpen.unreadable': '无法读取或导入文件，请检查文件是否存在及访问权限后重试。',
     'common.toast.copyError': '复制错误信息',
     'settings.escapeHidesWindow': '按 Esc 隐藏窗口',
     'settings.escapeHidesWindowHint': '默认开启。独立工具窗口会收回，HTTP 响应窗口会关闭；弹窗、菜单和查找仍优先处理 Esc。',
@@ -1595,6 +1603,14 @@ export const messages = {
     ,'messageBoard.keepAwake': '屏幕常亮'
   },
   'en-US': {
+    'fileOpen.title': 'Open file with MooTool',
+    'fileOpen.detail': 'Add a copy to Quick Notes or the JSON workspace. Duplicate names are numbered automatically. The source file stays unchanged.',
+    'fileOpen.quickNote': 'Add to Quick Notes',
+    'fileOpen.json': 'Add to JSON workspace',
+    'fileOpen.unsupported': 'Unsupported file type. Choose a JSON, text or source code file.',
+    'fileOpen.tooLarge': 'The file exceeds the 20 MB import limit.',
+    'fileOpen.encoding': 'Cannot decode this text file. Use UTF-8 or UTF-16 with a BOM and check for binary content.',
+    'fileOpen.unreadable': 'Could not read or import the file. Check that it exists and that you have access, then try again.',
     'common.toast.copyError': 'Copy error details',
     'settings.escapeHidesWindow': 'Hide window with Esc',
     'settings.escapeHidesWindowHint': 'On by default. Detached tools dock and HTTP response windows close. Dialogs, menus and find controls handle Esc first.',
@@ -3176,6 +3192,14 @@ export const messages = {
     ,'messageBoard.keepAwake': 'Screen stays awake'
   },
   'ja-JP': {
+    'fileOpen.title': 'MooTool でファイルを開く',
+    'fileOpen.detail': 'クイックノートまたは JSON ワークスペースにコピーを追加します。同名のファイルには連番が付きます。元のファイルは変更しません。',
+    'fileOpen.quickNote': 'クイックノートに追加',
+    'fileOpen.json': 'JSON ワークスペースに追加',
+    'fileOpen.unsupported': '未対応のファイル形式です。JSON、テキスト、ソースコードを選択してください。',
+    'fileOpen.tooLarge': 'ファイルがインポート上限の 20 MB を超えています。',
+    'fileOpen.encoding': 'テキストを読み取れません。UTF-8 または BOM 付き UTF-16 を使用し、バイナリを含まないことを確認してください。',
+    'fileOpen.unreadable': 'ファイルを読み取り、またはインポートできません。ファイルの存在とアクセス権を確認して再試行してください。',
     'common.toast.copyError': 'エラー情報をコピー',
     'settings.escapeHidesWindow': 'Esc でウィンドウを隠す',
     'settings.escapeHidesWindowHint': '初期設定はオンです。独立ツールは元に戻り、HTTP 応答ウィンドウは閉じます。ダイアログ、メニュー、検索が Esc を優先します。',

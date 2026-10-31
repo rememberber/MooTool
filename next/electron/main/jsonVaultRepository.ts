@@ -72,10 +72,10 @@ export class JsonVaultRepository {
     return normalized
   }
 
-  async createDefault(content = '{}'): Promise<JsonVaultFile> {
+  async createDefault(content = '{}', name = 'snippet'): Promise<JsonVaultFile> {
     if (typeof content !== 'string' || Buffer.byteLength(content, 'utf8') > maxFileSize) throw new Error('Invalid Vault file content')
     const root = await this.ensureRoot()
-    const relativePath = await this.uniqueJsonPath(root, '', 'snippet')
+    const relativePath = await this.uniqueJsonPath(root, '', sanitizeName(name, true).slice(0, 160))
     await writeFile(resolve(root, relativePath), content, { encoding: 'utf8', flag: 'wx' })
     return this.read(relativePath)
   }

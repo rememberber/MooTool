@@ -64,6 +64,7 @@ declare global {
       getSecretStatus: (key: SecretKey) => Promise<SecretStatus>
       setSecret: (key: SecretKey, value: string) => Promise<SecretStatus>
       clearSecret: (key: SecretKey) => Promise<SecretStatus>
+      readyForFileOpen: () => Promise<void>
       getWorkspaceState: () => Promise<WorkspaceState>
       getCommandPaletteState: () => Promise<CommandPaletteState>
       importCommandResult: (input: ImportCommandResultInput) => Promise<CommandResultImport>

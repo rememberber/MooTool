@@ -22,6 +22,18 @@ npm run typecheck
 npm run build
 ```
 
+## Open files from the operating system
+
+Installed builds advertise MooTool as an **Open With** candidate for JSON/JSONC, TXT/LOG, Markdown, XML, YAML, HTML, JavaScript, TypeScript, Java, Python and SQL files. Choose MooTool as the default application through the operating system:
+
+- **macOS:** install in Applications, select a file in Finder → Get Info → Open with → MooTool → Change All.
+- **Windows:** install the NSIS build, then use Open with → Choose another app → MooTool Next Electron → Always, or Settings → Apps → Default apps. Portable builds do not register file types.
+- **Linux:** install the deb build and choose MooTool in the file manager's Open With / default application settings. AppImage requires desktop integration before it appears there.
+
+Opening a supported file brings MooTool forward and asks whether to **add to Quick Notes**, **add to the JSON workspace**, or cancel. Each import creates a separate copy, automatically numbers duplicate names, and opens the result. Editing the copy never writes back to the source. Quick Notes retain the source syntax; the JSON workspace accepts the original text, including incomplete JSON that needs repair. Several files are handled in order, including requests received during startup or while MooTool is already running.
+
+Text imports support UTF-8 and BOM-marked UTF-16 up to 20 MB. Binary, unsupported, missing, or unreadable files produce an error without blocking later files. File associations are part of the packaged application; `npm run dev` alone does not register them or change system defaults.
+
 ## Developer command palette
 
 Press **Cmd+K** on macOS or **Ctrl+K** on Windows/Linux inside the main MooTool window, or click the sidebar search button. The palette searches both tool pages and executable actions. Use arrow keys to select an entry and Enter to run it. Tool-name searches retain tool pages as the first result.

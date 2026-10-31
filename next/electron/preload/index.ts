@@ -71,6 +71,7 @@ contextBridge.exposeInMainWorld('mootool', {
   getSecretStatus: (key: SecretKey): Promise<SecretStatus> => ipcRenderer.invoke('secret:status', key),
   setSecret: (key: SecretKey, value: string): Promise<SecretStatus> => ipcRenderer.invoke('secret:set', key, value),
   clearSecret: (key: SecretKey): Promise<SecretStatus> => ipcRenderer.invoke('secret:clear', key),
+  readyForFileOpen: (): Promise<void> => ipcRenderer.invoke('files:external-ready'),
   getWorkspaceState: (): Promise<WorkspaceState> => ipcRenderer.invoke('workspace:get'),
   getCommandPaletteState: (): Promise<CommandPaletteState> => ipcRenderer.invoke('command-palette:get'),
   importCommandResult: (input: ImportCommandResultInput): Promise<CommandResultImport> => ipcRenderer.invoke('command-palette:import', input),

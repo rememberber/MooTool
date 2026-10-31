@@ -159,6 +159,132 @@
       ],
       "binaries": [
         "Contents/Resources/native/mootool-ocr"
+      ],
+      "fileAssociations": [
+        {
+          "ext": [
+            "json"
+          ],
+          "name": "MooTool.NextElectron.json",
+          "description": "JSON",
+          "mimeType": "application/json",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "jsonc"
+          ],
+          "name": "MooTool.NextElectron.jsonc",
+          "description": "JSON with Comments",
+          "mimeType": "application/jsonc",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "txt",
+            "log"
+          ],
+          "name": "MooTool.NextElectron.txt",
+          "description": "Text",
+          "mimeType": "text/plain",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "md",
+            "markdown"
+          ],
+          "name": "MooTool.NextElectron.md",
+          "description": "Markdown",
+          "mimeType": "text/markdown",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "xml"
+          ],
+          "name": "MooTool.NextElectron.xml",
+          "description": "XML",
+          "mimeType": "application/xml",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "yaml",
+            "yml"
+          ],
+          "name": "MooTool.NextElectron.yaml",
+          "description": "YAML",
+          "mimeType": "application/yaml",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "html",
+            "htm"
+          ],
+          "name": "MooTool.NextElectron.html",
+          "description": "HTML",
+          "mimeType": "text/html",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "js"
+          ],
+          "name": "MooTool.NextElectron.js",
+          "description": "JavaScript",
+          "mimeType": "text/javascript",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "ts"
+          ],
+          "name": "MooTool.NextElectron.ts",
+          "description": "TypeScript",
+          "mimeType": "text/typescript",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "java"
+          ],
+          "name": "MooTool.NextElectron.java",
+          "description": "Java",
+          "mimeType": "text/x-java",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "py"
+          ],
+          "name": "MooTool.NextElectron.py",
+          "description": "Python",
+          "mimeType": "text/x-python",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "sql"
+          ],
+          "name": "MooTool.NextElectron.sql",
+          "description": "SQL",
+          "mimeType": "application/sql",
+          "role": "Editor",
+          "rank": "Alternate"
+        }
       ]
     },
     "win": {
@@ -178,7 +304,8 @@
     "nsis": {
       "shortcutName": "MooTool Next Electron",
       "uninstallDisplayName": "MooTool Next Electron ${version}",
-      "artifactName": "MooTool-Next-Electron-${version}-win-${arch}-setup.${ext}"
+      "artifactName": "MooTool-Next-Electron-${version}-win-${arch}-setup.${ext}",
+      "include": "resources/file-associations.nsh"
     },
     "portable": {
       "artifactName": "MooTool-Next-Electron-${version}-win-${arch}-portable.${ext}"
@@ -196,6 +323,144 @@
       "target": [
         "AppImage",
         "deb"
+      ],
+      "fileAssociations": [
+        {
+          "ext": [
+            "json"
+          ],
+          "name": "MooTool.NextElectron.json",
+          "description": "JSON",
+          "mimeType": "application/json",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "jsonc"
+          ],
+          "name": "MooTool.NextElectron.jsonc",
+          "description": "JSON with Comments",
+          "mimeType": "application/jsonc",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "txt",
+            "log"
+          ],
+          "name": "MooTool.NextElectron.txt",
+          "description": "Text",
+          "mimeType": "text/plain",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "md",
+            "markdown"
+          ],
+          "name": "MooTool.NextElectron.md",
+          "description": "Markdown",
+          "mimeType": "text/markdown",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "xml"
+          ],
+          "name": "MooTool.NextElectron.xml",
+          "description": "XML",
+          "mimeType": "application/xml",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "yaml",
+            "yml"
+          ],
+          "name": "MooTool.NextElectron.yaml",
+          "description": "YAML",
+          "mimeType": "application/yaml",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "html",
+            "htm"
+          ],
+          "name": "MooTool.NextElectron.html",
+          "description": "HTML",
+          "mimeType": "text/html",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "js"
+          ],
+          "name": "MooTool.NextElectron.js",
+          "description": "JavaScript",
+          "mimeType": "text/javascript",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "ts"
+          ],
+          "name": "MooTool.NextElectron.ts",
+          "description": "TypeScript",
+          "mimeType": "text/typescript",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "java"
+          ],
+          "name": "MooTool.NextElectron.java",
+          "description": "Java",
+          "mimeType": "text/x-java",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "py"
+          ],
+          "name": "MooTool.NextElectron.py",
+          "description": "Python",
+          "mimeType": "text/x-python",
+          "role": "Editor",
+          "rank": "Alternate"
+        },
+        {
+          "ext": [
+            "sql"
+          ],
+          "name": "MooTool.NextElectron.sql",
+          "description": "SQL",
+          "mimeType": "application/sql",
+          "role": "Editor",
+          "rank": "Alternate"
+        }
+      ],
+      "mimeTypes": [
+        "text/xml",
+        "application/javascript",
+        "application/x-yaml",
+        "text/yaml",
+        "text/x-yaml",
+        "text/x-java-source",
+        "text/x-sql"
+      ],
+      "executableArgs": [
+        "%F"
       ]
     },
     "appImage": {

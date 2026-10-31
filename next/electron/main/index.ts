@@ -1,6 +1,7 @@
 import { windowChromeOptions, trackWindowChrome } from './windowChrome'
 import { GlobalCommandShortcut } from './globalCommandShortcut'
 import { createInitialSettings } from './initialSettings'
+import { ExternalFileOpenQueue, externalFilesFromArgv, readExternalTextFile, type ExternalFileTarget } from './externalFileOpen'
 import { BatchRenameService } from './batchRenameService'
 import { OcrService } from './ocrService'
 import { VisionOcrBackend } from './ocrBackend'
@@ -208,6 +209,8 @@ const vaultWorkspaceService = new VaultWorkspaceService({
   set: (paths) => store.set('vaultActiveFiles', paths)
 })
 let mainWindow: BrowserWindow | null = null
+let fileOpenInitialized = false
+const externalFileQueue = new ExternalFileOpenQueue(importExternalFile, reportExternalFileError)
 let mainWindowMaterial: WindowMaterialController | null = null
 let batchRenameService: BatchRenameService
 let ocrService: OcrService
@@ -372,6 +375,7 @@ function createMainWindow(): BrowserWindow {
   })
 
   mainWindow = window
+  window.webContents.on('did-start-loading', () => externalFileQueue.setReady(false))
   const material = new WindowMaterialController(window, settings.appearance.windowMaterial, {
     platform: process.platform,
     systemVersion: process.getSystemVersion(),
@@ -427,6 +431,7 @@ function createMainWindow(): BrowserWindow {
   })
 
   window.on('closed', () => {
+    externalFileQueue.setReady(false)
     mainWindow = null
     mainWindowMaterial = null
   })
@@ -486,6 +491,10 @@ async function confirmClose(window: BrowserWindow): Promise<void> {
 }
 
 function registerIpc(): void {
+  ipcMain.handle('files:external-ready', (event) => {
+    assertMainRenderer(event.sender)
+    externalFileQueue.setReady(true)
+  })
   let aiIntegration: Promise<AiIntegrationService> | undefined
   const getAiIntegration = () => aiIntegration ??= import('./aiIntegrationService').then(({ AiIntegrationService }) => new AiIntegrationService({
     home: app.getPath('home'),
@@ -2223,6 +2232,61 @@ function openToolFromTray(toolId: Exclude<ToolId, 'mootool'>): void {
   if (!toolWindowManager.focus(toolId)) navigateMainWindow({ type: 'open-tool', toolId })
 }
 
+function enqueueExternalFiles(paths: string[]): void {
+  if (!paths.length || isQuitting) return
+  if (fileOpenInitialized) showMainWindow()
+  externalFileQueue.enqueue(paths)
+}
+
+async function importExternalFile(path: string): Promise<void> {
+  const file = await readExternalTextFile(path)
+  const text = messages[store.get('settings').general.language]
+  const { response } = await dialog.showMessageBox(showMainWindow(), {
+    type: 'question', title: text['fileOpen.title'], message: file.name,
+    detail: `${text['fileOpen.detail']}\n\n${file.path}`,
+    buttons: [text['fileOpen.quickNote'], text['fileOpen.json'], text['common.cancel']],
+    defaultId: file.syntax === 'application/json' ? 1 : 0, cancelId: 2, noLink: true
+  })
+  if ((response !== 0 && response !== 1) || isQuitting) return
+  const kind: ExternalFileTarget = response === 1 ? 'json' : 'quickNote'
+  const rootDirectory = kind === 'json' ? getJsonVaultRoot() : getQuickNoteRoot()
+  let relativePath: string
+  if (kind === 'json') {
+    const repository = new JsonVaultRepository(rootDirectory)
+    const name = parse(file.name).name.replace(/[\r\n\0]/g, '_').replace(/^\.+/, '').trim() || 'snippet'
+    const imported = await repository.createDefault(file.content, name)
+    relativePath = imported.relativePath
+    await vaultWorkspaceService.remember({ kind, rootDirectory, relativePath }, repository)
+    jsonVaultCheckpointScheduler.recordActivity('Import external file')
+  } else {
+    const repository = new QuickNoteVaultRepository(rootDirectory)
+    const settings = store.get('settings')
+    const imported = await repository.create({
+      title: parse(file.name).name.replace(/[\r\n\0]/g, '_').replace(/^\.+/, '').slice(0, 160).trim() || 'Note',
+      content: file.content, syntax: file.syntax,
+      fontName: settings.editor.quickNoteFontName, fontSize: settings.editor.quickNoteFontSize,
+      lineWrap: settings.editor.softWrap
+    })
+    relativePath = imported.relativePath
+    await vaultWorkspaceService.remember({ kind, rootDirectory, relativePath }, repository)
+    quickNoteCheckpointScheduler.recordActivity('Import external file')
+  }
+  broadcast('command-palette:imported', { kind, rootDirectory, relativePath })
+  openToolFromTray(kind)
+}
+
+async function reportExternalFileError(path: string, error: unknown): Promise<void> {
+  if (isQuitting) return
+  const text = messages[store.get('settings').general.language]
+  const key = error instanceof Error ? error.message : ''
+  const reason = key === 'fileOpen.unsupported' || key === 'fileOpen.tooLarge' || key === 'fileOpen.encoding'
+    ? text[key] : text['fileOpen.unreadable']
+  await dialog.showMessageBox(showMainWindow(), {
+    type: 'error', title: text['fileOpen.title'], message: reason,
+    detail: path, buttons: [text['common.close']]
+  })
+}
+
 function broadcast(channel: string, payload: unknown): void {
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send(channel, payload)
@@ -2555,7 +2619,22 @@ async function cleanPendingUpdates(): Promise<void> {
 
 const javaRegexService = new JavaRegexService()
 
-app.whenReady().then(async () => {
+const primaryInstance = app.requestSingleInstanceLock()
+if (!primaryInstance) app.quit()
+else {
+  // Register synchronously: macOS can send open-file before app.ready.
+  app.on('open-file', (event, path) => {
+    event.preventDefault()
+    enqueueExternalFiles([path])
+  })
+  app.on('second-instance', (_event, argv, cwd) => {
+    if (fileOpenInitialized) showMainWindow()
+    enqueueExternalFiles(externalFilesFromArgv(argv, cwd, Boolean(process.defaultApp)))
+  })
+  enqueueExternalFiles(externalFilesFromArgv(process.argv, process.cwd(), Boolean(process.defaultApp)))
+}
+
+if (primaryInstance) app.whenReady().then(async () => {
   if (process.platform === 'darwin' && app.isPackaged && process.env.NODE_ENV !== 'test') {
     await cleanPendingUpdates()
     updateCleanupTimer = setInterval(() => { void cleanPendingUpdates() }, UPDATE_CLEANUP_INTERVAL)
@@ -2659,11 +2738,13 @@ app.whenReady().then(async () => {
   })
 
   createMainWindow()
+  fileOpenInitialized = true
 
   app.on('activate', showMainWindow)
 })
 
 app.on('before-quit', () => {
+  externalFileQueue.setReady(false)
   pdfTasks.dispose()
   ocrService?.stop()
   isQuitting = true

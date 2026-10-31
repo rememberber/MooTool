@@ -64,7 +64,8 @@ export function Workbench() {
   }
 
   useEffect(() => {
-    void hydrate()
+    let cancelled = false
+    void hydrate().then(() => { if (!cancelled) void window.mootool.readyForFileOpen() })
     const unsubscribeNavigation = window.mootool.onNavigate((event) => {
       if (event === 'focus-search') {
         setSearchOpen(true)
@@ -80,6 +81,7 @@ export function Workbench() {
     const unsubscribeToolWindows = window.mootool.onToolWindowSnapshotChange(setToolWindows)
     void window.mootool.getToolWindowSnapshot().then(setToolWindows)
     return () => {
+      cancelled = true
       unsubscribeNavigation()
       unsubscribeToolWindows()
     }
