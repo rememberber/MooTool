@@ -1,131 +1,156 @@
-import {
-  CheckCircle2,
-  Clipboard,
-  Copy,
-  Download,
-  Eye,
-  EyeOff,
-  Pencil,
-  Plus,
-  RefreshCw,
-  Search,
-  ShieldAlert,
-  TriangleAlert,
-  Trash2,
-  Variable
-} from 'lucide-react'
+import { Download, Pencil, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
+import { invoke } from '@tauri-apps/api/core'
+import { useLocalizedMessages } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import { diagnosticsApi } from '../../platform/api/diagnosticsApi'
 import { userFilesApi } from '../../platform/api/userFilesApi'
-import type { EnvironmentVariable } from '../../platform/contracts/diagnostics'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
-import { useSettings } from '../settings/SettingsProvider'
 import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
+import { formatEnvironment, parseEnvironmentContent, updateEnvironmentContent, type EnvironmentEntry } from './environmentFile'
 import { variablesMessages } from './variablesMessages'
 
-type VariablesMessageKey = LocalizedMessageKey<typeof variablesMessages>
-type VariablesNotice = { key: VariablesMessageKey; values?: MessageValues } | { raw: string }
+type VariableTab = 'environment' | 'runtime'
+type DisplayScope = 'process' | 'user' | 'system'
+type PersistentScope = 'user' | 'system'
+
+const previewKey = (scope: PersistentScope) => `mootool-next-tauri:environment-${scope}`
 
 export function VariablesSurface() {
-  const { settings, save } = useSettings()
   const dialog = useDesktopDialog()
   const { t } = useLocalizedMessages(variablesMessages)
-  const [variables, setVariables] = useState<EnvironmentVariable[]>([])
+  const [tab, setTab] = useState<VariableTab>('environment')
+  const [scope, setScope] = useState<DisplayScope>('process')
+  const [targetScope, setTargetScope] = useState<PersistentScope>('user')
+  const [processEntries, setProcessEntries] = useState<EnvironmentEntry[]>([])
+  const [userContent, setUserContent] = useState('')
+  const [systemContent, setSystemContent] = useState('')
   const [query, setQuery] = useState('')
-  const [revealed, setRevealed] = useState(false)
-  const [notice, setNotice] = useState<VariablesNotice>({ key: 'notice.loading' })
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [editing, setEditing] = useState<EnvironmentEntry | null | undefined>(undefined)
+  const [keyValue, setKeyValue] = useState('')
+  const [value, setValue] = useState('')
+  const [notice, setNotice] = useState('')
   const [failed, setFailed] = useState(false)
-  const [copied, setCopied] = useState('')
-  const [busy, setBusy] = useState(true)
-  const [scope, setScope] = useState<'process' | 'runtime'>('process')
-  const runtimeVariables = useMemo<EnvironmentVariable[]>(() => Object.entries(settings.runtime.environment).map(([name, value]) => ({ name, value: isSensitiveName(name) && !revealed ? '••••••••' : value, sensitive: isSensitiveName(name) })).sort((left, right) => left.name.localeCompare(right.name)), [revealed, settings.runtime.environment])
-  const scopedVariables = scope === 'process' ? variables : runtimeVariables
-  const visible = useMemo(() => {
+  const runtimeEntries = useMemo(() => runtimeProperties(), [])
+  const userEntries = useMemo(() => parseEnvironmentContent(userContent), [userContent])
+  const systemEntries = useMemo(() => parseEnvironmentContent(systemContent), [systemContent])
+  const sourceEntries = tab === 'runtime'
+    ? runtimeEntries
+    : scope === 'process' ? processEntries : scope === 'user' ? userEntries : systemEntries
+  const entries = useMemo(() => {
     const needle = query.trim().toLowerCase()
-    return needle
-      ? scopedVariables.filter((item) => `${item.name}\n${item.value}`.toLowerCase().includes(needle))
-      : scopedVariables
-  }, [query, scopedVariables])
-  const sensitiveCount = scopedVariables.filter((item) => item.sensitive).length
-  const noticeText = 'raw' in notice ? notice.raw : t(notice.key, notice.values)
+    return needle ? sourceEntries.filter((entry) => `${entry.key}\n${entry.value}`.toLowerCase().includes(needle)) : sourceEntries
+  }, [query, sourceEntries])
+  const canEdit = tab === 'environment'
+  const canDelete = tab === 'environment' && scope !== 'process'
   const session = useMemo(() => ({
-    digest: JSON.stringify({ count: scopedVariables.length, sensitiveCount, revealed, queryLength: query.length, scope }),
-    summary: t('session.summary', { count: scopedVariables.length, sensitive: sensitiveCount, state: t(revealed ? 'state.revealed' : 'state.redacted') })
-  }), [query.length, revealed, scope, scopedVariables.length, sensitiveCount, t])
-  const { sessionId, reportError } = useToolSessionReport('variables', session.digest, session.summary, !busy)
+    digest: JSON.stringify({ tab, scope, count: sourceEntries.length, query: query.length }),
+    summary: t('count.line', { count: entries.length, total: sourceEntries.length })
+  }), [entries.length, query.length, scope, sourceEntries.length, t, tab])
+  const { sessionId, reportError } = useToolSessionReport('variables', session.digest, session.summary, !loading)
 
-  useEffect(() => {
-    void load(false)
-  }, [])
+  useEffect(() => { void refresh() }, [])
 
-  async function load(reveal: boolean): Promise<void> {
-    setBusy(true)
+  async function refresh(): Promise<void> {
+    setLoading(true)
     try {
-      setVariables(await diagnosticsApi.environment(reveal))
-      setRevealed(reveal)
-      setNotice({ key: reveal ? 'notice.revealed' : 'notice.redacted' })
+      const [processVariables, userFile, systemFile] = await Promise.all([
+        diagnosticsApi.environment(true),
+        readPersistent('user'),
+        readPersistent('system')
+      ])
+      setProcessEntries(processVariables.map((item) => ({ key: item.name, value: item.value })).sort((left, right) => left.key.localeCompare(right.key)))
+      setUserContent(userFile)
+      setSystemContent(systemFile)
       setFailed(false)
     } catch (cause) {
-      setNotice({ raw: cause instanceof Error ? cause.message : String(cause) })
+      setNotice(cause instanceof Error ? cause.message : String(cause))
       setFailed(true)
     } finally {
-      setBusy(false)
+      setLoading(false)
     }
   }
 
-  async function copy(item: EnvironmentVariable): Promise<void> {
-    if (item.sensitive && !revealed) {
-      setNotice({ key: 'error.revealFirst' })
-      setFailed(true)
-      return
-    }
+  function openEditor(entry?: EnvironmentEntry): void {
+    setEditing(entry ?? null)
+    setKeyValue(entry?.key ?? '')
+    setValue(entry?.value ?? '')
+    setTargetScope(scope === 'process' ? 'user' : scope)
+  }
+
+  async function saveVariable(): Promise<void> {
+    const destination: PersistentScope = scope === 'process' ? targetScope : scope
+    setSaving(true)
     try {
-      await clipboardApi.writeText(item.value)
-      setCopied(item.name)
-      setNotice({ key: 'notice.copied', values: { name: item.name } })
+      const current = destination === 'user' ? userContent : systemContent
+      const next = updateEnvironmentContent(current, keyValue.trim(), value, shellExport(destination))
+      await writePersistent(destination, next)
+      const nextUser = destination === 'user' ? parseEnvironmentContent(next) : userEntries
+      const nextSystem = destination === 'system' ? parseEnvironmentContent(next) : systemEntries
+      if (destination === 'user') setUserContent(next)
+      else setSystemContent(next)
+      syncProcessEntry(keyValue.trim(), nextUser, nextSystem, setProcessEntries)
+      setEditing(undefined)
+      setNotice(t('notice.saved'))
       setFailed(false)
-      window.setTimeout(() => setCopied(''), 1200)
-    } catch {
-      setNotice({ key: 'error.clipboard' })
+    } catch (cause) {
+      setNotice(cause instanceof Error ? cause.message : String(cause))
+      setFailed(true)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function deleteVariable(entry: EnvironmentEntry): Promise<void> {
+    if (scope === 'process') return
+    if (!await dialog.confirm(t('confirm.remove', { key: entry.key }), { dangerous: true })) return
+    setSaving(true)
+    try {
+      const current = scope === 'user' ? userContent : systemContent
+      const next = updateEnvironmentContent(current, entry.key, undefined, shellExport(scope))
+      await writePersistent(scope, next)
+      const nextUser = scope === 'user' ? parseEnvironmentContent(next) : userEntries
+      const nextSystem = scope === 'system' ? parseEnvironmentContent(next) : systemEntries
+      if (scope === 'user') setUserContent(next)
+      else setSystemContent(next)
+      syncProcessEntry(entry.key, nextUser, nextSystem, setProcessEntries)
+      setNotice(t('notice.removed'))
+      setFailed(false)
+    } catch (cause) {
+      setNotice(cause instanceof Error ? cause.message : String(cause))
+      setFailed(true)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function exportValues(): Promise<void> {
+    const content = formatEnvironment({
+      user: userEntries,
+      system: systemEntries,
+      environment: processEntries,
+      runtime: runtimeEntries
+    })
+    try {
+      const path = await userFilesApi.exportText('mootool-environment.txt', content)
+      if (path) setNotice(t('notice.exported', { path }))
+    } catch (cause) {
+      setNotice(cause instanceof Error ? cause.message : String(cause))
       setFailed(true)
     }
   }
 
-  async function editRuntime(item?: EnvironmentVariable): Promise<void> {
-    const name = (await dialog.prompt(t(item ? 'prompt.editName' : 'prompt.name'), item?.name ?? ''))?.trim()
-    if (!name) return
-    if (!/^[A-Za-z_][A-Za-z0-9_]{0,127}$/.test(name)) {
-      setNotice({ key: 'error.name' }); setFailed(true); return
+  async function copy(entry: EnvironmentEntry): Promise<void> {
+    try {
+      await clipboardApi.writeText(`${entry.key}=${entry.value}`)
+      setNotice(t('notice.copied', { name: entry.key }))
+      setFailed(false)
+    } catch {
+      setNotice(t('error.clipboard'))
+      setFailed(true)
     }
-    const currentValue = item ? settings.runtime.environment[item.name] ?? '' : ''
-    const value = await dialog.prompt(t('prompt.value'), currentValue)
-    if (value === null) return
-    await save((current) => {
-      const environment = { ...current.runtime.environment }
-      if (item && item.name !== name) delete environment[item.name]
-      environment[name] = value
-      return { ...current, runtime: { ...current.runtime, environment } }
-    })
-    setNotice({ key: item ? 'notice.updated' : 'notice.added', values: { name } })
-    setFailed(false)
-  }
-
-  async function removeRuntime(item: EnvironmentVariable): Promise<void> {
-    if (!await dialog.confirm(t('confirm.delete', { name: item.name }), { dangerous: true })) return
-    await save((current) => {
-      const environment = { ...current.runtime.environment }
-      delete environment[item.name]
-      return { ...current, runtime: { ...current.runtime, environment } }
-    })
-    setNotice({ key: 'notice.deleted', values: { name: item.name } })
-  }
-
-  async function exportVariables(): Promise<void> {
-    const content = scopedVariables.map((item) => `${item.name}=${item.sensitive && !revealed ? '' : item.value}`).join('\n')
-    const path = await userFilesApi.exportText(`mootool-${scope}-environment.env`, `${content}\n`)
-    if (path) setNotice({ key: 'notice.exported', values: { path } })
   }
 
   return (
@@ -134,48 +159,124 @@ export function VariablesSurface() {
         <h1 className="visually-hidden">{t('title')}</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
-
-      <nav className="utility-segments variables-tabs" aria-label={t('scope.aria')}><button className={scope === 'process' ? 'utility-segment utility-segment--active' : 'utility-segment'} type="button" onClick={() => setScope('process')}>{t('scope.process')}</button><button className={scope === 'runtime' ? 'utility-segment utility-segment--active' : 'utility-segment'} type="button" onClick={() => setScope('runtime')}>{t('scope.runtime')}</button></nav>
-
-      <section className="variables-toolbar">
-        <label><Search /><input value={query} placeholder={t('search.placeholder')} onChange={(event) => setQuery(event.target.value)} /></label>
-        <span><ShieldAlert />{t('summary.sensitive', { count: sensitiveCount })}</span>
-        <button className="secondary-button" type="button" disabled={busy} onClick={() => void load(!revealed)}>
-          {revealed ? <EyeOff /> : <Eye />}{t(revealed ? 'action.redact' : 'action.reveal')}
-        </button>
-        <button className="secondary-button" type="button" disabled={busy} onClick={() => void load(revealed)}>
-          <RefreshCw />{t('action.refresh')}
-        </button>
-        {scope === 'runtime' && <button className="secondary-button" type="button" onClick={() => void editRuntime()}><Plus />{t('action.add')}</button>}
-        <button className="secondary-button" type="button" onClick={() => void exportVariables()}><Download />{t('action.export')}</button>
-      </section>
-
+      <div className="variables-toolbar">
+        <div className="variables-tabs utility-segments" role="tablist">
+          {(['environment', 'runtime'] as const).map((id) => (
+            <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? 'utility-segment utility-segment--active' : 'utility-segment'} onClick={() => setTab(id)}>{t(`tab.${id}`)}</button>
+          ))}
+        </div>
+        {tab === 'environment' && (
+          <label>{t('scope.label')}
+            <select aria-label={t('scope.label')} value={scope} onChange={(event) => setScope(event.target.value as DisplayScope)}>
+              <option value="user">{t('scope.user')}</option>
+              <option value="system">{t('scope.system')}</option>
+              <option value="process">{t('scope.current')}</option>
+            </select>
+          </label>
+        )}
+        <label><Search /><input aria-label={t('search.placeholder')} value={query} placeholder={t('search.placeholder')} onChange={(event) => setQuery(event.target.value)} /></label>
+        {canEdit && <button type="button" disabled={saving} onClick={() => openEditor()}><Plus />{t('action.add')}</button>}
+        <button type="button" disabled={loading || saving} onClick={() => void refresh()}><RefreshCw />{t('action.refresh')}</button>
+        <button type="button" onClick={() => void exportValues()}><Download />{t('action.export')}</button>
+      </div>
       <section className="variables-table">
-        <header><span>{t('column.name')}</span><span>{t('column.value')}</span><span>{t('column.action')}</span></header>
+        <header><span>{t('field.key')}</span><span>{t('field.value')}</span><span>{t('column.action')}</span></header>
         <div>
-          {visible.map((item) => (
-            <article key={item.name}>
-              <strong><Variable />{item.name}{item.sensitive && <i>{t('badge.sensitive')}</i>}</strong>
-              <code>{item.value}</code>
-              <div className="variables-actions"><button type="button" onClick={() => void copy(item)}>
-                {copied === item.name ? <Clipboard /> : <Copy />}{t(copied === item.name ? 'action.copied' : 'action.copy')}
-              </button>{scope === 'runtime' && <><button type="button" aria-label={t('action.edit')} onClick={() => void editRuntime(item)}><Pencil /></button><button type="button" aria-label={t('action.delete')} onClick={() => void removeRuntime(item)}><Trash2 /></button></>}</div>
+          {entries.map((entry) => (
+            <article key={entry.key} onDoubleClick={() => { if (canEdit) openEditor(entry) }}>
+              <strong><code>{entry.key}</code></strong>
+              <code title={entry.value}>{entry.value}</code>
+              <div className="variables-actions">
+                <button type="button" aria-label={t('action.copy')} onClick={() => void copy(entry)}>{t('action.copy')}</button>
+                {canEdit && <button type="button" aria-label={t('action.edit')} onClick={() => openEditor(entry)}><Pencil /></button>}
+                {canDelete && <button type="button" aria-label={t('action.delete')} onClick={() => void deleteVariable(entry)}><Trash2 /></button>}
+              </div>
             </article>
           ))}
-          {!visible.length && <p>{t('empty')}</p>}
+          {!entries.length && <p>{t(canEdit ? 'empty.none' : 'empty')}</p>}
         </div>
       </section>
-
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}>
-        <span>{failed ? <TriangleAlert /> : <CheckCircle2 />}{noticeText}</span>
-        <span>{t(scope === 'process' ? 'footer.capabilities' : 'footer.runtimeCapabilities')}</span>
-        <code>{session.summary}</code>
+        <span>{t('count.line', { count: entries.length, total: sourceEntries.length })}</span>
+        {tab === 'environment' && <span>{scopeHint(scope, t)}</span>}
+        <span>{notice}</span>
       </footer>
+      {editing !== undefined && (
+        <form className="desktop-dialog-backdrop variables-editor" onSubmit={(event) => { event.preventDefault(); void saveVariable() }}>
+          <div className="desktop-dialog">
+            <h2>{t(editing ? 'editor.editTitle' : 'editor.addTitle')}</h2>
+            <label>{t('field.key')}<input autoFocus readOnly={Boolean(editing)} value={keyValue} placeholder="JAVA_HOME" onChange={(event) => setKeyValue(event.target.value)} /></label>
+            <label>{t('field.value')}<textarea value={value} onChange={(event) => setValue(event.target.value)} /></label>
+            {scope === 'process' && (
+              <label>{t('targetScope')}
+                <select value={targetScope} onChange={(event) => setTargetScope(event.target.value as PersistentScope)}>
+                  <option value="user">{t('scope.user')}</option>
+                  <option value="system">{t('scope.system')}</option>
+                </select>
+              </label>
+            )}
+            <p>{t('applyHint')}</p>
+            <footer>
+              <button type="button" disabled={saving} onClick={() => setEditing(undefined)}>{t('action.cancel')}</button>
+              <button type="submit" disabled={saving || !keyValue.trim()}>{t('action.save')}</button>
+            </footer>
+          </div>
+        </form>
+      )}
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
     </main>
   )
 }
 
-function isSensitiveName(name: string): boolean {
-  return /(token|secret|password|passwd|credential|private|api[_-]?key|auth)/i.test(name)
+function runtimeProperties(): EnvironmentEntry[] {
+  const locale = Intl.DateTimeFormat().resolvedOptions()
+  return [
+    ['process.version', ''],
+    ['process.versions.electron', ''],
+    ['process.versions.chrome', ''],
+    ['process.versions.node', ''],
+    ['process.execPath', ''],
+    ['process.platform', navigator.platform],
+    ['process.arch', navigator.userAgent.includes('arm64') || navigator.userAgent.includes('aarch64') ? 'arm64' : 'unknown'],
+    ['process.cwd', ''],
+    ['process.locale', locale.locale],
+    ['process.timeZone', locale.timeZone ?? '']
+  ].map(([key, value]) => ({ key, value })).sort((left, right) => left.key.localeCompare(right.key))
+}
+
+function syncProcessEntry(
+  key: string,
+  user: EnvironmentEntry[],
+  system: EnvironmentEntry[],
+  setEntries: (update: (current: EnvironmentEntry[]) => EnvironmentEntry[]) => void
+): void {
+  const effective = user.find((entry) => entry.key === key) ?? system.find((entry) => entry.key === key)
+  setEntries((current) => {
+    const next = current.filter((entry) => entry.key !== key)
+    if (effective) next.push(effective)
+    return next.sort((left, right) => left.key.localeCompare(right.key))
+  })
+}
+
+function scopeHint(scope: DisplayScope, t: (key: 'scopeHint.user' | 'scopeHint.system' | 'scopeHint.process') => string): string {
+  if (scope === 'user') return t('scopeHint.user')
+  if (scope === 'system') return t('scopeHint.system')
+  return t('scopeHint.process')
+}
+
+function shellExport(scope: PersistentScope): boolean {
+  return scope === 'user' || /Mac|iPhone|iPad/.test(navigator.platform + navigator.userAgent)
+}
+
+async function readPersistent(scope: PersistentScope): Promise<string> {
+  if (window.__TAURI_INTERNALS__) return invoke<string>('read_persistent_environment', { scope })
+  return localStorage.getItem(previewKey(scope)) ?? ''
+}
+
+async function writePersistent(scope: PersistentScope, content: string): Promise<void> {
+  if (window.__TAURI_INTERNALS__) {
+    await invoke('write_persistent_environment', { scope, content })
+    return
+  }
+  localStorage.setItem(previewKey(scope), content)
 }

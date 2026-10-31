@@ -41,7 +41,7 @@ pub struct VaultSnapshot {
     pub git: VaultGitStatus,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VaultGitStatus {
     pub available: bool,
@@ -52,6 +52,38 @@ pub struct VaultGitStatus {
     pub ahead: u32,
     pub behind: u32,
     pub remote: String,
+    pub merging: bool,
+    pub conflicts: u32,
+    pub operation: String,
+    pub changes: Vec<VaultGitChange>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VaultGitChange {
+    pub path: String,
+    pub original_path: Option<String>,
+    pub status: String,
+    pub conflict: bool,
+}
+
+impl Default for VaultGitStatus {
+    fn default() -> Self {
+        Self {
+            available: false,
+            repository: false,
+            branch: String::new(),
+            dirty: false,
+            changed_files: 0,
+            ahead: 0,
+            behind: 0,
+            remote: String::new(),
+            merging: false,
+            conflicts: 0,
+            operation: "none".into(),
+            changes: Vec::new(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -70,13 +102,42 @@ pub struct VaultGitDetails {
     pub commits: Vec<VaultGitCommit>,
 }
 
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VaultGitDiffInput {
+    pub path: Option<String>,
+    pub commit: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VaultGitDiffFile {
+    pub path: String,
+    pub original_path: Option<String>,
+    pub status: String,
+    pub before: String,
+    pub after: String,
+    pub preview: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VaultGitDiffResult {
+    pub files: Vec<VaultGitDiffFile>,
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum VaultGitOperation {
     Init,
+    Fetch,
     Pull,
     Commit,
     Push,
+    Discard,
+    AbortMerge,
+    ResolveConflict,
+    ContinueOperation,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -86,6 +147,10 @@ pub struct VaultGitRequest {
     pub operation: VaultGitOperation,
     pub message: Option<String>,
     pub editor_dirty: bool,
+    #[serde(default)]
+    pub path: Option<String>,
+    #[serde(default)]
+    pub strategy: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]

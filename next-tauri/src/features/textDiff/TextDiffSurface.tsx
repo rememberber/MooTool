@@ -6,6 +6,7 @@ import { DiffCodeEditor, type DiffEditorDecoration, type DiffEditorHandle, type 
 import { ResizableColumns } from '../../shared/ResizableColumns'
 import { HistoryPanel } from '../history/HistoryPanel'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { OPERATION_HISTORY_LIMIT } from '../../platform/contracts/history'
 import { useSettings } from '../settings/SettingsProvider'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import {
@@ -167,7 +168,7 @@ export function TextDiffSurface() {
   }
 
   const editors = (
-    <ResizableColumns id="text-diff" className="diff-editor-grid" initialPrimary={480} minPrimary={240} minSecondary={240}>
+    <ResizableColumns id="text-diff" className="diff-editor-grid" initialPrimary={480} defaultSizes={[1, 1]} minPrimary={240} minSecondary={240}>
       <div className="diff-editor-pane">
         <span>{t('pane.original')}</span>
         <DiffCodeEditor
@@ -259,7 +260,7 @@ export function TextDiffSurface() {
       {(reportError || actionError) && <p className="tool-surface-report-error">{actionError || t('report.error', { error: reportError })}</p>}
       {historyOpen && (
         <HistoryPanel
-          limit={settings.data.historyLimit}
+          limit={OPERATION_HISTORY_LIMIT}
           toolId="text-diff"
           onClose={() => setHistoryOpen(false)}
           onRestore={(entry) => {

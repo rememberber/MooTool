@@ -1,10 +1,8 @@
 import { useCallback } from 'react'
 import { historyApi } from '../../platform/api/historyApi'
-import type { OperationHistoryPayload, OperationStatus } from '../../platform/contracts/history'
-import { useSettings } from '../settings/SettingsProvider'
+import { OPERATION_HISTORY_LIMIT, type OperationHistoryPayload, type OperationStatus } from '../../platform/contracts/history'
 
 export function useOperationHistory(toolId: string) {
-  const { settings } = useSettings()
   return useCallback((action: string, summary: string, status: OperationStatus = 'success', payload: OperationHistoryPayload = {}) => {
     void historyApi.record({
       id: crypto.randomUUID(),
@@ -16,8 +14,8 @@ export function useOperationHistory(toolId: string) {
       outputText: truncateUtf8(payload.outputText),
       metadataJson: serializeMetadata(payload.metadata),
       createdAt: Date.now()
-    }, settings.data.historyLimit).catch(() => undefined)
-  }, [settings.data.historyLimit, toolId])
+    }, OPERATION_HISTORY_LIMIT).catch(() => undefined)
+  }, [toolId])
 }
 
 function truncateUtf8(value = '', maxBytes = 512 * 1024): string {

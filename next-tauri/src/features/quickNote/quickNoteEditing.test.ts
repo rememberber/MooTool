@@ -8,12 +8,12 @@ describe('quick note editing', () => {
   })
 
   it('formats SQL keywords with the selected dialect', async () => {
-    const formatted = await formatNoteContent('select id from users where id = 1', 'sql', 'PostgreSQL')
+    const formatted = await formatNoteContent('select id from users where id = 1', 'text/sql', 'PostgreSQL')
     expect(formatted).toContain('SELECT')
     expect(formatted).toContain('FROM')
   })
 
   it('formats JSON with a four-space indent', async () => {
-    await expect(formatNoteContent('{"a":1}', 'json')).resolves.toBe('{\n    "a": 1\n}')
+    await expect(formatNoteContent('{"a":1}', 'application/json')).resolves.toBe('{\n    "a": 1\n}')
   })
 })

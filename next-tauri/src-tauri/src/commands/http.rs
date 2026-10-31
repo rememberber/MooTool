@@ -11,16 +11,16 @@ use reqwest::{
     header::{CONTENT_TYPE, COOKIE, HeaderName, HeaderValue},
     redirect::Policy,
 };
-use tauri::{Emitter, ipc::Channel};
+use tauri::{Emitter, WebviewUrl, WebviewWindowBuilder, ipc::Channel};
 use tokio::sync::Notify;
 
 use crate::contracts::{
     error::AppResult,
     network::{
-        HttpProgressEvent, HttpRequestHistory, HttpRequestSpec, HttpResponseData, SavedHttpRequest,
+        HttpProgressEvent, HttpRequestHistory, HttpRequestSpec, HttpResponseData, SaveHttpRequestInput, SavedHttpRequest,
         validate_http_request_payload,
     },
-    settings::{NetworkSettings, ProxyMode},
+    settings::NetworkSettings,
 };
 use crate::repositories::{local_data::LocalDataRepository, settings::SettingsRepository};
 
@@ -87,14 +87,28 @@ pub async fn execute_http_request(
     let history_request = request.clone();
     let result = execute(request, notify, progress, settings.snapshot().network).await;
     manager.finish(&request_id);
-    let response = result?;
-    let history = HttpRequestHistory {
-        id: request_id,
-        request: history_request,
-        response: response.clone(),
-        created_at: now_millis(),
+    let response = match result {
+        Ok(response) => response,
+        Err(error) => {
+            let failed = HttpResponseData {
+                status: 0,
+                final_url: history_request.url.clone(),
+                headers: Vec::new(),
+                body_text: String::new(),
+                body_base64: String::new(),
+                content_type: String::new(),
+                size_bytes: 0,
+                truncated: false,
+                duration_ms: 0,
+                status_text: error.clone(),
+            };
+            if repository.record_http_history(&history_request, &failed).is_ok() {
+                let _ = app.emit("mootool://local-data-changed", "http-history");
+            }
+            return Err(error.into());
+        }
     };
-    if let Err(error) = repository.record_http_history(history) {
+    if let Err(error) = repository.record_http_history(&history_request, &response) {
         tracing::warn!(error = %error, "HTTP request completed but history could not be saved");
     } else if let Err(error) = app.emit("mootool://local-data-changed", "http-history") {
         tracing::warn!(error = %error, "HTTP history saved but synchronization event failed");
@@ -122,7 +136,7 @@ pub fn list_saved_http_requests(
 pub fn save_http_request(
     app: tauri::AppHandle,
     repository: tauri::State<'_, LocalDataRepository>,
-    item: SavedHttpRequest,
+    item: SaveHttpRequestInput,
 ) -> AppResult<SavedHttpRequest> {
     let saved = repository.save_http_request(item)?;
     let _ = app.emit("mootool://local-data-changed", "http-saved");
@@ -133,9 +147,9 @@ pub fn save_http_request(
 pub fn delete_saved_http_request(
     app: tauri::AppHandle,
     repository: tauri::State<'_, LocalDataRepository>,
-    id: String,
+    id: i64,
 ) -> AppResult<bool> {
-    let deleted = repository.delete_http_request(&id)?;
+    let deleted = repository.delete_http_request(id)?;
     if deleted {
         let _ = app.emit("mootool://local-data-changed", "http-saved");
     }
@@ -154,9 +168,9 @@ pub fn list_http_request_history(
 pub fn delete_http_request_history(
     app: tauri::AppHandle,
     repository: tauri::State<'_, LocalDataRepository>,
-    id: String,
+    id: i64,
 ) -> AppResult<bool> {
-    let deleted = repository.delete_http_history(&id)?;
+    let deleted = repository.delete_http_history(id)?;
     if deleted {
         let _ = app.emit("mootool://local-data-changed", "http-history");
     }
@@ -192,29 +206,32 @@ async fn execute(
         .connect_timeout(timeout.min(Duration::from_secs(30)))
         .timeout(timeout)
         .user_agent("MooTool-Next-Tauri/0.1");
-    match network.proxy_mode {
-        ProxyMode::System => {}
-        ProxyMode::Direct => client_builder = client_builder.no_proxy(),
-        ProxyMode::Manual => {
-            let host = network.proxy_host.trim();
-            if host.is_empty() {
-                return Err("manual proxy host is required".into());
-            }
-            let endpoint = if host.contains("://") {
-                host.to_string()
-            } else {
-                format!("http://{host}:{}", network.proxy_port)
-            };
-            let mut proxy = reqwest::Proxy::all(&endpoint)
-                .map_err(|error| format!("invalid proxy endpoint: {error}"))?;
-            if !network.proxy_username.trim().is_empty() {
-                let password = super::secure_credentials::load_proxy_password()
-                    .await?
-                    .unwrap_or_default();
-                proxy = proxy.basic_auth(network.proxy_username.trim(), &password);
-            }
-            client_builder = client_builder.proxy(proxy);
+    if !network.proxy_enabled {
+        client_builder = client_builder.no_proxy();
+    } else {
+        let host = network.proxy_host.trim();
+        let port: u16 = network
+            .proxy_port
+            .trim()
+            .parse()
+            .map_err(|_| "Invalid proxy settings".to_string())?;
+        if host.is_empty() || !(1..=65535).contains(&port) {
+            return Err("Invalid proxy settings".into());
         }
+        let endpoint = if host.contains("://") {
+            host.to_string()
+        } else {
+            format!("http://{host}:{port}")
+        };
+        let mut proxy = reqwest::Proxy::all(&endpoint)
+            .map_err(|error| format!("invalid proxy endpoint: {error}"))?;
+        if !network.proxy_username.trim().is_empty() {
+            let password = super::secure_credentials::load_proxy_password()
+                .await?
+                .unwrap_or_default();
+            proxy = proxy.basic_auth(network.proxy_username.trim(), &password);
+        }
+        client_builder = client_builder.proxy(proxy);
     }
     let client = client_builder
         .build()
@@ -266,6 +283,7 @@ async fn execute(
         _ = cancelled.notified() => return Err("HTTP request cancelled".into()),
     };
     let status = response.status().as_u16();
+    let status_text = response.status().canonical_reason().unwrap_or("").to_string();
     let final_url = response.url().to_string();
     let content_type = response
         .headers()
@@ -328,6 +346,7 @@ async fn execute(
         size_bytes: bytes.len(),
         truncated,
         duration_ms: started.elapsed().as_millis(),
+        status_text,
     })
 }
 
@@ -349,13 +368,24 @@ fn validate_request(request: &HttpRequestSpec) -> Result<(), String> {
     Ok(())
 }
 
-fn now_millis() -> i64 {
-    std::time::SystemTime::now()
+#[tauri::command]
+pub fn open_http_response_window(app: tauri::AppHandle) -> AppResult<()> {
+    let millis = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis()
-        .try_into()
-        .unwrap_or(i64::MAX)
+        .map(|value| value.as_millis())
+        .unwrap_or(0);
+    WebviewWindowBuilder::new(
+        &app,
+        format!("http-response-{millis}"),
+        WebviewUrl::App("index.html?surface=http-response".into()),
+    )
+    .title("HTTP Response")
+    .inner_size(1000.0, 760.0)
+    .min_inner_size(560.0, 400.0)
+    .center()
+    .build()
+    .map_err(|error| format!("failed to open HTTP response window: {error}"))?;
+    Ok(())
 }
 
 #[cfg(test)]
@@ -375,6 +405,7 @@ mod tests {
             body_type: "application/json".into(),
             timeout_ms: 30_000,
             follow_redirects: true,
+            saved_id: None,
         }
     }
 

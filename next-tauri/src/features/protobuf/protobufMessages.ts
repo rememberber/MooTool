@@ -14,6 +14,9 @@ export const protobufMessages = defineMessages({
     'pane.json': 'JSON 消息', 'action.encode': '编码', 'aria.json': 'Protobuf JSON 输入', 'action.decode': '解码',
     'pane.binary': '{format} 二进制', 'action.copied': '已复制', 'action.copy': '复制', 'aria.binary': 'Protobuf 二进制',
     'action.format': '格式化', 'notice.formatted': '.proto 定义已格式化', 'action.inspect': '解析字段', 'wire.empty': '空消息（0 bytes）', 'wire.hint': '编码或粘贴二进制后，可查看字段号、Wire Type 和值。',
+    'tab.json': 'JSON / Binary', 'tab.wire': 'Wire 解析', 'tab.convert': 'Hex / Base64',
+    'pane.wireInput': 'Wire 数据', 'pane.wireOutput': 'Wire 字段', 'action.decodeWire': '解析', 'field.wireFormat': '二进制格式',
+    'action.hexToBase64': 'Hex 转 Base64', 'action.base64ToHex': 'Base64 转 Hex', 'notice.converted': '二进制格式已转换',
     'footer.capabilities': 'protobuf.js · proto2 / proto3 · 64-bit 字符串保真', 'report.error': 'Protobuf 状态上报失败：{error}',
     'host.loading': '正在加载 Protobuf 工作台…'
   },
@@ -30,6 +33,9 @@ export const protobufMessages = defineMessages({
     'pane.json': 'JSON message', 'action.encode': 'Encode', 'aria.json': 'Protobuf JSON input', 'action.decode': 'Decode',
     'pane.binary': '{format} binary', 'action.copied': 'Copied', 'action.copy': 'Copy', 'aria.binary': 'Protobuf binary',
     'action.format': 'Format', 'notice.formatted': '.proto definition formatted', 'action.inspect': 'Parse fields', 'wire.empty': 'Empty message (0 bytes)', 'wire.hint': 'Encode or paste binary to inspect field numbers, wire types, and values.',
+    'tab.json': 'JSON / Binary', 'tab.wire': 'Wire Decoder', 'tab.convert': 'Hex / Base64',
+    'pane.wireInput': 'Wire data', 'pane.wireOutput': 'Wire fields', 'action.decodeWire': 'Decode', 'field.wireFormat': 'Binary format',
+    'action.hexToBase64': 'Hex to Base64', 'action.base64ToHex': 'Base64 to Hex', 'notice.converted': 'Binary format converted',
     'footer.capabilities': 'protobuf.js · proto2 / proto3 · Lossless 64-bit strings', 'report.error': 'Protobuf status reporting failed: {error}',
     'host.loading': 'Loading Protobuf workbench…'
   },
@@ -46,6 +52,9 @@ export const protobufMessages = defineMessages({
     'pane.json': 'JSON メッセージ', 'action.encode': 'エンコード', 'aria.json': 'Protobuf JSON 入力', 'action.decode': 'デコード',
     'pane.binary': '{format} バイナリ', 'action.copied': 'コピー済み', 'action.copy': 'コピー', 'aria.binary': 'Protobuf バイナリ',
     'action.format': '整形', 'notice.formatted': '.proto 定義を整形しました', 'action.inspect': 'フィールドを解析', 'wire.empty': '空のメッセージ（0 bytes）', 'wire.hint': 'バイナリをエンコードまたは貼り付けると、フィールド番号、Wire Type、値を確認できます。',
+    'tab.json': 'JSON / Binary', 'tab.wire': 'Wire 解析', 'tab.convert': 'Hex / Base64',
+    'pane.wireInput': 'Wire データ', 'pane.wireOutput': 'Wire フィールド', 'action.decodeWire': '解析', 'field.wireFormat': 'バイナリ形式',
+    'action.hexToBase64': 'Hex から Base64', 'action.base64ToHex': 'Base64 から Hex', 'notice.converted': 'バイナリ形式を変換しました',
     'footer.capabilities': 'protobuf.js · proto2 / proto3 · 64-bit 文字列を保持', 'report.error': 'Protobuf 状態の報告に失敗しました：{error}',
     'host.loading': 'Protobuf ワークベンチを読み込み中…'
   }

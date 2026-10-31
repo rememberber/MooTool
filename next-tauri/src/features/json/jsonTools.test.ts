@@ -30,7 +30,14 @@ describe('Tauri JSON tools', () => {
   it('validates input and reports structural metrics', () => {
     expect(validateJson('').kind).toBe('idle')
     expect(validateJson('{"items":[1,2]}')).toMatchObject({ kind: 'valid', rootType: 'Object' })
-    expect(validateJson('{').kind).toBe('error')
+    const invalid = validateJson('{')
+    expect(invalid.kind).toBe('error')
+    if (invalid.kind === 'error') {
+      let engine = ''
+      try { JSON.parse('{') } catch (cause) { engine = cause instanceof Error ? cause.message : '' }
+      expect(invalid.cause).toBeInstanceOf(SyntaxError)
+      expect(invalid.cause instanceof Error ? invalid.cause.message : '').toBe(engine)
+    }
     expect(analyzeJson('{"items":[1,2]}')).toEqual({
       rootType: 'Object',
       nodes: 4,

@@ -15,11 +15,10 @@ export type AccentColor =
   | 'green'
   | 'red'
   | 'purple'
-export type CloseBehavior = 'ask' | 'minimizeToTray' | 'quit'
-export type InterfaceDensity = 'compact' | 'comfortable'
-export type ProxyMode = 'system' | 'direct' | 'manual'
+export type CloseBehavior = 'ask' | 'hide' | 'quit'
 export type RuntimeSettingsId = 'java' | 'groovy' | 'python' | 'node'
 export type TranslationProvider = 'google' | 'bing' | 'deepl'
+export type VaultTreeExpandMode = 'expandAll' | 'collapseAll'
 
 export interface RuntimeRunOption {
   argumentsText: string
@@ -35,7 +34,7 @@ export interface CustomToolGroup {
 const PRODUCT_TOOL_IDS = new Set([
   'quick-note', 'text-diff', 'reformat', 'json', 'config', 'runtime', 'protobuf', 'variables',
   'http', 'host', 'network', 'ua', 'encode', 'crypto', 'regex', 'cron', 'qrcode', 'timestamp',
-  'message-board', 'translation', 'calculator', 'color', 'image', 'pdf', 'file-preview', 'system'
+  'message-board', 'translation', 'calculator', 'color', 'image', 'pdf', 'file-preview', 'batch-rename', 'system'
 ])
 
 export interface AppSettings {
@@ -49,45 +48,41 @@ export interface AppSettings {
     autoDownloadUpdates: boolean
     startMaximized: boolean
     trayEnabled: boolean
+    escapeHidesWindow: boolean
   }
   appearance: {
     theme: ThemePreference
     interfaceStyle: InterfaceStyle
     unifiedBackground: boolean
     accentColor: AccentColor
-    fontFamily: 'system' | 'mono'
+    fontFamily: string
     fontSize: number
-    uiScale: 90 | 100 | 110
   }
   layout: {
-    sidebarCompact: boolean
-    density: InterfaceDensity
+    hideNavigationTitles: boolean
     navigationStyle: NavigationStyle
     compactNavigation: boolean
     showSeparators: boolean
     customGroups: CustomToolGroup[]
-    paneSizes: Record<string, number>
+    paneSizes: Record<string, number[]>
     showRecent: boolean
-    showGroupTitles: boolean
-    hiddenTools: string[]
+    hiddenNavigationToolIds: string[]
   }
   editor: {
-    fontSize: number
-    tabSize: 2 | 4 | 8
-    wordWrap: boolean
-    jsonFontFamily: 'system' | 'mono'
+    softWrap: boolean
+    jsonFontName: string
     jsonFontSize: number
-    quickNoteFontFamily: 'system' | 'mono'
+    quickNoteFontName: string
     quickNoteFontSize: number
     sqlDialect: string
   }
   network: {
-    timeoutSeconds: number
-    proxyMode: ProxyMode
+    requestTimeoutMs: number
+    proxyEnabled: boolean
     proxyHost: string
-    proxyPort: number
+    proxyPort: string
     proxyUsername: string
-    translationTimeoutSeconds: number
+    translationTimeoutMs: number
   }
   runtime: {
     autoDetect: boolean
@@ -98,11 +93,8 @@ export interface AppSettings {
     environment: Record<string, string>
     drafts: Record<RuntimeSettingsId, string>
     options: Record<RuntimeSettingsId, RuntimeRunOption>
-    timeoutSeconds: number
   }
-  data: {
-    historyLimit: number
-  }
+  data: Record<string, never>
   vault: {
     autoCommit: boolean
     rootDirectory: string | null
@@ -112,10 +104,14 @@ export interface AppSettings {
     autoCommitInactiveSeconds: number
     autoPullMinutes: number
     hideGitignoredFiles: boolean
+    quickNoteTreeExpandMode: VaultTreeExpandMode
+    jsonTreeExpandMode: VaultTreeExpandMode
   }
   shortcuts: {
-    globalSearch: string
+    search: string
     settings: string
+    globalSearchEnabled: boolean
+    globalSearch: string
   }
   tools: {
     favorites: string[]
@@ -141,6 +137,12 @@ export interface SettingsApi {
   subscribe(listener: SettingsListener): Promise<UnlistenSettings>
 }
 
+export function normalizeCloseBehavior(value: unknown): CloseBehavior {
+  if (value === 'hide' || value === 'minimizeToTray') return 'hide'
+  if (value === 'quit') return 'quit'
+  return 'ask'
+}
+
 export function defaultAppSettings(): AppSettings {
   return {
     schemaVersion: SETTINGS_SCHEMA_VERSION,
@@ -150,48 +152,44 @@ export function defaultAppSettings(): AppSettings {
       launchAtLogin: false,
       closeBehavior: 'ask',
       autoCheckUpdates: true,
-      autoDownloadUpdates: false,
+      autoDownloadUpdates: true,
       startMaximized: false,
-      trayEnabled: true
+      trayEnabled: true,
+      escapeHidesWindow: true
     },
     appearance: {
       theme: 'system',
       interfaceStyle: 'modern',
       unifiedBackground: true,
       accentColor: 'blue',
-      fontFamily: 'system',
-      fontSize: 13,
-      uiScale: 100
+      fontFamily: 'system-ui',
+      fontSize: 13
     },
     layout: {
-      sidebarCompact: false,
-      density: 'comfortable',
-      navigationStyle: 'grouped',
+      hideNavigationTitles: false,
+      navigationStyle: 'classic',
       compactNavigation: false,
-      showSeparators: false,
+      showSeparators: true,
       customGroups: [],
       paneSizes: {},
-      showRecent: true,
-      showGroupTitles: true,
-      hiddenTools: []
+      showRecent: false,
+      hiddenNavigationToolIds: []
     },
     editor: {
-      fontSize: 13,
-      tabSize: 2,
-      wordWrap: true,
-      jsonFontFamily: 'mono',
-      jsonFontSize: 13,
-      quickNoteFontFamily: 'system',
-      quickNoteFontSize: 13,
+      softWrap: true,
+      jsonFontName: 'ui-monospace',
+      jsonFontSize: 14,
+      quickNoteFontName: 'ui-monospace',
+      quickNoteFontSize: 14,
       sqlDialect: 'Standard SQL'
     },
     network: {
-      timeoutSeconds: 30,
-      proxyMode: 'system',
+      requestTimeoutMs: 30_000,
+      proxyEnabled: false,
       proxyHost: '',
-      proxyPort: 8080,
+      proxyPort: '',
       proxyUsername: '',
-      translationTimeoutSeconds: 20
+      translationTimeoutMs: 15_000
     },
     runtime: {
       autoDetect: true,
@@ -206,12 +204,9 @@ export function defaultAppSettings(): AppSettings {
         groovy: { argumentsText: '', workingDirectory: '' },
         python: { argumentsText: '', workingDirectory: '' },
         node: { argumentsText: '', workingDirectory: '' }
-      },
-      timeoutSeconds: 30
+      }
     },
-    data: {
-      historyLimit: 500
-    },
+    data: {},
     vault: {
       autoCommit: false,
       rootDirectory: null,
@@ -220,11 +215,15 @@ export function defaultAppSettings(): AppSettings {
       autoCommitIdleSeconds: 30,
       autoCommitInactiveSeconds: 120,
       autoPullMinutes: 0,
-      hideGitignoredFiles: true
+      hideGitignoredFiles: true,
+      quickNoteTreeExpandMode: 'expandAll',
+      jsonTreeExpandMode: 'expandAll'
     },
     shortcuts: {
-      globalSearch: 'CommandOrControl+K',
-      settings: 'CommandOrControl+,'
+      search: 'CommandOrControl+K',
+      settings: 'CommandOrControl+,',
+      globalSearchEnabled: false,
+      globalSearch: 'CommandOrControl+Shift+Space'
     },
     tools: {
       favorites: [],
@@ -255,10 +254,151 @@ export const sqlDialects = [
 
 const NAVIGATION_STYLES: NavigationStyle[] = ['classic', 'card', 'grouped']
 
+export function normalizePaneSizeList(sizes: readonly number[]): number[] {
+  const total = sizes.reduce((sum, size) => sum + size, 0)
+  if (!(total > 0) || sizes.some((size) => !Number.isFinite(size) || size <= 0)) {
+    return sizes.map(() => Number((1 / Math.max(sizes.length, 1)).toFixed(6)))
+  }
+  return sizes.map((size) => Number((size / total).toFixed(6)))
+}
+
+export function storedPaneSizes(
+  paneSizes: Record<string, number[]>,
+  id: string,
+  legacyId: string | undefined,
+  count: number
+): number[] | null {
+  const current = paneSizes[id]
+  if (current?.length === count) return current
+  const legacy = legacyId ? paneSizes[legacyId] : undefined
+  return legacy?.length === count ? legacy : null
+}
+
+export function normalizePaneSizes(value: unknown): Record<string, number[]> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>)
+    .slice(0, 64)
+    .flatMap(([key, sizes]) => {
+      if (!/^[a-z0-9-]{1,64}$/i.test(key) || !Array.isArray(sizes) || sizes.length < 2 || sizes.length > 4) return []
+      const validSizes = sizes.map(Number)
+      if (validSizes.some((size) => !Number.isFinite(size) || size <= 0)) return []
+      return [[key, normalizePaneSizeList(validSizes)]]
+    }))
+}
+
+export function normalizeShortcutSettings(value: unknown): AppSettings['shortcuts'] {
+  const defaults = defaultAppSettings().shortcuts
+  const record = value && typeof value === 'object' ? value as Record<string, unknown> : {}
+  const legacyPalette = typeof record.globalSearchEnabled !== 'boolean'
+  const search = typeof record.search === 'string'
+    ? record.search
+    : legacyPalette && typeof record.globalSearch === 'string'
+      ? record.globalSearch
+      : defaults.search
+  return {
+    search,
+    settings: typeof record.settings === 'string' ? record.settings : defaults.settings,
+    globalSearchEnabled: record.globalSearchEnabled === true,
+    globalSearch: legacyPalette ? defaults.globalSearch : typeof record.globalSearch === 'string' ? record.globalSearch : defaults.globalSearch
+  }
+}
+
+export function normalizeLayoutSettings(value: unknown): AppSettings['layout'] {
+  const defaults = defaultAppSettings().layout
+  const record = value && typeof value === 'object' ? value as Record<string, unknown> : {}
+  const legacyHidden = record.hiddenNavigationToolIds ?? record.hiddenTools
+  const hiddenNavigationToolIds = Array.isArray(legacyHidden)
+    ? [...new Set(legacyHidden.filter((toolId): toolId is string => typeof toolId === 'string' && PRODUCT_TOOL_IDS.has(toolId)))]
+    : []
+  return {
+    ...defaults,
+    navigationStyle: normalizeNavigationStyle(record.navigationStyle),
+    compactNavigation: record.compactNavigation === true,
+    showSeparators: record.showSeparators !== false,
+    customGroups: normalizeCustomGroups(record.customGroups),
+    paneSizes: normalizePaneSizes(record.paneSizes),
+    showRecent: record.showRecent === true,
+    hideNavigationTitles: typeof record.hideNavigationTitles === 'boolean'
+      ? record.hideNavigationTitles
+      : record.sidebarCompact === true,
+    hiddenNavigationToolIds
+  }
+}
+
 export function normalizeNavigationStyle(value: unknown): NavigationStyle {
   return typeof value === 'string' && NAVIGATION_STYLES.includes(value as NavigationStyle)
     ? value as NavigationStyle
-    : 'grouped'
+    : 'classic'
+}
+
+export function normalizeInterfaceFontFamily(value: unknown): string {
+  if (typeof value !== 'string') return 'system-ui'
+  const trimmed = value.trim().slice(0, 120)
+  if (!trimmed || trimmed === 'system') return 'system-ui'
+  if (trimmed === 'mono') return 'ui-monospace'
+  return trimmed
+}
+
+export function normalizeEditorFontName(value: unknown): string {
+  if (typeof value !== 'string') return 'ui-monospace'
+  const trimmed = value.trim().slice(0, 120)
+  if (!trimmed || trimmed === 'mono') return 'ui-monospace'
+  if (trimmed === 'system') return 'system-ui'
+  return trimmed
+}
+
+export function normalizeEditorSettings(editor: unknown): AppSettings['editor'] {
+  const defaults = defaultAppSettings().editor
+  const legacy = editor && typeof editor === 'object' ? editor as Partial<AppSettings['editor']> & { jsonFontFamily?: unknown; quickNoteFontFamily?: unknown; wordWrap?: unknown; fontSize?: unknown; tabSize?: unknown } : undefined
+  const softWrap = typeof legacy?.softWrap === 'boolean'
+    ? legacy.softWrap
+    : typeof legacy?.wordWrap === 'boolean'
+      ? legacy.wordWrap
+      : defaults.softWrap
+  const next = {
+    ...defaults,
+    ...legacy,
+    jsonFontName: normalizeEditorFontName(legacy?.jsonFontName ?? legacy?.jsonFontFamily),
+    quickNoteFontName: normalizeEditorFontName(legacy?.quickNoteFontName ?? legacy?.quickNoteFontFamily),
+    softWrap
+  }
+  delete (next as { jsonFontFamily?: unknown }).jsonFontFamily
+  delete (next as { quickNoteFontFamily?: unknown }).quickNoteFontFamily
+  delete (next as { wordWrap?: unknown }).wordWrap
+  delete (next as { fontSize?: unknown }).fontSize
+  delete (next as { tabSize?: unknown }).tabSize
+  return next
+}
+
+function clampTimeoutMs(value: unknown, fallback: number): number {
+  const number = typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : fallback
+  return Math.max(1_000, Math.min(120_000, number))
+}
+
+export function normalizeNetworkSettings(value: unknown): AppSettings['network'] {
+  const defaults = defaultAppSettings().network
+  const record = value && typeof value === 'object' ? value as Record<string, unknown> : {}
+  const enabled = typeof record.proxyEnabled === 'boolean' ? record.proxyEnabled : record.proxyMode === 'manual'
+  let proxyPort = ''
+  if (typeof record.proxyPort === 'string') proxyPort = record.proxyPort.trim().slice(0, 16)
+  else if (typeof record.proxyPort === 'number' && Number.isFinite(record.proxyPort)) {
+    proxyPort = !enabled && record.proxyPort === 8080 ? '' : String(record.proxyPort)
+  }
+  const requestTimeoutMs = typeof record.requestTimeoutMs === 'number'
+    ? record.requestTimeoutMs
+    : typeof record.timeoutSeconds === 'number' ? record.timeoutSeconds * 1_000 : undefined
+  const translationTimeoutMs = typeof record.translationTimeoutMs === 'number'
+    ? record.translationTimeoutMs
+    : typeof record.translationTimeoutSeconds === 'number' ? record.translationTimeoutSeconds * 1_000 : undefined
+  return {
+    ...defaults,
+    requestTimeoutMs: clampTimeoutMs(requestTimeoutMs, defaults.requestTimeoutMs),
+    translationTimeoutMs: clampTimeoutMs(translationTimeoutMs, defaults.translationTimeoutMs),
+    proxyEnabled: enabled,
+    proxyHost: typeof record.proxyHost === 'string' ? record.proxyHost : defaults.proxyHost,
+    proxyPort,
+    proxyUsername: typeof record.proxyUsername === 'string' ? record.proxyUsername : defaults.proxyUsername
+  }
 }
 
 export function normalizeCustomGroups(value: unknown): CustomToolGroup[] {

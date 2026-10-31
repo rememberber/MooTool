@@ -19,7 +19,7 @@ use crate::{
         },
         error::AppResult,
         local_data::OperationHistory,
-        settings::{AppSettings, SETTINGS_SCHEMA_VERSION},
+        settings::{AppSettings, OPERATION_HISTORY_LIMIT, SETTINGS_SCHEMA_VERSION},
     },
     repositories::{
         local_data::{DATABASE_FILE_NAME, LocalDataRepository},
@@ -173,7 +173,6 @@ fn write_product_backup(
     record_data_operation(
         app,
         local_data,
-        settings,
         "创建备份",
         &backup_path.display().to_string(),
         "success",
@@ -348,12 +347,12 @@ pub fn import_product_backup(
         .map_err(|error| format!("backup restored but settings synchronization failed: {error}"))?;
     super::desktop::sync_autostart(&app, &restored_settings)
         .map_err(|error| format!("backup restored but launch-at-login sync failed: {error}"))?;
+    super::global_shortcut::sync_global_shortcut(&app, &restored_settings);
     app.emit(LOCAL_DATA_CHANGED_EVENT, "restore")
         .map_err(|error| format!("backup restored but data synchronization failed: {error}"))?;
     record_data_operation(
         &app,
         &local_data,
-        &settings,
         "恢复备份",
         &source.display().to_string(),
         "success",
@@ -502,7 +501,6 @@ fn validate_vault_relative_path(value: &str) -> Result<PathBuf, String> {
 fn record_data_operation(
     app: &tauri::AppHandle,
     local_data: &LocalDataRepository,
-    settings: &SettingsRepository,
     action: &str,
     summary: &str,
     status: &str,
@@ -520,7 +518,7 @@ fn record_data_operation(
             metadata_json: "{}".into(),
             created_at: timestamp,
         },
-        settings.snapshot().data.history_limit,
+        OPERATION_HISTORY_LIMIT,
     )?;
     app.emit(HISTORY_CHANGED_EVENT, ())
         .map_err(|error| format!("operation completed but history synchronization failed: {error}"))

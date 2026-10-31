@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatOpenPorts, parseIpv4Range, parsePortSpec } from './networkCommand'
+import { formatOpenPorts, formatPingRange, parseIpv4Range, parsePortSpec } from './networkCommand'
 
 describe('network command specs', () => {
   it('expands a three-octet prefix to .1 through .254', () => {
@@ -15,6 +15,9 @@ describe('network command specs', () => {
     expect(parsePortSpec('80, 22, 443')).toEqual([22, 80, 443])
     expect(parsePortSpec('1-3')).toEqual([1, 2, 3])
     expect(() => parsePortSpec('80-1')).toThrow('INVALID_TARGET')
+    expect(parsePortSpec('3306,80-82,22')).toEqual([22, 80, 81, 82, 3306])
+    expect(formatPingRange(['192.168.10.1'], 254)).toBe('Reachable hosts: 1 / 254\n\n192.168.10.1')
+    expect(formatPingRange([], 254)).toBe('Reachable hosts: 0 / 254\n\nNo reachable host found')
   })
 
   it('names open ports the same way as Electron', () => {

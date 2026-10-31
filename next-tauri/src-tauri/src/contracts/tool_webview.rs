@@ -18,6 +18,7 @@ pub enum ManagedToolId {
     Network,
     Pdf,
     FilePreview,
+    BatchRename,
     Protobuf,
     QuickNote,
     Qrcode,

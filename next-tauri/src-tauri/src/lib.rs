@@ -13,6 +13,23 @@ pub fn run() {
         ))
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(|app, _shortcut, event| {
+                    use tauri::Emitter;
+
+                    if event.state != tauri_plugin_global_shortcut::ShortcutState::Pressed {
+                        return;
+                    }
+                    if let Err(error) = commands::desktop::show_main_window(app).and_then(|_| {
+                        app.emit_to("main", "mootool://open-command-palette", ())
+                            .map_err(|error| format!("failed to open command palette: {error}"))
+                    }) {
+                        eprintln!("MooTool Next Tauri global shortcut failed: {error}");
+                    }
+                })
+                .build(),
+        )
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(commands::desktop::DesktopLifecycle::default())
         .manage(state::ToolWebviewManager::default())
@@ -92,7 +109,14 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::runtime::get_runtime_info,
+            commands::batch_rename::select_rename_files,
+            commands::batch_rename::preview_batch_rename,
+            commands::batch_rename::execute_batch_rename,
+            commands::batch_rename::undo_batch_rename,
+            commands::batch_rename::get_batch_rename_status,
             commands::diagnostics::get_environment_variables,
+            commands::diagnostics::read_persistent_environment,
+            commands::diagnostics::write_persistent_environment,
             commands::diagnostics::get_system_snapshot,
             commands::diagnostics::report_frontend_error,
             commands::diagnostics::export_diagnostics_bundle,
@@ -110,14 +134,20 @@ pub fn run() {
             commands::vault::duplicate_vault_document,
             commands::vault::delete_vault_document,
             commands::vault::delete_vault_entry,
+            commands::vault::export_vault_files,
+            commands::vault::reveal_vault_root,
+            commands::vault::reveal_vault_entry,
             commands::vault::get_vault_git_status,
             commands::vault::get_vault_git_details,
+            commands::vault::get_vault_git_diff,
             commands::vault::configure_vault_git_remote,
             commands::vault::run_vault_git,
             commands::vault::cancel_vault_git,
             commands::settings::get_settings,
             commands::settings::update_settings,
             commands::settings::reset_settings,
+            commands::global_shortcut::get_global_shortcut_status,
+            commands::global_shortcut::retry_global_shortcut,
             commands::settings::open_settings_window,
             commands::secure_credentials::get_proxy_credential_status,
             commands::secure_credentials::set_proxy_password,
@@ -128,7 +158,12 @@ pub fn run() {
             commands::desktop::resolve_close_request,
             commands::local_data::list_quick_notes,
             commands::local_data::save_quick_note,
+            commands::local_data::create_quick_note,
+            commands::local_data::duplicate_quick_note,
+            commands::local_data::rename_quick_note_entry,
+            commands::local_data::move_quick_note_entry,
             commands::local_data::delete_quick_note,
+            commands::local_data::export_quick_note_files,
             commands::local_data::reveal_quick_note_entry,
             commands::local_data::open_quick_note_vault,
             commands::quick_note_git::quick_note_git_status,
@@ -172,6 +207,7 @@ pub fn run() {
             commands::network_tools::list_network_connections,
             commands::network_tools::flush_network_dns_cache,
             commands::network_tools::ping_network_host,
+            commands::network_tools::ping_ipv4_prefix,
             commands::http::execute_http_request,
             commands::http::cancel_http_request,
             commands::http::list_saved_http_requests,
@@ -180,6 +216,7 @@ pub fn run() {
             commands::http::list_http_request_history,
             commands::http::delete_http_request_history,
             commands::http::clear_http_request_history,
+            commands::http::open_http_response_window,
             commands::user_files::pick_text_file,
             commands::user_files::export_text_file,
             commands::user_files::export_binary_data_url,
@@ -203,6 +240,9 @@ pub fn run() {
             commands::images::vectorize_image_assets,
             commands::images::rename_image_asset,
             commands::images::delete_image_assets,
+            commands::ocr::image_text_recognition_status,
+            commands::ocr::recognize_image_text,
+            commands::ocr::cancel_image_text_recognition,
             commands::native_desktop::capture_display_images,
             commands::native_desktop::sample_screen_color,
             commands::native_desktop::get_display_sleep_status,
@@ -221,6 +261,7 @@ pub fn run() {
             commands::tool_webview::set_tool_webview_visible,
             commands::tool_webview::detach_tool_webview,
             commands::tool_webview::dock_tool_webview,
+            commands::tool_webview::dismiss_escape_window,
             commands::tool_webview::stress_tool_webview_reparent,
             commands::tool_webview::close_tool_webview,
             commands::tool_webview::report_tool_webview_session

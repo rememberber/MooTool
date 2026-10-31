@@ -27,6 +27,7 @@ import { ImageHost } from '../features/image/ImageHost'
 import { JsonHost } from '../features/json/JsonHost'
 import { MessageBoardHost } from '../features/messageBoard/MessageBoardHost'
 import { NetworkHost } from '../features/network/NetworkHost'
+import { BatchRenameHost } from '../features/batchRename/BatchRenameHost'
 import { FilePreviewHost } from '../features/filePreview/FilePreviewHost'
 import { PdfHost } from '../features/pdf/PdfHost'
 import { ProtobufHost } from '../features/protobuf/ProtobufHost'
@@ -50,7 +51,7 @@ import { historyApi } from '../platform/api/historyApi'
 import { desktopApi } from '../platform/api/desktopApi'
 import { productUpdateApi } from '../platform/api/updateApi'
 import type { DesktopCloseDecision, DesktopCloseRequest } from '../platform/contracts/desktop'
-import type { OperationHistory } from '../platform/contracts/history'
+import { OPERATION_HISTORY_LIMIT, type OperationHistory } from '../platform/contracts/history'
 import { queueOperationRestore } from '../features/history/operationRestore'
 import type { RuntimeInfo } from '../platform/contracts/runtime'
 import type { AppLanguage } from '../platform/contracts/settings'
@@ -88,6 +89,7 @@ const toolHosts: Array<{ id: Exclude<ToolId, 'home'>; Host: ComponentType<{ acti
   { id: 'image', Host: ImageHost },
   { id: 'pdf', Host: PdfHost },
   { id: 'file-preview', Host: FilePreviewHost },
+  { id: 'batch-rename', Host: BatchRenameHost },
   { id: 'network', Host: NetworkHost },
   { id: 'ua', Host: UaHost },
   { id: 'variables', Host: VariablesHost },
@@ -115,15 +117,15 @@ export function App() {
     const timer = window.setTimeout(() => setNotice(''), 5_000)
     return () => window.clearTimeout(timer)
   }, [notice])
-  const sidebarCompact = settings.layout.sidebarCompact
-  const hiddenTools = new Set(settings.layout.hiddenTools)
+  const hideNavigationTitles = settings.layout.hideNavigationTitles
+  const hiddenNavigationToolIds = new Set(settings.layout.hiddenNavigationToolIds)
   const recent = settings.layout.showRecent
-    ? settings.tools.recent.filter(isToolId).filter((toolId) => !hiddenTools.has(toolId))
+    ? settings.tools.recent.filter(isToolId).filter((toolId) => !hiddenNavigationToolIds.has(toolId))
     : []
   const favorites = settings.tools.favorites
     .filter(isToolId)
     .map((toolId) => toolCatalog.find((tool) => tool.id === toolId))
-    .filter((tool): tool is NonNullable<typeof tool> => Boolean(tool && !tool.engineeringOnly && !hiddenTools.has(tool.id)))
+    .filter((tool): tool is NonNullable<typeof tool> => Boolean(tool && !tool.engineeringOnly && !hiddenNavigationToolIds.has(tool.id)))
 
   useEffect(() => {
     void runtimeApi.getInfo().then(setRuntimeInfo).catch((error: unknown) => {
@@ -166,7 +168,7 @@ export function App() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (matchesShortcut(event, settings.shortcuts.globalSearch)) {
+      if (matchesShortcut(event, settings.shortcuts.search)) {
         event.preventDefault()
         setCommandPaletteOpen(true)
       } else if (matchesShortcut(event, settings.shortcuts.settings)) {
@@ -176,7 +178,7 @@ export function App() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [openWindow, settings.shortcuts.globalSearch, settings.shortcuts.settings])
+  }, [openWindow, settings.shortcuts.search, settings.shortcuts.settings])
 
   useEffect(() => {
     if (!window.__TAURI_INTERNALS__) return
@@ -237,7 +239,7 @@ export function App() {
           ...current,
           general: {
             ...current.general,
-            closeBehavior: decision === 'quit' ? 'quit' : 'minimizeToTray'
+            closeBehavior: decision === 'quit' ? 'quit' : 'hide'
           }
         }))
       }
@@ -250,15 +252,15 @@ export function App() {
 
   const visibleGroups = useMemo(() => toolGroups.map((group) => ({
     group,
-    tools: navigationToolCatalog.filter((tool) => !hiddenTools.has(tool.id) && tool.group === group)
-  })).filter(({ tools }) => tools.length > 0), [settings.layout.hiddenTools, toolTitle])
+    tools: navigationToolCatalog.filter((tool) => !hiddenNavigationToolIds.has(tool.id) && tool.group === group)
+  })).filter(({ tools }) => tools.length > 0), [settings.layout.hiddenNavigationToolIds, toolTitle])
   const visibleCustomGroups = useMemo(() => settings.layout.customGroups.map((group) => ({
     ...group,
     tools: group.toolIds
       .map((toolId) => productToolCatalog.find((tool) => tool.id === toolId))
       .filter((tool): tool is NonNullable<typeof tool> => Boolean(tool))
-      .filter((tool) => !hiddenTools.has(tool.id))
-  })).filter((group) => group.tools.length > 0), [settings.layout.customGroups, settings.layout.hiddenTools, toolTitle])
+      .filter((tool) => !hiddenNavigationToolIds.has(tool.id))
+  })).filter((group) => group.tools.length > 0), [settings.layout.customGroups, settings.layout.hiddenNavigationToolIds, toolTitle])
 
   function openTool(toolId: ToolId): void {
     const tool = toolCatalog.find((item) => item.id === toolId)
@@ -280,7 +282,7 @@ export function App() {
         outputText: '',
         metadataJson: '{}',
         createdAt: Date.now()
-      }, settings.data.historyLimit).catch((cause: unknown) => setNotice(errorMessage(cause)))
+      }, OPERATION_HISTORY_LIMIT).catch((cause: unknown) => setNotice(errorMessage(cause)))
       void save((current) => ({
         ...current,
         tools: {
@@ -310,7 +312,7 @@ export function App() {
     if (!settingsReady) return
     void save((current) => ({
       ...current,
-      layout: { ...current.layout, sidebarCompact: !current.layout.sidebarCompact }
+      layout: { ...current.layout, hideNavigationTitles: !current.layout.hideNavigationTitles }
     })).catch((cause: unknown) => setNotice(errorMessage(cause)))
   }
 
@@ -339,7 +341,7 @@ export function App() {
 
   const shellClassName = [
     'app-shell',
-    sidebarCompact ? 'app-shell--compact' : '',
+    hideNavigationTitles ? 'app-shell--compact' : '',
     settings.layout.compactNavigation ? 'app-shell--compact-nav' : '',
     settings.layout.showSeparators ? 'app-shell--nav-separators' : '',
     settings.appearance.unifiedBackground ? 'app-shell--unified-background' : '',
@@ -356,11 +358,11 @@ export function App() {
           <button
             className="icon-button icon-ghost"
             type="button"
-            aria-label={sidebarCompact ? t('shell.expand') : t('shell.collapse')}
-            aria-pressed={sidebarCompact}
+            aria-label={hideNavigationTitles ? t('shell.expand') : t('shell.collapse')}
+            aria-pressed={hideNavigationTitles}
             onClick={toggleSidebar}
           >
-            {sidebarCompact ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+            {hideNavigationTitles ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
           </button>
           <button
             className="icon-button icon-ghost"
@@ -381,26 +383,26 @@ export function App() {
             icon={homeTool.icon}
             label="MooTool"
             active={activeTool === 'home'}
-            compact={sidebarCompact}
+            compact={hideNavigationTitles}
             onClick={() => openTool('home')}
           />
           <NavButton
             icon={History}
             label={t('shell.history')}
             active={historyOpen}
-            compact={sidebarCompact}
+            compact={hideNavigationTitles}
             onClick={() => setHistoryOpen(true)}
           />
           {favorites.length > 0 && (
             <section className="nav-group tool-group nav-group--favorites">
-              {settings.layout.showGroupTitles && <h2><Star />{t('shell.favorites')}</h2>}
+              <h2><Star />{t('shell.favorites')}</h2>
               {favorites.map((tool) => (
                 <NavButton
                   key={`favorite-${tool.id}`}
                   icon={tool.icon}
                   label={toolTitle(tool)}
                   active={activeTool === tool.id}
-                  compact={sidebarCompact}
+                  compact={hideNavigationTitles}
                   favorite
                   onToggleFavorite={() => toggleFavorite(tool.id)}
                   onClick={() => openTool(tool.id)}
@@ -410,14 +412,14 @@ export function App() {
           )}
           {visibleCustomGroups.map((group) => (
             <section className="nav-group tool-group tool-group--custom nav-group--custom" key={group.id}>
-              {settings.layout.showGroupTitles && <h2><FolderCog />{group.name}</h2>}
+              <h2><FolderCog />{group.name}</h2>
               {group.tools.map((tool) => (
                 <NavButton
                   key={`${group.id}-${tool.id}`}
                   icon={tool.icon}
                   label={toolTitle(tool)}
                   active={activeTool === tool.id}
-                  compact={sidebarCompact}
+                  compact={hideNavigationTitles}
                   favorite={settings.tools.favorites.includes(tool.id)}
                   onToggleFavorite={() => toggleFavorite(tool.id)}
                   onClick={() => openTool(tool.id)}
@@ -427,14 +429,14 @@ export function App() {
           ))}
           {visibleGroups.map(({ group, tools }) => (
             <section className="nav-group tool-group" key={group}>
-              {settings.layout.showGroupTitles && <h2>{groupTitle(group)}</h2>}
+              <h2>{groupTitle(group)}</h2>
               {tools.map((tool) => (
                 <NavButton
                   key={tool.id}
                   icon={tool.icon}
                   label={toolTitle(tool)}
                   active={activeTool === tool.id}
-                  compact={sidebarCompact}
+                  compact={hideNavigationTitles}
                   planned={!tool.ready}
                   favorite={settings.tools.favorites.includes(tool.id)}
                   onToggleFavorite={() => toggleFavorite(tool.id)}
@@ -513,7 +515,7 @@ export function App() {
           onClose={() => setCommandPaletteOpen(false)}
           onOpenTool={openTool}
         />
-        {historyOpen && <HistoryPanel limit={settings.data.historyLimit} onClose={() => setHistoryOpen(false)} onRestore={restoreOperation} />}
+        {historyOpen && <HistoryPanel limit={OPERATION_HISTORY_LIMIT} onClose={() => setHistoryOpen(false)} onRestore={restoreOperation} />}
         {closeRequest && (
           <div className="desktop-dialog-backdrop" role="presentation">
             <section className="desktop-dialog" role="dialog" aria-modal="true" aria-labelledby="close-dialog-title">
@@ -533,8 +535,8 @@ export function App() {
                   {t('closeDialog.cancel')}
                 </button>
                 {closeRequest.canMinimizeToTray && (
-                  <button className="secondary-button" type="button" onClick={() => void resolveClose('minimizeToTray')}>
-                    {t('closeDialog.tray')}
+                  <button className="secondary-button" type="button" onClick={() => void resolveClose('hide')}>
+                    {t('closeDialog.hide')}
                   </button>
                 )}
                 <button className="primary-button" type="button" onClick={() => void resolveClose('quit')}>

@@ -6,6 +6,7 @@ import {
   Code2,
   Diff,
   FileCode2,
+  FileCog,
   FileImage,
   FileText,
   Globe2,
@@ -56,6 +57,7 @@ export type ToolId =
   | 'image'
   | 'pdf'
   | 'file-preview'
+  | 'batch-rename'
   | 'system'
   | 'editor-lab'
   | 'webview-lab'
@@ -150,6 +152,7 @@ export const toolCatalog: ToolDefinition[] = [
   { ...tool('image', '图片工具', '实用工具', Image, ['capture', 'resize']), ready: true },
   { ...tool('pdf', 'PDF', '实用工具', FileImage, ['pdf', 'merge']), ready: true },
   { ...tool('file-preview', '文件预览', '实用工具', FileText, ['preview', 'file']), ready: true },
+  { ...tool('batch-rename', '批量重命名', '实用工具', FileCog, ['rename', 'batch', 'files', '重命名', '批量', '文件']), ready: true },
   {
     ...tool('system', '硬件与系统', '系统工具', HardDrive, ['hardware', 'system']),
     ready: true

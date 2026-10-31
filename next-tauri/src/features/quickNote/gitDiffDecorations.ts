@@ -5,28 +5,28 @@ import { quickNoteLanguage } from './quickNoteLanguage'
 import type { DiffEditorDecoration } from '../../shared/DiffCodeEditor'
 
 const syntaxByExtension: Record<string, QuickNote['syntax']> = {
-  md: 'markdown',
-  markdown: 'markdown',
-  json: 'json',
-  java: 'java',
-  js: 'javascript',
-  mjs: 'javascript',
-  cjs: 'javascript',
-  ts: 'typescript',
-  tsx: 'typescript',
-  py: 'python',
-  html: 'html',
-  htm: 'html',
-  xml: 'xml',
-  yaml: 'yaml',
-  yml: 'yaml',
-  sql: 'sql',
-  txt: 'plain'
+  md: 'text/markdown',
+  markdown: 'text/markdown',
+  json: 'application/json',
+  java: 'text/java',
+  js: 'text/javascript',
+  mjs: 'text/javascript',
+  cjs: 'text/javascript',
+  ts: 'text/typescript',
+  tsx: 'text/typescript',
+  py: 'text/python',
+  html: 'text/html',
+  htm: 'text/html',
+  xml: 'text/xml',
+  yaml: 'text/yaml',
+  yml: 'text/yaml',
+  sql: 'text/sql',
+  txt: 'text/plain'
 }
 
 export function gitDiffLanguage(path: string): Extension[] {
   const extension = path.split(/[/\\]/).pop()?.split('.').pop()?.toLowerCase() ?? ''
-  return quickNoteLanguage(syntaxByExtension[extension] ?? 'plain')
+  return quickNoteLanguage(syntaxByExtension[extension] ?? 'text/plain')
 }
 
 export function gitDiffDecorations(before: string, after: string): { left: DiffEditorDecoration[]; right: DiffEditorDecoration[] } {

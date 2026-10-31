@@ -119,6 +119,7 @@ export const toolWebviewApis: Record<ManagedToolId, ToolWebviewApi> = {
   network: platformApi('network'),
   pdf: platformApi('pdf'),
   'file-preview': platformApi('file-preview'),
+  'batch-rename': platformApi('batch-rename'),
   protobuf: platformApi('protobuf'),
   'quick-note': platformApi('quick-note'),
   qrcode: platformApi('qrcode'),

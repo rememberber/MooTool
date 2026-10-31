@@ -34,9 +34,10 @@ tauri = { version = "2", features = ["unstable", "tray-icon"] }
 tauri-plugin-autostart = "2"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-dialog = "2"
+tauri-plugin-global-shortcut = "2"
 tauri-plugin-updater = "2"
 tempfile = "3"
-time = { version = "=0.3.47", features = ["formatting"] }
+time = { version = "=0.3.47", features = ["formatting", "local-offset"] }
 tokio = { version = "1.53.1", features = ["process", "io-util", "time", "sync", "fs", "net", "macros"] }
 tracing = "0.1"
 tracing-appender = "0.2"

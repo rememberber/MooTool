@@ -214,7 +214,7 @@ export function ReformatSurface() {
         </button>
       </section>
 
-      <ResizableColumns id="reformat-result" className="reformat-editor-grid" initialPrimary={520} minPrimary={280} minSecondary={280}>
+      <ResizableColumns id="reformat-file" legacyId="reformat-result" className="reformat-editor-grid" initialPrimary={520} defaultSizes={[1, 1]} minPrimary={260} minSecondary={260}>
         <section className="utility-editor-card">
           <header><span>{t('editor.original')} · {fileName || t('editor.pending')}</span><code>{t('editor.stats', { lines: source.split('\n').length, length: source.length })}</code></header>
           <CodeEditor key={`${type}-source`} ariaLabel={t('editor.original')} value={source} onChange={(value) => { setSource(value); setResult('') }} className="utility-code-editor" />

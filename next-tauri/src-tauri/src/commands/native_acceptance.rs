@@ -759,7 +759,7 @@ mod tests {
 
     #[test]
     fn product_acceptance_list_excludes_engineering_surfaces() {
-        assert_eq!(PRODUCT_TOOLS.len(), 26);
+        assert_eq!(PRODUCT_TOOLS.len(), 27);
         assert!(!PRODUCT_TOOLS.contains(&ManagedToolId::EditorLab));
         assert!(!PRODUCT_TOOLS.contains(&ManagedToolId::WebviewProbe));
     }

@@ -7,6 +7,7 @@ import {
 import { useMemo, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey } from '../../app/localizedMessages'
 import { CodeEditor } from '../../shared/CodeEditor'
+import { ResizableColumns } from '../../shared/ResizableColumns'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
@@ -80,7 +81,7 @@ export function UaSurface() {
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 
-      <section className="ua-content">
+      <ResizableColumns id="ua-parser" className="ua-content" initialPrimary={1} defaultSizes={[0.9, 1.1]} minPrimary={300} minSecondary={300}>
         <section className="utility-editor-card ua-input">
           <header><span>{t('input.label')}</span></header>
           <CodeEditor
@@ -117,7 +118,7 @@ export function UaSurface() {
             <div className="ua-result-row" key={label}><span>{label}</span><strong>{displayValue(value, t)}</strong></div>
           ))}
         </section>
-      </section>
+      </ResizableColumns>
 
       <footer className={error ? 'utility-status utility-status--error' : 'utility-status'}>
         <span>{error ? <TriangleAlert /> : <CheckCircle2 />}

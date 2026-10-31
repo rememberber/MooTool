@@ -26,7 +26,7 @@ export interface QuickNoteGitCommit {
   message: string
 }
 
-export type QuickNoteGitAction = 'init' | 'configure-remote' | 'commit' | 'fetch' | 'pull' | 'push' | 'discard' | 'abort-merge' | 'resolve-conflict' | 'continue-operation'
+export type QuickNoteGitAction = 'init' | 'configure-remote' | 'commit' | 'fetch' | 'pull' | 'push' | 'discard' | 'abort-merge' | 'resolve-conflict' | 'continue-operation' | 'automatic-checkpoint'
 
 export interface QuickNoteGitActionResult {
   success: boolean

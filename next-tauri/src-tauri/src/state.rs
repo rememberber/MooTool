@@ -87,6 +87,14 @@ impl ToolWebviewManager {
             .bounds = Some(bounds);
     }
 
+    pub fn stored_bounds(&self, tool_id: ManagedToolId) -> Option<ToolWebviewBounds> {
+        self.inner
+            .lock()
+            .expect("tool WebView state poisoned")
+            .get(&tool_id)
+            .and_then(|state| state.bounds)
+    }
+
     pub fn mark_closed(&self, tool_id: ManagedToolId) {
         self.inner
             .lock()

@@ -3,6 +3,17 @@ import { buildSearchRegExp, defaultFindReplaceOptions, type FindMatch, type Find
 
 export type PreviewKind = 'text' | 'json' | 'image' | 'pdf' | 'unsupported'
 export type TextEncoding = 'auto' | 'utf-8' | 'utf-16le' | 'utf-16be' | 'gb18030'
+export type PreviewViewState = {
+  encoding?: TextEncoding
+  formatted?: boolean
+  wrap?: boolean
+  findOpen?: boolean
+  findQuery?: string
+  findOptions?: FindReplaceOptions
+  imageZoom?: number | null
+  pdfPage?: number
+  pdfZoom?: number
+}
 
 export const previewBatchLimit = 100
 export const previewLimits = { text: 2 * 1024 ** 2, json: 2 * 1024 ** 2, image: 32 * 1024 ** 2, pdf: 50 * 1024 ** 2, unsupported: 0 }

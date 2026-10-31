@@ -6,10 +6,10 @@ describe('desktopApi', () => {
     const invoke = vi.fn().mockResolvedValue(undefined)
     const api = createDesktopApi(invoke)
 
-    await api.resolveCloseRequest('minimizeToTray')
+    await api.resolveCloseRequest('hide')
 
     expect(invoke).toHaveBeenCalledWith('resolve_close_request', {
-      decision: 'minimizeToTray'
+      decision: 'hide'
     })
   })
 

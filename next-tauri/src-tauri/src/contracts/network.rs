@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HttpHeader {
+    #[serde(default)]
+    pub id: String,
     pub name: String,
     pub value: String,
     pub enabled: bool,
@@ -11,6 +13,8 @@ pub struct HttpHeader {
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HttpCookie {
+    #[serde(default)]
+    pub id: String,
     pub name: String,
     pub value: String,
     pub domain: String,
@@ -37,6 +41,8 @@ pub struct HttpRequestSpec {
     pub body_type: String,
     pub timeout_ms: u64,
     pub follow_redirects: bool,
+    #[serde(default)]
+    pub saved_id: Option<i64>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -51,49 +57,75 @@ pub struct HttpResponseData {
     pub size_bytes: usize,
     pub truncated: bool,
     pub duration_ms: u128,
+    #[serde(default)]
+    pub status_text: String,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveHttpRequestInput {
+    #[serde(default)]
+    pub id: Option<i64>,
+    pub name: String,
+    pub method: String,
+    pub url: String,
+    #[serde(default)]
+    pub params: Vec<HttpHeader>,
+    #[serde(default)]
+    pub headers: Vec<HttpHeader>,
+    #[serde(default)]
+    pub cookies: Vec<HttpCookie>,
+    pub body: String,
+    #[serde(default = "default_body_type")]
+    pub body_type: String,
+    #[serde(default)]
+    pub response_body: String,
+    #[serde(default)]
+    pub response_headers: String,
+    #[serde(default)]
+    pub response_cookies: String,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SavedHttpRequest {
-    pub id: String,
+    pub id: i64,
     pub name: String,
-    pub request: HttpRequestSpec,
-    pub response: Option<HttpResponseData>,
-    pub created_at: i64,
-    pub updated_at: i64,
+    pub method: String,
+    pub url: String,
+    pub params: Vec<HttpHeader>,
+    pub headers: Vec<HttpHeader>,
+    pub cookies: Vec<HttpCookie>,
+    pub body: String,
+    pub body_type: String,
+    pub response_body: String,
+    pub response_headers: String,
+    pub response_cookies: String,
+    pub create_time: String,
+    pub modified_time: String,
 }
 
-impl SavedHttpRequest {
-    pub fn validate(&self) -> Result<(), String> {
-        validate_record_id(&self.id)?;
-        if self.name.trim().is_empty() || self.name.chars().count() > 256 {
-            return Err("saved HTTP request name must contain 1 to 256 characters".into());
-        }
-        if self.created_at < 0 || self.updated_at < self.created_at {
-            return Err("invalid saved HTTP request timestamps".into());
-        }
-        validate_http_request_payload(&self.request)
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HttpRequestHistory {
-    pub id: String,
-    pub request: HttpRequestSpec,
-    pub response: HttpResponseData,
-    pub created_at: i64,
-}
-
-impl HttpRequestHistory {
-    pub fn validate(&self) -> Result<(), String> {
-        validate_record_id(&self.id)?;
-        if self.created_at < 0 {
-            return Err("invalid HTTP history timestamp".into());
-        }
-        validate_http_request_payload(&self.request)
-    }
+    pub id: i64,
+    pub request_id_value: Option<i64>,
+    pub title: String,
+    pub name: String,
+    pub method: String,
+    pub url: String,
+    pub params: Vec<HttpHeader>,
+    pub headers: Vec<HttpHeader>,
+    pub cookies: Vec<HttpCookie>,
+    pub body: String,
+    pub body_type: String,
+    pub response_body: String,
+    pub response_headers: String,
+    pub response_cookies: String,
+    pub status: String,
+    pub cost_time: i64,
+    pub create_time: String,
+    pub modified_time: String,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -140,16 +172,25 @@ pub fn validate_http_request_payload(request: &HttpRequestSpec) -> Result<(), St
     Ok(())
 }
 
-fn validate_record_id(value: &str) -> Result<(), String> {
-    if value.is_empty()
-        || value.len() > 128
-        || !value
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
+pub fn validate_saved_http_request(input: &SaveHttpRequestInput) -> Result<(), String> {
+    if !matches!(input.method.as_str(), "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS") {
+        return Err("Unsupported HTTP method".into());
+    }
+    if utf16_len(input.name.trim()) > 200
+        || utf16_len(&input.url) > 8_192
+        || utf16_len(&input.body) > 5 * 1024 * 1024
+        || utf16_len(&input.body_type) > 200
+        || utf16_len(&input.response_body) > 10 * 1024 * 1024
+        || utf16_len(&input.response_headers) > 2 * 1024 * 1024
+        || utf16_len(&input.response_cookies) > 2 * 1024 * 1024
     {
-        return Err("invalid HTTP local record ID".into());
+        return Err("Invalid string value".into());
     }
     Ok(())
+}
+
+fn utf16_len(value: &str) -> usize {
+    value.encode_utf16().count()
 }
 
 fn default_body_type() -> String {

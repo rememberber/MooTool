@@ -54,6 +54,8 @@ export const imageMessages = defineMessages({
     'prompt.rename': '输入新的图片名称',
     'confirm.delete': '删除选中的 {count} 张图片？',
     'action.screenshot': '截图',
+    'action.toggleList': '显示或隐藏图片列表',
+    'ocr.title': '识别文字', 'ocr.capture': '截图识字', 'ocr.captureSource': '截图选区', 'ocr.language': '识别语言', 'ocr.language.auto': '自动（中文/英文）', 'ocr.language.zh-Hans': '简体中文', 'ocr.language.zh-Hant': '繁体中文', 'ocr.language.en-US': '英文', 'ocr.language.ja-JP': '日文', 'ocr.local': '本机离线处理', 'ocr.result': '识别结果', 'ocr.intro': '选择语言并开始识别，之后可编辑、复制或保存文字。', 'ocr.review': '请对照图片校对；重新识别将替换当前文字。', 'ocr.start': '开始识别', 'ocr.again': '重新识别', 'ocr.cancel': '取消', 'ocr.cancelling': '正在取消…', 'ocr.close': '关闭', 'ocr.working': '正在本机识别…首次系统初始化可能较慢，可随时取消。', 'ocr.complete': '识别完成，可编辑结果。', 'ocr.empty': '未识别到文字，请尝试更清晰的图片或其他语言。', 'ocr.cancelled': '已取消识别', 'ocr.copy': '复制文字', 'ocr.copied': '已复制文字', 'ocr.save': '保存文字', 'ocr.saved': '文字已保存', 'ocr.metadata': '{count} 行 · {time} ms', 'ocr.engine.vision': 'macOS Vision', 'ocr.unavailable.platform': '当前系统暂不支持离线文字识别。', 'ocr.unavailable.component': '文字识别组件不可用，请更新或重新安装应用。', 'ocr.unavailable.system': '文字识别需要 macOS 13 或更新版本。', 'ocr.error.input': '图片数据无效，请重新选择图片。', 'ocr.error.tooLarge': '图片过大：单边最多 16384 px，总像素最多 3200 万，PNG 数据最多 32 MiB。', 'ocr.error.tooComplex': '文字区域过多或单行过长，请缩小识别范围。', 'ocr.error.unavailable': '文字识别当前不可用，请稍后重试。', 'ocr.error.language': '当前系统不支持所选识别语言，请选择其他语言。', 'ocr.error.busy': '另一个识别任务正在运行，请稍后重试。', 'ocr.error.cancelled': '识别已取消。', 'ocr.error.timeout': '识别超时，请缩小图片范围后重试。', 'ocr.error.failed': '识别失败，请重试或选择其他图片。',
     'action.clipboard': '剪贴板',
     'action.importImages': '导入图片',
     'action.importBase64': 'Base64 导入',
@@ -125,7 +127,7 @@ export const imageMessages = defineMessages({
     'capture.selection': '选区 {width} × {height}',
     'capture.drag': '拖动鼠标框选区域',
     'capture.keepFull': '保留当前显示器全图',
-    'capture.saveRegion': '保存所选区域',
+    'capture.saveRegion': '保存所选区域', 'capture.recognizeRegion': '识别所选区域', 'capture.recognizeDisplay': '识别当前显示器全图',
     'footer.capabilities': '独立图片库 · Canvas 压缩/水印 · 单图 20 MiB 上限 · 原生拖放/剪贴板/导出',
     'report.error': '图片状态上报失败：{error}', 'host.loading': '正在加载图片工具…'
   },
@@ -182,6 +184,8 @@ export const imageMessages = defineMessages({
     'prompt.rename': 'Enter a new image name',
     'confirm.delete': 'Delete the selected {count} images?',
     'action.screenshot': 'Screenshot',
+    'action.toggleList': 'Show or hide image list',
+    'ocr.title': 'Recognize text', 'ocr.capture': 'Capture text', 'ocr.captureSource': 'Captured region', 'ocr.language': 'Recognition language', 'ocr.language.auto': 'Auto (Chinese/English)', 'ocr.language.zh-Hans': 'Simplified Chinese', 'ocr.language.zh-Hant': 'Traditional Chinese', 'ocr.language.en-US': 'English', 'ocr.language.ja-JP': 'Japanese', 'ocr.local': 'Processed offline on this device', 'ocr.result': 'Recognized text', 'ocr.intro': 'Choose a language and start recognition, then edit, copy or save the text.', 'ocr.review': 'Compare the text with the image. Recognizing again replaces the current text.', 'ocr.start': 'Start recognition', 'ocr.again': 'Recognize again', 'ocr.cancel': 'Cancel', 'ocr.cancelling': 'Cancelling…', 'ocr.close': 'Close', 'ocr.working': 'Recognizing locally… Initial system setup may take longer. You can cancel at any time.', 'ocr.complete': 'Recognition complete. You can edit the text.', 'ocr.empty': 'No text was found. Try a clearer image or another language.', 'ocr.cancelled': 'Recognition cancelled', 'ocr.copy': 'Copy text', 'ocr.copied': 'Text copied', 'ocr.save': 'Save text', 'ocr.saved': 'Text saved', 'ocr.metadata': '{count} lines · {time} ms', 'ocr.engine.vision': 'macOS Vision', 'ocr.unavailable.platform': 'Offline text recognition is not available on this system yet.', 'ocr.unavailable.component': 'The text recognition component is unavailable. Update or reinstall the app.', 'ocr.unavailable.system': 'Text recognition requires macOS 13 or later.', 'ocr.error.input': 'Invalid image data. Select the image again.', 'ocr.error.tooLarge': 'Image too large: maximum 16384 px per side, 32 million pixels and 32 MiB of PNG data.', 'ocr.error.tooComplex': 'Too many text regions or an excessively long line. Select a smaller area.', 'ocr.error.unavailable': 'Text recognition is unavailable. Try again later.', 'ocr.error.language': 'This system does not support the selected recognition language. Choose another language.', 'ocr.error.busy': 'Another recognition task is running. Try again shortly.', 'ocr.error.cancelled': 'Recognition was cancelled.', 'ocr.error.timeout': 'Recognition timed out. Select a smaller image region and try again.', 'ocr.error.failed': 'Recognition failed. Try again or choose another image.',
     'action.clipboard': 'Clipboard',
     'action.importImages': 'Import images',
     'action.importBase64': 'Import Base64',
@@ -253,7 +257,7 @@ export const imageMessages = defineMessages({
     'capture.selection': 'Selection {width} × {height}',
     'capture.drag': 'Drag to select a region',
     'capture.keepFull': 'Keep full display image',
-    'capture.saveRegion': 'Save selected region',
+    'capture.saveRegion': 'Save selected region', 'capture.recognizeRegion': 'Recognize selected region', 'capture.recognizeDisplay': 'Recognize full display',
     'footer.capabilities': 'Independent image library · Canvas compression/watermark · 20 MiB per image · Native drop/clipboard/export',
     'report.error': 'Image status reporting failed: {error}', 'host.loading': 'Loading image tools…'
   },
@@ -310,6 +314,8 @@ export const imageMessages = defineMessages({
     'prompt.rename': '新しい画像名を入力',
     'confirm.delete': '選択した {count} 枚の画像を削除しますか？',
     'action.screenshot': 'スクリーンショット',
+    'action.toggleList': '画像一覧の表示切替',
+    'ocr.title': '文字認識', 'ocr.capture': '画面の文字を認識', 'ocr.captureSource': 'キャプチャ範囲', 'ocr.language': '認識言語', 'ocr.language.auto': '自動（中国語/英語）', 'ocr.language.zh-Hans': '簡体字中国語', 'ocr.language.zh-Hant': '繁体字中国語', 'ocr.language.en-US': '英語', 'ocr.language.ja-JP': '日本語', 'ocr.local': 'この端末でオフライン処理', 'ocr.result': '認識結果', 'ocr.intro': '言語を選んで認識を開始し、結果を編集、コピー、保存できます。', 'ocr.review': '画像と照合してください。再認識すると現在の文字が置き換わります。', 'ocr.start': '認識を開始', 'ocr.again': '再認識', 'ocr.cancel': 'キャンセル', 'ocr.cancelling': 'キャンセル中…', 'ocr.close': '閉じる', 'ocr.working': 'ローカルで認識中…システムの初期化には時間がかかる場合があります。いつでもキャンセルできます。', 'ocr.complete': '認識が完了しました。結果を編集できます。', 'ocr.empty': '文字が見つかりません。鮮明な画像か別の言語を試してください。', 'ocr.cancelled': '認識をキャンセルしました', 'ocr.copy': '文字をコピー', 'ocr.copied': '文字をコピーしました', 'ocr.save': '文字を保存', 'ocr.saved': '文字を保存しました', 'ocr.metadata': '{count} 行 · {time} ms', 'ocr.engine.vision': 'macOS Vision', 'ocr.unavailable.platform': 'このシステムではオフライン文字認識をまだ利用できません。', 'ocr.unavailable.component': '文字認識コンポーネントを利用できません。アプリを更新または再インストールしてください。', 'ocr.unavailable.system': '文字認識には macOS 13 以降が必要です。', 'ocr.error.input': '画像データが無効です。画像を選び直してください。', 'ocr.error.tooLarge': '画像が大きすぎます。各辺 16384 px、総画素数 3200 万、PNG データ 32 MiB が上限です。', 'ocr.error.tooComplex': '文字領域が多すぎるか、行が長すぎます。認識範囲を小さくしてください。', 'ocr.error.unavailable': '文字認識を利用できません。後で再試行してください。', 'ocr.error.language': 'このシステムは選択した認識言語に対応していません。別の言語を選んでください。', 'ocr.error.busy': '別の認識処理が実行中です。少し待って再試行してください。', 'ocr.error.cancelled': '認識をキャンセルしました。', 'ocr.error.timeout': '認識がタイムアウトしました。画像範囲を小さくして再試行してください。', 'ocr.error.failed': '認識に失敗しました。再試行するか、別の画像を選んでください。',
     'action.clipboard': 'クリップボード',
     'action.importImages': '画像をインポート',
     'action.importBase64': 'Base64 をインポート',
@@ -381,7 +387,7 @@ export const imageMessages = defineMessages({
     'capture.selection': '選択範囲 {width} × {height}',
     'capture.drag': 'ドラッグして範囲を選択',
     'capture.keepFull': '現在のディスプレイ全体を保存',
-    'capture.saveRegion': '選択範囲を保存',
+    'capture.saveRegion': '選択範囲を保存', 'capture.recognizeRegion': '選択範囲を認識', 'capture.recognizeDisplay': '現在のディスプレイ全体を認識',
     'footer.capabilities': '専用画像ライブラリ · Canvas 圧縮/透かし · 1 枚 20 MiB · ネイティブドロップ/クリップボード/書き出し',
     'report.error': '画像状態の送信に失敗しました：{error}', 'host.loading': '画像ツールを読み込み中…'
   }

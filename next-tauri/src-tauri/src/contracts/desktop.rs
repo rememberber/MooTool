@@ -8,7 +8,8 @@ pub const WINDOW_STATE_SCHEMA_VERSION: u32 = 1;
 #[serde(rename_all = "camelCase")]
 pub enum CloseDecision {
     Cancel,
-    MinimizeToTray,
+    #[serde(alias = "minimizeToTray")]
+    Hide,
     Quit,
 }
 

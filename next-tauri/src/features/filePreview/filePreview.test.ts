@@ -51,5 +51,6 @@ describe('file preview', () => {
     const options = { ...defaultFindReplaceOptions, regex: true }
     expect(scanPreviewMatches(text, 'a.b', options)).toEqual({ count: 2, match: { start: 3, end: 6 }, wrapped: false })
     expect(scanPreviewMatches(text, 'a.b', options, 10)).toEqual({ count: 2, match: { start: 3, end: 6 }, wrapped: true })
+    expect(scanPreviewMatches('cat CAT category', 'cat', { ...defaultFindReplaceOptions, matchCase: true, wholeWord: true }).count).toBe(1)
   })
 })

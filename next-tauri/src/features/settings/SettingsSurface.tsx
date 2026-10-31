@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import brandLogo from '../../assets/brand/mootool-logo.png'
+import { FontSelect } from '../../shared/components/FontSelect'
 import { useI18n } from '../../app/i18n'
 import { productToolCatalog } from '../../app/toolCatalog'
 import { backupApi } from '../../platform/api/backupApi'
@@ -33,9 +34,7 @@ import type {
   AppLanguage,
   AppSettings,
   CloseBehavior,
-  InterfaceDensity,
   NavigationStyle,
-  ProxyMode,
   InterfaceStyle,
   ThemePreference
 } from '../../platform/contracts/settings'
@@ -44,6 +43,7 @@ import { translationLanguageCodes, translationLanguageLabel } from '../../platfo
 import { errorMessage } from '../../shared/errors'
 import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import { ResizableColumns } from '../../shared/ResizableColumns'
+import { GlobalShortcutSettings } from './GlobalShortcutSettings'
 import { useSettings } from './SettingsProvider'
 import { UpdateCard } from './UpdateCard'
 import { ProductImportCard } from './ProductImportCard'
@@ -106,6 +106,8 @@ export function SettingsSurface() {
   const [aboutVersion, setAboutVersion] = useState('')
   const allowCloseRef = useRef(false)
 
+  const draftRef = useRef(draft)
+  draftRef.current = draft
   useEffect(() => setDraft(settings), [settings])
   useEffect(() => {
     const root = document.documentElement
@@ -287,7 +289,7 @@ export function SettingsSurface() {
         </button>
       </header>
 
-      <ResizableColumns id="settings-page" className="settings-body" initialPrimary={220} minPrimary={180} minSecondary={420}>
+      <ResizableColumns id="settings-page" className="settings-body" initialPrimary={220} defaultSizes={[220, 780]} minPrimary={180} minSecondary={420}>
         <nav className="settings-category-nav" aria-label={t('settings.title')}>
           {settingsCategories.map((category) => {
             const Icon = category.icon
@@ -316,9 +318,18 @@ export function SettingsSurface() {
               }))}
             >
               <option value="ask">{t('settings.closeAsk')}</option>
-              <option value="minimizeToTray">{t('settings.closeTray')}</option>
+              <option value="hide">{t('settings.closeHide')}</option>
               <option value="quit">{t('settings.closeQuit')}</option>
             </select>
+          </SettingRow>
+          <SettingRow label={t('settings.escapeHidesWindow')}>
+            <input
+              type="checkbox"
+              checked={draft.general.escapeHidesWindow}
+              onChange={(event) => setDraft(updateGeneral(draft, {
+                escapeHidesWindow: event.target.checked
+              }))}
+            />
           </SettingRow>
           <SettingRow label={t('settings.launchAtLogin')}>
             <input
@@ -392,10 +403,7 @@ export function SettingsSurface() {
             </div>
           </SettingRow>
           <SettingRow label={t('settings.interfaceFont')}>
-            <select value={draft.appearance.fontFamily} onChange={(event) => setDraft(updateAppearance(draft, { fontFamily: event.target.value as 'system' | 'mono' }))}>
-              <option value="system">{t('settings.interfaceFontSystem')}</option>
-              <option value="mono">{t('settings.interfaceFontMono')}</option>
-            </select>
+            <FontSelect ariaLabel={t('settings.interfaceFont')} value={draft.appearance.fontFamily} labels={{ 'system-ui': t('settings.interfaceFontSystem'), 'ui-monospace': t('settings.interfaceFontMono') }} onChange={(fontFamily) => setDraft(updateAppearance(draft, { fontFamily }))} />
           </SettingRow>
           <SettingRow label={t('settings.interfaceFontSize')}>
             <label className="settings-range">
@@ -433,35 +441,22 @@ export function SettingsSurface() {
               onChange={(value) => setDraft(updateLayout(draft, { navigationStyle: value as NavigationStyle }))}
             />
           </SettingRow>
-          <SettingRow label={t('settings.density')}>
-            <Segmented
-              value={draft.layout.density}
-              options={[
-                ['comfortable', t('settings.comfortable')],
-                ['compact', t('settings.compact')]
-              ]}
-              onChange={(density) => setDraft(updateLayout(draft, { density: density as InterfaceDensity }))}
-            />
-          </SettingRow>
           <SettingRow label={t('settings.compactNavigation')}>
             <input type="checkbox" checked={draft.layout.compactNavigation} onChange={(event) => setDraft(updateLayout(draft, { compactNavigation: event.target.checked }))} />
           </SettingRow>
           <SettingRow label={t('settings.showSeparators')}>
             <input type="checkbox" checked={draft.layout.showSeparators} onChange={(event) => setDraft(updateLayout(draft, { showSeparators: event.target.checked }))} />
           </SettingRow>
-          <SettingRow label={t('settings.sidebarCompact')}>
-            <input type="checkbox" checked={draft.layout.sidebarCompact} onChange={(event) => setDraft(updateLayout(draft, { sidebarCompact: event.target.checked }))} />
+          <SettingRow label={t('settings.hideNavigationTitles')}>
+            <input type="checkbox" checked={draft.layout.hideNavigationTitles} onChange={(event) => setDraft(updateLayout(draft, { hideNavigationTitles: event.target.checked }))} />
           </SettingRow>
           <SettingRow label={t('settings.showRecent')}>
             <input type="checkbox" checked={draft.layout.showRecent} onChange={(event) => setDraft(updateLayout(draft, { showRecent: event.target.checked }))} />
           </SettingRow>
-          <SettingRow label={t('settings.showGroupTitles')}>
-            <input type="checkbox" checked={draft.layout.showGroupTitles} onChange={(event) => setDraft(updateLayout(draft, { showGroupTitles: event.target.checked }))} />
-          </SettingRow>
           <div className="settings-complex-row">
             <span>{t('settings.visibleTools')}</span>
             <div className="settings-tool-visibility">
-              {productToolCatalog.map((tool) => <label key={tool.id}><input type="checkbox" checked={!draft.layout.hiddenTools.includes(tool.id)} onChange={(event) => setDraft(updateLayout(draft, { hiddenTools: event.target.checked ? draft.layout.hiddenTools.filter((id) => id !== tool.id) : [...draft.layout.hiddenTools, tool.id] }))} />{toolTitle(tool)}</label>)}
+              {productToolCatalog.map((tool) => <label key={tool.id}><input type="checkbox" checked={!draft.layout.hiddenNavigationToolIds.includes(tool.id)} onChange={(event) => setDraft(updateLayout(draft, { hiddenNavigationToolIds: event.target.checked ? draft.layout.hiddenNavigationToolIds.filter((id) => id !== tool.id) : [...draft.layout.hiddenNavigationToolIds, tool.id] }))} />{toolTitle(tool)}</label>)}
             </div>
           </div>
         </SettingsSection>
@@ -472,74 +467,52 @@ export function SettingsSurface() {
               {sqlDialects.map((dialect) => <option key={dialect} value={dialect}>{dialect}</option>)}
             </select>
           </SettingRow>
-          <SettingRow label={t('settings.fontSize')}>
-            <input
-              type="number"
-              min="10"
-              max="24"
-              value={draft.editor.fontSize}
-              onChange={(event) => setDraft(updateEditor(draft, { fontSize: event.target.valueAsNumber }))}
-            />
-          </SettingRow>
-          <SettingRow label={t('settings.tabSize')}>
-            <select
-              value={draft.editor.tabSize}
-              onChange={(event) => setDraft(updateEditor(draft, {
-                tabSize: Number(event.target.value) as 2 | 4 | 8
-              }))}
-            >
-              <option value="2">2</option>
-              <option value="4">4</option>
-              <option value="8">8</option>
-            </select>
-          </SettingRow>
-          <SettingRow label={t('settings.wordWrap')}>
+          <SettingRow label={t('settings.softWrap')}>
             <input
               type="checkbox"
-              checked={draft.editor.wordWrap}
-              onChange={(event) => setDraft(updateEditor(draft, { wordWrap: event.target.checked }))}
+              checked={draft.editor.softWrap}
+              onChange={(event) => setDraft(updateEditor(draft, { softWrap: event.target.checked }))}
             />
           </SettingRow>
           <SettingRow label={t('settings.jsonFontSize')}>
             <input type="number" min="10" max="24" value={draft.editor.jsonFontSize} onChange={(event) => setDraft(updateEditor(draft, { jsonFontSize: event.target.valueAsNumber }))} />
           </SettingRow>
           <SettingRow label={t('settings.jsonFontFamily')}>
-            <select value={draft.editor.jsonFontFamily} onChange={(event) => setDraft(updateEditor(draft, { jsonFontFamily: event.target.value as 'system' | 'mono' }))}><option value="system">{t('settings.interfaceFontSystem')}</option><option value="mono">{t('settings.interfaceFontMono')}</option></select>
+            <FontSelect ariaLabel={t('settings.jsonFontFamily')} value={draft.editor.jsonFontName} labels={{ 'ui-monospace': t('settings.interfaceFontMono') }} onChange={(jsonFontName) => setDraft(updateEditor(draft, { jsonFontName }))} />
           </SettingRow>
           <SettingRow label={t('settings.quickNoteFontSize')}>
             <input type="number" min="10" max="24" value={draft.editor.quickNoteFontSize} onChange={(event) => setDraft(updateEditor(draft, { quickNoteFontSize: event.target.valueAsNumber }))} />
           </SettingRow>
           <SettingRow label={t('settings.quickNoteFontFamily')}>
-            <select value={draft.editor.quickNoteFontFamily} onChange={(event) => setDraft(updateEditor(draft, { quickNoteFontFamily: event.target.value as 'system' | 'mono' }))}><option value="system">{t('settings.interfaceFontSystem')}</option><option value="mono">{t('settings.interfaceFontMono')}</option></select>
+            <FontSelect ariaLabel={t('settings.quickNoteFontFamily')} value={draft.editor.quickNoteFontName} labels={{ 'ui-monospace': t('settings.interfaceFontMono') }} onChange={(quickNoteFontName) => setDraft(updateEditor(draft, { quickNoteFontName }))} />
           </SettingRow>
         </SettingsSection>
 
         <SettingsSection active={activeCategory === 'network'} icon={<Globe2 />} title={t('settings.network')}>
-          <SettingRow label={t('settings.timeout')}>
-            <input type="number" min="1" max="300" value={draft.network.timeoutSeconds} onChange={(event) => setDraft(updateNetwork(draft, { timeoutSeconds: event.target.valueAsNumber }))} />
+          <SettingRow label={t('settings.requestTimeout')}>
+            <input type="number" min="1000" max="120000" value={draft.network.requestTimeoutMs} onChange={(event) => setDraft(updateNetwork(draft, { requestTimeoutMs: event.target.valueAsNumber }))} />
           </SettingRow>
-          <SettingRow label={t('settings.translationTimeout')}><input type="number" min="1" max="300" value={draft.network.translationTimeoutSeconds} onChange={(event) => setDraft(updateNetwork(draft, { translationTimeoutSeconds: event.target.valueAsNumber }))} /></SettingRow>
-          <SettingRow label={t('settings.proxyMode')}>
-            <select value={draft.network.proxyMode} onChange={(event) => setDraft(updateNetwork(draft, { proxyMode: event.target.value as ProxyMode }))}><option value="system">{t('settings.proxySystem')}</option><option value="direct">{t('settings.proxyDirect')}</option><option value="manual">{t('settings.proxyManual')}</option></select>
+          <SettingRow label={t('settings.translationTimeout')}><input type="number" min="1000" max="120000" value={draft.network.translationTimeoutMs} onChange={(event) => setDraft(updateNetwork(draft, { translationTimeoutMs: event.target.valueAsNumber }))} /></SettingRow>
+          <SettingRow label={t('settings.proxyEnabled')}>
+            <input type="checkbox" checked={draft.network.proxyEnabled} onChange={(event) => setDraft(updateNetwork(draft, { proxyEnabled: event.target.checked }))} />
           </SettingRow>
-          {draft.network.proxyMode === 'manual' && <>
-            <SettingRow label={t('settings.proxyHost')}><input value={draft.network.proxyHost} onChange={(event) => setDraft(updateNetwork(draft, { proxyHost: event.target.value }))} /></SettingRow>
-            <SettingRow label={t('settings.proxyPort')}><input type="number" min="1" max="65535" value={draft.network.proxyPort} onChange={(event) => setDraft(updateNetwork(draft, { proxyPort: event.target.valueAsNumber }))} /></SettingRow>
-            <SettingRow label={t('settings.proxyUsername')}><input value={draft.network.proxyUsername} autoComplete="off" onChange={(event) => setDraft(updateNetwork(draft, { proxyUsername: event.target.value }))} /></SettingRow>
-            <SettingRow label={t('settings.proxyPassword')}>
-              <div className="settings-secret-field">
-                <input
-                  type="password"
-                  value={proxyPassword}
-                  autoComplete="new-password"
-                  placeholder={proxyCredential?.stored && !proxyPasswordDirty ? t('settings.proxyPasswordStored') : t('settings.proxyPasswordEmpty')}
-                  onChange={(event) => { setProxyPassword(event.target.value); setProxyPasswordDirty(true) }}
-                />
-                {(proxyCredential?.stored || proxyPasswordDirty) && <button className="secondary-button" type="button" onClick={() => { setProxyPassword(''); setProxyPasswordDirty(true) }}>{t('settings.proxyPasswordClear')}</button>}
-              </div>
-            </SettingRow>
-            <div className="settings-security-note"><strong>{t('settings.proxyPasswordSecurity')}</strong><span>{t('settings.proxyPasswordSecurityBody', { store: proxyCredential?.secureStore ?? t('settings.proxyPasswordStore') })}</span></div>
-          </>}
+          <SettingRow label={t('settings.proxyHost')}><input value={draft.network.proxyHost} disabled={!draft.network.proxyEnabled} onChange={(event) => setDraft(updateNetwork(draft, { proxyHost: event.target.value }))} /></SettingRow>
+          <SettingRow label={t('settings.proxyPort')}><input value={draft.network.proxyPort} disabled={!draft.network.proxyEnabled} inputMode="numeric" onChange={(event) => setDraft(updateNetwork(draft, { proxyPort: event.target.value }))} /></SettingRow>
+          <SettingRow label={t('settings.proxyUsername')}><input value={draft.network.proxyUsername} autoComplete="off" disabled={!draft.network.proxyEnabled} onChange={(event) => setDraft(updateNetwork(draft, { proxyUsername: event.target.value }))} /></SettingRow>
+          <SettingRow label={t('settings.proxyPassword')}>
+            <div className="settings-secret-field">
+              <input
+                type="password"
+                value={proxyPassword}
+                autoComplete="new-password"
+                disabled={!draft.network.proxyEnabled}
+                placeholder={proxyCredential?.stored && !proxyPasswordDirty ? t('settings.proxyPasswordStored') : t('settings.proxyPasswordEmpty')}
+                onChange={(event) => { setProxyPassword(event.target.value); setProxyPasswordDirty(true) }}
+              />
+              {(proxyCredential?.stored || proxyPasswordDirty) && <button className="secondary-button" type="button" disabled={!draft.network.proxyEnabled} onClick={() => { setProxyPassword(''); setProxyPasswordDirty(true) }}>{t('settings.proxyPasswordClear')}</button>}
+            </div>
+          </SettingRow>
+          <div className="settings-security-note"><strong>{t('settings.proxyPasswordSecurity')}</strong><span>{t('settings.proxyPasswordSecurityBody', { store: proxyCredential?.secureStore ?? t('settings.proxyPasswordStore') })}</span></div>
         </SettingsSection>
 
         <SettingsSection active={activeCategory === 'runtime'} icon={<Terminal />} title={t('settings.runtimeOnly')}>
@@ -549,7 +522,6 @@ export function SettingsSurface() {
             </button>
           </div>
           <SettingRow label={t('settings.runtimeAutoDetect')}><input type="checkbox" checked={draft.runtime.autoDetect} onChange={(event) => setDraft(updateRuntime(draft, { autoDetect: event.target.checked }))} /></SettingRow>
-          <SettingRow label={t('settings.runtimeTimeout')}><input type="number" min="1" max="300" value={draft.runtime.timeoutSeconds} onChange={(event) => setDraft(updateRuntime(draft, { timeoutSeconds: event.target.valueAsNumber }))} /></SettingRow>
           {(['javaPath', 'groovyPath', 'pythonPath', 'nodePath'] as const).map((key) => {
             const runtimeId = key.replace('Path', '') as CodeRuntimeStatus['id']
             const status = runtimeStatuses.find((item) => item.id === runtimeId)
@@ -623,23 +595,14 @@ export function SettingsSurface() {
         </SettingsSection>
 
         <SettingsSection active={activeCategory === 'shortcuts'} icon={<Command />} title={t('settings.shortcuts')}>
-          <SettingRow label={t('settings.searchShortcut')}><input value={draft.shortcuts.globalSearch} onChange={(event) => setDraft({ ...draft, shortcuts: { ...draft.shortcuts, globalSearch: event.target.value } })} /></SettingRow>
-          <SettingRow label={t('settings.settingsShortcut')}><input value={draft.shortcuts.settings} onChange={(event) => setDraft({ ...draft, shortcuts: { ...draft.shortcuts, settings: event.target.value } })} /></SettingRow>
+          <h3 className="settings-subsection">{t('settings.group.shortcuts')}</h3>
+          <SettingRow label={t('settings.shortcut.search')}><kbd>{formatShortcut(settings.shortcuts.search)}</kbd></SettingRow>
+          <SettingRow label={t('settings.shortcut.settings')}><kbd>{formatShortcut(settings.shortcuts.settings)}</kbd></SettingRow>
+          <h3 className="settings-subsection">{t('settings.globalShortcut.title')}</h3>
+          <GlobalShortcutSettings baseSettings={() => draftRef.current} />
         </SettingsSection>
 
         <SettingsSection active={activeCategory === 'data'} icon={<Database />} title={t('settings.data')}>
-          <SettingRow label={t('settings.historyLimit')}>
-            <input
-              type="number"
-              min="10"
-              max="5000"
-              value={draft.data.historyLimit}
-              onChange={(event) => setDraft({
-                ...draft,
-                data: { ...draft.data, historyLimit: event.target.valueAsNumber }
-              })}
-            />
-          </SettingRow>
           <div className="settings-storage-note">
             <strong>{t('settings.storageTitle')}</strong>
             <span>{t('settings.storageBody')}</span>
@@ -701,6 +664,11 @@ function SettingsSection({ active, icon, title, children }: {
       <div>{children}</div>
     </section>
   )
+}
+
+function formatShortcut(value: string): string {
+  const command = navigator.platform.toLowerCase().includes('mac') ? '⌘' : 'Ctrl'
+  return value.replace('CommandOrControl', command)
 }
 
 function SettingRow({ label, children }: { label: string; children: React.ReactNode }) {

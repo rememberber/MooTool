@@ -23,6 +23,7 @@ import { imageApi } from '../../platform/api/imageApi'
 import { nativeDesktopApi } from '../../platform/api/nativeDesktopApi'
 import type { ImageAsset } from '../../platform/contracts/image'
 import { contentFingerprint } from '../../shared/fingerprint'
+import { ResizableColumns } from '../../shared/ResizableColumns'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { useOperationRestore } from '../history/operationRestore'
@@ -239,7 +240,8 @@ export function ColorSurface() {
         }}
       />
 
-      <section className="color-grid">
+      <ResizableColumns id="color-board" className="color-grid" initialPrimary={0.34} defaultSizes={[0.34, 0.66]} minPrimary={240} minSecondary={420}>
+        <div className="color-current-panel">
         <section className="color-hero-card">
           <div className="color-hero" style={{ background: formats.hex, color: bestTextColor(parsed) }}>
             <Palette />
@@ -274,6 +276,34 @@ export function ColorSurface() {
           ))}
         </section>
 
+        <section className="color-contrast-card">
+          <header><Contrast /><strong>{t('contrast.title')}</strong></header>
+          <div
+            className="color-contrast-preview"
+            style={{ background: colorFormats(comparison).hex, color: formats.hex }}
+          >
+            MooTool Aa
+          </div>
+          <div className="color-contrast-controls">
+            <label>{t('contrast.foreground')} <code>{formats.hex}</code></label>
+            <label>{t('contrast.background')}
+              <input
+                type="color"
+                value={colorFormats(comparison).hex}
+                onChange={(event) => setContrastHex(event.target.value.toUpperCase())}
+              />
+              <input value={contrastHex} onChange={(event) => setContrastHex(event.target.value.toUpperCase())} />
+            </label>
+          </div>
+          <div className="color-contrast-score">
+            <strong>{ratio.toFixed(2)}:1</strong>
+            <Badge pass={ratio >= 4.5} label={t('contrast.aaText')} />
+            <Badge pass={ratio >= 3} label={t('contrast.aaLarge')} />
+            <Badge pass={ratio >= 7} label={t('contrast.aaaText')} />
+          </div>
+        </section>
+        </div>
+        <div className="color-palette-panel">
         <section className="color-scale-card">
           <header><strong>{t('scale.title')}</strong><span>96 → 12% lightness</span></header>
           <div className="color-scale">
@@ -350,34 +380,8 @@ export function ColorSurface() {
             <span className="color-operation-preview" style={{ background: colorFormats(comparison).hex }}><code>{colorFormats(comparison).hex}</code></span>
           </div>
         </section>
-
-        <section className="color-contrast-card">
-          <header><Contrast /><strong>{t('contrast.title')}</strong></header>
-          <div
-            className="color-contrast-preview"
-            style={{ background: colorFormats(comparison).hex, color: formats.hex }}
-          >
-            MooTool Aa
-          </div>
-          <div className="color-contrast-controls">
-            <label>{t('contrast.foreground')} <code>{formats.hex}</code></label>
-            <label>{t('contrast.background')}
-              <input
-                type="color"
-                value={colorFormats(comparison).hex}
-                onChange={(event) => setContrastHex(event.target.value.toUpperCase())}
-              />
-              <input value={contrastHex} onChange={(event) => setContrastHex(event.target.value.toUpperCase())} />
-            </label>
-          </div>
-          <div className="color-contrast-score">
-            <strong>{ratio.toFixed(2)}:1</strong>
-            <Badge pass={ratio >= 4.5} label={t('contrast.aaText')} />
-            <Badge pass={ratio >= 3} label={t('contrast.aaLarge')} />
-            <Badge pass={ratio >= 7} label={t('contrast.aaaText')} />
-          </div>
-        </section>
-      </section>
+        </div>
+      </ResizableColumns>
 
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}>
         <span>{failed ? <TriangleAlert /> : <CheckCircle2 />}{noticeText}</span>

@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::Duration,
 };
 
 use reqwest::{Client, Url, redirect::Policy};
@@ -11,8 +11,8 @@ use tokio::sync::Notify;
 use crate::{
     contracts::{
         error::AppResult,
-        local_data::TranslationHistory,
-        settings::{NetworkSettings, ProxyMode},
+        local_data::SaveTranslationHistoryInput,
+        settings::NetworkSettings,
         translation::{TranslationProvider, TranslationRequest, TranslationResult},
     },
     repositories::{local_data::LocalDataRepository, settings::SettingsRepository},
@@ -92,20 +92,12 @@ pub async fn translate_text(
         execute_translation(&manager, &request, cancelled, &settings.snapshot().network).await;
     manager.finish(&request_id);
     let result = result?;
-    let timestamp = now_millis();
-    let history_suffix = request_id
-        .chars()
-        .filter(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
-        .take(80)
-        .collect::<String>();
-    repository.save_translation_history(TranslationHistory {
-        id: format!("{timestamp}-{history_suffix}"),
+    repository.save_translation_history(SaveTranslationHistoryInput {
         source_text,
         target_text: result.text.clone(),
         source_lang,
         target_lang,
-        provider: result.provider,
-        created_at: timestamp,
+        translator_type: result.provider,
     })?;
     Ok(result)
 }
@@ -129,29 +121,30 @@ async fn execute_translation(
         .timeout(Duration::from_millis(request.timeout_ms))
         .redirect(Policy::limited(3))
         .user_agent(TRANSLATION_USER_AGENT);
-    match network.proxy_mode {
-        ProxyMode::System => {}
-        ProxyMode::Direct => client_builder = client_builder.no_proxy(),
-        ProxyMode::Manual => {
-            let host = network.proxy_host.trim();
-            if host.is_empty() {
-                return Err("manual proxy host is required".into());
-            }
-            let endpoint = if host.contains("://") {
-                host.to_string()
-            } else {
-                format!("http://{host}:{}", network.proxy_port)
-            };
-            let mut proxy = reqwest::Proxy::all(&endpoint)
-                .map_err(|error| format!("invalid proxy endpoint: {error}"))?;
-            if !network.proxy_username.trim().is_empty() {
-                let password = super::secure_credentials::load_proxy_password()
-                    .await?
-                    .unwrap_or_default();
-                proxy = proxy.basic_auth(network.proxy_username.trim(), &password);
-            }
-            client_builder = client_builder.proxy(proxy);
+    if network.proxy_enabled {
+        let host = network.proxy_host.trim();
+        let port: u16 = network
+            .proxy_port
+            .trim()
+            .parse()
+            .map_err(|_| "Invalid proxy settings".to_string())?;
+        if host.is_empty() || !(1..=65535).contains(&port) {
+            return Err("Invalid proxy settings".into());
         }
+        let endpoint = if host.contains("://") {
+            host.to_string()
+        } else {
+            format!("http://{host}:{port}")
+        };
+        let mut proxy = reqwest::Proxy::all(&endpoint)
+            .map_err(|error| format!("invalid proxy endpoint: {error}"))?;
+        if !network.proxy_username.trim().is_empty() {
+            let password = super::secure_credentials::load_proxy_password()
+                .await?
+                .unwrap_or_default();
+            proxy = proxy.basic_auth(network.proxy_username.trim(), &password);
+        }
+        client_builder = client_builder.proxy(proxy);
     }
     let client = client_builder
         .build()
@@ -220,8 +213,8 @@ async fn translate_deepl(
             "target_lang": target,
             "preserve_formatting": true
         });
-        if let Some(source) = source {
-            body["source_lang"] = Value::String(source.into());
+        if let Some(source) = source.as_deref() {
+            body["source_lang"] = Value::String(source.to_string());
         }
         let response = tokio::select! {
             response = client.post(format!("{host}/v2/translate")).header("Authorization", format!("DeepL-Auth-Key {key}")).json(&body).send() => response.map_err(|error| format!("DeepL translation failed: {error}"))?,
@@ -532,15 +525,6 @@ fn bing_language(value: &str, source: bool) -> &str {
 fn extract_between<'a>(value: &'a str, start: &str, end: &str) -> Option<&'a str> {
     let rest = value.split_once(start)?.1;
     Some(rest.split_once(end)?.0)
-}
-
-fn now_millis() -> i64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis()
-        .try_into()
-        .unwrap_or(i64::MAX)
 }
 
 #[cfg(test)]

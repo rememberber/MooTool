@@ -21,8 +21,9 @@ import {
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import { historyApi } from '../../platform/api/historyApi'
 import { userFilesApi } from '../../platform/api/userFilesApi'
-import type { OperationHistory } from '../../platform/contracts/history'
+import { OPERATION_HISTORY_LIMIT, type OperationHistory } from '../../platform/contracts/history'
 import { CodeEditor } from '../../shared/CodeEditor'
+import { ResizableColumns } from '../../shared/ResizableColumns'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
@@ -96,11 +97,11 @@ export function QrcodeSurface() {
   useEffect(() => {
     if (tab !== 'history') return
     let active = true
-    void historyApi.list(settings.data.historyLimit).then((items) => {
+    void historyApi.list(OPERATION_HISTORY_LIMIT).then((items) => {
       if (active) setHistory(items.filter((item) => item.toolId === 'qrcode'))
     }).catch(() => undefined)
     return () => { active = false }
-  }, [settings.data.historyLimit, tab])
+  }, [OPERATION_HISTORY_LIMIT, tab])
 
   async function generate(): Promise<void> {
     setBusy(true)
@@ -118,7 +119,7 @@ export function QrcodeSurface() {
         outputText: output,
         metadataJson: JSON.stringify({ operation: 'generate', options }),
         createdAt: Date.now()
-      }, settings.data.historyLimit)
+      }, OPERATION_HISTORY_LIMIT)
       succeed('notice.generated')
     } catch (cause) {
       setPng('')
@@ -150,7 +151,7 @@ export function QrcodeSurface() {
         outputText: value,
         metadataJson: JSON.stringify({ operation: 'decode', fileName: name || file.name }),
         createdAt: Date.now()
-      }, settings.data.historyLimit)
+      }, OPERATION_HISTORY_LIMIT)
       succeed('notice.decoded')
     } catch (cause) {
       setDecoded('')
@@ -237,7 +238,7 @@ export function QrcodeSurface() {
         ))}
       </div>
       {tab === 'generate' && (
-        <section className="qrcode-grid qrcode-grid--generate">
+        <ResizableColumns id="qrcode-generate" className="qrcode-grid qrcode-grid--generate" initialPrimary={1} defaultSizes={[1, 1]} minPrimary={300} minSecondary={280}>
           <section className="utility-editor-card qrcode-compose">
             <header><span>{t('compose.content')}</span><QrCode /></header>
             <CodeEditor ariaLabel={t('compose.content')} value={source} onChange={setSource} className="utility-code-editor" lineWrapping />
@@ -267,10 +268,10 @@ export function QrcodeSurface() {
               <button className="secondary-button" type="button" disabled={!png} onClick={() => void copyQrImage()}><Copy />{t('action.copyImage')}</button>
             </div>
           </section>
-        </section>
+        </ResizableColumns>
       )}
       {tab === 'recognize' && (
-        <section className="qrcode-grid qrcode-grid--generate">
+        <ResizableColumns id="qrcode-recognize" className="qrcode-grid qrcode-grid--generate" initialPrimary={1} defaultSizes={[1, 1]} minPrimary={300} minSecondary={280}>
           <section className="qrcode-scan-card">
             <header>
               <label className="secondary-button qrcode-upload"><FolderOpen />{t('action.chooseImage')}<input type="file" accept="image/*" onChange={(event) => { void decode(event.target.files?.[0]); event.target.value = '' }} /></label>
@@ -285,7 +286,7 @@ export function QrcodeSurface() {
             <CodeEditor ariaLabel={t('scan.result')} value={decoded} readOnly className="utility-code-editor" lineWrapping />
             <button className="utility-copy" type="button" disabled={!decoded} onClick={() => void copyDecoded()}>{copied ? <Clipboard /> : <Copy />}{t(copied ? 'action.copied' : 'action.copy')}</button>
           </section>
-        </section>
+        </ResizableColumns>
       )}
       {tab === 'history' && (
         <section className="qrcode-history">

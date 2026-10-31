@@ -23,6 +23,7 @@ export interface HttpRequestSpec {
   bodyType: string
   timeoutMs: number
   followRedirects: boolean
+  savedId?: number
 }
 
 export interface HttpResponseData {
@@ -35,22 +36,38 @@ export interface HttpResponseData {
   sizeBytes: number
   truncated: boolean
   durationMs: number
+  statusText?: string
 }
 
-export interface SavedHttpRequest {
-  id: string
+export interface SaveHttpRequestInput {
+  id?: number
   name: string
-  request: HttpRequestSpec
-  response?: HttpResponseData
-  createdAt: number
-  updatedAt: number
+  method: string
+  url: string
+  params: HttpEntry[]
+  headers: HttpEntry[]
+  cookies: HttpCookieEntry[]
+  body: string
+  bodyType: string
+  responseBody?: string
+  responseHeaders?: string
+  responseCookies?: string
 }
 
-export interface HttpRequestHistory {
-  id: string
-  request: HttpRequestSpec
-  response: HttpResponseData
-  createdAt: number
+export interface SavedHttpRequest extends SaveHttpRequestInput {
+  id: number
+  responseBody: string
+  responseHeaders: string
+  responseCookies: string
+  createTime: string
+  modifiedTime: string
+}
+
+export interface HttpRequestHistory extends SavedHttpRequest {
+  requestIdValue: number | null
+  title: string
+  status: string
+  costTime: number
 }
 
 export type HttpProgressEvent =
@@ -62,9 +79,9 @@ export interface HttpApi {
   execute(request: HttpRequestSpec, onProgress: (event: HttpProgressEvent) => void): Promise<HttpResponseData>
   cancel(requestId: string): Promise<boolean>
   listSaved(query?: string): Promise<SavedHttpRequest[]>
-  save(item: SavedHttpRequest): Promise<SavedHttpRequest>
-  deleteSaved(id: string): Promise<boolean>
+  save(item: SaveHttpRequestInput): Promise<SavedHttpRequest>
+  deleteSaved(id: number): Promise<boolean>
   listHistory(query?: string): Promise<HttpRequestHistory[]>
-  deleteHistory(id: string): Promise<boolean>
+  deleteHistory(id: number): Promise<boolean>
   clearHistory(): Promise<number>
 }

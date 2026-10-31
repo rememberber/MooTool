@@ -13,6 +13,7 @@ import {
   permutation
 } from './calculator'
 import { calculatorMessages } from './calculatorMessages'
+import { ResizableColumns } from '../../shared/ResizableColumns'
 
 type CalculatorMessageKey = LocalizedMessageKey<typeof calculatorMessages>
 export type CalculatorOperation = 'expression' | 'hexToDec' | 'decToHex' | 'decToBin' | 'binToDec' | 'floatHexToDec' | 'gcd' | 'lcm' | 'permutation' | 'combination'
@@ -124,7 +125,7 @@ export function CalculatorPage({ onStateChange }: {
       </header>
 
       <div className="local-tool-shell calculator-workspace">
-      <div className="calculator-layout">
+      <ResizableColumns id="calculator-panels" className="calculator-layout" initialPrimary={1} defaultSizes={[1, 1]} minPrimary={360} minSecondary={320}>
         <div className="calculator-controls">
           <section className="calculator-section calculator-arithmetic">
             <h2>{t('arithmetic.title')}</h2>
@@ -259,7 +260,7 @@ export function CalculatorPage({ onStateChange }: {
                 ))}
           </div>
         </section>
-      </div>
+      </ResizableColumns>
       </div>
     </section>
   )

@@ -51,8 +51,12 @@ pub fn save_note(app: &tauri::AppHandle, sqlite: &LocalDataRepository, note: Qui
         .note_files()?
         .into_iter()
         .find(|file| file.metadata.id == note.id);
-    let relative = note_path(&note);
+    let previous_attachments = previous.as_ref().map(|file| attachment_references(&file.content)).unwrap_or_default();
+    let relative = saved_note_path(&note, previous.as_ref().map(|file| file.relative_path.as_str()));
     if let Some(previous) = &previous {
+        if previous.relative_path != relative && vault.root().join(&relative).exists() {
+            return Err("An entry with that name already exists".into());
+        }
         if previous.relative_path != relative {
             let _ = vault.delete_entry(&previous.relative_path);
         }
@@ -63,6 +67,66 @@ pub fn save_note(app: &tauri::AppHandle, sqlite: &LocalDataRepository, note: Qui
         metadata: metadata_from_note(&note),
     })?;
     let mapped = note_from_file(saved);
+    let current_attachments = attachment_references(&note.content);
+    let removed = previous_attachments
+        .into_iter()
+        .filter(|path| !current_attachments.iter().any(|current| current == path))
+        .collect::<Vec<_>>();
+    remove_unreferenced_attachments(&vault, &removed)?;
+    sqlite.save_note(mapped.clone())?;
+    Ok(mapped)
+}
+
+pub fn create_note(
+    app: &tauri::AppHandle,
+    sqlite: &LocalDataRepository,
+    title: &str,
+    parent: &str,
+    font_name: &str,
+    font_size: u16,
+    line_wrap: bool,
+) -> Result<QuickNote, String> {
+    let vault = open_vault(app)?;
+    import_sqlite_notes(&vault, sqlite)?;
+    let saved = vault.create(title, parent, font_name, font_size, line_wrap)?;
+    let mapped = note_from_file(saved);
+    sqlite.save_note(mapped.clone())?;
+    Ok(mapped)
+}
+
+pub fn duplicate_note(app: &tauri::AppHandle, sqlite: &LocalDataRepository, relative_path: &str) -> Result<QuickNote, String> {
+    let vault = open_vault(app)?;
+    import_sqlite_notes(&vault, sqlite)?;
+    let saved = vault.duplicate(relative_path)?;
+    let mapped = note_from_file(saved);
+    sqlite.save_note(mapped.clone())?;
+    Ok(mapped)
+}
+
+pub fn rename_note_entry(
+    app: &tauri::AppHandle,
+    sqlite: &LocalDataRepository,
+    relative_path: &str,
+    name: &str,
+) -> Result<QuickNote, String> {
+    let vault = open_vault(app)?;
+    import_sqlite_notes(&vault, sqlite)?;
+    let next_path = vault.rename_entry(relative_path, name)?;
+    let mapped = note_from_file(vault.read(&next_path)?);
+    sqlite.save_note(mapped.clone())?;
+    Ok(mapped)
+}
+
+pub fn move_note_entry(
+    app: &tauri::AppHandle,
+    sqlite: &LocalDataRepository,
+    relative_path: &str,
+    target_directory: &str,
+) -> Result<QuickNote, String> {
+    let vault = open_vault(app)?;
+    import_sqlite_notes(&vault, sqlite)?;
+    let next_path = vault.move_entry(relative_path, target_directory)?;
+    let mapped = note_from_file(vault.read(&next_path)?);
     sqlite.save_note(mapped.clone())?;
     Ok(mapped)
 }
@@ -72,9 +136,11 @@ pub fn delete_note(app: &tauri::AppHandle, sqlite: &LocalDataRepository, id: &st
     import_sqlite_notes(&vault, sqlite)?;
     let existing = vault.note_files()?.into_iter().find(|file| file.metadata.id == id);
     let removed_file = existing.is_some();
+    let attachments = existing.as_ref().map(|file| attachment_references(&file.content)).unwrap_or_default();
     if let Some(existing) = existing {
         vault.delete_entry(&existing.relative_path)?;
     }
+    remove_unreferenced_attachments(&vault, &attachments)?;
     Ok(sqlite.delete_note(id)? || removed_file)
 }
 
@@ -125,33 +191,56 @@ pub fn rename_folder(
 pub fn delete_folder(app: &tauri::AppHandle, sqlite: &LocalDataRepository, path: &str, updated_at: i64) -> Result<usize, String> {
     let vault = open_vault(app)?;
     let files = vault.note_files()?;
-    let mut moved = 0;
-    for file in files {
+    let mut attachments = Vec::new();
+    let mut removed = 0usize;
+    for file in &files {
         let folder = parent_folder(&file.relative_path);
         if folder == path || folder.starts_with(&format!("{path}/")) {
-            let name = std::path::Path::new(&file.relative_path)
-                .file_name()
-                .and_then(|value| value.to_str())
-                .unwrap_or("note.txt");
-            let mut next = name.to_string();
-            let mut index = 2;
-            while vault.root().join(&next).exists() {
-                let stem = std::path::Path::new(name).file_stem().and_then(|value| value.to_str()).unwrap_or("note");
-                let extension = std::path::Path::new(name).extension().and_then(|value| value.to_str()).unwrap_or("txt");
-                next = format!("{stem} ({index}).{extension}");
-                index += 1;
-            }
-            fs::rename(vault.root().join(&file.relative_path), vault.root().join(&next))
-                .map_err(|error| format!("failed to move note out of deleted folder: {error}"))?;
-            moved += 1;
+            removed += 1;
+            attachments.extend(attachment_references(&file.content));
         }
     }
     let directory = vault.root().join(path);
     if directory.exists() {
-        fs::remove_dir_all(directory).map_err(|error| format!("failed to delete note folder: {error}"))?;
+        fs::remove_dir_all(&directory).map_err(|error| format!("failed to delete note folder: {error}"))?;
     }
-    sqlite.delete_note_folder(path, updated_at)?;
-    Ok(moved)
+    let deleted = sqlite.delete_note_folder(path, updated_at)?;
+    remove_unreferenced_attachments(&vault, &attachments)?;
+    Ok(removed.max(deleted))
+}
+
+fn attachment_references(content: &str) -> Vec<String> {
+    let mut paths = Vec::new();
+    let mut rest = content;
+    while let Some(start) = rest.find("attachments/") {
+        let candidate = &rest[start..];
+        let end = candidate
+            .find(|character: char| !character.is_ascii_alphanumeric() && character != '/' && character != '_' && character != '.' && character != '-')
+            .unwrap_or(candidate.len());
+        let path = candidate[..end].trim_end_matches('.');
+        if path.matches('/').count() == 1 && path.len() > "attachments/".len() {
+            paths.push(path.to_string());
+        }
+        rest = &candidate[end.max(1)..];
+    }
+    paths
+}
+
+fn remove_unreferenced_attachments(vault: &QuickNoteVault, candidates: &[String]) -> Result<(), String> {
+    if candidates.is_empty() {
+        return Ok(());
+    }
+    let mut referenced = std::collections::HashSet::new();
+    for file in vault.note_files()? {
+        referenced.extend(attachment_references(&file.content));
+    }
+    for candidate in candidates {
+        if referenced.contains(candidate) {
+            continue;
+        }
+        let _ = vault.delete_attachment(candidate);
+    }
+    Ok(())
 }
 
 fn import_sqlite_notes(vault: &QuickNoteVault, sqlite: &LocalDataRepository) -> Result<(), String> {
@@ -188,7 +277,7 @@ fn note_from_file(file: QuickNoteFile) -> QuickNote {
         font_name: file.metadata.font_name,
         line_spacing: file.metadata.line_spacing,
         line_wrapping: file.metadata.line_wrap,
-        syntax: ui_syntax(&file.metadata.syntax),
+        syntax: file_syntax(&file.metadata.syntax),
         pinned: file.metadata.pinned,
         created_at: parse_millis(&file.metadata.created_at),
         updated_at: parse_millis(&file.metadata.modified_at),
@@ -233,6 +322,37 @@ fn note_path(note: &QuickNote) -> String {
     if note.folder_path.is_empty() { file_name } else { format!("{}/{}", note.folder_path, file_name) }
 }
 
+fn saved_note_path(note: &QuickNote, previous: Option<&str>) -> String {
+    let extension = extension_for_syntax(&note.syntax);
+    let existing = if note.relative_path.is_empty() { previous.unwrap_or("") } else { note.relative_path.as_str() };
+    if existing.is_empty() {
+        return note_path(note);
+    }
+    let leaf = existing.rsplit_once('/').map(|(_, name)| name).unwrap_or(existing);
+    let parent = existing.rsplit_once('/').map(|(directory, _)| directory).unwrap_or("");
+    let placed = if note.folder_path == parent {
+        existing.to_string()
+    } else if note.folder_path.is_empty() {
+        leaf.to_string()
+    } else {
+        format!("{}/{leaf}", note.folder_path)
+    };
+    with_syntax_extension(&placed, extension)
+}
+
+fn with_syntax_extension(path: &str, extension: &str) -> String {
+    let (directory, leaf) = match path.rsplit_once('/') {
+        Some((directory, leaf)) => (Some(directory), leaf),
+        None => (None, path),
+    };
+    let stem = leaf.rsplit_once('.').map(|(stem, _)| stem).filter(|stem| !stem.is_empty()).unwrap_or(leaf);
+    let file_name = format!("{stem}.{extension}");
+    match directory {
+        Some(directory) => format!("{directory}/{file_name}"),
+        None => file_name,
+    }
+}
+
 fn safe_title(title: &str) -> String {
     let sanitized: String = title
         .trim()
@@ -243,7 +363,77 @@ fn safe_title(title: &str) -> String {
     if sanitized.is_empty() { "note".to_string() } else { sanitized.to_string() }
 }
 
-fn gitignore_patterns(root: &std::path::Path) -> Vec<String> {
+pub fn export_quick_note_files(app: &tauri::AppHandle, directory: &std::path::Path, relative_paths: &[String]) -> Result<usize, String> {
+    if !directory.is_dir() {
+        return Err("Quick Note export directory does not exist".into());
+    }
+    if relative_paths.is_empty() || relative_paths.len() > 500 {
+        return Err("Invalid vault export".into());
+    }
+    let vault = open_vault(app)?;
+    let mut written = 0usize;
+    let mut seen = std::collections::HashSet::new();
+    for relative_path in relative_paths {
+        if !seen.insert(relative_path.clone()) {
+            continue;
+        }
+        let file = vault.read(relative_path)?;
+        write_exported_quick_note(directory, &file.relative_path, &file.content)?;
+        written += 1;
+    }
+    Ok(written)
+}
+
+pub fn write_exported_quick_note(directory: &std::path::Path, relative_path: &str, content: &str) -> Result<(), String> {
+    let base = quick_note_export_base(relative_path);
+    for suffix in 0..10_000 {
+        let name = if suffix == 0 {
+            format!("{base}.txt")
+        } else {
+            format!("{base}-{suffix}.txt")
+        };
+        let target = directory.join(&name);
+        match fs::OpenOptions::new().write(true).create_new(true).open(&target) {
+            Ok(mut file) => {
+                use std::io::Write;
+                file.write_all(content.as_bytes())
+                    .map_err(|error| format!("failed to export {}: {error}", target.display()))?;
+                return Ok(());
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => return Err(format!("failed to export {}: {error}", target.display())),
+        }
+    }
+    Err("too many export name collisions".into())
+}
+
+fn quick_note_export_base(relative_path: &str) -> String {
+    let path = relative_path.replace('\\', "/").replace('/', "-");
+    let stem = strip_note_export_extension(&path);
+    let sanitized: String = stem
+        .chars()
+        .map(|character| {
+            if matches!(character, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*') || character.is_ascii_control() {
+                '_'
+            } else {
+                character
+            }
+        })
+        .collect();
+    let sanitized = sanitized.trim();
+    if sanitized.is_empty() { "untitled".to_string() } else { sanitized.to_string() }
+}
+
+fn strip_note_export_extension(name: &str) -> &str {
+    let lower = name.to_ascii_lowercase();
+    if let Some(stem) = lower.strip_suffix(".json").or_else(|| lower.strip_suffix(".txt")) {
+        &name[..stem.len()]
+    } else {
+        name
+    }
+}
+
+pub fn gitignore_patterns(root: &std::path::Path) -> Vec<String> {
     fs::read_to_string(root.join(".gitignore"))
         .unwrap_or_default()
         .lines()
@@ -331,22 +521,6 @@ fn file_syntax(syntax: &str) -> String {
     }
 }
 
-fn ui_syntax(syntax: &str) -> String {
-    match extension_for_syntax(syntax) {
-        "md" => "markdown".into(),
-        "json" => "json".into(),
-        "java" => "java".into(),
-        "js" => "javascript".into(),
-        "ts" => "typescript".into(),
-        "py" => "python".into(),
-        "html" => "html".into(),
-        "xml" => "xml".into(),
-        "yaml" => "yaml".into(),
-        "sql" => "sql".into(),
-        _ => "plain".into(),
-    }
-}
-
 fn format_millis(millis: i64) -> String {
     let seconds = millis.div_euclid(1000);
     let fraction = millis.rem_euclid(1000) as u32;
@@ -388,8 +562,44 @@ fn now_millis() -> i64 {
 }
 
 #[cfg(test)]
+fn sample_note(title: &str, folder: &str, path: &str, syntax: &str) -> crate::contracts::local_data::QuickNote {
+    crate::contracts::local_data::QuickNote {
+        id: "note".into(),
+        title: title.into(),
+        content: String::new(),
+        tags: Vec::new(),
+        color: "default".into(),
+        folder_path: folder.into(),
+        relative_path: path.into(),
+        editor_font: "default".into(),
+        line_height: "normal".into(),
+        font_size: 14,
+        font_name: String::new(),
+        line_spacing: 1.2,
+        line_wrapping: true,
+        syntax: syntax.into(),
+        pinned: false,
+        created_at: 0,
+        updated_at: 0,
+    }
+}
+
+#[cfg(test)]
 mod tests {
-    use super::path_ignored;
+    use super::{attachment_references, extension_for_syntax, file_syntax, path_ignored, remove_unreferenced_attachments, sample_note, saved_note_path, write_exported_quick_note};
+    use crate::repositories::quick_note_vault::{QuickNoteFile, QuickNoteVault};
+
+    #[test]
+    fn keeps_the_existing_file_name_when_the_title_changes() {
+        let renamed = sample_note("Completely different", "Work", "Work/API ideas.txt", "plain");
+        assert_eq!(saved_note_path(&renamed, Some("Work/API ideas.txt")), "Work/API ideas.txt");
+        let markdown = sample_note("Completely different", "Work", "Work/API ideas.txt", "markdown");
+        assert_eq!(saved_note_path(&markdown, Some("Work/API ideas.txt")), "Work/API ideas.md");
+        let moved = sample_note("Completely different", "Archive", "Work/API ideas.txt", "plain");
+        assert_eq!(saved_note_path(&moved, Some("Work/API ideas.txt")), "Archive/API ideas.txt");
+        let fresh = sample_note("a/b", "Work", "", "plain");
+        assert_eq!(saved_note_path(&fresh, None), "Work/a_b.txt");
+    }
 
     #[test]
     fn hides_gitignored_notes_and_directories() {
@@ -402,12 +612,67 @@ mod tests {
     }
 
     #[test]
+    fn removes_an_attachment_only_after_its_last_note_is_gone() {
+        let directory = tempfile::tempdir().expect("vault");
+        let vault = QuickNoteVault::open(directory.path().to_path_buf()).expect("open");
+        let stored = vault.store_attachment(b"png-bytes", ".png").expect("attachment");
+        let first = vault.create("Picture", "", "ui-monospace", 14, true).expect("first");
+        let saved = vault
+            .save(&QuickNoteFile { content: stored.markdown.clone(), ..first })
+            .expect("save first");
+        let second = vault.create("Other", "", "ui-monospace", 14, true).expect("second");
+        vault
+            .save(&QuickNoteFile { content: stored.markdown.clone(), ..second })
+            .expect("save second");
+        vault.delete_entry(&saved.relative_path).expect("delete first");
+        remove_unreferenced_attachments(&vault, &[stored.relative_path.clone()]).expect("keep shared");
+        assert!(vault.read_attachment(&stored.relative_path).is_ok());
+        let remaining = vault.note_files().expect("remaining");
+        vault.delete_entry(&remaining[0].relative_path).expect("delete last");
+        remove_unreferenced_attachments(&vault, &[stored.relative_path.clone()]).expect("cleanup");
+        assert!(vault.read_attachment(&stored.relative_path).is_err());
+    }
+
+    #[test]
+    fn reads_note_attachment_references() {
+        assert_eq!(
+            attachment_references("![image](attachments/a.png)\nattachments/b.jpg."),
+            vec!["attachments/a.png".to_string(), "attachments/b.jpg".to_string()]
+        );
+    }
+
+    #[test]
     fn uses_electron_extensions_for_note_syntax() {
         assert_eq!(extension_for_syntax("text/markdown"), "md");
         assert_eq!(extension_for_syntax("java"), "java");
         assert_eq!(extension_for_syntax("typescript"), "ts");
         assert_eq!(extension_for_syntax("sql"), "sql");
         assert_eq!(extension_for_syntax("plain"), "txt");
-        assert_eq!(ui_syntax("text/python"), "python");
+        assert_eq!(file_syntax("python"), "text/python");
+        assert_eq!(file_syntax("text/python"), "text/python");
+        assert_eq!(file_syntax("sql"), "text/sql");
+    }
+
+    #[test]
+    fn exports_note_bodies_with_electron_file_names() {
+        let source = tempfile::tempdir().expect("vault");
+        let vault = QuickNoteVault::open(source.path().to_path_buf()).expect("open");
+        vault.create_folder("Work").expect("folder");
+        let note = vault.create("API ideas", "Work", "ui-monospace", 14, true).expect("create");
+        let saved = vault
+            .save(&QuickNoteFile { content: "# Hello\nneedle".into(), ..note })
+            .expect("save");
+        let exported = tempfile::tempdir().expect("export");
+        write_exported_quick_note(exported.path(), &saved.relative_path, &vault.read(&saved.relative_path).expect("read").content).expect("export note");
+        write_exported_quick_note(exported.path(), "notes/example.md", "markdown body").expect("markdown");
+        write_exported_quick_note(exported.path(), "notes/example.JSON", "json body").expect("json");
+        write_exported_quick_note(exported.path(), "bad/a:b?.txt", "sanitized").expect("sanitized");
+        write_exported_quick_note(exported.path(), "Work-API ideas.txt", "collision").expect("collision");
+        assert_eq!(std::fs::read_to_string(exported.path().join("Work-API ideas.txt")).expect("txt body"), "# Hello\nneedle");
+        assert!(!std::fs::read_to_string(exported.path().join("Work-API ideas.txt")).expect("body").contains("font_name"));
+        assert_eq!(std::fs::read_to_string(exported.path().join("notes-example.md.txt")).expect("md"), "markdown body");
+        assert_eq!(std::fs::read_to_string(exported.path().join("notes-example.txt")).expect("json name"), "json body");
+        assert_eq!(std::fs::read_to_string(exported.path().join("bad-a_b_.txt")).expect("sanitized name"), "sanitized");
+        assert_eq!(std::fs::read_to_string(exported.path().join("Work-API ideas-1.txt")).expect("collision"), "collision");
     }
 }

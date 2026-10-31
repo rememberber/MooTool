@@ -211,24 +211,7 @@ function parseJson(input: string): unknown {
   if (!input.trim()) {
     throw new JsonToolError('contentEmpty')
   }
-  try {
-    return JSON.parse(input)
-  } catch (cause) {
-    if (!(cause instanceof SyntaxError)) throw cause
-    const position = readErrorPosition(cause.message)
-    if (position === undefined) {
-      throw new JsonToolError('parseDetail', { detail: cause.message })
-    }
-    const prefix = input.slice(0, position)
-    const line = prefix.split('\n').length
-    const column = position - prefix.lastIndexOf('\n')
-    throw new JsonToolError('parsePosition', { line, column })
-  }
-}
-
-function readErrorPosition(message: string): number | undefined {
-  const match = /position\s+(\d+)/i.exec(message)
-  return match ? Number(match[1]) : undefined
+  return JSON.parse(input)
 }
 
 function sortJsonValue(value: unknown, ignoreCase = false): unknown {

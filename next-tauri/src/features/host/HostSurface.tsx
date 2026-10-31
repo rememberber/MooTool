@@ -13,6 +13,7 @@ import type { HostProfile } from '../../platform/contracts/localData'
 import type { SystemHostsFile } from '../../platform/contracts/host'
 import { EditorView } from '@codemirror/view'
 import { CodeEditor } from '../../shared/CodeEditor'
+import { ResizableColumns } from '../../shared/ResizableColumns'
 import {
   defaultFindReplaceOptions,
   findAllMatches,
@@ -36,7 +37,7 @@ export function HostSurface() {
   const dialog = useDesktopDialog()
   const { t, locale } = useLocalizedMessages(hostMessages)
   const [profiles, setProfiles] = useState<HostProfile[]>([])
-  const [activeId, setActiveId] = useState('')
+  const [activeProfile, setActiveProfile] = useState<HostProfile | null>(null)
   const [name, setName] = useState(() => t('profile.new'))
   const [content, setContent] = useState(template)
   const [pristineNew, setPristineNew] = useState(true)
@@ -59,24 +60,29 @@ export function HostSurface() {
   const revisionRef = useRef(0)
   const editorView = useRef<EditorView | null>(null)
   const pendingSelection = useRef<{ start: number; end: number } | null>(null)
-  const active = profiles.find((item) => item.id === activeId)
+  const active = profiles.find((item) => item.id === activeProfile?.id) ?? activeProfile
   const dirty = !active || active.name !== name || active.content !== content
-  const shouldPersistDraft = dirty && Boolean(active || !pristineNew)
-  const visibleProfiles = useMemo(() => {
-    const needle = query.trim().toLowerCase()
-    if (!needle) return profiles
-    return profiles.filter((item) => (includeContent ? `${item.name}\n${item.content}` : item.name).toLowerCase().includes(needle))
-  }, [includeContent, profiles, query])
+  const visibleProfiles = profiles
   const findMatches = useMemo(() => findAllMatches(content, find, findOptions), [content, find, findOptions])
   const noticeText = 'raw' in notice ? notice.raw : t(notice.key, notice.values)
   const session = useMemo(() => ({
-    digest: JSON.stringify({ activeId, name, hash: contentFingerprint(content), profiles: profiles.length, showSystem }),
+    digest: JSON.stringify({ activeId: active?.id ?? null, name, hash: contentFingerprint(content), profiles: profiles.length, showSystem }),
     summary: t('session.summary', { count: profiles.length, state: t(dirty ? 'session.unsaved' : 'session.saved') })
-  }), [activeId, content, dirty, name, profiles.length, showSystem, t])
+  }), [active, content, dirty, name, profiles.length, showSystem, t])
   const { sessionId, reportError } = useToolSessionReport('host', session.digest, session.summary)
   const recordOperation = useOperationHistory('host')
 
-  useEffect(() => { void loadProfiles(); void refreshSystem() }, [])
+  useEffect(() => { void refreshSystem() }, [])
+
+  const initialLoad = useRef(true)
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const selectFirst = initialLoad.current
+      initialLoad.current = false
+      void loadProfiles(selectFirst)
+    }, 100)
+    return () => window.clearTimeout(timer)
+  }, [includeContent, query])
 
   useEffect(() => {
     const pending = pendingSelection.current
@@ -120,18 +126,18 @@ export function HostSurface() {
   }, [active, locale, pristineNew, t])
 
   useEffect(() => {
-    if (!shouldPersistDraft || !name.trim() || showSystem || busy) return
+    if (active?.id == null || !dirty || !name.trim() || showSystem || busy) return
     const timer = window.setTimeout(() => {
       void persistCurrent(false)
-    }, 500)
+    }, 250)
     return () => window.clearTimeout(timer)
-  }, [busy, content, name, shouldPersistDraft, showSystem])
+  }, [active, busy, content, dirty, name, showSystem])
 
-  async function loadProfiles(): Promise<void> {
+  async function loadProfiles(selectFirst = false): Promise<void> {
     try {
-      const loaded = await localDataApi.listHostProfiles()
+      const loaded = await localDataApi.listHostProfiles(query, includeContent)
       setProfiles(loaded)
-      if (loaded[0]) void select(loaded[0])
+      if (selectFirst && loaded[0]) void select(loaded[0])
     } catch (cause) { fail(cause) }
   }
 
@@ -140,19 +146,19 @@ export function HostSurface() {
   }
 
   async function select(profile: HostProfile): Promise<boolean> {
-    if (shouldPersistDraft && !await persistCurrent(false)) return false
-    setActiveId(profile.id); applyDraft(profile.name, profile.content, false); setShowSystem(false)
+    if (active && dirty && !await persistCurrent(false)) return false
+    setActiveProfile(profile); applyDraft(profile.name, profile.content, false); setShowSystem(false)
     return true
   }
 
   async function openProfileMenu(profile: HostProfile, left: number, top: number): Promise<void> {
-    if (profile.id !== activeId && !await select(profile)) return
+    if (profile.id !== active?.id && !await select(profile)) return
     setContextMenu({ profile, left, top })
   }
 
   async function create(): Promise<void> {
-    if (shouldPersistDraft && !await persistCurrent(false)) return
-    setActiveId(''); applyDraft(t('profile.new'), template, true); setShowSystem(false)
+    if (active && dirty && !await persistCurrent(false)) return
+    setActiveProfile(null); applyDraft(t('profile.new'), template, true); setShowSystem(false)
   }
 
   async function save(): Promise<void> {
@@ -169,10 +175,9 @@ export function HostSurface() {
     try {
       const revision = revisionRef.current
       const snapshot = { name, content }
-      const now = Date.now()
-      const saved = await localDataApi.saveHostProfile({ id: active?.id ?? crypto.randomUUID(), name: snapshot.name.trim(), content: snapshot.content, createdAt: active?.createdAt ?? now, updatedAt: now })
-      setProfiles((items) => [saved, ...items.filter((item) => item.id !== saved.id)])
-      setActiveId(saved.id)
+      const saved = await localDataApi.saveHostProfile({ id: active?.id, name: snapshot.name.trim(), content: snapshot.content })
+      setProfiles(await localDataApi.listHostProfiles(query, includeContent))
+      setActiveProfile(saved)
       const unchanged = revisionRef.current === revision
       if (unchanged) {
         setName(saved.name)
@@ -191,17 +196,17 @@ export function HostSurface() {
     } finally { setBusy(false) }
   }
 
-  async function remove(profile: HostProfile | undefined = active): Promise<void> {
+  async function remove(profile: HostProfile | null | undefined = active): Promise<void> {
     if (!profile || busy || !await dialog.confirm(t('confirm.delete', { name: profile.name }), { dangerous: true })) return
     try {
       await localDataApi.deleteHostProfile(profile.id)
       const next = profiles.filter((item) => item.id !== profile.id)
       setProfiles(next)
-      if (activeId === profile.id) {
+      if (active?.id === profile.id) {
         if (next[0]) {
-          setActiveId(next[0].id); applyDraft(next[0].name, next[0].content, false); setShowSystem(false)
+          setActiveProfile(next[0]); applyDraft(next[0].name, next[0].content, false); setShowSystem(false)
         } else {
-          setActiveId(''); applyDraft(t('profile.new'), template, true); setShowSystem(false)
+          setActiveProfile(null); applyDraft(t('profile.new'), template, true); setShowSystem(false)
         }
       }
       succeed('notice.deleted')
@@ -209,13 +214,13 @@ export function HostSurface() {
   }
 
   async function renameProfile(profile: HostProfile): Promise<void> {
-    const useCurrent = profile.id === activeId
+    const useCurrent = profile.id === active?.id
     const currentName = useCurrent ? name : profile.name
     const nextName = (await dialog.prompt(t('action.rename'), currentName))?.trim()
     if (!nextName || nextName === currentName.trim()) return
     setBusy(true)
     try {
-      const saved = await localDataApi.saveHostProfile({ ...profile, name: nextName, content: useCurrent ? content : profile.content, updatedAt: Date.now() })
+      const saved = await localDataApi.saveHostProfile({ id: profile.id, name: nextName, content: useCurrent ? content : profile.content })
       setProfiles((items) => [saved, ...items.filter((item) => item.id !== saved.id)])
       if (useCurrent) setName(saved.name)
       succeed('notice.saved')
@@ -233,11 +238,11 @@ export function HostSurface() {
   }
 
   async function importFile(): Promise<void> {
-    if (shouldPersistDraft && !await persistCurrent(false)) return
+    if (active && dirty && !await persistCurrent(false)) return
     try {
       const file = await userFilesApi.pickText()
       if (!file) return
-      setActiveId('')
+      setActiveProfile(null)
       applyDraft(file.name.replace(/\.[^.]+$/, '') || t('profile.imported'), file.content, false)
       setShowSystem(false)
       succeed('notice.imported', { file: file.name })
@@ -245,7 +250,7 @@ export function HostSurface() {
   }
 
   async function exportFile(profile?: HostProfile): Promise<void> {
-    const useCurrent = !profile || profile.id === activeId
+    const useCurrent = !profile || profile.id === active?.id
     const exportName = useCurrent ? name : profile.name
     const exportContent = useCurrent ? content : profile.content
     try {
@@ -331,7 +336,7 @@ export function HostSurface() {
         <button className="secondary-button" type="button" onClick={() => { setShowSystem(!showSystem); if (!system) void refreshSystem() }}><Eye />{t(showSystem ? 'action.editProfile' : 'action.viewSystem')}</button>
         <button className="secondary-button" type="button" onClick={() => void refreshSystem()}><RefreshCw />{t('action.refresh')}</button>
       </section>
-      <section className="host-layout">
+      <ResizableColumns id="host-workspace" className="host-layout" initialPrimary={220} defaultSizes={[220, 780]} minPrimary={170} minSecondary={360}>
         <aside>
           <header>
             <label className="host-profile-search"><Search /><input value={query} aria-label={t('search.placeholder')} placeholder={t('search.placeholder')} onChange={(event) => setQuery(event.target.value)} /></label>
@@ -339,9 +344,9 @@ export function HostSurface() {
             <label className="host-search-content"><input type="checkbox" checked={includeContent} onChange={(event) => setIncludeContent(event.target.checked)} />{t('search.content')}</label>
           </header>
           <div>{visibleProfiles.map((profile) => (
-            <button className={profile.id === activeId ? 'host-profile host-profile--active' : 'host-profile'} type="button" key={profile.id} onClick={() => void select(profile)} onContextMenu={(event) => { event.preventDefault(); void openProfileMenu(profile, Math.min(event.clientX, window.innerWidth - 176), Math.min(event.clientY, window.innerHeight - 126)) }}>
+            <button className={profile.id === active?.id ? 'host-profile host-profile--active' : 'host-profile'} type="button" key={profile.id} onClick={() => void select(profile)} onContextMenu={(event) => { event.preventDefault(); void openProfileMenu(profile, Math.min(event.clientX, window.innerWidth - 176), Math.min(event.clientY, window.innerHeight - 126)) }}>
               <strong>{profile.name}</strong>
-              <small>{new Date(profile.updatedAt).toLocaleString(locale)}</small>
+              <small>{profile.modifiedTime}</small>
             </button>
           ))}</div>
         </aside>
@@ -377,7 +382,7 @@ export function HostSurface() {
           )}
           <CodeEditor ariaLabel={showSystem ? t('system.title') : t('editor.profile')} value={showSystem ? system?.content ?? '' : content} onChange={showSystem ? undefined : updateContent} onReady={(view) => { editorView.current = view }} readOnly={showSystem} className="utility-code-editor" lineWrapping={false} />
         </section>
-      </section>
+      </ResizableColumns>
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}>
         <span>{failed ? <TriangleAlert /> : <CheckCircle2 />}{noticeText}</span>
         <span>{t(system?.writable ? 'footer.writable' : 'footer.mayRequireAdmin')} · {t('footer.storage')}</span>

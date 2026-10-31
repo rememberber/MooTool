@@ -1,7 +1,6 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { bracketMatching, foldGutter } from '@codemirror/language'
-import { EditorState, type Extension } from '@codemirror/state'
-import { openSearchPanel, search, searchKeymap } from '@codemirror/search'
+import { EditorState, type Extension, Compartment } from '@codemirror/state'
 import {
   drawSelection,
   EditorView,
@@ -11,8 +10,9 @@ import {
   lineNumbers
 } from '@codemirror/view'
 import { useEffect, useRef } from 'react'
-import { useI18n } from '../app/i18n'
 import { electronCodeHighlighting } from './codeHighlight'
+import { codeEditorSearchHighlight } from './codeEditorSearchHighlight'
+import { defaultFindReplaceOptions, type FindReplaceOptions } from './findReplace'
 
 interface CodeEditorProps {
   ariaLabel: string
@@ -23,6 +23,8 @@ interface CodeEditorProps {
   className?: string
   readOnly?: boolean
   lineWrapping?: boolean
+  searchQuery?: string
+  searchOptions?: FindReplaceOptions
 }
 
 export function CodeEditor({
@@ -33,11 +35,13 @@ export function CodeEditor({
   extensions = [],
   className = '',
   readOnly = false,
-  lineWrapping = true
+  lineWrapping = true,
+  searchQuery,
+  searchOptions
 }: CodeEditorProps) {
-  const { t } = useI18n()
   const hostRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | undefined>(undefined)
+  const searchCompartment = useRef(new Compartment())
   const onChangeRef = useRef(onChange)
   const onReadyRef = useRef(onReady)
   onChangeRef.current = onChange
@@ -58,15 +62,14 @@ export function CodeEditor({
           highlightActiveLineGutter(),
           bracketMatching(),
           foldGutter(),
-          search({ top: false }),
           electronCodeHighlighting(),
           keymap.of([
-            ...searchKeymap,
             ...defaultKeymap,
             ...historyKeymap,
             indentWithTab
           ]),
           ...(lineWrapping ? [EditorView.lineWrapping] : []),
+          searchCompartment.current.of([]),
           EditorState.readOnly.of(readOnly),
           EditorView.editable.of(!readOnly),
           EditorView.contentAttributes.of({
@@ -104,17 +107,15 @@ export function CodeEditor({
     })
   }, [value])
 
-  return (
-    <div className={`shared-code-editor ${className}`.trim()} ref={hostRef}>
-      <button
-        className="shared-code-editor__search"
-        type="button"
-        tabIndex={-1}
-        aria-hidden="true"
-        onClick={() => viewRef.current && openSearchPanel(viewRef.current)}
-      >
-        {t('editor.find')}
-      </button>
-    </div>
-  )
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view || searchQuery === undefined) return
+    view.dispatch({
+      effects: searchCompartment.current.reconfigure(
+        searchQuery ? codeEditorSearchHighlight(searchQuery, { ...defaultFindReplaceOptions, ...searchOptions }) : []
+      )
+    })
+  }, [searchOptions, searchQuery])
+
+  return <div className={`shared-code-editor ${className}`.trim()} ref={hostRef} />
 }

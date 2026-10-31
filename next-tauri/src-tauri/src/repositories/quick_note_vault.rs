@@ -70,26 +70,27 @@ impl QuickNoteVault {
         Ok(Self { root })
     }
 
-    pub fn create(&self, title: &str, parent: &str, font_name: &str, font_size: u16) -> Result<QuickNoteFile, String> {
-        let title = sanitize_name(title)?;
+    pub fn create(&self, title: &str, parent: &str, font_name: &str, font_size: u16, line_wrap: bool) -> Result<QuickNoteFile, String> {
+        let title = normalize_title(title)?;
+        let file_name = sanitize_name(&title).map_err(|_| "Invalid file name".to_string())?;
         let parent = normalize_directory(parent, true)?;
         let directory = self.resolve(&parent)?;
         fs::create_dir_all(&directory).map_err(|error| format!("failed to create note folder: {error}"))?;
-        let relative = unique_note_path(&self.root, &parent, &title, ".txt")?;
+        let relative = unique_note_path(&self.root, &parent, &file_name, ".txt")?;
         let now = iso_now();
         self.save(&QuickNoteFile {
             relative_path: relative,
             content: String::new(),
             metadata: QuickNoteMetadata {
                 id: String::new(),
-                title: title.clone(),
+                title,
                 style: String::new(),
                 syntax: "text/plain".into(),
                 font_name: font_name.chars().take(120).collect(),
                 font_size: clamp_font_size(font_size),
                 line_spacing: 1.0,
                 color: "default".into(),
-                line_wrap: true,
+                line_wrap,
                 created_at: now.clone(),
                 modified_at: now,
                 tags: Vec::new(),
@@ -100,10 +101,151 @@ impl QuickNoteVault {
         })
     }
 
+    pub fn duplicate(&self, relative_path: &str) -> Result<QuickNoteFile, String> {
+        let source = self.read(relative_path)?;
+        let copy_title = format!("{} Copy", source.metadata.title.trim());
+        if copy_title.chars().any(|character| character == '\n' || character == '\r' || character == '\0')
+            || copy_title.chars().count() > 180
+        {
+            return Err("Invalid title".into());
+        }
+        let parent = match source.relative_path.rsplit_once('/') {
+            Some((folder, _)) => folder.to_string(),
+            None => String::new(),
+        };
+        let extension = format!(".{}", extension_for_note_syntax(&source.metadata.syntax));
+        let relative = unique_note_path(&self.root, &parent, &sanitize_name(&copy_title)?, &extension)?;
+        let now = iso_now();
+        self.save(&QuickNoteFile {
+            relative_path: relative,
+            content: source.content,
+            metadata: QuickNoteMetadata {
+                id: String::new(),
+                title: copy_title,
+                style: source.metadata.style,
+                syntax: source.metadata.syntax,
+                font_name: source.metadata.font_name,
+                font_size: source.metadata.font_size,
+                line_spacing: source.metadata.line_spacing,
+                color: source.metadata.color,
+                line_wrap: source.metadata.line_wrap,
+                created_at: now.clone(),
+                modified_at: now,
+                tags: source.metadata.tags,
+                pinned: false,
+                editor_font: source.metadata.editor_font,
+                line_height: source.metadata.line_height,
+            },
+        })
+    }
+
+    pub fn rename_entry(&self, relative_path: &str, name: &str) -> Result<String, String> {
+        let source_relative = normalize_entry(relative_path)?;
+        let source = self.resolve(&source_relative)?;
+        if !source.exists() {
+            return Err("Vault entry does not exist".into());
+        }
+        let file_entry = source.is_file();
+        let title = name.trim();
+        if title.is_empty() || title.chars().count() > 180 || title.chars().any(|character| character == '\n' || character == '\r' || character == '\0') {
+            return Err("Invalid title".into());
+        }
+        let sanitized = sanitize_name(title)?;
+        let parent = match source_relative.rsplit_once('/') {
+            Some((folder, _)) => folder.to_string(),
+            None => String::new(),
+        };
+        let next_name = if file_entry {
+            match Path::new(&source_relative).extension().and_then(|value| value.to_str()) {
+                Some(extension) if !extension.is_empty() => format!("{sanitized}.{extension}"),
+                _ => sanitized,
+            }
+        } else {
+            sanitized
+        };
+        let mut next_relative = if parent.is_empty() { next_name } else { format!("{parent}/{next_name}") };
+        if next_relative != source_relative && self.resolve(&next_relative)?.exists() {
+            return Err("An entry with that name already exists".into());
+        }
+        if next_relative != source_relative {
+            let target = self.resolve(&next_relative)?;
+            if let Some(directory) = target.parent() {
+                fs::create_dir_all(directory).map_err(|error| format!("failed to create note folder: {error}"))?;
+            }
+            fs::rename(&source, &target).map_err(|error| format!("failed to rename note: {error}"))?;
+        }
+        if file_entry {
+            let mut file = self.read(&next_relative)?;
+            file.metadata.title = title.to_string();
+            let syntax_extension = extension_for_note_syntax(&file.metadata.syntax);
+            let current_extension = Path::new(&next_relative).extension().and_then(|value| value.to_str()).unwrap_or("");
+            if current_extension != syntax_extension {
+                let stem = Path::new(&next_relative).file_stem().and_then(|value| value.to_str()).unwrap_or("note");
+                let rewritten = match next_relative.rsplit_once('/') {
+                    Some((folder, _)) => format!("{folder}/{stem}.{syntax_extension}"),
+                    None => format!("{stem}.{syntax_extension}"),
+                };
+                if rewritten != next_relative && self.resolve(&rewritten)?.exists() {
+                    return Err("An entry with that name already exists".into());
+                }
+                fs::rename(self.resolve(&next_relative)?, self.resolve(&rewritten)?).map_err(|error| format!("failed to rename note: {error}"))?;
+                file.relative_path = rewritten.clone();
+                next_relative = rewritten;
+            }
+            self.save(&file)?;
+        }
+        Ok(next_relative)
+    }
+
+    pub fn move_entry(&self, relative_path: &str, target_directory: &str) -> Result<String, String> {
+        let source_relative = normalize_entry(relative_path)?;
+        let target_directory = normalize_directory(target_directory, true)?;
+        if target_directory == source_relative || target_directory.starts_with(&format!("{source_relative}/")) {
+            return Err("Cannot move a folder into itself".into());
+        }
+        let current_parent = match source_relative.rsplit_once('/') {
+            Some((folder, _)) => folder.to_string(),
+            None => String::new(),
+        };
+        if current_parent == target_directory {
+            return Ok(source_relative);
+        }
+        let source = self.resolve(&source_relative)?;
+        if !source.exists() {
+            return Err("Vault entry does not exist".into());
+        }
+        let directory = if target_directory.is_empty() { self.root.clone() } else { self.resolve(&target_directory)? };
+        fs::create_dir_all(&directory).map_err(|error| format!("failed to create note folder: {error}"))?;
+        let file_name = source
+            .file_name()
+            .and_then(|value| value.to_str())
+            .ok_or_else(|| "Invalid Vault path".to_string())?;
+        let mut target = directory.join(file_name);
+        if target.exists() {
+            if source.is_dir() {
+                return Err("Target folder already contains this entry".into());
+            }
+            let stem = Path::new(file_name).file_stem().and_then(|value| value.to_str()).unwrap_or("note");
+            let extension = Path::new(file_name)
+                .extension()
+                .and_then(|value| value.to_str())
+                .map(|value| format!(".{value}"))
+                .unwrap_or_default();
+            let unique = unique_note_path(&self.root, &target_directory, stem, &extension)?;
+            target = self.resolve(&unique)?;
+        }
+        fs::rename(&source, &target).map_err(|error| format!("failed to move note: {error}"))?;
+        Ok(target.strip_prefix(&self.root).unwrap_or(&target).to_string_lossy().replace('\\', "/"))
+    }
+
     pub fn create_folder(&self, path: &str) -> Result<(), String> {
         let relative = normalize_directory(path, false)?;
         let target = self.resolve(&relative)?;
-        fs::create_dir_all(&target).map_err(|error| format!("failed to create folder: {error}"))
+        match fs::create_dir(&target) {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => Err("An entry with that name already exists".into()),
+            Err(error) => Err(format!("failed to create folder: {error}")),
+        }
     }
 
     pub fn read(&self, relative_path: &str) -> Result<QuickNoteFile, String> {
@@ -114,12 +256,13 @@ impl QuickNoteVault {
         let fallback = Path::new(&relative)
             .file_stem()
             .and_then(|value| value.to_str())
-            .unwrap_or("note");
-        let parsed = parse_note(&raw, fallback);
+            .unwrap_or("note")
+            .to_string();
+        let parsed = parse_note(&raw, &fallback);
         Ok(QuickNoteFile {
             relative_path: relative,
             content: parsed.0,
-            metadata: parsed.1.unwrap_or_else(|| fallback_metadata(fallback, &metadata)),
+            metadata: parsed.1.unwrap_or_else(|| fallback_metadata(&fallback, &metadata)),
         })
     }
 
@@ -232,7 +375,7 @@ impl QuickNoteVault {
 pub fn serialize_note(metadata: &QuickNoteMetadata, content: &str) -> String {
     let spacing = format!("{:.1}", clamp_line_spacing(metadata.line_spacing));
     let yaml = format!(
-        "title: {}\nstyle: {}\nsyntax: {}\nfont_name: {}\nfont_size: \"{}\"\nline_spacing: \"{}\"\ncolor: {}\nline_wrap: \"{}\"\ncreated_at: {}\nmodified_at: {}\nid: {}\ntags: {}\npinned: \"{}\"\neditor_font: {}\nline_height: {}",
+        "title: {}\nstyle: {}\nsyntax: {}\nfont_name: {}\nfont_size: \"{}\"\nline_spacing: \"{}\"\ncolor: {}\nline_wrap: \"{}\"\ncreated_at: {}\nmodified_at: {}\nid: {}\ntags: {}\npinned: \"{}\"",
         yaml_scalar(&metadata.title),
         yaml_scalar(&metadata.style),
         yaml_scalar(&metadata.syntax),
@@ -245,9 +388,7 @@ pub fn serialize_note(metadata: &QuickNoteMetadata, content: &str) -> String {
         yaml_scalar(&metadata.modified_at),
         yaml_scalar(&metadata.id),
         yaml_scalar(&metadata.tags.join(",")),
-        if metadata.pinned { "1" } else { "0" },
-        yaml_scalar(&metadata.editor_font),
-        yaml_scalar(&metadata.line_height)
+        if metadata.pinned { "1" } else { "0" }
     );
     let separator = if content.is_empty() || content.starts_with('\n') { "" } else { "\n" };
     format!("---\n{yaml}\n---{separator}{content}")
@@ -270,13 +411,29 @@ pub fn parse_note(raw: &str, fallback_title: &str) -> (String, Option<QuickNoteM
         let Some((key, value)) = line.split_once(':') else { continue };
         values.insert(key.trim().to_string(), unquote(value.trim()));
     }
+    let legacy_font = values.get("editor_font").cloned().filter(|value| !value.is_empty()).unwrap_or_else(|| "default".into());
+    let legacy_height = values.get("line_height").cloned().filter(|value| !value.is_empty()).unwrap_or_else(|| "normal".into());
+    let font_name = values.get("font_name").cloned().filter(|value| !value.is_empty()).unwrap_or_else(|| match legacy_font.as_str() {
+        "mono" => "ui-monospace".into(),
+        "serif" => "Georgia".into(),
+        _ => String::new(),
+    });
+    let line_spacing = if values.contains_key("line_spacing") {
+        clamp_line_spacing(values.get("line_spacing").and_then(|value| value.parse().ok()).unwrap_or(1.0))
+    } else {
+        match legacy_height.as_str() {
+            "relaxed" => 1.6,
+            "compact" => 1.0,
+            _ => 1.0,
+        }
+    };
     let metadata = QuickNoteMetadata {
         title: values.get("title").cloned().filter(|value| !value.is_empty()).unwrap_or_else(|| fallback_title.into()),
         style: values.get("style").cloned().unwrap_or_default(),
         syntax: values.get("syntax").cloned().filter(|value| !value.is_empty()).unwrap_or_else(|| "text/plain".into()),
-        font_name: values.get("font_name").cloned().unwrap_or_default(),
+        font_name,
         font_size: clamp_font_size(values.get("font_size").and_then(|value| value.parse().ok()).unwrap_or(14)),
-        line_spacing: clamp_line_spacing(values.get("line_spacing").and_then(|value| value.parse().ok()).unwrap_or(1.0)),
+        line_spacing,
         color: values.get("color").cloned().filter(|value| !value.is_empty()).unwrap_or_else(|| "default".into()),
         line_wrap: values.get("line_wrap").map(|value| value == "1" || value == "true").unwrap_or(true),
         created_at: values.get("created_at").cloned().unwrap_or_else(iso_now),
@@ -284,8 +441,8 @@ pub fn parse_note(raw: &str, fallback_title: &str) -> (String, Option<QuickNoteM
         id: values.get("id").cloned().unwrap_or_default(),
         tags: values.get("tags").map(|value| value.split(',').filter(|tag| !tag.is_empty()).map(str::to_string).collect()).unwrap_or_default(),
         pinned: values.get("pinned").is_some_and(|value| value == "1" || value == "true"),
-        editor_font: values.get("editor_font").cloned().filter(|value| !value.is_empty()).unwrap_or_else(|| "default".into()),
-        line_height: values.get("line_height").cloned().filter(|value| !value.is_empty()).unwrap_or_else(|| "normal".into()),
+        editor_font: legacy_font,
+        line_height: legacy_height,
     };
     (content.to_string(), Some(metadata))
 }
@@ -322,6 +479,22 @@ fn list_directory(root: &Path, directory: &Path) -> Result<Vec<QuickNoteNode>, S
         kind.then_with(|| left.name.cmp(&right.name))
     });
     Ok(nodes)
+}
+
+fn extension_for_note_syntax(syntax: &str) -> &'static str {
+    match syntax {
+        "markdown" | "text/markdown" => "md",
+        "json" | "application/json" => "json",
+        "java" | "text/java" => "java",
+        "javascript" | "text/javascript" => "js",
+        "typescript" | "text/typescript" => "ts",
+        "python" | "text/python" => "py",
+        "html" | "text/html" => "html",
+        "xml" | "text/xml" => "xml",
+        "yaml" | "text/yaml" => "yaml",
+        "sql" | "text/sql" => "sql",
+        _ => "txt",
+    }
 }
 
 fn unique_note_path(root: &Path, parent: &str, title: &str, extension: &str) -> Result<String, String> {
@@ -363,6 +536,7 @@ fn normalize_entry(value: &str) -> Result<String, String> {
     let normalized = value.trim().trim_start_matches("./").trim_end_matches('/').replace('\\', "/");
     if normalized.is_empty()
         || normalized.starts_with('/')
+        || normalized.encode_utf16().count() > 768
         || normalized.contains('\0')
         || normalized.split('/').any(|part| part.is_empty() || part == "." || part == ".." || part.starts_with('.'))
     {
@@ -376,6 +550,14 @@ fn is_note_file(name: &str) -> bool {
         .extension()
         .and_then(|value| value.to_str())
         .is_some_and(|extension| NOTE_EXTENSIONS.contains(&extension))
+}
+
+fn normalize_title(value: &str) -> Result<String, String> {
+    let title = value.trim();
+    if title.is_empty() || title.chars().count() > 180 || title.chars().any(|character| character == '\n' || character == '\r' || character == '\0') {
+        return Err("Invalid title".into());
+    }
+    Ok(title.to_string())
 }
 
 fn sanitize_name(value: &str) -> Result<String, String> {
@@ -570,7 +752,7 @@ mod tests {
         let vault = QuickNoteVault::open(directory.path().to_path_buf()).expect("vault");
         vault.create_folder("Work").expect("folder");
         let note = vault
-            .create("API ideas", "Work", "PingFang SC", 15)
+            .create("API ideas", "Work", "PingFang SC", 15, true)
             .expect("create");
         let saved = vault
             .save(&QuickNoteFile {
@@ -584,11 +766,116 @@ mod tests {
         assert_eq!(saved.metadata.font_size, 15);
         assert_eq!(saved.metadata.line_spacing, 1.0);
         let raw = fs::read_to_string(directory.path().join(&saved.relative_path)).expect("raw");
-        assert!(raw.contains("font_name: PingFang SC"));
+        assert!(raw.contains("font_name: \"PingFang SC\""));
         assert!(raw.contains("font_size: \"15\""));
         assert!(raw.contains("line_spacing: \"1.0\""));
+        assert!(!raw.contains("editor_font:"));
+        assert!(!raw.contains("line_height:"));
+        let (legacy_content, legacy) = parse_note("---\ntitle: Old\neditor_font: mono\nline_height: relaxed\n---\nbody", "Old");
+        let legacy = legacy.expect("legacy");
+        assert_eq!(legacy_content, "body");
+        assert_eq!(legacy.font_name, "ui-monospace");
+        assert_eq!(legacy.line_spacing, 1.6);
         assert_eq!(vault.list().expect("list").len(), 1);
         assert_eq!(vault.list().expect("list")[0].children.len(), 1);
+        let copy = vault.duplicate(&saved.relative_path).expect("duplicate");
+        assert_eq!(copy.relative_path, "Work/API ideas Copy.txt");
+        assert_eq!(copy.metadata.title, "API ideas Copy");
+        assert_eq!(copy.content, "# Hello\nneedle");
+        assert!(!copy.metadata.pinned);
+        let markdown = vault
+            .save(&QuickNoteFile {
+                relative_path: "Work/Query.md".into(),
+                content: "select 1".into(),
+                metadata: QuickNoteMetadata {
+                    syntax: "text/markdown".into(),
+                    title: "Query".into(),
+                    pinned: true,
+                    tags: vec!["sql".into()],
+                    ..saved.metadata.clone()
+                },
+            })
+            .expect("markdown");
+        let markdown_copy = vault.duplicate(&markdown.relative_path).expect("markdown copy");
+        assert_eq!(markdown_copy.relative_path, "Work/Query Copy.md");
+        assert_eq!(markdown_copy.metadata.tags, vec!["sql".to_string()]);
+        assert!(!markdown_copy.metadata.pinned);
+        let second = vault.duplicate(&markdown.relative_path).expect("second copy");
+        assert_eq!(second.relative_path, "Work/Query Copy (2).md");
+        assert_eq!(second.metadata.title, "Query Copy");
+    }
+
+    #[test]
+    fn creates_a_plain_text_note_and_keeps_the_raw_title() {
+        let directory = tempfile::tempdir().expect("temp dir");
+        let vault = QuickNoteVault::open(directory.path().to_path_buf()).expect("vault");
+        let note = vault.create("  a/b  ", "", "ui-monospace", 14, false).expect("create");
+        assert_eq!(note.metadata.title, "a/b");
+        assert_eq!(note.relative_path, "a_b.txt");
+        assert_eq!(note.metadata.syntax, "text/plain");
+        assert!(!note.metadata.line_wrap);
+        assert_eq!(vault.create("   ", "", "ui-monospace", 14, true).unwrap_err(), "Invalid title");
+        assert_eq!(vault.create("...", "", "ui-monospace", 14, true).unwrap_err(), "Invalid file name");
+    }
+
+    #[test]
+    fn creates_a_folder_only_when_its_parent_exists() {
+        let directory = tempfile::tempdir().expect("temp dir");
+        let vault = QuickNoteVault::open(directory.path().to_path_buf()).expect("vault");
+        vault.create_folder("Work").expect("work");
+        vault.create_folder("Work/Nested").expect("nested");
+        assert!(directory.path().join("Work/Nested").is_dir());
+        assert_eq!(vault.create_folder("Work").unwrap_err(), "An entry with that name already exists");
+        assert!(vault.create_folder("Missing/Child").is_err());
+        assert!(vault.create_folder(".hidden").is_err());
+    }
+
+    #[test]
+    fn moves_a_note_without_overwriting_an_existing_file() {
+        let directory = tempfile::tempdir().expect("temp dir");
+        let vault = QuickNoteVault::open(directory.path().to_path_buf()).expect("vault");
+        vault.create_folder("Work").expect("work");
+        vault.create_folder("Other").expect("other");
+        let note = vault.create("API ideas", "Work", "ui-monospace", 14, true).expect("create");
+        let saved = vault
+            .save(&QuickNoteFile { content: "keep me".into(), ..note })
+            .expect("save");
+        vault.create("API ideas", "Other", "ui-monospace", 14, true).expect("collision");
+        let moved = vault.move_entry(&saved.relative_path, "Other").expect("move");
+        assert_eq!(moved, "Other/API ideas (2).txt");
+        assert_eq!(vault.read(&moved).expect("read").content, "keep me");
+        assert!(vault.move_entry("Other", "Other/nested").is_err());
+        vault.create_folder("Archive").expect("archive");
+        vault.create_folder("Archive/Work").expect("existing folder");
+        assert_eq!(
+            vault.move_entry("Work", "Archive").expect_err("folder collision"),
+            "Target folder already contains this entry"
+        );
+    }
+
+    #[test]
+    fn renames_a_note_without_replacing_an_existing_file() {
+        let directory = tempfile::tempdir().expect("temp dir");
+        let vault = QuickNoteVault::open(directory.path().to_path_buf()).expect("vault");
+        vault.create_folder("Work").expect("work");
+        let note = vault.create("API ideas", "Work", "ui-monospace", 14, true).expect("create");
+        let saved = vault
+            .save(&QuickNoteFile {
+                content: "body".into(),
+                metadata: QuickNoteMetadata { syntax: "text/markdown".into(), ..note.metadata },
+                ..note
+            })
+            .expect("save");
+        vault.create("Query", "Work", "ui-monospace", 14, true).expect("existing");
+        assert_eq!(
+            vault.rename_entry(&saved.relative_path, "Query").expect_err("collision"),
+            "An entry with that name already exists"
+        );
+        let renamed = vault.rename_entry(&saved.relative_path, "a/b").expect("rename");
+        assert_eq!(renamed, "Work/a_b.md");
+        let file = vault.read(&renamed).expect("read");
+        assert_eq!(file.metadata.title, "a/b");
+        assert_eq!(file.content, "body");
     }
 
     #[test]

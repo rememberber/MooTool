@@ -22,7 +22,7 @@ use crate::{
             ProductImportCounts, ProductImportPreview, ProductImportRecords, ProductImportResult,
             ProductImportSource,
         },
-        settings::{AccentColor, AppLanguage, AppSettings, NavigationStyle, ThemePreference},
+        settings::{AccentColor, AppLanguage, AppSettings, NavigationStyle, ThemePreference, OPERATION_HISTORY_LIMIT},
         translation::TranslationProvider,
     },
     repositories::{
@@ -72,15 +72,13 @@ struct SafeSettingsPatch {
     auto_check_updates: Option<bool>,
     theme: Option<ThemePreference>,
     accent_color: Option<AccentColor>,
-    sidebar_compact: Option<bool>,
+    hide_navigation_titles: Option<bool>,
     navigation_style: Option<NavigationStyle>,
     compact_navigation: Option<bool>,
     show_separators: Option<bool>,
     show_recent: Option<bool>,
-    show_group_titles: Option<bool>,
-    hidden_tools: Option<Vec<String>>,
+    hidden_navigation_tool_ids: Option<Vec<String>>,
     editor_font_size: Option<u8>,
-    history_limit: Option<u16>,
     vault_auto_commit: Option<bool>,
 }
 
@@ -90,15 +88,13 @@ impl SafeSettingsPatch {
             && self.auto_check_updates.is_none()
             && self.theme.is_none()
             && self.accent_color.is_none()
-            && self.sidebar_compact.is_none()
+            && self.hide_navigation_titles.is_none()
             && self.navigation_style.is_none()
             && self.compact_navigation.is_none()
             && self.show_separators.is_none()
             && self.show_recent.is_none()
-            && self.show_group_titles.is_none()
-            && self.hidden_tools.is_none()
+            && self.hidden_navigation_tool_ids.is_none()
             && self.editor_font_size.is_none()
-            && self.history_limit.is_none()
             && self.vault_auto_commit.is_none()
     }
 
@@ -115,8 +111,8 @@ impl SafeSettingsPatch {
         if let Some(value) = self.accent_color {
             settings.appearance.accent_color = value;
         }
-        if let Some(value) = self.sidebar_compact {
-            settings.layout.sidebar_compact = value;
+        if let Some(value) = self.hide_navigation_titles {
+            settings.layout.hide_navigation_titles = value;
         }
         if let Some(value) = self.navigation_style {
             settings.layout.navigation_style = value;
@@ -130,17 +126,11 @@ impl SafeSettingsPatch {
         if let Some(value) = self.show_recent {
             settings.layout.show_recent = value;
         }
-        if let Some(value) = self.show_group_titles {
-            settings.layout.show_group_titles = value;
-        }
-        if let Some(value) = self.hidden_tools.clone() {
-            settings.layout.hidden_tools = value;
+        if let Some(value) = self.hidden_navigation_tool_ids.clone() {
+            settings.layout.hidden_navigation_tool_ids = value;
         }
         if let Some(value) = self.editor_font_size {
-            settings.editor.font_size = value;
-        }
-        if let Some(value) = self.history_limit {
-            settings.data.history_limit = value;
+            settings.editor.json_font_size = value;
         }
         if let Some(value) = self.vault_auto_commit {
             settings.vault.auto_commit = value;
@@ -242,11 +232,7 @@ pub fn run_product_import(
         &source.preview.source_directory,
         &source.preview.fingerprint,
         source.records,
-        saved_settings
-            .as_ref()
-            .unwrap_or(&previous_settings)
-            .data
-            .history_limit,
+        OPERATION_HISTORY_LIMIT,
         timestamp,
     );
     let (mut imported, mut skipped) = match import_result {
@@ -276,6 +262,7 @@ pub fn run_product_import(
         if let Err(error) = app.emit(super::settings::SETTINGS_CHANGED_EVENT, saved) {
             tracing::warn!(error = %error, "import completed but settings event could not be emitted");
         }
+        super::global_shortcut::sync_global_shortcut(&app, saved);
     }
     if let Err(error) = app.emit(
         super::local_data::LOCAL_DATA_CHANGED_EVENT,
@@ -737,7 +724,7 @@ fn read_database_notes(
 
 fn read_database_hosts(
     connection: &Connection,
-    fingerprint: &str,
+    _fingerprint: &str,
     base_time: i64,
     records: &mut ProductImportRecords,
 ) -> Result<(), String> {
@@ -746,31 +733,34 @@ fn read_database_hosts(
     }
     let mut statement = connection
         .prepare(
-            "SELECT CAST(id AS TEXT), COALESCE(name, ''), COALESCE(content, '')
+            "SELECT id, COALESCE(name, ''), COALESCE(content, ''), COALESCE(create_time, ''), COALESCE(modified_time, '')
              FROM t_host ORDER BY id LIMIT 5000",
         )
         .map_err(|error| format!("failed to read source host profiles: {error}"))?;
     let rows = statement
         .query_map([], |row| {
             Ok((
-                row.get::<_, String>(0)?,
+                row.get::<_, i64>(0)?,
                 row.get::<_, String>(1)?,
                 row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+                row.get::<_, String>(4)?,
             ))
         })
         .map_err(|error| format!("failed to query source host profiles: {error}"))?;
     for (index, row) in rows.enumerate() {
-        let (source_id, name, content) =
+        let (source_id, name, content, create_time, modified_time) =
             row.map_err(|error| format!("failed to read source host profile: {error}"))?;
-        if name.trim().is_empty() {
+        if name.trim().is_empty() || source_id <= 0 {
             continue;
         }
+        let fallback = sqlite_import_date(base_time.saturating_add(index as i64));
         records.host_profiles.push(HostProfile {
-            id: imported_id(fingerprint, "host", &source_id),
-            name: truncate_chars(name.trim(), 256),
+            id: source_id,
+            name: truncate_chars(name.trim(), 200),
             content: truncate_utf8_bytes(&content, 2 * 1024 * 1024),
-            created_at: base_time.saturating_add(index as i64),
-            updated_at: base_time.saturating_add(index as i64),
+            create_time: if valid_import_date(&create_time) { create_time } else { fallback.clone() },
+            modified_time: if valid_import_date(&modified_time) { modified_time } else { fallback },
         });
     }
     Ok(())
@@ -778,7 +768,7 @@ fn read_database_hosts(
 
 fn read_database_translation_words(
     connection: &Connection,
-    fingerprint: &str,
+    _fingerprint: &str,
     base_time: i64,
     records: &mut ProductImportRecords,
 ) -> Result<(), String> {
@@ -787,39 +777,43 @@ fn read_database_translation_words(
     }
     let mut statement = connection
         .prepare(
-            "SELECT CAST(id AS TEXT), COALESCE(source_text, ''), COALESCE(target_text, ''),
-                    COALESCE(source_lang, 'auto'), COALESCE(target_lang, 'zh-CN'), COALESCE(remark, '')
+            "SELECT id, COALESCE(source_text, ''), COALESCE(target_text, ''),
+                    COALESCE(source_lang, 'auto'), COALESCE(target_lang, 'zh-CN'), COALESCE(remark, ''),
+                    COALESCE(create_time, ''), COALESCE(modified_time, '')
              FROM t_translation_word ORDER BY id LIMIT 5000",
         )
         .map_err(|error| format!("failed to read source translation words: {error}"))?;
     let rows = statement
         .query_map([], |row| {
             Ok((
-                row.get::<_, String>(0)?,
+                row.get::<_, i64>(0)?,
                 row.get::<_, String>(1)?,
                 row.get::<_, String>(2)?,
                 row.get::<_, String>(3)?,
                 row.get::<_, String>(4)?,
                 row.get::<_, String>(5)?,
+                row.get::<_, String>(6)?,
+                row.get::<_, String>(7)?,
             ))
         })
         .map_err(|error| format!("failed to query source translation words: {error}"))?;
     for (index, row) in rows.enumerate() {
-        let (source_id, source_text, target_text, source_lang, target_lang, remark) =
+        let (source_id, source_text, target_text, source_lang, target_lang, remark, create_time, modified_time) =
             row.map_err(|error| format!("failed to read source translation word: {error}"))?;
-        if source_text.trim().is_empty() {
+        if source_text.trim().is_empty() || source_id <= 0 {
             continue;
         }
         let (source_lang, target_lang) = normalize_language_pair(&source_lang, &target_lang);
+        let fallback = sqlite_import_date(base_time.saturating_add(index as i64));
         records.translation_words.push(TranslationWord {
-            id: imported_id(fingerprint, "word", &source_id),
+            id: source_id,
             source_text: truncate_chars(source_text.trim(), 50_000),
             target_text: truncate_chars(target_text.trim(), 50_000),
             source_lang,
             target_lang,
             remark: truncate_chars(remark.trim(), 2_000),
-            created_at: base_time.saturating_add(index as i64),
-            updated_at: base_time.saturating_add(index as i64),
+            create_time: if valid_import_date(&create_time) { create_time } else { fallback.clone() },
+            modified_time: if valid_import_date(&modified_time) { modified_time } else { fallback },
         });
     }
     Ok(())
@@ -827,7 +821,7 @@ fn read_database_translation_words(
 
 fn read_database_translation_history(
     connection: &Connection,
-    fingerprint: &str,
+    _fingerprint: &str,
     base_time: i64,
     records: &mut ProductImportRecords,
 ) -> Result<(), String> {
@@ -836,43 +830,50 @@ fn read_database_translation_history(
     }
     let mut statement = connection
         .prepare(
-            "SELECT CAST(id AS TEXT), COALESCE(source_text, ''), COALESCE(target_text, ''),
+            "SELECT id, COALESCE(source_text, ''), COALESCE(target_text, ''),
                     COALESCE(source_lang, 'auto'), COALESCE(target_lang, 'zh-CN'),
-                    COALESCE(translator_type, 'google')
+                    COALESCE(translator_type, 'google'), COALESCE(create_time, '')
              FROM t_translation_history ORDER BY id LIMIT 5000",
         )
         .map_err(|error| format!("failed to read source translation history: {error}"))?;
     let rows = statement
         .query_map([], |row| {
             Ok((
-                row.get::<_, String>(0)?,
+                row.get::<_, i64>(0)?,
                 row.get::<_, String>(1)?,
                 row.get::<_, String>(2)?,
                 row.get::<_, String>(3)?,
                 row.get::<_, String>(4)?,
                 row.get::<_, String>(5)?,
+                row.get::<_, String>(6)?,
             ))
         })
         .map_err(|error| format!("failed to query source translation history: {error}"))?;
     for (index, row) in rows.enumerate() {
-        let (source_id, source_text, target_text, source_lang, target_lang, provider) =
+        let (source_id, source_text, target_text, source_lang, target_lang, provider, create_time) =
             row.map_err(|error| format!("failed to read source translation history row: {error}"))?;
-        if source_text.trim().is_empty() {
+        if source_text.trim().is_empty() || source_id <= 0 {
             continue;
         }
         let (source_lang, target_lang) = normalize_language_pair(&source_lang, &target_lang);
         records.translation_history.push(TranslationHistory {
-            id: imported_id(fingerprint, "translation-history", &source_id),
+            id: source_id,
             source_text: truncate_chars(source_text.trim(), 50_000),
             target_text: truncate_chars(target_text.trim(), 50_000),
             source_lang,
             target_lang,
-            provider: if provider.eq_ignore_ascii_case("bing") {
+            translator_type: if provider.eq_ignore_ascii_case("bing") {
                 TranslationProvider::Bing
+            } else if provider.eq_ignore_ascii_case("deepl") {
+                TranslationProvider::DeepL
             } else {
                 TranslationProvider::Google
             },
-            created_at: base_time.saturating_add(index as i64),
+            create_time: if valid_import_date(&create_time) {
+                create_time
+            } else {
+                sqlite_import_date(base_time.saturating_add(index as i64))
+            },
         });
     }
     Ok(())
@@ -1184,7 +1185,7 @@ fn parse_java_settings(contents: &str) -> SafeSettingsPatch {
         language: get("setting.common", "locale").and_then(parse_language),
         auto_check_updates: get("setting.common", "autoCheckUpdate").and_then(parse_bool),
         theme: get("setting.appearance", "theme").and_then(parse_theme),
-        sidebar_compact: get("setting.custom", "tabCompact").and_then(parse_bool),
+        hide_navigation_titles: get("setting.custom", "tabCompact").and_then(parse_bool),
         editor_font_size: get("func.jsonBeauty", "jsonBeautyFontSize").and_then(parse_font_size),
         vault_auto_commit: get("func.quickNote", "quickNoteAutoGitCommit")
             .and_then(parse_bool)
@@ -1224,7 +1225,7 @@ fn parse_electron_settings(bytes: &[u8]) -> Result<SafeSettingsPatch, String> {
         auto_check_updates: json_bool(settings, &["general", "autoCheckUpdates"]),
         theme: json_string(settings, &["appearance", "theme"]).and_then(parse_theme),
         accent_color: json_string(settings, &["appearance", "accentColor"]).and_then(parse_accent),
-        sidebar_compact: json_bool(settings, &["layout", "sidebarCompact"])
+        hide_navigation_titles: json_bool(settings, &["layout", "sidebarCompact"])
             .or(hide_navigation_titles)
             .or_else(|| json_bool(settings, &["layout", "compactNavigation"])),
         navigation_style: json_string(settings, &["layout", "navigationStyle"])
@@ -1232,18 +1233,13 @@ fn parse_electron_settings(bytes: &[u8]) -> Result<SafeSettingsPatch, String> {
         compact_navigation: json_bool(settings, &["layout", "compactNavigation"]),
         show_separators: json_bool(settings, &["layout", "showSeparators"]),
         show_recent: json_bool(settings, &["layout", "showRecent"]),
-        show_group_titles: hide_navigation_titles
-            .map(|hidden| !hidden)
-            .or_else(|| json_bool(settings, &["layout", "showGroupTitles"])),
-        hidden_tools: json_string_array(settings, &["layout", "hiddenNavigationToolIds"])
+        hidden_navigation_tool_ids: json_string_array(settings, &["layout", "hiddenNavigationToolIds"])
+            .or_else(|| json_string_array(settings, &["layout", "hiddenTools"]))
             .map(|values| map_electron_hidden_tools(values)),
         editor_font_size: json_u64(settings, &["editor", "fontSize"])
             .or_else(|| json_u64(settings, &["editor", "jsonFontSize"]))
             .and_then(|value| u8::try_from(value).ok())
             .filter(|value| (10..=24).contains(value)),
-        history_limit: json_u64(settings, &["data", "historyLimit"])
-            .and_then(|value| u16::try_from(value).ok())
-            .filter(|value| (10..=5000).contains(value)),
         vault_auto_commit: json_bool(settings, &["vault", "autoCommit"]),
     })
 }
@@ -1296,6 +1292,8 @@ fn map_electron_tool_id(value: &str) -> Option<String> {
         "colorBoard" => "color",
         "hardware" => "system",
         "messageBoard" => "message-board",
+        "batchRename" => "batch-rename",
+        "filePreview" => "file-preview",
         "reformat" | "json" | "protobuf" | "variables" | "http" | "host" | "encode" | "crypto"
         | "regex" | "cron" | "translation" | "calculator" | "image" | "pdf" => value,
         "mootool" => return None,
@@ -1421,6 +1419,34 @@ fn normalize_tool_id(value: &str) -> String {
         }
         _ => "import".into(),
     }
+}
+
+fn sqlite_import_date(millis: i64) -> String {
+    let utc = time::OffsetDateTime::from_unix_timestamp_nanos((millis as i128).saturating_mul(1_000_000))
+        .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
+    let local = time::UtcOffset::current_local_offset()
+        .map(|offset| utc.to_offset(offset))
+        .unwrap_or(utc);
+    format!(
+        "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
+        local.year(),
+        local.month() as u8,
+        local.day(),
+        local.hour(),
+        local.minute(),
+        local.second()
+    )
+}
+
+fn valid_import_date(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    bytes.len() == 19
+        && bytes.get(4) == Some(&b'-')
+        && bytes.get(7) == Some(&b'-')
+        && bytes.get(10) == Some(&b' ')
+        && bytes.get(13) == Some(&b':')
+        && bytes.get(16) == Some(&b':')
+        && bytes.iter().enumerate().all(|(index, byte)| matches!(index, 4 | 7 | 10 | 13 | 16) || byte.is_ascii_digit())
 }
 
 fn imported_id(fingerprint: &str, category: &str, source_id: &str) -> String {
@@ -1595,7 +1621,7 @@ mod tests {
         );
         assert_eq!(patch.language, Some(AppLanguage::Japanese));
         assert_eq!(patch.auto_check_updates, Some(false));
-        assert_eq!(patch.sidebar_compact, Some(true));
+        assert_eq!(patch.hide_navigation_titles, Some(true));
         assert_eq!(patch.editor_font_size, Some(16));
 
         let electron = parse_electron_settings(
@@ -1612,11 +1638,10 @@ mod tests {
         assert_eq!(layout.navigation_style, Some(NavigationStyle::Card));
         assert_eq!(layout.compact_navigation, Some(true));
         assert_eq!(layout.show_separators, Some(true));
-        assert_eq!(layout.sidebar_compact, Some(true));
-        assert_eq!(layout.show_group_titles, Some(false));
+        assert_eq!(layout.hide_navigation_titles, Some(true));
         assert_eq!(layout.show_recent, Some(false));
         assert_eq!(
-            layout.hidden_tools,
+            layout.hidden_navigation_tool_ids,
             Some(vec!["quick-note".into(), "system".into()])
         );
     }

@@ -1,4 +1,4 @@
-export type DesktopCloseDecision = 'cancel' | 'minimizeToTray' | 'quit'
+export type DesktopCloseDecision = 'cancel' | 'hide' | 'quit'
 
 export interface DesktopCloseRequest {
   canMinimizeToTray: boolean

@@ -215,8 +215,200 @@ pub fn get_environment_variables(reveal_sensitive: bool) -> Vec<EnvironmentVaria
 }
 
 #[tauri::command]
+pub fn read_persistent_environment(scope: String) -> Result<String, String> {
+    let path = persistent_environment_path(&scope)?;
+    match fs::read_to_string(&path) {
+        Ok(content) => Ok(content),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(String::new()),
+        Err(error) => Err(error.to_string()),
+    }
+}
+
+#[tauri::command]
+pub fn write_persistent_environment(scope: String, content: String) -> Result<(), String> {
+    if content.len() > 1024 * 1024 || content.contains('\0') {
+        return Err("environment file is invalid".into());
+    }
+    let path = persistent_environment_path(&scope)?;
+    let previous = fs::read_to_string(&path).unwrap_or_default();
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
+    let mode = if scope == "user" { 0o600 } else { 0o644 };
+    write_environment_file(&path, &content, mode)?;
+    if scope == "user" {
+        ensure_user_environment_profile(&path)?;
+        sync_user_launch_environment(&previous, &content);
+    }
+    Ok(())
+}
+
+fn write_environment_file(path: &Path, content: &str, mode: u32) -> Result<(), String> {
+    match fs::write(path, content.as_bytes()) {
+        Ok(()) => set_environment_mode(path, mode),
+        Err(error) if error.kind() == std::io::ErrorKind::PermissionDenied => {
+            write_environment_elevated(path, content, mode)
+        }
+        Err(error) => Err(error.to_string()),
+    }
+}
+
+fn set_environment_mode(path: &Path, mode: u32) -> Result<(), String> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(path, fs::Permissions::from_mode(mode)).map_err(|error| error.to_string())
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = (path, mode);
+        Ok(())
+    }
+}
+
+fn write_environment_elevated(path: &Path, content: &str, mode: u32) -> Result<(), String> {
+    let temporary = std::env::temp_dir().join(format!(
+        "mootool-environment-{}-{}",
+        std::process::id(),
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|error| error.to_string())?
+            .as_millis()
+    ));
+    fs::write(&temporary, content.as_bytes()).map_err(|error| error.to_string())?;
+    let copy = format!(
+        "/bin/cp {} {} && /bin/chmod {:o} {}",
+        shell_quote(&temporary.to_string_lossy()),
+        shell_quote(&path.to_string_lossy()),
+        mode,
+        shell_quote(&path.to_string_lossy())
+    );
+    let result = if cfg!(target_os = "macos") {
+        std::process::Command::new("/usr/bin/osascript")
+            .args(["-e", &format!("do shell script {} with administrator privileges", apple_script_string(&copy))])
+            .status()
+            .map_err(|error| error.to_string())
+            .and_then(|status| {
+                if status.success() {
+                    Ok(())
+                } else {
+                    Err(format!("administrator approval failed ({status})"))
+                }
+            })
+    } else {
+        Err("writing the system environment requires administrator permission".into())
+    };
+    let _ = fs::remove_file(temporary);
+    result
+}
+
+fn sync_user_launch_environment(previous: &str, next: &str) {
+    if !cfg!(target_os = "macos") {
+        return;
+    }
+    let before = environment_assignments(previous);
+    let after = environment_assignments(next);
+    for key in before.keys() {
+        if !after.contains_key(key) {
+            let _ = std::process::Command::new("/bin/launchctl")
+                .args(["unsetenv", key])
+                .status();
+        }
+    }
+    for (key, value) in &after {
+        if before.get(key) != Some(value) {
+            let _ = std::process::Command::new("/bin/launchctl")
+                .args(["setenv", key, value])
+                .status();
+        }
+    }
+}
+
+fn environment_assignments(content: &str) -> std::collections::BTreeMap<String, String> {
+    let mut values = std::collections::BTreeMap::new();
+    for line in content.split(['\n', '\r']) {
+        let Some((key, value)) = environment_assignment(line) else {
+            continue;
+        };
+        values.insert(key, value);
+    }
+    values
+}
+
+fn environment_assignment(line: &str) -> Option<(String, String)> {
+    let trimmed = line.trim().strip_prefix("export ").unwrap_or(line.trim());
+    let (key, value) = trimmed.split_once('=')?;
+    let key = key.trim();
+    let mut characters = key.chars();
+    let first = characters.next()?;
+    if !(first.is_ascii_alphabetic() || first == '_')
+        || !characters.all(|character| character.is_ascii_alphanumeric() || character == '_')
+    {
+        return None;
+    }
+    Some((key.to_string(), unquote_environment_value(value.trim())))
+}
+
+fn unquote_environment_value(value: &str) -> String {
+    if value.len() >= 2 && value.starts_with('\'') && value.ends_with('\'') {
+        return value[1..value.len() - 1].replace("'\\''", "'");
+    }
+    if value.len() >= 2 && value.starts_with('"') && value.ends_with('"') {
+        return value[1..value.len() - 1]
+            .replace("\\\"", "\"")
+            .replace("\\\\", "\\");
+    }
+    value.to_string()
+}
+
+fn shell_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\"'\"'"))
+}
+
+fn apple_script_string(value: &str) -> String {
+    format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
+}
+
+fn persistent_environment_path(scope: &str) -> Result<PathBuf, String> {
+    let home = std::env::var("HOME").map_err(|_| "home directory is unavailable".to_string())?;
+    match scope {
+        "user" => Ok(PathBuf::from(home).join(".MooTool").join("environment")),
+        "system" if cfg!(target_os = "macos") => Ok(PathBuf::from("/etc/zshenv")),
+        "system" => Ok(PathBuf::from("/etc/environment")),
+        _ => Err("environment scope must be user or system".into()),
+    }
+}
+
+fn ensure_user_environment_profile(environment_path: &Path) -> Result<(), String> {
+    let home = std::env::var("HOME").map_err(|_| "home directory is unavailable".to_string())?;
+    let profile_name = if cfg!(target_os = "macos") { ".zshenv" } else { ".profile" };
+    let profile = PathBuf::from(home).join(profile_name);
+    let current = match fs::read_to_string(&profile) {
+        Ok(content) => content,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(error) => return Err(error.to_string()),
+    };
+    const MARKER: &str = "# >>> MooTool environment >>>";
+    if current.contains(MARKER) {
+        return Ok(());
+    }
+    let separator = if current.is_empty() || current.ends_with('\n') { "" } else { "\n" };
+    let quoted = environment_path.to_string_lossy().replace('\'', "'\\''");
+    let block = format!("{MARKER}\n[ -f '{quoted}' ] && . '{quoted}'\n# <<< MooTool environment <<<\n");
+    fs::write(&profile, format!("{current}{separator}{block}")).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 pub fn get_system_snapshot() -> SystemSnapshot {
     collect_system_snapshot()
+}
+
+fn disk_kind_name(kind: sysinfo::DiskKind) -> String {
+    match kind {
+        sysinfo::DiskKind::HDD => "HDD".into(),
+        sysinfo::DiskKind::SSD => "SSD".into(),
+        sysinfo::DiskKind::Unknown(_) => String::new(),
+    }
 }
 
 fn collect_system_snapshot() -> SystemSnapshot {
@@ -226,12 +418,14 @@ fn collect_system_snapshot() -> SystemSnapshot {
         .process(Pid::from_u32(std::process::id()))
         .map(|process| process.memory())
         .unwrap_or_default();
+    let identity = super::hardware_identity::machine_identity();
     let disks = Disks::new_with_refreshed_list()
         .iter()
         .map(|disk| SystemDisk {
             name: disk.name().to_string_lossy().into_owned(),
             mount_point: disk.mount_point().to_string_lossy().into_owned(),
             file_system: disk.file_system().to_string_lossy().into_owned(),
+            kind: disk_kind_name(disk.kind()),
             total_bytes: disk.total_space(),
             available_bytes: disk.available_space(),
             removable: disk.is_removable(),
@@ -248,6 +442,7 @@ fn collect_system_snapshot() -> SystemSnapshot {
                 .map(ToString::to_string)
                 .collect(),
             mac_address: network.mac_address().to_string(),
+            mtu: network.mtu(),
             received_bytes: network.total_received(),
             transmitted_bytes: network.total_transmitted(),
         })
@@ -259,16 +454,28 @@ fn collect_system_snapshot() -> SystemSnapshot {
         kernel_version: System::kernel_version().unwrap_or_else(|| "Unknown".into()),
         host_name: System::host_name().unwrap_or_else(|| "Unknown".into()),
         architecture: std::env::consts::ARCH.into(),
+        serial: identity.serial,
+        manufacturer: identity.manufacturer,
+        model: identity.model,
+        time_zone: identity.time_zone,
         cpu_brand: system
             .cpus()
             .first()
             .map(|cpu| cpu.brand().trim().to_string())
             .filter(|brand| !brand.is_empty())
             .unwrap_or_else(|| "Unknown".into()),
+        cpu_vendor: system
+            .cpus()
+            .first()
+            .map(|cpu| cpu.vendor_id().trim().to_string())
+            .unwrap_or_default(),
         physical_cores: System::physical_core_count().unwrap_or_default(),
         logical_cores: system.cpus().len(),
+        performance_cores: identity.performance_cores,
+        efficiency_cores: identity.efficiency_cores,
         total_memory_bytes: system.total_memory(),
         available_memory_bytes: system.available_memory(),
+        active_memory_bytes: identity.active_memory_bytes,
         process_memory_bytes,
         uptime_seconds: System::uptime(),
         cpu_usage_percent: system.global_cpu_usage(),

@@ -12,6 +12,7 @@ use crate::{
     contracts::error::AppResult,
     contracts::local_data::{
         BoardMessage, HostProfile, QuickNote, QuickNoteAttachment, QuickNoteAttachmentDataRequest,
+        SaveHostProfileInput, SaveTranslationWordInput,
         QuickNoteAttachmentImportRequest, QuickNoteFolder, SystemHostsFile, ToolFavorite,
         TranslationHistory, TranslationWord,
     },
@@ -41,6 +42,56 @@ pub fn save_quick_note(
 }
 
 #[tauri::command]
+pub fn create_quick_note(
+    app: tauri::AppHandle,
+    repository: tauri::State<'_, LocalDataRepository>,
+    title: String,
+    parent_path: String,
+    font_name: String,
+    font_size: u16,
+    line_wrap: bool,
+) -> AppResult<QuickNote> {
+    let saved = super::quick_note_files::create_note(&app, &repository, &title, &parent_path, &font_name, font_size, line_wrap)?;
+    emit_changed(&app, "quick-note")?;
+    Ok(saved)
+}
+
+#[tauri::command]
+pub fn duplicate_quick_note(
+    app: tauri::AppHandle,
+    repository: tauri::State<'_, LocalDataRepository>,
+    relative_path: String,
+) -> AppResult<QuickNote> {
+    let saved = super::quick_note_files::duplicate_note(&app, &repository, &relative_path)?;
+    emit_changed(&app, "quick-note")?;
+    Ok(saved)
+}
+
+#[tauri::command]
+pub fn rename_quick_note_entry(
+    app: tauri::AppHandle,
+    repository: tauri::State<'_, LocalDataRepository>,
+    relative_path: String,
+    name: String,
+) -> AppResult<QuickNote> {
+    let saved = super::quick_note_files::rename_note_entry(&app, &repository, &relative_path, &name)?;
+    emit_changed(&app, "quick-note")?;
+    Ok(saved)
+}
+
+#[tauri::command]
+pub fn move_quick_note_entry(
+    app: tauri::AppHandle,
+    repository: tauri::State<'_, LocalDataRepository>,
+    relative_path: String,
+    target_directory: String,
+) -> AppResult<QuickNote> {
+    let saved = super::quick_note_files::move_note_entry(&app, &repository, &relative_path, &target_directory)?;
+    emit_changed(&app, "quick-note")?;
+    Ok(saved)
+}
+
+#[tauri::command]
 pub fn open_quick_note_vault(app: tauri::AppHandle) -> AppResult<()> {
     let vault = super::quick_note_files::open_vault(&app)?;
     let path = vault.root();
@@ -60,10 +111,21 @@ pub fn open_quick_note_vault(app: tauri::AppHandle) -> AppResult<()> {
     if status.success() {
         Ok(())
     } else {
-        Err(format!("failed to open quick note vault: {status}"))
+        Err(format!("failed to open quick note vault: {status}").into())
     }
 }
 
+#[tauri::command]
+pub fn export_quick_note_files(
+    app: tauri::AppHandle,
+    directory: String,
+    relative_paths: Vec<String>,
+) -> AppResult<usize> {
+    let count = super::quick_note_files::export_quick_note_files(&app, std::path::Path::new(directory.trim()), &relative_paths)?;
+    Ok(count)
+}
+
+#[tauri::command]
 pub fn reveal_quick_note_entry(app: tauri::AppHandle, relative_path: String) -> AppResult<()> {
     let vault = super::quick_note_files::open_vault(&app)?;
     let resolved = if let Ok(target) = vault.resolve_entry(&relative_path) {
@@ -100,7 +162,7 @@ fn reveal_in_file_manager(path: &std::path::Path) -> AppResult<()> {
     if status.success() {
         Ok(())
     } else {
-        Err(format!("failed to reveal vault entry: {status}"))
+        Err(format!("failed to reveal vault entry: {status}").into())
     }
 }
 
@@ -441,15 +503,17 @@ pub fn delete_board_message(
 #[tauri::command]
 pub fn list_host_profiles(
     repository: tauri::State<'_, LocalDataRepository>,
+    keyword: Option<String>,
+    include_content: Option<bool>,
 ) -> AppResult<Vec<HostProfile>> {
-    Ok(repository.list_host_profiles()?)
+    Ok(repository.list_host_profiles(keyword.as_deref().unwrap_or(""), include_content.unwrap_or(true))?)
 }
 
 #[tauri::command]
 pub fn save_host_profile(
     app: tauri::AppHandle,
     repository: tauri::State<'_, LocalDataRepository>,
-    profile: HostProfile,
+    profile: SaveHostProfileInput,
 ) -> AppResult<HostProfile> {
     let saved = repository.save_host_profile(profile)?;
     emit_changed(&app, "host")?;
@@ -460,9 +524,9 @@ pub fn save_host_profile(
 pub fn delete_host_profile(
     app: tauri::AppHandle,
     repository: tauri::State<'_, LocalDataRepository>,
-    id: String,
+    id: i64,
 ) -> AppResult<bool> {
-    let deleted = repository.delete_host_profile(&id)?;
+    let deleted = repository.delete_host_profile(id)?;
     if deleted {
         emit_changed(&app, "host")?;
     }
@@ -472,15 +536,16 @@ pub fn delete_host_profile(
 #[tauri::command]
 pub fn list_translation_words(
     repository: tauri::State<'_, LocalDataRepository>,
+    keyword: Option<String>,
 ) -> AppResult<Vec<TranslationWord>> {
-    Ok(repository.list_translation_words()?)
+    Ok(repository.list_translation_words(keyword.as_deref().unwrap_or(""))?)
 }
 
 #[tauri::command]
 pub fn save_translation_word(
     app: tauri::AppHandle,
     repository: tauri::State<'_, LocalDataRepository>,
-    word: TranslationWord,
+    word: SaveTranslationWordInput,
 ) -> AppResult<TranslationWord> {
     let saved = repository.save_translation_word(word)?;
     emit_changed(&app, "translation-word")?;
@@ -491,9 +556,9 @@ pub fn save_translation_word(
 pub fn delete_translation_word(
     app: tauri::AppHandle,
     repository: tauri::State<'_, LocalDataRepository>,
-    id: String,
+    id: i64,
 ) -> AppResult<bool> {
-    let deleted = repository.delete_translation_word(&id)?;
+    let deleted = repository.delete_translation_word(id)?;
     if deleted {
         emit_changed(&app, "translation-word")?;
     }
@@ -503,17 +568,18 @@ pub fn delete_translation_word(
 #[tauri::command]
 pub fn list_translation_history(
     repository: tauri::State<'_, LocalDataRepository>,
+    keyword: Option<String>,
 ) -> AppResult<Vec<TranslationHistory>> {
-    Ok(repository.list_translation_history()?)
+    Ok(repository.list_translation_history(keyword.as_deref().unwrap_or(""))?)
 }
 
 #[tauri::command]
 pub fn delete_translation_history(
     app: tauri::AppHandle,
     repository: tauri::State<'_, LocalDataRepository>,
-    id: String,
+    id: i64,
 ) -> AppResult<bool> {
-    let deleted = repository.delete_translation_history(&id)?;
+    let deleted = repository.delete_translation_history(id)?;
     if deleted {
         emit_changed(&app, "translation-history")?;
     }

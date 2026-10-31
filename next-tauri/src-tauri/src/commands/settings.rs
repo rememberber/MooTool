@@ -37,6 +37,7 @@ pub fn update_settings(
     super::desktop::sync_desktop_preferences(&app, &saved).map_err(|error| {
         format!("settings were saved but desktop preferences sync failed: {error}")
     })?;
+    super::global_shortcut::sync_global_shortcut(&app, &saved);
     Ok(saved)
 }
 
@@ -53,6 +54,7 @@ pub fn reset_settings(
     super::desktop::sync_desktop_preferences(&app, &saved).map_err(|error| {
         format!("settings were reset but desktop preferences sync failed: {error}")
     })?;
+    super::global_shortcut::sync_global_shortcut(&app, &saved);
     Ok(saved)
 }
 

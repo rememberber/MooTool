@@ -52,10 +52,19 @@ export interface PingResult {
   durationMs: number
 }
 
+export interface PingRangeResult {
+  prefix: string
+  scannedHosts: number
+  reachableHosts: string[]
+  durationMs: number
+  cancelled: boolean
+}
+
 export interface NetworkToolsApi {
   interfaces(): Promise<NetworkInterfaceInfo[]>
   resolve(host: string): Promise<string[]>
-  scanPorts(requestId: string, host: string, startPort: number, endPort: number, timeoutMs: number): Promise<PortScanResult>
+  scanPorts(requestId: string, host: string, ports: number[], timeoutMs: number, budgetMs: number): Promise<PortScanResult>
+  pingRange(requestId: string, prefix: string, timeoutMs: number): Promise<PingRangeResult>
   scanRange(requestId: string, cidr: string, ports: number[], timeoutMs: number): Promise<NetworkRangeScanResult>
   cancelTask(requestId: string): Promise<boolean>
   whois(query: string): Promise<WhoisResult>

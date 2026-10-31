@@ -42,6 +42,10 @@ export function parsePortSpec(value?: string): number[] {
   return [...ports].sort((left, right) => left - right)
 }
 
+export function formatPingRange(reachable: string[], scanned: number): string {
+  return [`Reachable hosts: ${reachable.length} / ${scanned}`, '', ...(reachable.length ? reachable : ['No reachable host found'])].join('\n')
+}
+
 export function formatOpenPorts(host: string, scanned: number[], openPorts: number[]): string {
   const lines = openPorts.map((port) => {
     const service = commonTcpPorts.get(port)

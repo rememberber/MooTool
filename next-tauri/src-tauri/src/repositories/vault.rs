@@ -94,6 +94,11 @@ impl VaultRepository {
         list_directories(&self.root()?)
     }
 
+    pub fn resolve_entry(&self, relative_path: &str) -> Result<PathBuf, String> {
+        let root = self.root()?;
+        resolve_existing_any(&root, &normalize_relative_entry_path(relative_path)?)
+    }
+
     pub fn read_document(&self, relative_path: &str) -> Result<VaultDocument, String> {
         read_document_at(&self.root()?, relative_path)
     }
@@ -737,6 +742,7 @@ mod tests {
             .configure_without_watcher(vault.path().to_path_buf())
             .expect("configure vault");
         assert!(repository.read_document("../outside.json").is_err());
+        assert!(repository.resolve_entry("../outside.json").is_err());
         assert!(
             repository
                 .save_document(VaultSaveRequest {

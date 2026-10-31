@@ -11,6 +11,7 @@ import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } fr
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import type { AppLanguage } from '../../platform/contracts/settings'
 import { contentFingerprint } from '../../shared/fingerprint'
+import { ResizableColumns } from '../../shared/ResizableColumns'
 import { useSettings } from '../settings/SettingsProvider'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
@@ -238,7 +239,7 @@ export function CronSurface() {
         }}
       />
 
-      <section className="cron-content">
+      <ResizableColumns id="cron-builder" className="cron-content" initialPrimary={660} defaultSizes={[660, 340]} minPrimary={460} minSecondary={260}>
         <div className="cron-builder">
           <header>
             <span><Sparkles />{t('builder.title')}</span>
@@ -291,7 +292,7 @@ export function CronSurface() {
           </ol>
           {!runs.length && <p>{t('runs.empty')}</p>}
         </section>
-      </section>
+      </ResizableColumns>
 
       <footer className={error ? 'utility-status utility-status--error' : 'utility-status'}>
         <span>{error ? <TriangleAlert /> : <CheckCircle2 />}

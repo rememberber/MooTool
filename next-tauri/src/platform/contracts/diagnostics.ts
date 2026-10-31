@@ -10,11 +10,19 @@ export interface SystemSnapshot {
   kernelVersion: string
   hostName: string
   architecture: string
+  serial?: string
+  manufacturer?: string
+  model?: string
+  timeZone?: string
   cpuBrand: string
+  cpuVendor?: string
   physicalCores: number
   logicalCores: number
+  performanceCores?: number | null
+  efficiencyCores?: number | null
   totalMemoryBytes: number
   availableMemoryBytes: number
+  activeMemoryBytes?: number | null
   processMemoryBytes: number
   uptimeSeconds: number
   cpuUsagePercent: number
@@ -29,6 +37,7 @@ export interface SystemDisk {
   name: string
   mountPoint: string
   fileSystem: string
+  kind?: string
   totalBytes: number
   availableBytes: number
   removable: boolean
@@ -38,6 +47,7 @@ export interface SystemNetworkInterface {
   name: string
   addresses: string[]
   macAddress: string
+  mtu?: number
   receivedBytes: number
   transmittedBytes: number
 }

@@ -60,7 +60,8 @@ impl StreamingDigest for Md5 {
         tail[..self.offset].copy_from_slice(&self.buffer[..self.offset]);
         tail[self.offset] = 0x80;
         let bits = self.length.wrapping_mul(8).to_le_bytes();
-        tail[tail.len() - 8..].copy_from_slice(&bits);
+        let tail_len = tail.len();
+        tail[tail_len - 8..].copy_from_slice(&bits);
         for chunk in tail.chunks_exact(64) {
             md5_block(&mut self.state, chunk);
         }
@@ -160,7 +161,8 @@ fn finish_big_endian<const N: usize>(
     tail[..offset].copy_from_slice(&buffer[..offset]);
     tail[offset] = 0x80;
     let bits = length.wrapping_mul(8).to_be_bytes();
-    tail[tail.len() - 8..].copy_from_slice(&bits);
+    let tail_len = tail.len();
+    tail[tail_len - 8..].copy_from_slice(&bits);
     for chunk in tail.chunks_exact(64) {
         compress(state, chunk);
     }
@@ -267,7 +269,7 @@ fn sm3_block(state: &mut [u32; 8], block: &[u8]) {
     let mut g = state[6];
     let mut h = state[7];
     for index in 0..64 {
-        let constant = if index < 16 { 0x79cc4519 } else { 0x7a879d8a };
+        let constant: u32 = if index < 16 { 0x79cc4519 } else { 0x7a879d8a };
         let ss1 = a
             .rotate_left(12)
             .wrapping_add(e)

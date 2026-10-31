@@ -14,6 +14,7 @@ export type ManagedToolId =
   | 'network'
   | 'pdf'
   | 'file-preview'
+  | 'batch-rename'
   | 'protobuf'
   | 'quick-note'
   | 'qrcode'

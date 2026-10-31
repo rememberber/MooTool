@@ -209,13 +209,13 @@ mod tests {
         let path = directory.path().join(SETTINGS_FILE_NAME);
         let repository = SettingsRepository::open(path).expect("open repository");
         let mut settings = repository.snapshot();
-        settings.editor.font_size = 18;
+        settings.editor.soft_wrap = false;
         repository.replace(settings).expect("save settings");
 
         let reset = repository.reset().expect("reset settings");
 
         assert_eq!(reset.revision, 2);
-        assert_eq!(reset.editor.font_size, 13);
+        assert!(reset.editor.soft_wrap);
     }
 
     #[test]

@@ -12,6 +12,7 @@ import { useLocalizedMessages } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import { javaRegexApi } from '../../platform/api/javaRegexApi'
 import { DiffCodeEditor, type DiffEditorDecoration, type DiffEditorHandle } from '../../shared/DiffCodeEditor'
+import { ResizableColumns } from '../../shared/ResizableColumns'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { ToolFavoriteBar } from '../favorites/ToolFavoriteBar'
@@ -344,7 +345,7 @@ export function RegexSurface() {
                 <Flag label="u · Unicode" checked={options.unicode} onChange={(value) => setOption('unicode', value)} />
               </div>
               {engine === 'java' && <p className="regex-engine-hint">{t('engine.hint')}</p>}
-              <div className="regex-grid">
+              <ResizableColumns id="regex-test" className="regex-grid" initialPrimary={710} defaultSizes={[710, 290]} minPrimary={320} minSecondary={220}>
                 <section className="utility-editor-card regex-source">
                   <header><span>{t('pane.source')}</span><code>{t('pane.characters', { count: source.length })}</code></header>
                   <DiffCodeEditor
@@ -403,7 +404,7 @@ export function RegexSurface() {
                     ))}
                   </div>
                 </section>
-              </div>
+              </ResizableColumns>
               <section className="regex-replace">
                 <label>
                   <Replace />{t('field.replace')}

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { BoardMessage, QuickNote, ToolFavorite } from '../contracts/localData'
+import { normalizeNoteSyntax } from '../contracts/localData'
 import { createLocalDataApi } from './localDataApi'
 
 describe('local data API', () => {
@@ -18,7 +19,7 @@ describe('local data API', () => {
       lineSpacing: 1,
       relativePath: '',
       lineWrapping: true,
-      syntax: 'markdown',
+      syntax: 'text/markdown',
       pinned: false,
       createdAt: 1,
       updatedAt: 1
@@ -103,5 +104,12 @@ describe('local data API', () => {
       ['save_tool_favorite', { favorite }],
       ['delete_tool_favorite', { id: 'favorite-1' }]
     ])
+  })
+
+  it('maps legacy quick note syntax names to Electron MIME values', () => {
+    expect(normalizeNoteSyntax('sql')).toBe('text/sql')
+    expect(normalizeNoteSyntax('markdown')).toBe('text/markdown')
+    expect(normalizeNoteSyntax('text/plain')).toBe('text/plain')
+    expect(normalizeNoteSyntax('unknown')).toBe('text/plain')
   })
 })

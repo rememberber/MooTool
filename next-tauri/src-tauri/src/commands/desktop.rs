@@ -219,6 +219,7 @@ pub fn setup(
         .map_err(|error| format!("failed to apply system tray visibility: {error}"))?;
 
     sync_desktop_preferences(app.handle(), &settings)?;
+    super::global_shortcut::sync_global_shortcut(app.handle(), &settings);
     if synchronize_autostart {
         sync_autostart(app.handle(), &settings)?;
     }
@@ -304,7 +305,7 @@ pub fn handle_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) 
         .unwrap_or_default();
     match settings.general.close_behavior {
         CloseBehavior::Quit => app.exit(0),
-        CloseBehavior::MinimizeToTray => {
+        CloseBehavior::Hide => {
             if !settings.general.tray_enabled {
                 app.exit(0);
             } else if let Err(error) = hide_product_windows(app) {
@@ -334,7 +335,7 @@ pub fn resolve_close_request(
         .store(false, Ordering::Release);
     match decision {
         CloseDecision::Cancel => Ok(()),
-        CloseDecision::MinimizeToTray => Ok(hide_product_windows(&app)?),
+        CloseDecision::Hide => Ok(hide_product_windows(&app)?),
         CloseDecision::Quit => {
             app.exit(0);
             Ok(())

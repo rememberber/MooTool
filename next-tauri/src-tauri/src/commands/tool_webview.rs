@@ -20,7 +20,7 @@ use crate::{
 const MAIN_WINDOW_LABEL: &str = "main";
 const SHELL_WEBVIEW_LABEL: &str = "main";
 
-pub(crate) const PRODUCT_TOOLS: [ManagedToolId; 26] = [
+pub(crate) const PRODUCT_TOOLS: [ManagedToolId; 27] = [
     ManagedToolId::Calculator,
     ManagedToolId::Color,
     ManagedToolId::Config,
@@ -35,6 +35,7 @@ pub(crate) const PRODUCT_TOOLS: [ManagedToolId; 26] = [
     ManagedToolId::Network,
     ManagedToolId::Pdf,
     ManagedToolId::FilePreview,
+    ManagedToolId::BatchRename,
     ManagedToolId::Protobuf,
     ManagedToolId::QuickNote,
     ManagedToolId::Qrcode,
@@ -225,6 +226,28 @@ pub(crate) fn detach_tool_webview_owned(
     state.record_reparent_operations(tool_id, 1);
     state.mark_detached(tool_id);
     Ok(state.snapshot(tool_id))
+}
+
+#[tauri::command]
+pub async fn dismiss_escape_window(
+    caller: Webview,
+    app: AppHandle,
+    state: State<'_, ToolWebviewManager>,
+) -> AppResult<()> {
+    if let Some(tool_id) = ManagedToolId::from_webview_label(caller.label()) {
+        let snapshot = state.snapshot(tool_id);
+        if snapshot.placement == ToolWebviewPlacement::Detached {
+            if let Some(bounds) = state.stored_bounds(tool_id) {
+                dock_tool_webview_owned(&app, state.inner(), tool_id, bounds)?;
+                return Ok(());
+            }
+        }
+    }
+    caller
+        .window()
+        .hide()
+        .map_err(|error| format!("failed to hide window: {error}"))?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -425,6 +448,7 @@ impl ManagedToolId {
             Self::Network => "network",
             Self::Pdf => "pdf",
             Self::FilePreview => "file-preview",
+            Self::BatchRename => "batch-rename",
             Self::Protobuf => "protobuf",
             Self::QuickNote => "quick-note",
             Self::Qrcode => "qrcode",
@@ -458,6 +482,7 @@ impl ManagedToolId {
             Self::Network => "tool-network",
             Self::Pdf => "tool-pdf",
             Self::FilePreview => "tool-file-preview",
+            Self::BatchRename => "tool-batch-rename",
             Self::Protobuf => "tool-protobuf",
             Self::QuickNote => "tool-quick-note",
             Self::Qrcode => "tool-qrcode",
@@ -491,6 +516,7 @@ impl ManagedToolId {
             Self::Network => "tool-detached-network",
             Self::Pdf => "tool-detached-pdf",
             Self::FilePreview => "tool-detached-file-preview",
+            Self::BatchRename => "tool-detached-batch-rename",
             Self::Protobuf => "tool-detached-protobuf",
             Self::QuickNote => "tool-detached-quick-note",
             Self::Qrcode => "tool-detached-qrcode",
@@ -524,6 +550,7 @@ impl ManagedToolId {
             Self::Network => "index.html?surface=network",
             Self::Pdf => "index.html?surface=pdf",
             Self::FilePreview => "index.html?surface=file-preview",
+            Self::BatchRename => "index.html?surface=batch-rename",
             Self::Protobuf => "index.html?surface=protobuf",
             Self::QuickNote => "index.html?surface=quick-note",
             Self::Qrcode => "index.html?surface=qrcode",
@@ -557,6 +584,7 @@ impl ManagedToolId {
             Self::Network => "MooTool Network & IP",
             Self::Pdf => "MooTool PDF",
             Self::FilePreview => "MooTool File Preview",
+            Self::BatchRename => "MooTool Batch Rename",
             Self::Protobuf => "MooTool Protobuf",
             Self::QuickNote => "MooTool Quick Note",
             Self::Qrcode => "MooTool QR Code",
@@ -590,6 +618,7 @@ impl ManagedToolId {
             "tool-network" => Some(Self::Network),
             "tool-pdf" => Some(Self::Pdf),
             "tool-file-preview" => Some(Self::FilePreview),
+            "tool-batch-rename" => Some(Self::BatchRename),
             "tool-protobuf" => Some(Self::Protobuf),
             "tool-quick-note" => Some(Self::QuickNote),
             "tool-qrcode" => Some(Self::Qrcode),

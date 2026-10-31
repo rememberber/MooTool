@@ -2,8 +2,14 @@ import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import {
   defaultAppSettings,
+  normalizeCloseBehavior,
   normalizeCustomGroups,
-  normalizeNavigationStyle,
+  normalizeEditorSettings,
+  normalizeInterfaceFontFamily,
+  normalizeLayoutSettings,
+  normalizeNetworkSettings,
+  normalizeShortcutSettings,
+  normalizePaneSizes,
   SETTINGS_SCHEMA_VERSION,
   type AppSettings,
   type SettingsApi,
@@ -45,23 +51,33 @@ function loadBrowserSettings(): AppSettings {
     return {
       ...defaults,
       ...parsed,
-      general: { ...defaults.general, ...parsed.general },
-      appearance: { ...defaults.appearance, ...parsed.appearance },
-      layout: {
-        ...defaults.layout,
-        ...parsed.layout,
-        navigationStyle: normalizeNavigationStyle(parsed.layout?.navigationStyle),
-        compactNavigation: parsed.layout?.compactNavigation === true,
-        showSeparators: parsed.layout?.showSeparators === true,
-        customGroups: normalizeCustomGroups(parsed.layout?.customGroups),
-        paneSizes: normalizePaneSizes(parsed.layout?.paneSizes)
+      general: {
+        ...defaults.general,
+        ...parsed.general,
+        closeBehavior: normalizeCloseBehavior(parsed.general?.closeBehavior),
+        escapeHidesWindow: parsed.general?.escapeHidesWindow !== false
       },
-      editor: { ...defaults.editor, ...parsed.editor },
-      network: { ...defaults.network, ...parsed.network },
+      appearance: {
+        ...defaults.appearance,
+        theme: parsed.appearance?.theme ?? defaults.appearance.theme,
+        interfaceStyle: parsed.appearance?.interfaceStyle ?? defaults.appearance.interfaceStyle,
+        unifiedBackground: parsed.appearance?.unifiedBackground ?? defaults.appearance.unifiedBackground,
+        accentColor: parsed.appearance?.accentColor ?? defaults.appearance.accentColor,
+        fontFamily: normalizeInterfaceFontFamily(parsed.appearance?.fontFamily),
+        fontSize: parsed.appearance?.fontSize ?? defaults.appearance.fontSize
+      },
+      layout: normalizeLayoutSettings(parsed.layout),
+      editor: normalizeEditorSettings(parsed.editor),
+      network: normalizeNetworkSettings(parsed.network),
       runtime: { ...defaults.runtime, ...parsed.runtime },
-      data: { ...defaults.data, ...parsed.data },
-      vault: { ...defaults.vault, ...parsed.vault },
-      shortcuts: { ...defaults.shortcuts, ...parsed.shortcuts },
+      data: {},
+      vault: {
+        ...defaults.vault,
+        ...parsed.vault,
+        quickNoteTreeExpandMode: parsed.vault?.quickNoteTreeExpandMode === 'collapseAll' ? 'collapseAll' : 'expandAll',
+        jsonTreeExpandMode: parsed.vault?.jsonTreeExpandMode === 'collapseAll' ? 'collapseAll' : 'expandAll'
+      },
+      shortcuts: normalizeShortcutSettings(parsed.shortcuts),
       tools: { ...defaults.tools, ...parsed.tools },
       schemaVersion: SETTINGS_SCHEMA_VERSION
     }
@@ -118,14 +134,3 @@ function createBrowserSettingsApi(): SettingsApi {
 export const settingsApi: SettingsApi = typeof window !== 'undefined' && window.__TAURI_INTERNALS__
   ? createSettingsApi()
   : createBrowserSettingsApi()
-
-function normalizePaneSizes(value: unknown): Record<string, number> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
-  return Object.fromEntries(Object.entries(value as Record<string, unknown>)
-    .filter(([key, size]) => /^[a-z0-9-]{1,64}$/.test(key)
-      && typeof size === 'number'
-      && Number.isFinite(size)
-      && size >= 120
-      && size <= 2_000)
-    .map(([key, size]) => [key, Math.round(size as number)]))
-}

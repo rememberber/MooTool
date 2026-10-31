@@ -2,6 +2,9 @@ import { ChevronDown, ChevronRight, FileText, Folder, FolderOpen } from 'lucide-
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { QuickNote, QuickNoteFolder } from '../../platform/contracts/localData'
+import type { VaultTreeExpandMode } from '../../platform/contracts/settings'
+import { ancestorDirectoryPaths, resolveExpandedPaths } from '../../shared/vaultTreeExpand'
+import { selectTreePaths, type SelectionGesture } from '../../shared/vaultSelection'
 
 export type NoteTreeAction = 'rename' | 'move' | 'duplicate' | 'export' | 'info' | 'delete' | 'reveal'
 
@@ -13,10 +16,21 @@ export interface NoteTreeNode {
   children: NoteTreeNode[]
 }
 
-export function buildNoteTree(notes: QuickNote[], folders: QuickNoteFolder[], query: string, tag: string): NoteTreeNode[] {
-  const needle = query.trim().toLowerCase()
+export type NoteSort = 'modified' | 'created' | 'name'
+
+export function buildNoteTree(
+  notes: QuickNote[],
+  folders: QuickNoteFolder[],
+  query: string,
+  tag: string,
+  options: { includeContent?: boolean; sort?: NoteSort } = {}
+): NoteTreeNode[] {
+  const includeContent = options.includeContent ?? true
+  const sort = options.sort ?? 'modified'
+  const needle = query.trim().toLocaleLowerCase()
+  const notePath = (note: QuickNote) => note.relativePath || (note.folderPath ? `${note.folderPath}/${note.id}` : note.id)
   const matches = (note: QuickNote) => (!tag || note.tags.includes(tag))
-    && (!needle || `${note.title}\n${note.content}\n${note.tags.join(' ')}`.toLowerCase().includes(needle))
+    && (!needle || [note.title, notePath(note), includeContent ? note.content : ''].some((value) => value.toLocaleLowerCase().includes(needle)))
   const visible = notes.filter(matches)
   const directoryPaths = new Set<string>(folders.map((folder) => folder.path))
   for (const note of visible) {
@@ -25,10 +39,18 @@ export function buildNoteTree(notes: QuickNote[], folders: QuickNoteFolder[], qu
     for (let index = 1; index <= parts.length; index += 1) directoryPaths.add(parts.slice(0, index).join('/'))
   }
   if (needle || tag) {
-    for (const path of [...directoryPaths]) {
+    const keep = new Set<string>()
+    for (const path of directoryPaths) {
+      const pathMatches = Boolean(needle) && path.toLocaleLowerCase().includes(needle)
       const hasNote = visible.some((note) => note.folderPath === path || note.folderPath.startsWith(`${path}/`))
-      if (!hasNote) directoryPaths.delete(path)
+      if (hasNote || pathMatches) keep.add(path)
     }
+    for (const path of [...keep]) {
+      for (const ancestor of ancestorDirectoryPaths(path)) {
+        if (directoryPaths.has(ancestor)) keep.add(ancestor)
+      }
+    }
+    for (const path of [...directoryPaths]) if (!keep.has(path)) directoryPaths.delete(path)
   }
   const roots: NoteTreeNode[] = []
   const byPath = new Map<string, NoteTreeNode>()
@@ -52,7 +74,24 @@ export function buildNoteTree(notes: QuickNote[], folders: QuickNoteFolder[], qu
     if (parent) parent.children.push(file)
     else roots.push(file)
   }
+  sortTree(roots, sort)
   return roots
+}
+
+function sortTree(nodes: NoteTreeNode[], sort: NoteSort): void {
+  nodes.sort((left, right) => compareNodes(left, right, sort))
+  for (const node of nodes) if (node.kind === 'directory') sortTree(node.children, sort)
+}
+
+function compareNodes(left: NoteTreeNode, right: NoteTreeNode, sort: NoteSort): number {
+  if (left.kind !== right.kind) return left.kind === 'directory' ? -1 : 1
+  if (left.kind === 'directory' || sort === 'name') {
+    const leftName = left.path.split('/').at(-1) ?? left.name
+    const rightName = right.path.split('/').at(-1) ?? right.name
+    return leftName.localeCompare(rightName)
+  }
+  const field = sort === 'created' ? 'createdAt' : 'updatedAt'
+  return (right.note?.[field] ?? 0) - (left.note?.[field] ?? 0)
 }
 
 function noteLabel(note: QuickNote): string {
@@ -71,31 +110,58 @@ export function canMoveToDirectory(relativePath: string, targetDirectory: string
     && !targetDirectory.startsWith(`${relativePath}/`)
 }
 
-export function QuickNoteTree({ nodes, activeId, selectedFolder, onOpenNote, onSelectFolder, onMove, onAction, onGit, labels, gitLabel }: {
+export function QuickNoteTree({ nodes, activeId, selectedFolder, selectedPath, expandMode, locateRequest = 0, onOpenNote, onSelectFolder, onMove, onAction, onGit, labels, gitLabel, selectedLabel }: {
   nodes: NoteTreeNode[]
   activeId: string
   selectedFolder: string
+  selectedPath: string
+  expandMode: VaultTreeExpandMode
+  locateRequest?: number
   onOpenNote(note: QuickNote): void
   onSelectFolder(path: string): void
   onMove(node: NoteTreeNode, targetDirectory: string): void
-  onAction(node: NoteTreeNode, action: NoteTreeAction): void
+  onAction(node: NoteTreeNode, action: NoteTreeAction, files?: NoteTreeNode[]): void
   onGit(): void
   labels: Record<NoteTreeAction, string>
   gitLabel: string
+  selectedLabel?(count: number): string
 }) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
   const [dropTarget, setDropTarget] = useState<string | null>(null)
-  const [contextMenu, setContextMenu] = useState<{ node: NoteTreeNode; left: number; top: number } | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ node: NoteTreeNode; paths: string[]; left: number; top: number } | null>(null)
+  const [selectedPaths, setSelectedPaths] = useState<string[]>([])
+  const selectionAnchor = useRef('')
   const menuRef = useRef<HTMLDivElement>(null)
+  const treeRef = useRef<HTMLDivElement>(null)
+  const handledLocate = useRef(0)
   const knownDirectories = useRef(new Set<string>())
+  const appliedMode = useRef<VaultTreeExpandMode | null>(null)
   const draggedPath = useRef('')
   useEffect(() => {
     const paths = directoryPaths(nodes)
+    if (appliedMode.current !== expandMode) {
+      appliedMode.current = expandMode
+      knownDirectories.current = new Set(paths)
+      setExpanded(resolveExpandedPaths(paths, expandMode, selectedPath))
+      return
+    }
     const fresh = paths.filter((path) => !knownDirectories.current.has(path))
     knownDirectories.current = new Set(paths)
-    if (!fresh.length) return
-    setExpanded((current) => new Set([...current, ...fresh]))
-  }, [nodes])
+    setExpanded((current) => {
+      const next = new Set(current)
+      if (expandMode === 'expandAll') fresh.forEach((path) => next.add(path))
+      for (const path of ancestorDirectoryPaths(selectedPath)) next.add(path)
+      return next
+    })
+  }, [expandMode, nodes, selectedPath])
+  useEffect(() => {
+    if (!locateRequest || handledLocate.current === locateRequest || !selectedPath) return
+    const row = treeRef.current?.querySelector<HTMLElement>(`[data-path="${CSS.escape(selectedPath)}"]`)
+    if (!row) return
+    handledLocate.current = locateRequest
+    row.focus({ preventScroll: true })
+    row.scrollIntoView({ block: 'nearest' })
+  }, [expanded, locateRequest, nodes, selectedPath])
   useEffect(() => {
     if (!contextMenu) return
     const close = () => setContextMenu(null)
@@ -107,6 +173,33 @@ export function QuickNoteTree({ nodes, activeId, selectedFolder, onOpenNote, onS
       document.removeEventListener('keydown', closeOnEscape)
     }
   }, [contextMenu])
+  const visiblePaths = visibleNotePaths(nodes, expanded)
+  const visibleKey = visiblePaths.join('\n')
+  useEffect(() => {
+    setSelectedPaths((current) => {
+      const next = current.filter((path) => visiblePaths.includes(path))
+      return next.length === current.length ? current : next
+    })
+  }, [visibleKey])
+  function chooseNode(node: NoteTreeNode, gesture: SelectionGesture): boolean {
+    setSelectedPaths((current) => selectTreePaths(current, node.path, selectionAnchor.current, visiblePaths, gesture))
+    if (!gesture.shiftKey) selectionAnchor.current = node.path
+    return !gesture.ctrlKey && !gesture.metaKey && !gesture.shiftKey
+  }
+  function openContextMenu(node: NoteTreeNode, left: number, top: number): void {
+    const paths = selectedPaths.includes(node.path) ? selectedPaths : [node.path]
+    if (!selectedPaths.includes(node.path)) {
+      setSelectedPaths(paths)
+      selectionAnchor.current = node.path
+    }
+    setContextMenu({ node, paths, left, top })
+  }
+  function selectedFiles(paths: string[]): NoteTreeNode[] {
+    return paths.flatMap((path) => {
+      const node = findNode(nodes, path)
+      return node?.kind === 'file' ? [node] : []
+    })
+  }
   function moveDropped(targetDirectory: string): void {
     const node = findNode(nodes, draggedPath.current)
     setDropTarget(null)
@@ -115,8 +208,10 @@ export function QuickNoteTree({ nodes, activeId, selectedFolder, onOpenNote, onS
   }
   return (
     <div
+      ref={treeRef}
       className={dropTarget === '' ? 'quick-note-tree quick-note-tree--drop' : 'quick-note-tree'}
       role="tree"
+      aria-multiselectable="true"
       onDragOver={(event) => {
         if (!draggedPath.current || !canMoveToDirectory(draggedPath.current, '')) return
         event.preventDefault()
@@ -135,6 +230,7 @@ export function QuickNoteTree({ nodes, activeId, selectedFolder, onOpenNote, onS
           activeId={activeId}
           selectedFolder={selectedFolder}
           expanded={expanded}
+          selectedPaths={selectedPaths}
           dropTarget={dropTarget}
           onToggle={(path) => setExpanded((current) => {
             const next = new Set(current)
@@ -149,9 +245,11 @@ export function QuickNoteTree({ nodes, activeId, selectedFolder, onOpenNote, onS
           onDragEnd={() => { draggedPath.current = ''; setDropTarget(null) }}
           onDragHover={setDropTarget}
           onDropNode={moveDropped}
-          onContextMenu={(node, left, top) => setContextMenu({ node, left, top })}
+          onChoose={chooseNode}
+          onContextMenu={openContextMenu}
         />
       ))}
+      {selectedPaths.length > 1 && selectedLabel && <div className="quick-note-tree__selection">{selectedLabel(selectedPaths.length)}</div>}
       {contextMenu && createPortal(
         <div
           ref={menuRef}
@@ -161,18 +259,19 @@ export function QuickNoteTree({ nodes, activeId, selectedFolder, onOpenNote, onS
           onPointerDown={(event) => event.stopPropagation()}
         >
           {(['rename', 'move'] as const).map((action) => (
-            <button key={action} type="button" role="menuitem" onClick={() => { onAction(contextMenu.node, action); setContextMenu(null) }}>{labels[action]}</button>
+            <button key={action} type="button" role="menuitem" disabled={contextMenu.paths.length > 1} onClick={() => { onAction(contextMenu.node, action); setContextMenu(null) }}>{labels[action]}</button>
           ))}
           {contextMenu.node.kind === 'file' && (
             <>
-              {(['duplicate', 'export', 'info'] as const).map((action) => (
-                <button key={action} type="button" role="menuitem" onClick={() => { onAction(contextMenu.node, action); setContextMenu(null) }}>{labels[action]}</button>
+              {(['duplicate', 'export'] as const).map((action) => (
+                <button key={action} type="button" role="menuitem" disabled={!selectedFiles(contextMenu.paths).length} onClick={() => { const files = selectedFiles(contextMenu.paths); onAction(contextMenu.node, action, files); setContextMenu(null) }}>{labels[action]}</button>
               ))}
+              <button type="button" role="menuitem" disabled={contextMenu.paths.length > 1} onClick={() => { onAction(contextMenu.node, 'info'); setContextMenu(null) }}>{labels.info}</button>
               <div className="quick-note-tree-menu__separator" role="separator" />
             </>
           )}
           {(['delete', 'reveal'] as const).map((action) => (
-            <button key={action} type="button" role="menuitem" onClick={() => { onAction(contextMenu.node, action); setContextMenu(null) }}>{labels[action]}</button>
+            <button key={action} type="button" role="menuitem" disabled={contextMenu.paths.length > 1} onClick={() => { onAction(contextMenu.node, action); setContextMenu(null) }}>{labels[action]}</button>
           ))}
           <div className="quick-note-tree-menu__separator" role="separator" />
           <button type="button" role="menuitem" onClick={() => { onGit(); setContextMenu(null) }}>{gitLabel}</button>
@@ -181,6 +280,10 @@ export function QuickNoteTree({ nodes, activeId, selectedFolder, onOpenNote, onS
       )}
     </div>
   )
+}
+
+function visibleNotePaths(nodes: NoteTreeNode[], expanded: ReadonlySet<string>): string[] {
+  return nodes.flatMap((node) => [node.path, ...(node.kind === 'directory' && expanded.has(node.path) ? visibleNotePaths(node.children, expanded) : [])])
 }
 
 function directoryPaths(nodes: NoteTreeNode[]): string[] {
@@ -196,12 +299,13 @@ function findNode(nodes: NoteTreeNode[], path: string): NoteTreeNode | undefined
   return undefined
 }
 
-function TreeNode({ node, depth, activeId, selectedFolder, expanded, dropTarget, onToggle, onOpenNote, onSelectFolder, onDragPath, canDrop, onDragEnd, onDragHover, onDropNode, onContextMenu }: {
+function TreeNode({ node, depth, activeId, selectedFolder, expanded, selectedPaths, dropTarget, onToggle, onOpenNote, onSelectFolder, onDragPath, canDrop, onDragEnd, onDragHover, onDropNode, onChoose, onContextMenu }: {
   node: NoteTreeNode
   depth: number
   activeId: string
   selectedFolder: string
   expanded: ReadonlySet<string>
+  selectedPaths: string[]
   dropTarget: string | null
   onToggle(path: string): void
   onOpenNote(note: QuickNote): void
@@ -211,18 +315,21 @@ function TreeNode({ node, depth, activeId, selectedFolder, expanded, dropTarget,
   onDragEnd(): void
   onDragHover(path: string | null): void
   onDropNode(targetDirectory: string): void
+  onChoose(node: NoteTreeNode, gesture: SelectionGesture): boolean
   onContextMenu(node: NoteTreeNode, left: number, top: number): void
 }) {
   const open = node.kind === 'directory' && expanded.has(node.path)
-  const selected = node.kind === 'file' ? node.note?.id === activeId : selectedFolder === node.path
+  const active = node.kind === 'file' ? node.note?.id === activeId : selectedFolder === node.path
+  const selected = selectedPaths.includes(node.path)
   const dropping = node.kind === 'directory' && dropTarget === node.path
   return (
-    <div role="treeitem" aria-expanded={node.kind === 'directory' ? open : undefined} aria-selected={selected}>
+    <div role="treeitem" aria-expanded={node.kind === 'directory' ? open : undefined} aria-selected={selected || active}>
       <button
-        className={`quick-note-tree__row${selected ? ' quick-note-tree__row--active' : ''}${dropping ? ' quick-note-tree__row--drop' : ''}`}
+        data-path={node.path}
+        className={`quick-note-tree__row${active ? ' quick-note-tree__row--active' : ''}${selected ? ' quick-note-tree__row--selected' : ''}${dropping ? ' quick-note-tree__row--drop' : ''}`}
         style={{ paddingInlineStart: `${8 + depth * 16}px`, color: node.kind === 'file' ? noteColor(node.note?.color) : undefined }}
         type="button"
-        draggable
+        draggable={selectedPaths.length <= 1}
         onDragStart={(event) => {
           event.dataTransfer.effectAllowed = 'move'
           event.dataTransfer.setData(quickNotePathType, node.path)
@@ -252,7 +359,8 @@ function TreeNode({ node, depth, activeId, selectedFolder, expanded, dropTarget,
             Math.max(8, Math.min(event.clientY, window.innerHeight - menuHeight))
           )
         }}
-        onClick={() => {
+        onClick={(event) => {
+          if (!onChoose(node, { ctrlKey: event.ctrlKey, metaKey: event.metaKey, shiftKey: event.shiftKey })) return
           if (node.kind === 'directory') {
             onSelectFolder(node.path)
             onToggle(node.path)
@@ -273,8 +381,10 @@ function TreeNode({ node, depth, activeId, selectedFolder, expanded, dropTarget,
           activeId={activeId}
           selectedFolder={selectedFolder}
           expanded={expanded}
+          selectedPaths={selectedPaths}
           dropTarget={dropTarget}
           onToggle={onToggle}
+          onChoose={onChoose}
           onOpenNote={onOpenNote}
           onSelectFolder={onSelectFolder}
           onDragPath={onDragPath}

@@ -4,7 +4,7 @@ use std::{
     process::Stdio,
     sync::{
         Arc, Mutex,
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
     },
     time::Instant,
 };
@@ -121,6 +121,16 @@ impl NetworkTaskManager {
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct PingRangeResult {
+    prefix: String,
+    scanned_hosts: usize,
+    reachable_hosts: Vec<String>,
+    duration_ms: u128,
+    cancelled: bool,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PingResult {
     host: String,
     success: bool,
@@ -168,68 +178,57 @@ pub async fn scan_tcp_ports(
     manager: tauri::State<'_, NetworkTaskManager>,
     request_id: String,
     host: String,
-    start_port: u16,
-    end_port: u16,
+    ports: Vec<u16>,
     timeout_ms: u64,
+    budget_ms: u64,
 ) -> AppResult<PortScanResult> {
     validate_host(&host)?;
-    if start_port == 0
-        || end_port < start_port
-        || u32::from(end_port) - u32::from(start_port) > 1_023
-    {
-        return Err("port range must contain 1 to 1024 ports".into());
-    }
+    let ports = normalize_ports(ports)?;
     if !(100..=5_000).contains(&timeout_ms) {
         return Err("port timeout must be between 100 and 5000 milliseconds".into());
     }
+    if !(1_000..=120_000).contains(&budget_ms) {
+        return Err("network command timeout must be between 1 and 120 seconds".into());
+    }
     let cancelled = manager.begin(&request_id)?;
-    let resolved = tokio::net::lookup_host((host.as_str(), start_port))
-        .await
-        .map_err(|error| {
-            manager.finish(&request_id);
-            format!("host lookup failed: {error}")
-        })?
-        .next()
-        .ok_or_else(|| {
-            manager.finish(&request_id);
-            "host lookup returned no address".to_string()
-        })?
-        .ip();
-    let started = Instant::now();
-    let task_flag = cancelled.clone();
-    let mut open_ports = stream::iter(start_port..=end_port)
-        .map(move |port| {
-            let task_flag = task_flag.clone();
-            async move {
-                if task_flag.load(Ordering::Relaxed) {
-                    return None;
-                }
-                let address = SocketAddr::new(resolved, port);
-                timeout(
-                    Duration::from_millis(timeout_ms),
-                    TcpStream::connect(address),
-                )
-                .await
-                .ok()
-                .and_then(Result::ok)
-                .map(|_| port)
+    let resolved = match tokio::net::lookup_host((host.as_str(), ports[0])).await {
+        Ok(mut addresses) => match addresses.next() {
+            Some(address) => address.ip(),
+            None => {
+                manager.finish(&request_id);
+                return Err("host lookup returned no address".into());
             }
-        })
-        .buffer_unordered(64)
-        .filter_map(|port| async move { port })
-        .collect::<Vec<_>>()
-        .await;
-    open_ports.sort_unstable();
-    let was_cancelled = cancelled.load(Ordering::Relaxed);
+        },
+        Err(error) => {
+            manager.finish(&request_id);
+            return Err(format!("host lookup failed: {error}").into());
+        }
+    };
+    let started = Instant::now();
+    let open_ports = match collect_open_ports(
+        resolved,
+        &ports,
+        Duration::from_millis(timeout_ms),
+        started + Duration::from_millis(budget_ms),
+        &cancelled,
+    )
+    .await
+    {
+        Ok(open_ports) => open_ports,
+        Err(error) => {
+            manager.finish(&request_id);
+            return Err(error.into());
+        }
+    };
     manager.finish(&request_id);
     Ok(PortScanResult {
         host,
         resolved_address: resolved.to_string(),
-        start_port,
-        end_port,
+        start_port: ports[0],
+        end_port: *ports.last().unwrap_or(&ports[0]),
         open_ports,
         duration_ms: started.elapsed().as_millis(),
-        cancelled: was_cancelled,
+        cancelled: false,
     })
 }
 
@@ -471,6 +470,45 @@ pub async fn ping_network_host(host: String) -> AppResult<PingResult> {
     })
 }
 
+#[tauri::command]
+pub async fn ping_ipv4_prefix(
+    manager: tauri::State<'_, NetworkTaskManager>,
+    request_id: String,
+    prefix: String,
+    timeout_ms: u64,
+) -> AppResult<PingRangeResult> {
+    let addresses = ipv4_prefix_hosts(&prefix)?;
+    if !(1_000..=120_000).contains(&timeout_ms) {
+        return Err("network command timeout must be between 1 and 120 seconds".into());
+    }
+    let cancelled = manager.begin(&request_id)?;
+    let started = Instant::now();
+    let probe_timeout = timeout_ms.min(800);
+    let reachable = match ping_addresses(
+        &addresses,
+        probe_timeout,
+        started + Duration::from_millis(timeout_ms),
+        &cancelled,
+    )
+    .await
+    {
+        Ok(reachable) => reachable,
+        Err(error) => {
+            manager.finish(&request_id);
+            return Err(error.into());
+        }
+    };
+    let scanned_hosts = addresses.len();
+    manager.finish(&request_id);
+    Ok(PingRangeResult {
+        prefix: prefix.trim().to_string(),
+        scanned_hosts,
+        reachable_hosts: reachable,
+        duration_ms: started.elapsed().as_millis(),
+        cancelled: false,
+    })
+}
+
 fn validate_host(value: &str) -> Result<(), String> {
     let host = value.trim();
     if host.is_empty()
@@ -600,6 +638,172 @@ fn normalize_connection_state(state: &str) -> String {
     }
 }
 
+fn normalize_ports(mut ports: Vec<u16>) -> Result<Vec<u16>, String> {
+    ports.sort_unstable();
+    ports.dedup();
+    if ports.is_empty() || ports.len() > 4_096 || ports.iter().any(|port| *port == 0) {
+        return Err("INVALID_TARGET".into());
+    }
+    Ok(ports)
+}
+
+fn ipv4_prefix_hosts(value: &str) -> Result<Vec<Ipv4Addr>, String> {
+    let value = value.trim();
+    let core = value.strip_suffix('.').unwrap_or(value);
+    if core.is_empty() || core.ends_with('.') || core.contains("..") {
+        return Err("INVALID_TARGET".into());
+    }
+    let mut parts = core.split('.');
+    let Some(first) = parts.next() else { return Err("INVALID_TARGET".into()); };
+    let Some(second) = parts.next() else { return Err("INVALID_TARGET".into()); };
+    let Some(third) = parts.next() else { return Err("INVALID_TARGET".into()); };
+    if parts.next().is_some() {
+        return Err("INVALID_TARGET".into());
+    }
+    let octets = [first, second, third]
+        .map(parse_octet)
+        .into_iter()
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok((1..=254).map(|host| Ipv4Addr::new(octets[0], octets[1], octets[2], host)).collect())
+}
+
+fn parse_octet(value: &str) -> Result<u8, String> {
+    if value.is_empty() || value.len() > 3 || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err("INVALID_TARGET".into());
+    }
+    value.parse::<u8>().map_err(|_| "INVALID_TARGET".to_string())
+}
+
+async fn collect_open_ports(
+    resolved: std::net::IpAddr,
+    ports: &[u16],
+    probe_timeout: Duration,
+    deadline: Instant,
+    cancelled: &AtomicBool,
+) -> Result<Vec<u16>, String> {
+    let next = Arc::new(AtomicUsize::new(0));
+    let open_ports = Arc::new(Mutex::new(Vec::new()));
+    let workers = std::cmp::min(96, ports.len());
+    let results = futures_util::future::join_all((0..workers).map(|_| {
+        let next = next.clone();
+        let open_ports = open_ports.clone();
+        async move {
+            loop {
+                if cancelled.load(Ordering::Relaxed) {
+                    return Err("ABORTED".to_string());
+                }
+                if Instant::now() >= deadline {
+                    return Err("TIMEOUT".to_string());
+                }
+                let index = next.fetch_add(1, Ordering::Relaxed);
+                let Some(port) = ports.get(index).copied() else { return Ok(()); };
+                if tcp_open(SocketAddr::new(resolved, port), probe_timeout, cancelled).await {
+                    open_ports.lock().map_err(|_| "network task manager state poisoned".to_string())?.push(port);
+                }
+            }
+        }
+    })).await;
+    if let Some(error) = results.into_iter().find_map(Result::err) {
+        return Err(error);
+    }
+    let mut open_ports = open_ports.lock().map_err(|_| "network task manager state poisoned".to_string())?.clone();
+    open_ports.sort_unstable();
+    Ok(open_ports)
+}
+
+async fn tcp_open(address: SocketAddr, probe_timeout: Duration, cancelled: &AtomicBool) -> bool {
+    let connect = timeout(probe_timeout, TcpStream::connect(address));
+    tokio::pin!(connect);
+    loop {
+        tokio::select! {
+            result = &mut connect => return result.ok().and_then(Result::ok).is_some(),
+            _ = tokio::time::sleep(Duration::from_millis(50)) => {
+                if cancelled.load(Ordering::Relaxed) {
+                    return false;
+                }
+            }
+        }
+    }
+}
+
+async fn ping_addresses(
+    addresses: &[Ipv4Addr],
+    probe_timeout: u64,
+    deadline: Instant,
+    cancelled: &AtomicBool,
+) -> Result<Vec<String>, String> {
+    let next = Arc::new(AtomicUsize::new(0));
+    let reachable = Arc::new(Mutex::new(Vec::new()));
+    let workers = std::cmp::min(32, addresses.len());
+    let results = futures_util::future::join_all((0..workers).map(|_| {
+        let next = next.clone();
+        let reachable = reachable.clone();
+        async move {
+            loop {
+                if cancelled.load(Ordering::Relaxed) {
+                    return Err("ABORTED".to_string());
+                }
+                if Instant::now() >= deadline {
+                    return Err("TIMEOUT".to_string());
+                }
+                let index = next.fetch_add(1, Ordering::Relaxed);
+                let Some(address) = addresses.get(index).copied() else { return Ok(()); };
+                if ping_once(&address.to_string(), probe_timeout, cancelled).await? {
+                    reachable.lock().map_err(|_| "network task manager state poisoned".to_string())?.push(address);
+                }
+            }
+        }
+    })).await;
+    if let Some(error) = results.into_iter().find_map(Result::err) {
+        return Err(error);
+    }
+    let mut reachable = reachable.lock().map_err(|_| "network task manager state poisoned".to_string())?.clone();
+    reachable.sort_by_key(|address| u32::from(*address));
+    Ok(reachable.into_iter().map(|address| address.to_string()).collect())
+}
+
+async fn ping_once(address: &str, timeout_ms: u64, cancelled: &AtomicBool) -> Result<bool, String> {
+    if cancelled.load(Ordering::Relaxed) {
+        return Err("ABORTED".into());
+    }
+    let (program, args) = ping_once_command(address, timeout_ms);
+    let mut child = Command::new(program)
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .kill_on_drop(true)
+        .spawn()
+        .map_err(|error| format!("failed to start ping: {error}"))?;
+    let started = Instant::now();
+    loop {
+        if cancelled.load(Ordering::Relaxed) {
+            let _ = child.kill().await;
+            return Err("ABORTED".into());
+        }
+        if started.elapsed() > Duration::from_millis(timeout_ms + 1_000) {
+            let _ = child.kill().await;
+            return Ok(false);
+        }
+        match timeout(Duration::from_millis(50), child.wait()).await {
+            Ok(Ok(status)) => return Ok(status.success()),
+            Ok(Err(error)) => return Err(format!("ping failed: {error}")),
+            Err(_) => continue,
+        }
+    }
+}
+
+fn ping_once_command(host: &str, timeout_ms: u64) -> (&'static str, Vec<String>) {
+    if cfg!(windows) {
+        ("ping.exe", vec!["-n".into(), "1".into(), "-w".into(), timeout_ms.to_string(), host.into()])
+    } else if cfg!(target_os = "macos") {
+        ("/sbin/ping", vec!["-c".into(), "1".into(), "-W".into(), timeout_ms.to_string(), host.into()])
+    } else {
+        let seconds = timeout_ms.div_ceil(1_000).max(1);
+        ("ping", vec!["-c".into(), "1".into(), "-W".into(), seconds.to_string(), host.into()])
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -620,6 +824,16 @@ mod tests {
         );
         assert!(parse_ipv4_cidr("192.168.1.1/33").is_err());
         assert!(parse_ipv4_cidr("not-an-ip/24").is_err());
+        let hosts = ipv4_prefix_hosts("192.168.10").expect("prefix");
+        assert_eq!(hosts.len(), 254);
+        assert_eq!(hosts[0], Ipv4Addr::new(192, 168, 10, 1));
+        assert_eq!(*hosts.last().expect("last host"), Ipv4Addr::new(192, 168, 10, 254));
+        assert_eq!(ipv4_prefix_hosts("192.168.10.").expect("trailing dot").len(), 254);
+        assert!(ipv4_prefix_hosts("192.168.10.1").is_err());
+        assert!(ipv4_prefix_hosts("192.168.10..").is_err());
+        assert_eq!(normalize_ports(vec![3306, 80, 80, 22]).expect("ports"), vec![22, 80, 3306]);
+        assert!(normalize_ports(vec![0]).is_err());
+        assert!(normalize_ports((1..=4_097).map(|port| u16::try_from(port).expect("port")).collect()).is_err());
 
         let manager = NetworkTaskManager::default();
         let flag = manager.begin("scan-1").expect("begin task");
@@ -628,6 +842,12 @@ mod tests {
         assert!(flag.load(Ordering::Relaxed));
         manager.finish("scan-1");
         assert!(!manager.cancel("scan-1").expect("finished task"));
+    }
+
+    #[tokio::test]
+    async fn pings_the_loopback_address_once() {
+        let cancelled = AtomicBool::new(false);
+        assert!(ping_once("127.0.0.1", 800, &cancelled).await.expect("ping loopback"));
     }
 
     #[test]

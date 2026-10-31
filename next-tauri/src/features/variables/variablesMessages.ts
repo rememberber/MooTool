@@ -13,6 +13,11 @@ export const variablesMessages = defineMessages({
     'prompt.name': '变量名称', 'prompt.editName': '修改变量名称', 'prompt.value': '变量值', 'error.name': '变量名必须以字母或下划线开头，且只能包含字母、数字和下划线', 'confirm.delete': '删除运行时变量 {name}？',
     'notice.added': '已添加 {name}', 'notice.updated': '已更新 {name}', 'notice.deleted': '已删除 {name}', 'notice.exported': '已导出到 {path}', 'footer.runtimeCapabilities': '应用级运行时变量 · 注入代码运行进程 · 不修改系统环境',
     'footer.capabilities': '只读 · 默认脱敏 · 不写入系统环境', 'report.error': '环境变量状态上报失败：{error}',
+    'tab.environment': '系统环境变量', 'tab.runtime': 'Electron 运行属性', 'scope.label': '范围', 'scope.user': '用户变量', 'scope.system': '系统变量', 'scope.current': '当前进程',
+    'scopeHint.user': '持久写入当前用户；新终端和应用启动后生效', 'scopeHint.system': '写入全局环境，可能需要管理员授权', 'scopeHint.process': '完整显示当前环境；编辑后可保存为用户变量或系统变量',
+    'field.key': '键', 'field.value': '值', 'count.line': '显示 {count} / {total} 项', 'targetScope': '保存到', 'editor.addTitle': '新增环境变量', 'editor.editTitle': '编辑环境变量',
+    'applyHint': '保存后会直接修改系统配置。已运行的程序通常需要重启才能读取新值。', 'notice.saved': '环境变量已更新', 'notice.removed': '环境变量已删除', 'confirm.remove': '确定删除环境变量“{key}”吗？', 'empty.none': '暂无变量，点击“新增”创建',
+    'action.cancel': '取消', 'action.save': '保存',
     'host.loading': '正在加载环境变量…'
   },
   'en-US': {
@@ -27,6 +32,11 @@ export const variablesMessages = defineMessages({
     'prompt.name': 'Variable name', 'prompt.editName': 'Edit variable name', 'prompt.value': 'Variable value', 'error.name': 'Names must start with a letter or underscore and contain only letters, digits, and underscores', 'confirm.delete': 'Delete runtime variable {name}?',
     'notice.added': '{name} added', 'notice.updated': '{name} updated', 'notice.deleted': '{name} deleted', 'notice.exported': 'Exported to {path}', 'footer.runtimeCapabilities': 'App-scoped runtime variables · Injected into code processes · Never changes the system environment',
     'footer.capabilities': 'Read-only · Redacted by default · Never writes the system environment', 'report.error': 'Environment status reporting failed: {error}',
+    'tab.environment': 'System Environment', 'tab.runtime': 'Electron Runtime Properties', 'scope.label': 'Scope', 'scope.user': 'User', 'scope.system': 'System', 'scope.current': 'Current process',
+    'scopeHint.user': 'Saved for this user; applies to newly started terminals and applications', 'scopeHint.system': 'Saved globally and may require administrator approval', 'scopeHint.process': 'Shows the complete current environment; edits can be saved for the user or system',
+    'field.key': 'Key', 'field.value': 'Value', 'count.line': 'Showing {count} of {total}', 'targetScope': 'Save to', 'editor.addTitle': 'Add Environment Variable', 'editor.editTitle': 'Edit Environment Variable',
+    'applyHint': 'Saving updates the operating-system configuration directly. Running applications usually need to restart to read the new value.', 'notice.saved': 'Environment variable updated', 'notice.removed': 'Environment variable deleted', 'confirm.remove': 'Delete environment variable “{key}”?', 'empty.none': 'No variables yet. Select Add to create one.',
+    'action.cancel': 'Cancel', 'action.save': 'Save',
     'host.loading': 'Loading Environment Variables…'
   },
   'ja-JP': {
@@ -41,6 +51,11 @@ export const variablesMessages = defineMessages({
     'prompt.name': '変数名', 'prompt.editName': '変数名を変更', 'prompt.value': '変数値', 'error.name': '変数名は英字またはアンダースコアで始め、英数字とアンダースコアのみ使用できます', 'confirm.delete': 'ランタイム変数 {name} を削除しますか？',
     'notice.added': '{name} を追加しました', 'notice.updated': '{name} を更新しました', 'notice.deleted': '{name} を削除しました', 'notice.exported': '{path} にエクスポートしました', 'footer.runtimeCapabilities': 'アプリ専用ランタイム変数 · コード実行プロセスへ注入 · システム環境は変更しません',
     'footer.capabilities': '読み取り専用 · 既定で秘匿 · システム環境へ書き込みません', 'report.error': '環境変数状態の報告に失敗しました：{error}',
+    'tab.environment': 'システム環境変数', 'tab.runtime': 'Electron ランタイムプロパティ', 'scope.label': '範囲', 'scope.user': 'ユーザー', 'scope.system': 'システム', 'scope.current': '現在のプロセス',
+    'scopeHint.user': 'このユーザーに保存され、新しく起動するターミナルとアプリに反映されます', 'scopeHint.system': 'システム全体に保存され、管理者の承認が必要な場合があります', 'scopeHint.process': '現在の環境をすべて表示し、編集内容をユーザーまたはシステムに保存できます',
+    'field.key': 'キー', 'field.value': '値', 'count.line': '{count} / {total} 件を表示', 'targetScope': '保存先', 'editor.addTitle': '環境変数を追加', 'editor.editTitle': '環境変数を編集',
+    'applyHint': '保存すると OS の設定が直接更新されます。実行中のアプリは通常、再起動後に新しい値を読み込みます。', 'notice.saved': '環境変数を更新しました', 'notice.removed': '環境変数を削除しました', 'confirm.remove': '環境変数「{key}」を削除しますか？', 'empty.none': '変数がありません。「追加」から作成できます。',
+    'action.cancel': 'キャンセル', 'action.save': '保存',
     'host.loading': '環境変数を読み込み中…'
   }
 })

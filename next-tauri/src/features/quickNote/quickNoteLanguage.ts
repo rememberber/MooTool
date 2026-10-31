@@ -12,16 +12,16 @@ import type { QuickNote } from '../../platform/contracts/localData'
 
 export function quickNoteLanguage(syntax: QuickNote['syntax']): Extension[] {
   switch (syntax) {
-    case 'json': return [json()]
-    case 'markdown': return [markdown()]
-    case 'java': return [java()]
-    case 'javascript': return [javascript()]
-    case 'typescript': return [javascript({ typescript: true })]
-    case 'python': return [python()]
-    case 'html': return [html()]
-    case 'xml': return [xml()]
-    case 'yaml': return [yaml()]
-    case 'sql': return [sql()]
+    case 'application/json': return [json()]
+    case 'text/markdown': return [markdown()]
+    case 'text/java': return [java()]
+    case 'text/javascript': return [javascript()]
+    case 'text/typescript': return [javascript({ typescript: true })]
+    case 'text/python': return [python()]
+    case 'text/html': return [html()]
+    case 'text/xml': return [xml()]
+    case 'text/yaml': return [yaml()]
+    case 'text/sql': return [sql()]
     default: return []
   }
 }

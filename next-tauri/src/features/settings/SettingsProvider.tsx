@@ -8,14 +8,15 @@ import {
   useState,
   type PropsWithChildren
 } from 'react'
-import { quickNoteGitApi } from '../../platform/api/quickNoteGitApi'
 import { settingsApi } from '../../platform/api/settingsApi'
 import {
   defaultAppSettings,
   type AppSettings
 } from '../../platform/contracts/settings'
 import { errorMessage } from '../../shared/errors'
-import { accentPresets, electronInterfaceFontFamily, resolveTheme } from './appearance'
+import { configureVaultCheckpoints } from './vaultCheckpoints'
+import { accentPresets, resolveTheme } from './appearance'
+import { cssFontFamily } from '../../shared/fonts/systemFonts'
 
 interface SettingsContextValue {
   settings: AppSettings
@@ -108,12 +109,9 @@ export function SettingsProvider({ children }: PropsWithChildren) {
   }, [])
 
   useEffect(() => {
-    if (!ready || !settings.vault.autoPullMinutes || !window.__TAURI_INTERNALS__) return
-    const timer = window.setInterval(() => {
-      void quickNoteGitApi.action({ action: 'pull' }).catch(() => undefined)
-    }, settings.vault.autoPullMinutes * 60_000)
-    return () => window.clearInterval(timer)
-  }, [ready, settings.vault.autoPullMinutes])
+    if (!ready) return
+    configureVaultCheckpoints(settings)
+  }, [ready, settings])
 
   const value = useMemo<SettingsContextValue>(() => ({
     settings,
@@ -143,23 +141,17 @@ function applyDocumentAppearance(settings: AppSettings): () => void {
     root.dataset.theme = resolved
     root.dataset.accent = settings.appearance.accentColor
     root.dataset.interfaceStyle = settings.appearance.interfaceStyle
-    root.dataset.density = settings.layout.density
     root.lang = settings.general.language
     root.style.colorScheme = resolved
     root.style.setProperty('--accent', accent.value)
     root.style.setProperty('--accent-strong', accent.strong)
     root.style.setProperty('--accent-contrast', accent.contrast)
     root.style.setProperty('--app-font-size', `${fontSize}px`)
-    root.style.setProperty('--interface-scale', '1')
-    root.style.setProperty('--editor-font-size', `${settings.editor.fontSize}px`)
     root.style.setProperty('--json-editor-font-size', `${settings.editor.jsonFontSize}px`)
     root.style.setProperty('--quick-note-editor-font-size', `${settings.editor.quickNoteFontSize}px`)
-    root.style.setProperty('--json-editor-font-family', settings.editor.jsonFontFamily === 'mono' ? 'var(--font-mono)' : 'inherit')
-    root.style.setProperty('--quick-note-editor-font-family', settings.editor.quickNoteFontFamily === 'mono' ? 'var(--font-mono)' : 'inherit')
-    root.style.setProperty('--editor-tab-size', String(settings.editor.tabSize))
-    root.style.setProperty('--interface-font-family', settings.appearance.fontFamily === 'mono'
-      ? 'var(--font-mono)'
-      : electronInterfaceFontFamily)
+    root.style.setProperty('--json-editor-font-family', cssFontFamily(settings.editor.jsonFontName))
+    root.style.setProperty('--quick-note-editor-font-family', cssFontFamily(settings.editor.quickNoteFontName))
+    root.style.setProperty('--app-font-family', settings.appearance.fontFamily)
     if (window.__TAURI_INTERNALS__) {
       void import('@tauri-apps/api/window')
         .then(({ getCurrentWindow }) => getCurrentWindow().setTheme(resolved))

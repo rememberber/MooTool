@@ -11,29 +11,29 @@ export function prefixSelectedLines(content: string, start: number, end: number,
 
 export async function formatNoteContent(content: string, syntax: QuickNote['syntax'], sqlDialect = 'Standard SQL'): Promise<string> {
   if (!content.trim()) return ''
-  if (syntax === 'json') return `${JSON.stringify(JSON.parse(content), null, 4)}\n`.trimEnd()
-  if (syntax === 'java') {
+  if (syntax === 'application/json') return `${JSON.stringify(JSON.parse(content), null, 4)}\n`.trimEnd()
+  if (syntax === 'text/java') {
     const { default: beautify } = await import('js-beautify')
     return beautify.js(content, { indent_size: 4, indent_char: ' ', brace_style: 'collapse' }).trimEnd()
   }
-  if (syntax === 'sql') return formatSql(content, sqlDialect)
-  if (syntax === 'plain' || syntax === 'python') {
+  if (syntax === 'text/sql') return formatSql(content, sqlDialect)
+  if (syntax === 'text/plain' || syntax === 'text/python') {
     return content.replaceAll('\t', '    ').split(/\r?\n/).map((line) => line.trimEnd()).join('\n').trimEnd()
   }
   const { format } = await import('prettier/standalone')
-  const parser = syntax === 'yaml' ? 'yaml' : syntax === 'html' ? 'html' : syntax === 'xml' ? 'xml' : syntax === 'javascript' ? 'babel' : syntax === 'typescript' ? 'typescript' : 'markdown'
-  const plugin = syntax === 'yaml'
+  const parser = syntax === 'text/yaml' ? 'yaml' : syntax === 'text/html' ? 'html' : syntax === 'text/xml' ? 'xml' : syntax === 'text/javascript' ? 'babel' : syntax === 'text/typescript' ? 'typescript' : 'markdown'
+  const plugin = syntax === 'text/yaml'
     ? (await import('prettier/plugins/yaml')).default
-    : syntax === 'html'
+    : syntax === 'text/html'
       ? (await import('prettier/plugins/html')).default
-      : syntax === 'xml'
+      : syntax === 'text/xml'
         ? (await import('@prettier/plugin-xml')).default
-        : syntax === 'javascript'
+        : syntax === 'text/javascript'
           ? (await import('prettier/plugins/babel')).default
-          : syntax === 'typescript'
+          : syntax === 'text/typescript'
             ? (await import('prettier/plugins/typescript')).default
             : (await import('prettier/plugins/markdown')).default
-  const estree = syntax === 'javascript' || syntax === 'typescript' ? (await import('prettier/plugins/estree')).default : null
+  const estree = syntax === 'text/javascript' || syntax === 'text/typescript' ? (await import('prettier/plugins/estree')).default : null
   return (await format(content, {
     parser,
     plugins: estree ? [plugin, estree] : [plugin],
@@ -41,7 +41,7 @@ export async function formatNoteContent(content: string, syntax: QuickNote['synt
     useTabs: false,
     printWidth: 80,
     endOfLine: 'lf',
-    ...(syntax === 'xml' ? { xmlWhitespaceSensitivity: 'preserve' as const } : {})
+    ...(syntax === 'text/xml' ? { xmlWhitespaceSensitivity: 'preserve' as const } : {})
   })).trimEnd()
 }
 

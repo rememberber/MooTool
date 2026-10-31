@@ -17,6 +17,8 @@ import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } fr
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import { fileDigestApi } from '../../platform/api/fileDigestApi'
 import { CodeEditor } from '../../shared/CodeEditor'
+import { ResizableColumns } from '../../shared/ResizableColumns'
+import { ResizableThreeColumns } from '../../shared/ResizableThreeColumns'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
@@ -454,7 +456,7 @@ export function CryptoSurface() {
       </section>
 
       {tab === 'asymmetric' && (
-        <section className="crypto-key-pair">
+        <ResizableColumns id="crypto-key-pair" className="crypto-key-pair" initialPrimary={1} defaultSizes={[1, 1]} minPrimary={260} minSecondary={260}>
           <label>
             {t('field.public')}
             <textarea value={publicKey} spellCheck={false} onChange={(event) => setPublicKey(event.target.value)} />
@@ -463,7 +465,7 @@ export function CryptoSurface() {
             {t('field.private')}
             <textarea value={privateKey} spellCheck={false} onChange={(event) => setPrivateKey(event.target.value)} />
           </label>
-        </section>
+        </ResizableColumns>
       )}
 
       {tab === 'digest' ? (
@@ -492,10 +494,36 @@ export function CryptoSurface() {
             </section>
           ))}
         </div>
+      ) : tab === 'asymmetric' ? (
+        <>
+          <ResizableColumns id="crypto-asymmetric-data" className="crypto-editor-grid" initialPrimary={1} defaultSizes={[1, 1]} minPrimary={260} minSecondary={260}>
+            <section className="utility-editor-card">
+              <header><span>{t('pane.aesInput')}</span></header>
+              <CodeEditor ariaLabel={t('aria.input')} value={source} onChange={setSource} className="utility-code-editor" lineWrapping />
+            </section>
+            <section className="utility-editor-card">
+              <header>
+                <span>{t('pane.output')}</span>
+                <button className="utility-copy" type="button" disabled={!output} onClick={() => void copyOutput()}>
+                  {copied ? <Clipboard /> : <Copy />}{copied ? t('action.copied') : t('action.copy')}
+                </button>
+              </header>
+              <CodeEditor ariaLabel={t('aria.output')} value={output} onChange={setOutput} className="utility-code-editor" lineWrapping />
+            </section>
+          </ResizableColumns>
+          <section className="crypto-actions crypto-actions--row">
+            <button type="button" onClick={() => runAsymmetric('publicEncrypt')}><LockKeyhole />{t('action.publicEncrypt')}</button>
+            <button type="button" onClick={() => runAsymmetric('privateDecrypt')}><UnlockKeyhole />{t('action.privateDecrypt')}</button>
+            <button type="button" disabled={asymAlgorithm !== 'RSA'} onClick={() => runAsymmetric('privateEncrypt')}><LockKeyhole />{t('action.privateEncrypt')}</button>
+            <button type="button" disabled={asymAlgorithm !== 'RSA'} onClick={() => runAsymmetric('publicDecrypt')}><UnlockKeyhole />{t('action.publicDecrypt')}</button>
+            <button type="button" onClick={() => runAsymmetric('sign')}><KeyRound />{t('action.sign')}</button>
+            <button type="button" disabled={!output} onClick={() => runAsymmetric('verify')}><ShieldCheck />{t('action.verify')}</button>
+          </section>
+        </>
       ) : (
-      <section className="utility-editor-grid crypto-editor-grid">
+      <ResizableThreeColumns id={tab === 'base' ? 'crypto-base' : 'crypto-symmetric'} className="crypto-editor-grid" initialLeft={1} initialRight={1} defaultSizes={[1, 0.28, 1]} minLeft={240} minCenter={110} minRight={240}>
         <section className="utility-editor-card">
-          <header><span>{t(tab === 'symmetric' || tab === 'asymmetric' ? 'pane.aesInput' : 'pane.source')}</span></header>
+          <header><span>{t(tab === 'symmetric' ? 'pane.aesInput' : 'pane.source')}</span></header>
           <CodeEditor
             ariaLabel={t('aria.input')}
             value={source}
@@ -510,16 +538,6 @@ export function CryptoSurface() {
             <>
               <button type="button" onClick={() => runSymmetric('encrypt')}><LockKeyhole />{t('action.encrypt')}</button>
               <button type="button" onClick={() => runSymmetric('decrypt')}><UnlockKeyhole />{t('action.decrypt')}</button>
-            </>
-          )}
-          {tab === 'asymmetric' && (
-            <>
-              <button type="button" onClick={() => runAsymmetric('publicEncrypt')}><LockKeyhole />{t('action.publicEncrypt')}</button>
-              <button type="button" onClick={() => runAsymmetric('privateDecrypt')}><UnlockKeyhole />{t('action.privateDecrypt')}</button>
-              <button type="button" disabled={asymAlgorithm !== 'RSA'} onClick={() => runAsymmetric('privateEncrypt')}><LockKeyhole />{t('action.privateEncrypt')}</button>
-              <button type="button" disabled={asymAlgorithm !== 'RSA'} onClick={() => runAsymmetric('publicDecrypt')}><UnlockKeyhole />{t('action.publicDecrypt')}</button>
-              <button type="button" onClick={() => runAsymmetric('sign')}><KeyRound />{t('action.sign')}</button>
-              <button type="button" disabled={!output} onClick={() => runAsymmetric('verify')}><ShieldCheck />{t('action.verify')}</button>
             </>
           )}
           {tab === 'base' && (
@@ -542,7 +560,7 @@ export function CryptoSurface() {
             lineWrapping
           />
         </section>
-      </section>
+      </ResizableThreeColumns>
       )}
 
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}>

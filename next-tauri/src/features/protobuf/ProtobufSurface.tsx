@@ -1,5 +1,7 @@
 import {
+  ArrowLeft,
   ArrowLeftRight,
+  ArrowRight,
   Binary,
   Braces,
   CheckCircle2,
@@ -7,7 +9,6 @@ import {
   Copy,
   FileCode2,
   Play,
-  ScanSearch,
   TriangleAlert
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -15,6 +16,8 @@ import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } fr
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import { json } from '@codemirror/lang-json'
 import { CodeEditor } from '../../shared/CodeEditor'
+import { ResizableColumns } from '../../shared/ResizableColumns'
+import { ResizableThreeColumns } from '../../shared/ResizableThreeColumns'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
@@ -33,6 +36,7 @@ import { protobufMessages } from './protobufMessages'
 
 type ProtobufMessageKey = LocalizedMessageKey<typeof protobufMessages>
 type ProtobufNotice = { key: ProtobufMessageKey; values?: MessageValues } | { raw: string }
+type ProtobufTab = 'json' | 'wire' | 'convert'
 
 const defaultSchema = `syntax = "proto3";
 package mootool.demo;
@@ -64,8 +68,12 @@ export function ProtobufSurface() {
   const [jsonInput, setJsonInput] = useState(defaultJson)
   const [binaryInput, setBinaryInput] = useState('')
   const [format, setFormat] = useState<ProtobufBinaryFormat>('base64')
-  const [wire, setWire] = useState('')
-  const [wireInspected, setWireInspected] = useState(false)
+  const [tab, setTab] = useState<ProtobufTab>('json')
+  const [wireInput, setWireInput] = useState('')
+  const [wireFormat, setWireFormat] = useState<ProtobufBinaryFormat>('hex')
+  const [wireOutput, setWireOutput] = useState('')
+  const [hex, setHex] = useState('')
+  const [base64, setBase64] = useState('')
   const [notice, setNotice] = useState<ProtobufNotice>({ key: 'notice.ready' })
   const [failed, setFailed] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -92,6 +100,26 @@ export function ProtobufSurface() {
 
   useOperationRestore('protobuf', (entry) => {
     const metadata = parseOperationMetadata(entry)
+    if (metadata.direction === 'wire') {
+      setTab('wire')
+      setWireInput(entry.inputText)
+      setWireOutput(entry.outputText)
+      if (metadata.format === 'base64' || metadata.format === 'hex') setWireFormat(metadata.format)
+      setFailed(false)
+      return
+    }
+    if (metadata.direction === 'hexToBase64' || metadata.direction === 'base64ToHex') {
+      setTab('convert')
+      if (metadata.direction === 'hexToBase64') {
+        setHex(entry.inputText)
+        setBase64(entry.outputText)
+      } else {
+        setBase64(entry.inputText)
+        setHex(entry.outputText)
+      }
+      setFailed(false)
+      return
+    }
     try {
       const input = JSON.parse(entry.inputText) as { schema?: string; jsonInput?: string; binaryInput?: string }
       setSchema(input.schema ?? defaultSchema)
@@ -103,8 +131,7 @@ export function ProtobufSurface() {
     }
     if (typeof metadata.messageName === 'string') setMessageName(metadata.messageName)
     if (metadata.format === 'base64' || metadata.format === 'hex') setFormat(metadata.format)
-    setWire('')
-    setWireInspected(false)
+    setTab('json')
     setFailed(false)
   })
 
@@ -112,8 +139,6 @@ export function ProtobufSurface() {
     try {
       const output = encodeProtobuf(schema, messageName, jsonInput, format)
       setBinaryInput(output)
-      setWire(inspectWire(output, format))
-      setWireInspected(true)
       succeed('notice.encoded')
       recordOperation(t('action.encode'), `${messageName} · ${format.toUpperCase()} · ${output.length}`, 'success', {
         inputText: JSON.stringify({ schema, jsonInput, binaryInput: '' }), outputText: output,
@@ -128,8 +153,6 @@ export function ProtobufSurface() {
     try {
       const output = decodeProtobuf(schema, messageName, binaryInput, format)
       setJsonInput(output)
-      setWire(inspectWire(binaryInput, format))
-      setWireInspected(true)
       succeed('notice.decoded')
       recordOperation(t('action.decode'), `${messageName} · ${format.toUpperCase()} · ${output.length}`, 'success', {
         inputText: JSON.stringify({ schema, jsonInput: '', binaryInput }), outputText: output,
@@ -156,11 +179,30 @@ export function ProtobufSurface() {
     succeed('notice.formatted')
   }
 
-  function inspect(): void {
+  function decodeWireInput(): void {
     try {
-      setWire(inspectWire(binaryInput, format))
-      setWireInspected(true)
+      const output = inspectWire(wireInput, wireFormat)
+      setWireOutput(output)
       succeed('notice.inspected')
+      recordOperation(t('action.decodeWire'), `${wireFormat.toUpperCase()} · ${output.length}`, 'success', {
+        inputText: wireInput, outputText: output, metadata: { direction: 'wire', format: wireFormat }
+      })
+    } catch (cause) {
+      fail(cause)
+    }
+  }
+
+  function convertBinary(direction: 'hexToBase64' | 'base64ToHex'): void {
+    try {
+      const output = direction === 'hexToBase64'
+        ? convertProtobufBinary(hex, 'hex', 'base64')
+        : convertProtobufBinary(base64, 'base64', 'hex')
+      if (direction === 'hexToBase64') setBase64(output)
+      else setHex(output)
+      succeed('notice.converted')
+      recordOperation(t(direction === 'hexToBase64' ? 'action.hexToBase64' : 'action.base64ToHex'), String(output.length), 'success', {
+        inputText: direction === 'hexToBase64' ? hex : base64, outputText: output, metadata: { direction }
+      })
     } catch (cause) {
       fail(cause)
     }
@@ -197,15 +239,20 @@ export function ProtobufSurface() {
       </header>
 
       <section className="utility-toolbar protobuf-toolbar">
-        <label className="utility-select">
+        <div className="protobuf-tabs" role="tablist">
+          {(['json', 'wire', 'convert'] as const).map((id) => (
+            <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>{t(`tab.${id}`)}</button>
+          ))}
+        </div>
+        {tab === 'json' && <label className="utility-select">
           {t('field.message')}
           <select value={messageName} onChange={(event) => setMessageName(event.target.value)}>
             {schemaInfo.messageNames.length
               ? schemaInfo.messageNames.map((name) => <option key={name}>{name}</option>)
               : <option value="">{t('field.noMessages')}</option>}
           </select>
-        </label>
-        <div className="utility-segments">
+        </label>}
+        {tab === 'json' && <div className="utility-segments">
           {(['base64', 'hex'] as const).map((item) => (
             <button
               className={format === item ? 'utility-segment utility-segment--active' : 'utility-segment'}
@@ -216,11 +263,11 @@ export function ProtobufSurface() {
               {item.toUpperCase()}
             </button>
           ))}
-        </div>
-        <span className="protobuf-package"><FileCode2 />{schemaInfo.packageName || t('field.noPackage')}</span>
+        </div>}
+        {tab === 'json' && <span className="protobuf-package"><FileCode2 />{schemaInfo.packageName || t('field.noPackage')}</span>}
       </section>
 
-      <section className="protobuf-grid">
+      {tab === 'json' && <ResizableColumns id="protobuf-json" className="protobuf-grid" initialPrimary={0.34} defaultSizes={[0.34, 0.66]} minPrimary={240} minSecondary={420}>
         <section className="utility-editor-card protobuf-schema">
           <header><span>{t('pane.schema')}</span><button className="utility-copy" type="button" onClick={formatProto}><Braces />{t('action.format')}</button><code>{t('pane.messages', { count: schemaInfo.messageNames.length })}</code></header>
           <CodeEditor
@@ -265,12 +312,44 @@ export function ProtobufSurface() {
             />
           </section>
         </section>
+      </ResizableColumns>}
 
-        <section className="protobuf-wire">
-          <header><ScanSearch /><strong>Wire Inspector</strong><button type="button" onClick={inspect}>{t('action.inspect')}</button></header>
-          <pre>{wireInspected ? wire || t('wire.empty') : t('wire.hint')}</pre>
-        </section>
-      </section>
+      {tab === 'wire' && (
+        <ResizableThreeColumns id="protobuf-wire" className="protobuf-io" initialLeft={1} initialRight={1} defaultSizes={[1, 0.28, 1]} minLeft={240} minCenter={110} minRight={240}>
+          <section className="utility-editor-card">
+            <header><span>{t('pane.wireInput')}</span></header>
+            <CodeEditor ariaLabel={t('pane.wireInput')} value={wireInput} onChange={setWireInput} className="utility-code-editor" lineWrapping />
+          </section>
+          <div className="protobuf-actions">
+            <select aria-label={t('field.wireFormat')} value={wireFormat} onChange={(event) => setWireFormat(event.target.value as ProtobufBinaryFormat)}>
+              <option value="hex">Hex</option>
+              <option value="base64">Base64</option>
+            </select>
+            <button type="button" onClick={decodeWireInput}><Play />{t('action.decodeWire')}</button>
+          </div>
+          <section className="utility-editor-card">
+            <header><span>{t('pane.wireOutput')}</span></header>
+            <CodeEditor ariaLabel={t('pane.wireOutput')} value={wireOutput} onChange={setWireOutput} readOnly className="utility-code-editor" lineWrapping />
+          </section>
+        </ResizableThreeColumns>
+      )}
+
+      {tab === 'convert' && (
+        <ResizableThreeColumns id="protobuf-convert" className="protobuf-io" initialLeft={1} initialRight={1} defaultSizes={[1, 0.28, 1]} minLeft={240} minCenter={110} minRight={240}>
+          <section className="utility-editor-card">
+            <header><span>Hex</span></header>
+            <CodeEditor ariaLabel="Hex" value={hex} onChange={setHex} className="utility-code-editor" lineWrapping />
+          </section>
+          <div className="protobuf-actions">
+            <button type="button" onClick={() => convertBinary('hexToBase64')}><ArrowRight />{t('action.hexToBase64')}</button>
+            <button type="button" onClick={() => convertBinary('base64ToHex')}><ArrowLeft />{t('action.base64ToHex')}</button>
+          </div>
+          <section className="utility-editor-card">
+            <header><span>Base64</span></header>
+            <CodeEditor ariaLabel="Base64" value={base64} onChange={setBase64} className="utility-code-editor" lineWrapping />
+          </section>
+        </ResizableThreeColumns>
+      )}
 
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}>
         <span>{failed ? <TriangleAlert /> : <CheckCircle2 />}{noticeText}</span>

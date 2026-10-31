@@ -18,7 +18,8 @@ import { credentialApi } from '../../platform/api/credentialApi'
 import { localDataApi } from '../../platform/api/localDataApi'
 import { settingsApi } from '../../platform/api/settingsApi'
 import { translationApi } from '../../platform/api/translationApi'
-import type { TranslationHistory, TranslationWord } from '../../platform/contracts/localData'
+import { ResizableColumns } from '../../shared/ResizableColumns'
+import type { SaveTranslationWordInput, TranslationHistory, TranslationWord } from '../../platform/contracts/localData'
 import type { TranslationProvider } from '../../platform/contracts/translation'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
@@ -30,7 +31,6 @@ import { parseOperationMetadata, useOperationRestore } from '../history/operatio
 import { useSettings } from '../settings/SettingsProvider'
 import {
   alternateTargetLanguage,
-  includesTranslationQuery,
   languageLabel,
   providerLabel,
   supportsTranslationLanguage,
@@ -133,7 +133,7 @@ export function TranslationSurface() {
         sourceLang,
         targetLang,
         preferredProvider: provider,
-        timeoutMs: settings.network.translationTimeoutSeconds * 1_000
+        timeoutMs: settings.network.translationTimeoutMs
       })
       if (sequence !== requestSequence.current || activeRequest.current !== requestId) return
       setTarget(result.text)
@@ -156,7 +156,7 @@ export function TranslationSurface() {
         setTranslating(false)
       }
     }
-  }, [cancelActive, languageName, provider, recordOperation, settings.network.translationTimeoutSeconds, sourceLang, t, targetLang])
+  }, [cancelActive, languageName, provider, recordOperation, settings.network.translationTimeoutMs, sourceLang, t, targetLang])
 
   useEffect(() => {
     if (provider === 'deepl') return
@@ -232,17 +232,13 @@ export function TranslationSurface() {
 
   async function saveCurrentWord() {
     if (!source.trim()) return
-    const now = Date.now()
     try {
       await localDataApi.saveTranslationWord({
-        id: crypto.randomUUID(),
         sourceText: source,
         targetText: target,
         sourceLang,
         targetLang,
-        remark: '',
-        createdAt: now,
-        updatedAt: now
+        remark: ''
       })
       setFailed(false)
       setNotice({ key: 'notice.savedWord' })
@@ -252,7 +248,7 @@ export function TranslationSurface() {
     }
   }
 
-  function applyRecord(item: TranslationWord | TranslationHistory) {
+  function applyRecord(item: SaveTranslationWordInput | TranslationHistory) {
     cancelActive()
     suppressNextAutomaticTranslation.current = true
     setSource(item.sourceText)
@@ -295,10 +291,10 @@ export function TranslationSurface() {
             {formattedName && <code className="translation-name-preview" title={formattedName}>{formattedName}</code>}
           </div>
           {provider === 'deepl' && <div className="translation-engine-hint"><span>{t('deepl.hint')}</span><button className="secondary-button" type="button" onClick={() => { window.localStorage.setItem('mootool-next-tauri:settings-category', 'tools'); void settingsApi.openWindow() }}>{t('deepl.configure')}</button></div>}
-          <div className="translation-editor-grid">
+          <ResizableColumns id="translation-editor" className="translation-editor-grid" initialPrimary={1} defaultSizes={[1, 1]} minPrimary={280} minSecondary={280}>
             <section><header><strong>{languageName(sourceLang)}</strong><span>{source.length} / 50000</span></header><CodeEditor ariaLabel={t('aria.source')} value={source} onChange={(value) => setSource(value.slice(0, 50_000))} className="utility-code-editor" lineWrapping /></section>
             <section><header><strong>{languageName(targetLang)}</strong><span>{translating ? t('status.translating') : providerUsed ? `${providerLabel(providerUsed)}${fallbackUsed ? ` · ${t('status.fallback')}` : ''}` : t('status.result')}</span></header><CodeEditor ariaLabel={t('aria.result')} value={translating && !target ? t('status.translating') : target} readOnly className="utility-code-editor" lineWrapping /></section>
-          </div>
+          </ResizableColumns>
         </section>
       )}
       {tab === 'words' && <WordBook onApply={applyRecord} />}
@@ -330,34 +326,32 @@ function translationErrorMessage(cause: unknown, t: (key: TranslationMessageKey)
   return code ? t(`error.${code}`) : message
 }
 
-function WordBook({ onApply }: { onApply: (word: TranslationWord) => void }) {
+function WordBook({ onApply }: { onApply: (word: SaveTranslationWordInput) => void }) {
   const { t, locale } = useLocalizedMessages(translationMessages)
   const dialog = useDesktopDialog()
   const [items, setItems] = useState<TranslationWord[]>([])
   const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState<TranslationWord>()
+  const [selected, setSelected] = useState<SaveTranslationWordInput>()
   const [error, setError] = useState('')
   const load = useCallback(async () => {
     try {
-      const next = await localDataApi.listTranslationWords()
+      const next = await localDataApi.listTranslationWords(query)
       setItems(next)
-      setSelected((current) => current ? next.find((item) => item.id === current.id) ?? current : next[0])
+      setSelected((current) => current ? next.find((item) => item.id === current.id) ?? undefined : next[0])
     } catch (cause) {
       setError(errorMessage(cause))
     }
-  }, [])
+  }, [query])
   useEffect(() => { void load() }, [load])
-  const visible = items.filter((item) => includesTranslationQuery(item, query))
 
   function add() {
-    const now = Date.now()
-    setSelected({ id: crypto.randomUUID(), sourceText: '', targetText: '', sourceLang: 'auto', targetLang: 'zh-CN', remark: '', createdAt: now, updatedAt: now })
+    setSelected({ sourceText: '', targetText: '', sourceLang: 'auto', targetLang: 'zh-CN', remark: '' })
   }
 
   async function save() {
     if (!selected?.sourceText.trim()) return
     try {
-      const saved = await localDataApi.saveTranslationWord({ ...selected, updatedAt: Date.now() })
+      const saved = await localDataApi.saveTranslationWord(selected)
       setSelected(saved)
       await load()
     } catch (cause) { setError(errorMessage(cause)) }
@@ -365,16 +359,16 @@ function WordBook({ onApply }: { onApply: (word: TranslationWord) => void }) {
 
   async function remove() {
     if (!selected || !await dialog.confirm(t('confirm.deleteWord'), { dangerous: true })) return
-    await localDataApi.deleteTranslationWord(selected.id)
+    if (selected.id) await localDataApi.deleteTranslationWord(selected.id)
     setSelected(undefined)
     await load()
   }
 
   return (
-    <section className="translation-record-layout">
-      <aside><label className="translation-search"><Search /><input value={query} placeholder={t('search.words')} onChange={(event) => setQuery(event.target.value)} /></label><div>{visible.map((item) => <button className={selected?.id === item.id ? 'translation-record translation-record--active' : 'translation-record'} type="button" key={item.id} onClick={() => setSelected(item)}><strong>{item.sourceText}</strong><span>{item.targetText}</span></button>)}</div><footer><button type="button" onClick={add}><Plus />{t('action.new')}</button><button type="button" disabled={!selected} onClick={() => void remove()}><Trash2 />{t('action.delete')}</button></footer></aside>
+    <ResizableColumns id="translation-words" className="translation-record-layout" initialPrimary={220} defaultSizes={[220, 780]} minPrimary={170} minSecondary={360}>
+      <aside><label className="translation-search"><Search /><input value={query} placeholder={t('search.words')} onChange={(event) => setQuery(event.target.value)} /></label><div>{items.map((item) => <button className={selected?.id === item.id ? 'translation-record translation-record--active' : 'translation-record'} type="button" key={item.id} onClick={() => setSelected(item)}><strong>{item.sourceText}</strong><span>{item.targetText}</span></button>)}</div><footer><button type="button" onClick={add}><Plus />{t('action.new')}</button><button type="button" disabled={!selected} onClick={() => void remove()}><Trash2 />{t('action.delete')}</button></footer></aside>
       <section>{selected ? <><header><strong>{languageLabel(selected.sourceLang, locale, t('language.auto'))} → {languageLabel(selected.targetLang, locale, t('language.auto'))}</strong><button type="button" onClick={() => onApply(selected)}><Languages />{t('action.apply')}</button></header><textarea value={selected.sourceText} placeholder={t('field.source')} onChange={(event) => setSelected({ ...selected, sourceText: event.target.value })} /><textarea value={selected.targetText} placeholder={t('field.target')} onChange={(event) => setSelected({ ...selected, targetText: event.target.value })} /><input value={selected.remark} placeholder={t('field.remark')} onChange={(event) => setSelected({ ...selected, remark: event.target.value })} /><button className="primary-button" type="button" onClick={() => void save()}><Save />{t('action.save')}</button></> : <div className="translation-empty">{t('words.empty')}</div>}{error && <p className="translation-error">{error}</p>}</section>
-    </section>
+    </ResizableColumns>
   )
 }
 
@@ -385,17 +379,16 @@ function HistoryPanel({ onApply }: { onApply: (item: TranslationHistory) => void
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
   const load = useCallback(async () => {
-    try { setItems(await localDataApi.listTranslationHistory()) } catch (cause) { setError(errorMessage(cause)) }
-  }, [])
+    try { setItems(await localDataApi.listTranslationHistory(query)) } catch (cause) { setError(errorMessage(cause)) }
+  }, [query])
   useEffect(() => { void load() }, [load])
-  const visible = items.filter((item) => includesTranslationQuery(item, query))
   async function clearHistory() {
     if (await dialog.confirm(t('confirm.clearHistory'), { dangerous: true })) await localDataApi.clearTranslationHistory().then(load)
   }
   return (
     <section className="translation-history-panel">
       <header><label className="translation-search"><Search /><input value={query} placeholder={t('search.history')} onChange={(event) => setQuery(event.target.value)} /></label><button type="button" disabled={!items.length} onClick={() => void clearHistory()}><Trash2 />{t('action.clearAll')}</button></header>
-      <div>{visible.length ? visible.map((item) => <article key={item.id}><button type="button" onClick={() => onApply(item)}><header><strong>{languageLabel(item.sourceLang, locale, t('language.auto'))} → {languageLabel(item.targetLang, locale, t('language.auto'))}</strong><span>{item.provider === 'google' ? 'Google' : 'Bing'} · {new Date(item.createdAt).toLocaleString(locale)}</span></header><p>{item.sourceText}</p><p>{item.targetText}</p></button><button type="button" title={t('action.delete')} onClick={() => void localDataApi.deleteTranslationHistory(item.id).then(load)}><Trash2 /></button></article>) : <div className="translation-empty">{t('history.empty')}</div>}</div>
+      <div>{items.length ? items.map((item) => <article key={item.id}><button type="button" onClick={() => onApply(item)}><header><strong>{languageLabel(item.sourceLang, locale, t('language.auto'))} → {languageLabel(item.targetLang, locale, t('language.auto'))}</strong><span>{item.translatorType} · {item.createTime}</span></header><p>{item.sourceText}</p><p>{item.targetText}</p></button><button type="button" title={t('action.delete')} onClick={() => void localDataApi.deleteTranslationHistory(item.id).then(load)}><Trash2 /></button></article>) : <div className="translation-empty">{t('history.empty')}</div>}</div>
       {error && <p className="translation-error">{error}</p>}
     </section>
   )

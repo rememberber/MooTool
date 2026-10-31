@@ -1,6 +1,7 @@
 use std::{fs, path::Path, process::Command};
 
 use serde::{Deserialize, Serialize};
+use tauri::Manager;
 
 use crate::contracts::error::AppResult;
 
@@ -130,9 +131,9 @@ fn diff_files(root: &Path, input: &QuickNoteGitDiffInput) -> Result<QuickNoteGit
         let parent = run_git(root, &["rev-parse", "--verify", &format!("{commit}^")])?;
         let parent_ref = parent.status.success().then(|| String::from_utf8_lossy(&parent.stdout).trim().to_string());
         let listed = if let Some(parent_ref) = &parent_ref {
-            run_git(root, &["diff", "--name-status", "-M", parent_ref, commit])?
+            run_git(root, &["diff", "--name-status", "-z", "-M", "-C", parent_ref, commit])?
         } else {
-            run_git(root, &["diff-tree", "--root", "--no-commit-id", "--name-status", "-r", "-M", commit])?
+            run_git(root, &["diff-tree", "--root", "--no-commit-id", "--name-status", "-z", "-r", "-M", "-C", commit])?
         };
         if !listed.status.success() {
             return Err(command_text(&listed));
@@ -218,18 +219,32 @@ fn build_diff_file(change: QuickNoteGitChange, before: ContentPreview, after: Co
 }
 
 fn parse_name_status(output: &str) -> Vec<QuickNoteGitChange> {
-    output.lines().filter_map(|line| {
-        let mut parts = line.split('\t');
-        let status = parts.next()?.trim().to_string();
-        let first = parts.next()?.to_string();
-        let second = parts.next().map(str::to_string);
-        let (original_path, path) = if status.starts_with('R') || status.starts_with('C') {
-            (Some(first), second.unwrap_or_default())
+    let records: Vec<&str> = output.split('\0').collect();
+    let mut changes = Vec::new();
+    let mut index = 0;
+    while index < records.len() {
+        let record = records[index];
+        index += 1;
+        if record.is_empty() { continue; }
+        let (status, inline_path) = record.split_once('\t').unwrap_or((record, ""));
+        let renamed = status.starts_with('R') || status.starts_with('C');
+        let original_path = if renamed {
+            let value = if inline_path.is_empty() { take_record(&records, &mut index) } else { inline_path };
+            Some(value.to_string()).filter(|value| !value.is_empty())
         } else {
-            (None, first)
+            None
         };
-        Some(QuickNoteGitChange { path, original_path, status, conflict: false })
-    }).collect()
+        let path = if renamed || inline_path.is_empty() { take_record(&records, &mut index) } else { inline_path };
+        if path.is_empty() { continue; }
+        changes.push(QuickNoteGitChange { path: path.to_string(), original_path, status: status.to_string(), conflict: false });
+    }
+    changes
+}
+
+fn take_record<'a>(records: &[&'a str], index: &mut usize) -> &'a str {
+    let value = records.get(*index).copied().unwrap_or("");
+    if *index < records.len() { *index += 1; }
+    value
 }
 
 #[tauri::command]
@@ -245,10 +260,11 @@ pub fn quick_note_git_action(
 }
 
 fn perform_action(root: &Path, input: &QuickNoteGitActionInput, username: &str, runtime: Option<&Path>) -> Result<QuickNoteGitActionResult, String> {
-    if input.action != "init" && !git_status(root)?.repository {
+    if input.action != "init" && input.action != "automatic-checkpoint" && !git_status(root)?.repository {
         return Ok(failure("Git repository is not initialized in the Vault root"));
     }
     match input.action.as_str() {
+        "automatic-checkpoint" => automatic_checkpoint(root, input.message.as_deref().unwrap_or("Automatic Vault checkpoint"), username, runtime),
         "init" => initialize(root),
         "configure-remote" => configure_remote(root, input.remote.as_deref().unwrap_or("")),
         "commit" => commit(root, input.message.as_deref(), username),
@@ -261,6 +277,35 @@ fn perform_action(root: &Path, input: &QuickNoteGitActionInput, username: &str, 
         "continue-operation" => continue_operation(root, username),
         _ => Err("unsupported quick note git action".into()),
     }
+}
+
+fn automatic_checkpoint(root: &Path, message: &str, username: &str, runtime: Option<&Path>) -> Result<QuickNoteGitActionResult, String> {
+    let mut status = git_status(root)?;
+    if !status.available {
+        return Ok(success("Git is unavailable; checkpoint skipped"));
+    }
+    if !status.repository {
+        let initialized = initialize(root)?;
+        if !initialized.success {
+            return Ok(initialized);
+        }
+        status = git_status(root)?;
+    }
+    if status.merging || status.conflicts > 0 {
+        return Ok(success("Merge/rebase in progress; checkpoint skipped"));
+    }
+    let had_changes = !status.changes.is_empty();
+    let mut result = success("No changes to commit");
+    if had_changes {
+        result = commit(root, Some(message), username)?;
+        if !result.success {
+            return Ok(result);
+        }
+    }
+    if !status.remote.is_empty() && (had_changes || status.ahead > 0) {
+        return command_result_auth(root, &["push", "-u", "origin", "HEAD"], username, runtime);
+    }
+    Ok(result)
 }
 
 fn initialize(root: &Path) -> Result<QuickNoteGitActionResult, String> {
@@ -394,8 +439,8 @@ fn git_status(root: &Path) -> Result<QuickNoteGitStatus, String> {
     if root_real != top_real {
         return Ok(QuickNoteGitStatus { available: true, ..QuickNoteGitStatus::default() });
     }
-    let porcelain = run_git(root, &["status", "--porcelain=v1", "--branch", "--untracked-files=all"])?;
-    let (branch_line, changes) = parse_porcelain(&String::from_utf8_lossy(&porcelain.stdout));
+    let porcelain = run_git(root, &["status", "--porcelain=v1", "-z", "--branch", "--untracked-files=all"])?;
+    let (branch_line, changes) = parse_porcelain_z(&String::from_utf8_lossy(&porcelain.stdout));
     let remote = run_git(root, &["remote", "get-url", "origin"])
         .ok()
         .filter(|output| output.status.success())
@@ -535,16 +580,28 @@ fn command_text(output: &std::process::Output) -> String {
     text
 }
 
-fn parse_porcelain(output: &str) -> (String, Vec<QuickNoteGitChange>) {
-    let mut lines = output.lines();
-    let branch_line = lines.next().unwrap_or_default().to_string();
-    let changes = lines.filter(|line| line.len() >= 4).map(|line| {
-        let status = line[..2].to_string();
-        let raw = line[3..].to_string();
-        let (original_path, path) = raw.split_once(" -> ").map(|(from, to)| (Some(from.to_string()), to.to_string())).unwrap_or((None, raw));
+fn parse_porcelain_z(output: &str) -> (String, Vec<QuickNoteGitChange>) {
+    let mut records = output.split('\0');
+    let branch_line = records.next().unwrap_or_default().to_string();
+    let records: Vec<&str> = records.collect();
+    let mut changes = Vec::new();
+    let mut index = 0;
+    while index < records.len() {
+        let record = records[index];
+        index += 1;
+        if record.len() < 4 { continue; }
+        let status = record[..2].to_string();
+        let path = record[3..].to_string();
+        let renamed = status.contains('R') || status.contains('C');
+        let original_path = if renamed {
+            let value = take_record(&records, &mut index);
+            Some(value.to_string()).filter(|value| !value.is_empty())
+        } else {
+            None
+        };
         let conflict = status.contains('U') || status == "AA" || status == "DD";
-        QuickNoteGitChange { path, original_path, status, conflict }
-    }).collect();
+        changes.push(QuickNoteGitChange { path, original_path, status, conflict });
+    }
     (branch_line, changes)
 }
 
@@ -604,7 +661,7 @@ mod tests {
 
     #[test]
     fn parses_branch_changes_and_conflicts() {
-        let (branch, changes) = parse_porcelain("## main...origin/main [ahead 2, behind 1]\n M Work/API ideas.md\n?? attachments/image.png\nUU Work/conflict.md\nR  old.md -> new.md\n");
+        let (branch, changes) = parse_porcelain_z("## main...origin/main [ahead 2, behind 1]\0 M Work/API ideas.md\0?? attachments/image.png\0UU Work/conflict.md\0R  new.md\0old.md\0");
         assert_eq!(parse_branch(&branch), "main");
         assert_eq!(parse_counter(&branch, "ahead "), 2);
         assert_eq!(parse_counter(&branch, "behind "), 1);
@@ -612,11 +669,39 @@ mod tests {
         assert!(changes[2].conflict);
         assert_eq!(changes[3].original_path.as_deref(), Some("old.md"));
         assert_eq!(changes[3].path, "new.md");
+        assert_eq!(parse_porcelain_z("## main\0?? odd\nname.md\0").1[0].path, "odd\nname.md");
+    }
+
+    #[test]
+    fn automatic_checkpoint_initializes_then_commits_the_activity_message() {
+        if !git_available() {
+            return;
+        }
+        let root = std::env::temp_dir().join(format!("mootool-checkpoint-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).expect("checkpoint directory");
+        fs::write(root.join("note.md"), "hello\n").expect("note");
+        let first = automatic_checkpoint(&root, "Create Quick Note", "", None).expect("first checkpoint");
+        assert!(first.success, "{}", first.message);
+        let log = run_git(&root, &["log", "-1", "--format=%s"]).expect("log");
+        assert_eq!(String::from_utf8_lossy(&log.stdout).trim(), "Initial MooTool Vault setup");
+        fs::write(root.join("note.md"), "updated\n").expect("updated note");
+        let second = automatic_checkpoint(&root, "Update Quick Note", "", None).expect("second checkpoint");
+        assert!(second.success, "{}", second.message);
+        let log = run_git(&root, &["log", "-1", "--format=%s"]).expect("second log");
+        assert_eq!(String::from_utf8_lossy(&log.stdout).trim(), "Update Quick Note");
+        let head = run_git(&root, &["rev-parse", "HEAD"]).expect("head");
+        fs::write(root.join(".git").join("MERGE_HEAD"), &head.stdout).expect("merge head");
+        fs::write(root.join("note.md"), "during merge\n").expect("merge note");
+        let skipped = automatic_checkpoint(&root, "Should not commit", "", None).expect("merge checkpoint");
+        assert!(skipped.success);
+        assert_eq!(skipped.message, "Merge/rebase in progress; checkpoint skipped");
+        let _ = fs::remove_dir_all(&root);
     }
 
     #[test]
     fn parses_commit_name_status() {
-        let changes = parse_name_status("M\tWork/API ideas.md\nR100\told.md\tnew.md\n");
+        let changes = parse_name_status("M\0Work/API ideas.md\0R100\0old.md\0new.md\0");
         assert_eq!(changes[0].path, "Work/API ideas.md");
         assert_eq!(changes[1].original_path.as_deref(), Some("old.md"));
         assert_eq!(changes[1].path, "new.md");

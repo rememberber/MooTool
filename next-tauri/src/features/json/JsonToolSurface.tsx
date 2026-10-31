@@ -2,7 +2,6 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirro
 import { json } from '@codemirror/lang-json'
 import { bracketMatching } from '@codemirror/language'
 import { Compartment, EditorState } from '@codemirror/state'
-import { openSearchPanel, search, searchKeymap } from '@codemirror/search'
 import {
   drawSelection,
   EditorView,
@@ -15,18 +14,27 @@ import {
   Braces,
   ArrowLeftRight,
   CheckCircle2,
+  ChevronDown,
+  ChevronRight,
   Clipboard,
+  CloudDownload,
+  CloudUpload,
   CodeXml,
   Copy,
   Download,
   Eraser,
+  FileJson,
   FilePlus2,
+  FoldVertical,
   FolderPlus,
   FolderGit2,
   FolderOpen,
   GitBranch,
+  GitCommitHorizontal,
+  LocateFixed,
   LoaderCircle,
   MoreHorizontal,
+  PanelRight,
   Pencil,
   RefreshCw,
   Save,
@@ -34,30 +42,55 @@ import {
   Sparkles,
   Trash2,
   UnfoldHorizontal,
+  UnfoldVertical,
+  Undo2,
   Unplug,
   Upload,
   WrapText,
+  X,
   XCircle
 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
+import { useI18n } from '../../app/i18n'
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import { userFilesApi } from '../../platform/api/userFilesApi'
 import { vaultApi } from '../../platform/api/vaultApi'
 import type {
   VaultDocument,
   VaultGitDetails,
+  VaultGitDiffResult,
   VaultGitOperation,
   VaultSnapshot
 } from '../../platform/contracts/vault'
 import { electronCodeHighlighting } from '../../shared/codeHighlight'
+import { codeEditorSearchHighlight } from '../../shared/codeEditorSearchHighlight'
 import { errorMessage } from '../../shared/errors'
+import {
+  defaultFindReplaceOptions,
+  findAllMatches,
+  findNextMatch,
+  findNextMatchWithWrap,
+  replaceAllMatches,
+  replaceCurrentMatch,
+  type FindReplaceOptions
+} from '../../shared/findReplace'
+import { ancestorDirectoryPaths, ensureAncestorsExpanded, resolveExpandedPaths } from '../../shared/vaultTreeExpand'
+import { selectTreePaths, type SelectionGesture } from '../../shared/vaultSelection'
+import { selectVaultRows, type VaultListSort } from './jsonVaultList'
+import { open } from '@tauri-apps/plugin-dialog'
 import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
+import { canMoveVaultEntry, readDraggedVaultEntry, renamedVaultPath, uniqueDuplicatePath, vaultDragDestination, vaultDragKindType, vaultDragPathType } from './jsonVaultActions'
+import { GitDiffView } from '../quickNote/QuickNoteGitPanel'
+import { ResizableColumns } from '../../shared/ResizableColumns'
 import { ResizableThreeColumns } from '../../shared/ResizableThreeColumns'
 import { toolWebviewApis } from '../../platform/api/toolWebviewApi'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import { useSettings } from '../settings/SettingsProvider'
+import { FontSelect } from '../../shared/components/FontSelect'
+import { recordJsonVaultActivity, setJsonVaultEditorDirty } from '../settings/vaultCheckpoints'
 import { describeJsonSession } from './jsonSession'
 import { jsonMessages } from './jsonMessages'
 import {
@@ -83,6 +116,24 @@ import {
 type JsonMessageKey = LocalizedMessageKey<typeof jsonMessages>
 type JsonNotice = { key: JsonMessageKey; values?: MessageValues } | { raw: string }
 
+function JsonWorkspace({ inspectorVisible, children }: { inspectorVisible: boolean; children: [ReactElement, ReactElement, ReactElement] }) {
+  if (inspectorVisible) {
+    return (
+      <ResizableThreeColumns id="json-three-pane" legacyId="json-workbench" className="json-workbench__content" initialLeft={190} initialRight={280} defaultSizes={[190, 520, 280]} minLeft={150} minCenter={360} minRight={220}>
+        {children[0]}
+        {children[1]}
+        {children[2]}
+      </ResizableThreeColumns>
+    )
+  }
+  return (
+    <ResizableColumns id="json-two-pane" className="json-workbench__content" initialPrimary={190} defaultSizes={[190, 800]} minPrimary={150} minSecondary={360}>
+      {children[0]}
+      {children[1]}
+    </ResizableColumns>
+  )
+}
+
 interface EditorMetrics {
   content: string
   anchor: number
@@ -95,8 +146,9 @@ type VaultSelection = { path: string; kind: 'file' | 'folder' }
 
 export function JsonToolSurface() {
   const dialog = useDesktopDialog()
-  const { settings } = useSettings()
+  const { settings, save } = useSettings()
   const { t, locale } = useLocalizedMessages(jsonMessages)
+  const { t: settingsText } = useI18n()
   const recordOperation = useOperationHistory('json')
   const sampleJson = useRef(t('sample.json')).current
   const hostRef = useRef<HTMLDivElement>(null)
@@ -105,6 +157,13 @@ export function JsonToolSurface() {
   const revision = useRef(0)
   const wrapCompartment = useRef(new Compartment())
   const ariaCompartment = useRef(new Compartment())
+  const searchCompartment = useRef(new Compartment())
+  const findIndexRef = useRef(0)
+  const [findOpen, setFindOpen] = useState(false)
+  const [findQuery, setFindQuery] = useState('')
+  const [replaceText, setReplaceText] = useState('')
+  const [findOptions, setFindOptions] = useState<FindReplaceOptions>(defaultFindReplaceOptions)
+  const [replacedCount, setReplacedCount] = useState(0)
   const [metrics, setMetrics] = useState<EditorMetrics>({
     content: sampleJson,
     anchor: 0,
@@ -112,8 +171,8 @@ export function JsonToolSurface() {
     line: 1,
     scrollTop: 0
   })
-  const [wrap, setWrap] = useState(settings.editor.wordWrap)
-  const [indent, setIndent] = useState(settings.editor.tabSize)
+  const [wrap, setWrap] = useState(settings.editor.softWrap)
+  const [indent, setIndent] = useState<2 | 4 | 8>(2)
   const [sortKeys, setSortKeys] = useState(false)
   const [ignoreCase, setIgnoreCase] = useState(false)
   const [checkDuplicateKeys, setCheckDuplicateKeys] = useState(true)
@@ -127,11 +186,35 @@ export function JsonToolSurface() {
   const [reportError, setReportError] = useState('')
   const [vault, setVault] = useState<VaultSnapshot>()
   const [vaultDocument, setVaultDocument] = useState<VaultDocument>()
+  const [inspectorOpen, setInspectorOpen] = useState(false)
   const [vaultSelection, setVaultSelection] = useState<VaultSelection>()
+  const [vaultQuery, setVaultQuery] = useState('')
+  const [vaultIncludeContent, setVaultIncludeContent] = useState(true)
+  const [vaultSort, setVaultSort] = useState<VaultListSort>('name')
+  const [contentMatches, setContentMatches] = useState<ReadonlySet<string>>(new Set())
+  const [locateVaultRequest, setLocateVaultRequest] = useState(0)
+  const [expandedFolders, setExpandedFolders] = useState<ReadonlySet<string> | null>(null)
+  const knownFolders = useRef(new Set<string>())
+  const vaultListRef = useRef<HTMLDivElement>(null)
+  const handledVaultLocate = useRef(0)
+  const appliedExpandMode = useRef<string | null>(null)
+  const jsonExpandMode = settings.vault.jsonTreeExpandMode === 'collapseAll' ? 'collapseAll' : 'expandAll'
+  const vaultSelectionPath = vaultSelection?.path ?? ''
   const [vaultBusy, setVaultBusy] = useState(false)
   const [gitRequestId, setGitRequestId] = useState('')
   const [gitDetailsOpen, setGitDetailsOpen] = useState(false)
   const [gitDetails, setGitDetails] = useState<VaultGitDetails>({ diff: '', commits: [] })
+  const [gitDiff, setGitDiff] = useState<VaultGitDiffResult>({ files: [] })
+  const [gitDiffPath, setGitDiffPath] = useState('')
+  const [gitTab, setGitTab] = useState<'changes' | 'history'>('changes')
+  const [gitSelected, setGitSelected] = useState('')
+  const [gitRemoteDraft, setGitRemoteDraft] = useState(settings.vault.gitRemote)
+  const [gitCommitMessage, setGitCommitMessage] = useState(t('git.defaultMessage'))
+  const [vaultMenu, setVaultMenu] = useState<{ entry: VaultSelection; paths: string[]; left: number; top: number } | null>(null)
+  const [selectedVaultPaths, setSelectedVaultPaths] = useState<string[]>([])
+  const vaultSelectionAnchor = useRef('')
+  const [vaultDropTarget, setVaultDropTarget] = useState<string | null>(null)
+  const draggedVaultEntry = useRef<VaultSelection | null>(null)
   const [gitDetailsBusy, setGitDetailsBusy] = useState(false)
   const metricsRef = useRef(metrics)
   const vaultDocumentRef = useRef(vaultDocument)
@@ -139,6 +222,70 @@ export function JsonToolSurface() {
   vaultDocumentRef.current = vaultDocument
   const vaultDirty = Boolean(vaultDocument && metrics.content !== vaultDocument.content)
   const noticeText = localizeNotice(notice, t)
+  const vaultFileKey = vault?.files.map((file) => `${file.relativePath}\0${file.modifiedAt}\0${file.sizeBytes}`).join('\n') ?? ''
+  const vaultRows = vault ? selectVaultRows(vault.files, vault.directories, vaultQuery, vaultIncludeContent, contentMatches, vaultSort) : []
+  const visibleVaultRows = vaultRows.filter((row) => ancestorDirectoryPaths(row.kind === 'folder' ? row.path : row.file.relativePath).every((parent) => !expandedFolders || expandedFolders.has(parent)))
+  const visibleVaultPaths = visibleVaultRows.map((row) => row.kind === 'folder' ? row.path : row.file.relativePath)
+  const visibleVaultKey = visibleVaultPaths.join('\n')
+  const multipleVaultSelection = selectedVaultPaths.length > 1
+  const vaultLocatePath = vaultDocument?.relativePath || (vaultSelection?.kind === 'file' ? vaultSelection.path : '')
+
+  useEffect(() => { setJsonVaultEditorDirty(vaultDirty) }, [vaultDirty])
+  useEffect(() => {
+    setSelectedVaultPaths((current) => {
+      const next = current.filter((path) => visibleVaultPaths.includes(path))
+      return next.length === current.length ? current : next
+    })
+  }, [visibleVaultKey])
+  useEffect(() => {
+    if (!vault) return
+    const folders = vaultFolderPaths(vault)
+    if (appliedExpandMode.current !== jsonExpandMode) {
+      appliedExpandMode.current = jsonExpandMode
+      knownFolders.current = new Set(folders)
+      setExpandedFolders(resolveExpandedPaths(folders, jsonExpandMode, vaultSelectionPath))
+      return
+    }
+    const fresh = folders.filter((path) => !knownFolders.current.has(path))
+    knownFolders.current = new Set(folders)
+    setExpandedFolders((current) => {
+      const next = new Set(current ?? [])
+      if (jsonExpandMode === 'expandAll') fresh.forEach((path) => next.add(path))
+      for (const path of ancestorDirectoryPaths(vaultSelectionPath)) next.add(path)
+      return next
+    })
+  }, [jsonExpandMode, vault, vaultSelectionPath])
+  useEffect(() => {
+    const keyword = vaultQuery.trim().toLocaleLowerCase()
+    if (!vault || !keyword || !vaultIncludeContent) {
+      setContentMatches(new Set())
+      return
+    }
+    let cancelled = false
+    const candidates = vault.files.filter((file) => file.sizeBytes <= 20 * 1024 * 1024 && !file.relativePath.toLocaleLowerCase().includes(keyword))
+    void (async () => {
+      const matched = new Set<string>()
+      for (const file of candidates) {
+        if (cancelled) return
+        try {
+          const document = await vaultApi.read(file.relativePath)
+          if (document.content.toLocaleLowerCase().includes(keyword)) matched.add(file.relativePath)
+        } catch {
+          // A file that cannot be read does not match the content search.
+        }
+      }
+      if (!cancelled) setContentMatches(matched)
+    })()
+    return () => { cancelled = true }
+  }, [vault, vaultFileKey, vaultIncludeContent, vaultQuery])
+  useEffect(() => {
+    if (!locateVaultRequest || handledVaultLocate.current === locateVaultRequest || !vaultLocatePath) return
+    const row = vaultListRef.current?.querySelector<HTMLElement>(`[data-path="${CSS.escape(vaultLocatePath)}"]`)
+    if (!row) return
+    handledVaultLocate.current = locateVaultRequest
+    row.focus({ preventScroll: true })
+    row.scrollIntoView({ block: 'nearest' })
+  }, [expandedFolders, locateVaultRequest, vaultFileKey, vaultLocatePath, vaultQuery])
 
   useOperationRestore('json', (entry) => {
     const metadata = parseOperationMetadata(entry)
@@ -153,18 +300,30 @@ export function JsonToolSurface() {
   })
 
   useEffect(() => {
-    setWrap(settings.editor.wordWrap)
-    setIndent(settings.editor.tabSize)
-  }, [settings.editor.tabSize, settings.editor.wordWrap])
+    setWrap(settings.editor.softWrap)
+  }, [settings.editor.softWrap])
+
+  const inspectorVisible = inspectorOpen && Boolean(vaultDocument)
+
+  useEffect(() => {
+    const desktopLayout = window.matchMedia('(min-width: 1321px)')
+    const syncInspector = () => {
+      if (!desktopLayout.matches) setInspectorOpen(false)
+    }
+    desktopLayout.addEventListener('change', syncInspector)
+    return () => desktopLayout.removeEventListener('change', syncInspector)
+  }, [])
 
   useEffect(() => {
     const host = hostRef.current
     if (!host) return
+    const length = metrics.content.length
 
     const view = new EditorView({
       parent: host,
       state: EditorState.create({
-        doc: sampleJson,
+        doc: metrics.content,
+        selection: { anchor: Math.min(metrics.anchor, length), head: Math.min(metrics.head, length) },
         extensions: [
           history(),
           lineNumbers(),
@@ -173,15 +332,14 @@ export function JsonToolSurface() {
           highlightActiveLineGutter(),
           bracketMatching(),
           json(),
-          search({ top: false }),
           electronCodeHighlighting(),
           keymap.of([
-            ...searchKeymap,
             ...defaultKeymap,
             ...historyKeymap,
             indentWithTab
           ]),
-          wrapCompartment.current.of(EditorView.lineWrapping),
+          wrapCompartment.current.of(wrap ? EditorView.lineWrapping : []),
+          searchCompartment.current.of(findOpen ? codeEditorSearchHighlight(findQuery, findOptions) : []),
           ariaCompartment.current.of(EditorView.contentAttributes.of({
             'aria-label': t('aria.editor'),
             spellcheck: 'false',
@@ -190,6 +348,7 @@ export function JsonToolSurface() {
           })),
           EditorView.updateListener.of((update) => {
             if (!update.docChanged && !update.selectionSet) return
+            if (update.docChanged) setNotice({ key: 'notice.ready' })
             const selection = update.state.selection.main
             setMetrics((current) => ({
               ...current,
@@ -209,11 +368,12 @@ export function JsonToolSurface() {
     const handleCompositionStart = () => setCompositionStarts((value) => value + 1)
     const handleCompositionEnd = () => setCompositionEnds((value) => value + 1)
 
+    view.scrollDOM.scrollTop = metrics.scrollTop
     view.scrollDOM.addEventListener('scroll', handleScroll, { passive: true })
     view.contentDOM.addEventListener('compositionstart', handleCompositionStart)
     view.contentDOM.addEventListener('compositionend', handleCompositionEnd)
     editorRef.current = view
-    view.focus()
+    if (!inspectorVisible) view.focus()
 
     return () => {
       view.scrollDOM.removeEventListener('scroll', handleScroll)
@@ -222,7 +382,7 @@ export function JsonToolSurface() {
       editorRef.current = undefined
       view.destroy()
     }
-  }, [])
+  }, [inspectorVisible])
 
   useEffect(() => {
     let cancelled = false
@@ -244,7 +404,23 @@ export function JsonToolSurface() {
       cancelled = true
       dispose?.()
     }
-  }, [])
+  }, [settings.vault.hideGitignoredFiles])
+
+  useEffect(() => {
+    if (!vaultMenu) return
+    const close = () => setVaultMenu(null)
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') close() }
+    const focusFrame = window.requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('.json-vault-menu button:not(:disabled)')?.focus())
+    document.addEventListener('pointerdown', close)
+    document.addEventListener('keydown', closeOnEscape)
+    window.addEventListener('blur', close)
+    return () => {
+      window.cancelAnimationFrame(focusFrame)
+      document.removeEventListener('pointerdown', close)
+      document.removeEventListener('keydown', closeOnEscape)
+      window.removeEventListener('blur', close)
+    }
+  }, [vaultMenu])
 
   useEffect(() => {
     const view = editorRef.current
@@ -253,6 +429,26 @@ export function JsonToolSurface() {
       effects: wrapCompartment.current.reconfigure(wrap ? EditorView.lineWrapping : [])
     })
   }, [wrap])
+
+  useEffect(() => {
+    const view = editorRef.current
+    if (!view) return
+    view.dispatch({
+      effects: searchCompartment.current.reconfigure(findOpen ? codeEditorSearchHighlight(findQuery, findOptions) : [])
+    })
+  }, [findOpen, findOptions, findQuery])
+
+  useEffect(() => {
+    const handleFindShortcut = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.shiftKey || event.altKey) return
+      const key = event.key.toLowerCase()
+      if (key !== 'f' && key !== 'r') return
+      event.preventDefault()
+      openJsonFind()
+    }
+    window.addEventListener('keydown', handleFindShortcut)
+    return () => window.removeEventListener('keydown', handleFindShortcut)
+  })
 
   useEffect(() => {
     const view = editorRef.current
@@ -268,6 +464,7 @@ export function JsonToolSurface() {
   }, [t])
 
   const validation = useMemo(() => validateJson(metrics.content), [metrics.content])
+  const findMatches = useMemo(() => findAllMatches(metrics.content, findQuery, findOptions), [findOptions, findQuery, metrics.content])
   const analysis = useMemo(() => analyzeJson(metrics.content), [metrics.content])
   const duplicates = useMemo(() => {
     try { return findDuplicateJsonKeys(metrics.content, ignoreCase) } catch { return [] }
@@ -298,6 +495,7 @@ export function JsonToolSurface() {
     from: session.selectionFrom,
     to: session.selectionTo
   })
+  const inspectorShowsValidation = !('raw' in notice) && notice.key === 'notice.ready'
   const validationText = validation.kind === 'idle'
     ? t('validation.idle')
     : validation.kind === 'valid'
@@ -326,6 +524,69 @@ export function JsonToolSurface() {
     })
     setNotice(message)
     view.focus()
+  }
+
+  function openJsonFind(): void {
+    const view = editorRef.current
+    const selection = view?.state.selection.main
+    const selected = selection && selection.to > selection.from ? metrics.content.slice(selection.from, selection.to) : undefined
+    findIndexRef.current = 0
+    setReplacedCount(0)
+    if (selected !== undefined) setFindQuery(selected)
+    setFindOpen(true)
+  }
+
+  function selectJsonRange(start: number, end: number): void {
+    const view = editorRef.current
+    if (!view) return
+    view.dispatch({ selection: { anchor: start, head: end }, scrollIntoView: true })
+    view.focus()
+  }
+
+  function findJsonAround(forward: boolean): void {
+    if (!findQuery) return
+    const selection = editorRef.current?.state.selection.main
+    const fromIndex = forward ? selection?.to ?? findIndexRef.current : selection?.from ?? findIndexRef.current
+    const result = findNextMatchWithWrap(metrics.content, findQuery, findOptions, fromIndex, forward)
+    if (!result) {
+      setNotice({ key: 'find.noMatches' })
+      return
+    }
+    if (result.wrapped) setNotice({ key: forward ? 'find.wrappedStart' : 'find.wrappedEnd' })
+    findIndexRef.current = forward ? result.match.end : result.match.start
+    selectJsonRange(result.match.start, result.match.end)
+  }
+
+  function replaceJson(all: boolean): void {
+    const view = editorRef.current
+    if (!view || !findQuery) return
+    if (all) {
+      const result = replaceAllMatches(metrics.content, findQuery, replaceText, findOptions)
+      if (result.count === 0) setNotice({ key: 'find.noMatches' })
+      else {
+        view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: result.content } })
+        setReplacedCount(result.count)
+      }
+      return
+    }
+    const selection = view.state.selection.main
+    const result = replaceCurrentMatch(metrics.content, findQuery, replaceText, findOptions, { start: selection.from, end: selection.to })
+    if (!result.replaced) {
+      setNotice({ key: 'find.noMatches' })
+      return
+    }
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: result.content } })
+    setReplacedCount((count) => count + 1)
+    findIndexRef.current = result.nextFrom
+    const query = findQuery
+    const options = findOptions
+    window.requestAnimationFrame(() => {
+      const match = findNextMatch(result.content, query, options, result.nextFrom, true)
+      if (match) {
+        findIndexRef.current = match.end
+        selectJsonRange(match.start, match.end)
+      }
+    })
   }
 
   function runTransform(transform: () => string, success: JsonMessageKey): void {
@@ -403,7 +664,7 @@ export function JsonToolSurface() {
     }
   }
 
-  async function refreshVault(external: boolean): Promise<void> {
+  async function refreshVault(external: boolean): Promise<VaultSnapshot> {
     const snapshot = await vaultApi.snapshot()
     setVault(snapshot)
     setVaultSelection((selected) => {
@@ -414,20 +675,21 @@ export function JsonToolSurface() {
       return exists ? selected : undefined
     })
     const opened = vaultDocumentRef.current
-    if (!opened || !snapshot.rootPath) return
+    if (!opened || !snapshot.rootPath) return snapshot
     if (!snapshot.files.some((file) => file.relativePath === opened.relativePath)) {
       if (external) setNotice({ key: 'notice.externalRemoved', values: { path: opened.relativePath } })
-      return
+      return snapshot
     }
     if (metricsRef.current.content !== opened.content) {
       if (external) setNotice({ key: 'notice.externalDirty' })
-      return
+      return snapshot
     }
     const latest = await vaultApi.read(opened.relativePath)
     if (latest.fingerprint !== opened.fingerprint) {
       setVaultDocument(latest)
       replaceDocument(latest.content, { key: 'notice.externalLoaded', values: { path: latest.relativePath } })
     }
+    return snapshot
   }
 
   async function chooseVault(): Promise<void> {
@@ -454,6 +716,8 @@ export function JsonToolSurface() {
       const document = await vaultApi.read(relativePath)
       setVaultDocument(document)
       setVaultSelection({ path: relativePath, kind: 'file' })
+      setSelectedVaultPaths([relativePath])
+      vaultSelectionAnchor.current = relativePath
       replaceDocument(document.content, { key: 'notice.opened', values: { path: relativePath } })
     } catch (cause) {
       setNotice({ raw: errorMessage(cause, 'json.vault.read') })
@@ -480,7 +744,7 @@ export function JsonToolSurface() {
       setVaultSelection({ path: document.relativePath, kind: 'file' })
       await refreshVault(false)
       setNotice({ key: 'notice.created', values: { path: document.relativePath } })
-      await autoCommit(document.relativePath)
+      recordJsonVaultActivity('Create JSON snippet')
     } catch (cause) {
       setNotice({ raw: errorMessage(cause, 'json.vault.create') })
     } finally {
@@ -488,10 +752,10 @@ export function JsonToolSurface() {
     }
   }
 
-  async function saveVaultDocument(): Promise<void> {
+  async function saveVaultDocument(): Promise<boolean> {
     if (!vaultDocument) {
       await createVaultDocument()
-      return
+      return false
     }
     setVaultBusy(true)
     try {
@@ -503,12 +767,22 @@ export function JsonToolSurface() {
       setVaultDocument(saved)
       await refreshVault(false)
       setNotice({ key: 'notice.saved', values: { path: saved.relativePath } })
-      await autoCommit(saved.relativePath)
+      recordJsonVaultActivity('Update JSON snippet')
+      return true
     } catch (cause) {
       setNotice({ raw: errorMessage(cause, 'json.vault.save') })
+      return false
     } finally {
       setVaultBusy(false)
     }
+  }
+
+  async function pullVault(): Promise<void> {
+    if (vaultDirty && vaultDocument) {
+      const saved = await saveVaultDocument()
+      if (!saved) return
+    }
+    await runGit('pull', undefined, false)
   }
 
   async function createVaultDirectory(): Promise<void> {
@@ -524,6 +798,7 @@ export function JsonToolSurface() {
       setVaultSelection({ path, kind: 'folder' })
       await refreshVault(false)
       setNotice({ key: 'notice.folderCreated', values: { path } })
+      recordJsonVaultActivity('Create JSON Vault folder')
     } catch (cause) {
       setNotice({ raw: errorMessage(cause, 'json.vault.create-directory') })
     } finally {
@@ -531,37 +806,37 @@ export function JsonToolSurface() {
     }
   }
 
-  async function moveVaultEntry(): Promise<void> {
-    if (!vaultSelection) return
-    const destinationPath = (await dialog.prompt(
-      t('prompt.moveEntry', { path: vaultSelection.path }),
-      vaultSelection.path
+  async function moveVaultEntry(prepared?: { destinationPath: string; activity: string; notice: 'notice.moved' | 'vault.renamed' }, entry: VaultSelection | undefined = vaultSelection): Promise<void> {
+    if (!entry) return
+    const destinationPath = prepared?.destinationPath ?? (await dialog.prompt(
+      t('prompt.moveEntry', { path: entry.path }),
+      entry.path
     ))?.trim()
-    if (!destinationPath || destinationPath === vaultSelection.path) return
+    if (!destinationPath || destinationPath === entry.path) return
     setVaultBusy(true)
     try {
       let expectedFingerprint: string | null = null
-      if (vaultSelection.kind === 'file') {
-        expectedFingerprint = vaultDocument?.relativePath === vaultSelection.path
+      if (entry.kind === 'file') {
+        expectedFingerprint = vaultDocument?.relativePath === entry.path
           ? vaultDocument.fingerprint
-          : (await vaultApi.read(vaultSelection.path)).fingerprint
+          : (await vaultApi.read(entry.path)).fingerprint
       }
-      const previousPath = vaultSelection.path
+      const previousPath = entry.path
       const movedPath = await vaultApi.move(previousPath, destinationPath, expectedFingerprint)
-      setVaultSelection({ path: movedPath, kind: vaultSelection.kind })
+      setVaultSelection({ path: movedPath, kind: entry.kind })
       setVaultDocument((document) => {
         if (!document) return document
-        if (vaultSelection.kind === 'file' && document.relativePath === previousPath) {
+        if (entry.kind === 'file' && document.relativePath === previousPath) {
           return { ...document, relativePath: movedPath }
         }
-        if (vaultSelection.kind === 'folder' && document.relativePath.startsWith(`${previousPath}/`)) {
+        if (entry.kind === 'folder' && document.relativePath.startsWith(`${previousPath}/`)) {
           return { ...document, relativePath: `${movedPath}${document.relativePath.slice(previousPath.length)}` }
         }
         return document
       })
       await refreshVault(false)
-      setNotice({ key: 'notice.moved', values: { path: movedPath } })
-      await autoCommit(movedPath)
+      setNotice({ key: prepared?.notice ?? 'notice.moved', values: { path: movedPath } })
+      recordJsonVaultActivity(prepared?.activity ?? 'Move JSON Vault entry')
     } catch (cause) {
       setNotice({ raw: errorMessage(cause, 'json.vault.move') })
     } finally {
@@ -569,30 +844,145 @@ export function JsonToolSurface() {
     }
   }
 
-  async function duplicateVaultDocument(): Promise<void> {
-    if (vaultSelection?.kind !== 'file') return
-    if (vaultDirty && vaultDocument?.relativePath === vaultSelection.path
-      && !await dialog.confirm(t('confirm.duplicateDirty'), { dangerous: true })) return
-    const destinationPath = (await dialog.prompt(
-      t('prompt.duplicateFile'),
-      duplicatePath(vaultSelection.path)
-    ))?.trim()
-    if (!destinationPath) return
+  async function renameVaultEntry(entry: VaultSelection | undefined = vaultSelection): Promise<void> {
+    if (!entry) return
+    const leaf = entry.path.split('/').at(-1) ?? entry.path
+    const current = entry.kind === 'file' ? leaf.replace(/\.json$/i, '') : leaf
+    const name = await dialog.prompt(t('vault.renamePrompt'), current)
+    if (name === null) return
+    try {
+      const destinationPath = renamedVaultPath(entry.path, name, entry.kind === 'file')
+      await moveVaultEntry({ destinationPath, activity: 'Rename JSON Vault entry', notice: 'vault.renamed' }, entry)
+    } catch (cause) {
+      setNotice({ raw: errorMessage(cause, 'json.vault.rename') })
+    }
+  }
+
+  async function exportSelectedVaultFile(paths: string[] = vaultFilePaths()): Promise<void> {
+    if (!paths.length) return
+    if (vaultDirty && vaultDocument && paths.includes(vaultDocument.relativePath)) {
+      const saved = await saveVaultDocument()
+      if (!saved) return
+    }
+    const selected = await open({ directory: true, multiple: false, title: t('vault.export') })
+    const directory = Array.isArray(selected) ? selected[0] : selected
+    if (!directory) return
     setVaultBusy(true)
     try {
-      const source = vaultDocument?.relativePath === vaultSelection.path
-        ? vaultDocument
-        : await vaultApi.read(vaultSelection.path)
-      const document = await vaultApi.duplicate(
-        vaultSelection.path,
-        destinationPath,
-        source.fingerprint
-      )
-      setVaultDocument(document)
-      setVaultSelection({ path: document.relativePath, kind: 'file' })
-      replaceDocument(document.content, { key: 'notice.duplicated', values: { path: document.relativePath } })
+      const count = await vaultApi.exportFiles(directory, paths)
+      setNotice({ key: 'vault.exported', values: { count } })
+    } catch (cause) {
+      setNotice({ raw: errorMessage(cause, 'json.vault.export') })
+    } finally {
+      setVaultBusy(false)
+    }
+  }
+
+  async function revealVaultEntry(entry: VaultSelection): Promise<void> {
+    try {
+      await vaultApi.revealEntry(entry.path)
+    } catch (cause) {
+      setNotice({ raw: errorMessage(cause, 'json.vault.reveal') })
+    }
+  }
+
+  function openVaultMenu(entry: VaultSelection, clientX: number, clientY: number): void {
+    const paths = selectedVaultPaths.includes(entry.path) ? selectedVaultPaths : [entry.path]
+    if (!selectedVaultPaths.includes(entry.path)) {
+      setSelectedVaultPaths(paths)
+      vaultSelectionAnchor.current = entry.path
+      setVaultSelection(entry)
+    }
+    setVaultMenu({
+      entry,
+      paths,
+      left: Math.min(clientX, window.innerWidth - 180),
+      top: Math.min(clientY, window.innerHeight - 220)
+    })
+  }
+
+  function chooseVaultRow(entry: VaultSelection, gesture: SelectionGesture): boolean {
+    setSelectedVaultPaths((current) => selectTreePaths(current, entry.path, vaultSelectionAnchor.current, visibleVaultPaths, gesture))
+    if (!gesture.shiftKey) vaultSelectionAnchor.current = entry.path
+    const plain = !gesture.ctrlKey && !gesture.metaKey && !gesture.shiftKey
+    if (plain) setVaultSelection(entry)
+    return plain
+  }
+
+  function vaultFilePaths(paths = selectedVaultPaths): string[] {
+    const files = new Set(vault?.files.map((file) => file.relativePath) ?? [])
+    const source = paths.length ? paths : vaultSelection?.kind === 'file' ? [vaultSelection.path] : []
+    return source.filter((path) => files.has(path))
+  }
+
+  function startVaultDrag(event: React.DragEvent, entry: VaultSelection): void {
+    draggedVaultEntry.current = entry
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData(vaultDragPathType, entry.path)
+    event.dataTransfer.setData(vaultDragKindType, entry.kind)
+  }
+
+  function allowVaultDrop(event: React.DragEvent, targetDirectory: string): void {
+    const entry = draggedVaultEntry.current
+    if (!entry || !canMoveVaultEntry(entry.path, targetDirectory)) return
+    event.preventDefault()
+    event.stopPropagation()
+    event.dataTransfer.dropEffect = 'move'
+    if (vaultDropTarget !== targetDirectory) setVaultDropTarget(targetDirectory)
+  }
+
+  function dropVaultEntry(event: React.DragEvent, targetDirectory: string): void {
+    event.preventDefault()
+    event.stopPropagation()
+    const entry = readDraggedVaultEntry(event.dataTransfer) ?? draggedVaultEntry.current
+    draggedVaultEntry.current = null
+    setVaultDropTarget(null)
+    if (!entry || !canMoveVaultEntry(entry.path, targetDirectory)) return
+    void moveVaultEntry({
+      destinationPath: vaultDragDestination(entry.path, targetDirectory),
+      activity: 'Move JSON Vault entry',
+      notice: 'notice.moved'
+    }, entry)
+  }
+
+  function endVaultDrag(): void {
+    draggedVaultEntry.current = null
+    setVaultDropTarget(null)
+  }
+
+  async function openVaultFolder(): Promise<void> {
+    try {
+      await vaultApi.revealRoot()
+    } catch (cause) {
+      setNotice({ raw: errorMessage(cause, 'json.vault.open') })
+    }
+  }
+
+  async function duplicateVaultDocument(paths: string[] = vaultFilePaths()): Promise<void> {
+    if (!paths.length) return
+    if (vaultDirty && vaultDocument && paths.includes(vaultDocument.relativePath)) {
+      const saved = await saveVaultDocument()
+      if (!saved) return
+    }
+    setVaultBusy(true)
+    try {
+      const taken = new Set([...(vault?.files.map((file) => file.relativePath) ?? []), ...(vault?.directories ?? [])])
+      let last: VaultDocument | undefined
+      for (const path of paths) {
+        const source = vaultDocument?.relativePath === path ? vaultDocument : await vaultApi.read(path)
+        const destinationPath = uniqueDuplicatePath(path, taken)
+        taken.add(destinationPath)
+        last = await vaultApi.duplicate(path, destinationPath, source.fingerprint)
+      }
+      if (last) {
+        setVaultDocument(last)
+        setVaultSelection({ path: last.relativePath, kind: 'file' })
+        setSelectedVaultPaths([last.relativePath])
+        vaultSelectionAnchor.current = last.relativePath
+        replaceDocument(last.content, { key: 'notice.duplicated', values: { path: last.relativePath } })
+      }
       await refreshVault(false)
-      await autoCommit(document.relativePath)
+      recordJsonVaultActivity('Duplicate JSON snippet')
     } catch (cause) {
       setNotice({ raw: errorMessage(cause, 'json.vault.duplicate') })
     } finally {
@@ -600,11 +990,11 @@ export function JsonToolSurface() {
     }
   }
 
-  async function deleteVaultEntry(): Promise<void> {
-    if (!vaultSelection || !await dialog.confirm(t('confirm.remove', { path: vaultSelection.path }), { dangerous: true })) return
+  async function deleteVaultEntry(entry: VaultSelection | undefined = vaultSelection): Promise<void> {
+    if (!entry || !await dialog.confirm(t('confirm.remove', { path: entry.path }), { dangerous: true })) return
     setVaultBusy(true)
     try {
-      const selected = vaultSelection
+      const selected = entry
       const expectedFingerprint = selected.kind === 'file'
         ? vaultDocument?.relativePath === selected.path
           ? vaultDocument.fingerprint
@@ -623,6 +1013,7 @@ export function JsonToolSurface() {
         setNotice({ key: 'notice.recovered', values: { path: removed.recoveryPath } })
       }
       setVaultSelection(undefined)
+      recordJsonVaultActivity('Delete JSON Vault entry')
       await refreshVault(false)
     } catch (cause) {
       setNotice({ raw: errorMessage(cause, 'json.vault.delete') })
@@ -650,7 +1041,8 @@ export function JsonToolSurface() {
   async function runGit(
     operation: VaultGitOperation,
     message?: string,
-    editorDirty = vaultDirty
+    editorDirty = vaultDirty,
+    extra: { path?: string; strategy?: 'ours' | 'theirs' } = {}
   ): Promise<void> {
     const requestId = crypto.randomUUID()
     setGitRequestId(requestId)
@@ -659,13 +1051,23 @@ export function JsonToolSurface() {
         requestId,
         operation,
         ...(message ? { message } : {}),
-        editorDirty
+        editorDirty,
+        ...extra
       })
       if (!result.success) {
         throw new Error(result.stderr.trim() || result.stdout.trim() || t('notice.gitFailed', { operation }))
       }
       setNotice(result.stdout.trim() ? { raw: result.stdout.trim() } : { key: 'notice.gitDone', values: { operation } })
-      await refreshVault(false)
+      const snapshot = await refreshVault(false)
+      if (gitDetailsOpen) {
+        setGitRemoteDraft(snapshot.git.remote || settings.vault.gitRemote)
+        setGitDetails(snapshot.git.repository ? await vaultApi.gitDetails() : { diff: '', commits: [] })
+      }
+      if (operation === 'discard' || operation === 'abortMerge' || operation === 'resolveConflict') {
+        setGitSelected('')
+        setGitDiff({ files: [] })
+        setGitDiffPath('')
+      }
     } catch (cause) {
       setNotice({ raw: errorMessage(cause, `json.vault.git.${operation}`) })
     } finally {
@@ -673,36 +1075,64 @@ export function JsonToolSurface() {
     }
   }
 
-  async function autoCommit(relativePath: string): Promise<void> {
-    if (!settings.vault.autoCommit || !vault?.git.repository) return
-    await runGit('commit', `Update ${relativePath} from MooTool Next Tauri`, false)
-  }
-
   async function cancelGit(): Promise<void> {
     if (gitRequestId) await vaultApi.cancelGit(gitRequestId)
   }
 
   async function loadGitDetails(open = true): Promise<void> {
-    if (!vault?.git.repository) return
-    if (open) setGitDetailsOpen(true)
+    if (!vault?.rootPath) return
+    if (open) {
+      setGitDetailsOpen(true)
+      setGitTab('changes')
+      setGitSelected('')
+      setGitDiff({ files: [] })
+      setGitDiffPath('')
+    }
     setGitDetailsBusy(true)
     try {
-      setGitDetails(await vaultApi.gitDetails(vaultSelection?.kind === 'file' ? vaultSelection.path : undefined))
+      const snapshot = await refreshVault(false)
+      setGitRemoteDraft(snapshot.git.remote || settings.vault.gitRemote)
+      setGitDetails(snapshot.git.repository ? await vaultApi.gitDetails() : { diff: '', commits: [] })
     } catch (cause) {
       setNotice({ raw: errorMessage(cause, 'json.vault.git.details') })
     } finally { setGitDetailsBusy(false) }
   }
 
-  async function configureGitRemote(): Promise<void> {
+  async function showGitDiff(input: { path?: string; commit?: string }, selected: string): Promise<void> {
+    setGitSelected(selected)
+    setGitDiffPath(selected)
+    setGitDetailsBusy(true)
+    try {
+      setGitDiff(await vaultApi.gitDiff(input))
+    } catch (cause) {
+      setGitDiff({ files: [] })
+      setNotice({ raw: errorMessage(cause, 'json.vault.git.diff') })
+    } finally {
+      setGitDetailsBusy(false)
+    }
+  }
+
+  function selectGitTab(next: 'changes' | 'history'): void {
+    setGitTab(next)
+    setGitSelected('')
+    setGitDiff({ files: [] })
+    setGitDiffPath('')
+  }
+
+  async function saveGitRemote(): Promise<void> {
     if (!vault?.git.repository) return
-    const value = await dialog.prompt(t('git.remotePrompt'), vault.git.remote)
-    if (value === null) return
+    const value = gitRemoteDraft.trim()
     try {
       const git = await vaultApi.configureGitRemote(value)
       setVault((current) => current ? { ...current, git } : current)
-      setNotice({ key: value.trim() ? 'notice.remoteSaved' : 'notice.remoteRemoved' })
+      setGitRemoteDraft(git.remote || value)
+      await save((current) => ({ ...current, vault: { ...current.vault, gitRemote: value } }))
+      setNotice({ key: value ? 'notice.remoteSaved' : 'notice.remoteRemoved' })
     } catch (cause) { setNotice({ raw: errorMessage(cause, 'json.vault.git.remote') }) }
   }
+
+  const selectedGitChange = vault?.git.changes.find((change) => change.path === gitSelected)
+  const gitBusy = Boolean(gitRequestId) || gitDetailsBusy
 
   return (
     <main className="json-workbench">
@@ -776,10 +1206,13 @@ export function JsonToolSurface() {
         <button className="secondary-button" type="button" onClick={() => setWrap((value) => !value)}>
           <WrapText />{wrap ? t('action.wrapOff') : t('action.wrapOn')}
         </button>
+        <label className="json-toolbar__select">
+          <FontSelect ariaLabel={settingsText('settings.jsonFontFamily')} value={settings.editor.jsonFontName} labels={{ 'ui-monospace': settingsText('settings.interfaceFontMono') }} onChange={(jsonFontName) => { void save({ ...settings, editor: { ...settings.editor, jsonFontName } }) }} />
+        </label>
         <button
           className="secondary-button"
           type="button"
-          onClick={() => openSearchPanel(editorRef.current!)}
+          onClick={() => { if (findOpen) { setFindOpen(false); setReplacedCount(0) } else openJsonFind() }}
         >
           <Search />{t('action.find')}
         </button>
@@ -799,6 +1232,17 @@ export function JsonToolSurface() {
           </div>
         </details>
         <button
+          className="icon-button"
+          type="button"
+          aria-pressed={inspectorOpen}
+          aria-label={t('inspector.title')}
+          title={t('inspector.title')}
+          disabled={!vaultDocument}
+          onClick={() => setInspectorOpen((value) => !value)}
+        >
+          <PanelRight />
+        </button>
+        <button
           className="icon-button json-toolbar__clear"
           type="button"
           aria-label={t('action.clear')}
@@ -808,13 +1252,7 @@ export function JsonToolSurface() {
         </button>
       </section>
 
-      <section className={`json-status json-status--${validation.kind}`}>
-        {validation.kind === 'valid' ? <CheckCircle2 /> : validation.kind === 'error' ? <XCircle /> : <Braces />}
-        <strong>{validationText}</strong>
-        <span>{noticeText}</span>
-      </section>
-
-      <ResizableThreeColumns id="json-workbench" className="json-workbench__content" initialLeft={210} initialRight={250}>
+      <JsonWorkspace inspectorVisible={inspectorVisible}>
         <aside className="json-vault">
           <div className="json-vault__heading">
             <div><span className="eyebrow">JSON VAULT</span><h2>{t('vault.workspace')}</h2></div>
@@ -823,60 +1261,99 @@ export function JsonToolSurface() {
           {vault?.rootPath ? (
             <>
               <code className="json-vault__root" title={vault.rootPath}>{vault.rootPath}</code>
-              <div className="json-vault__files" role="tree" aria-label={t('vault.workspace')}>
-                {vault.files.length || vault.directories.length ? buildVaultRows(vault.files, vault.directories).map((row) => row.kind === 'folder' ? (
+              <label className="json-vault__search"><Search /><input aria-label={t('vault.search')} value={vaultQuery} placeholder={t('vault.search')} onChange={(event) => setVaultQuery(event.target.value)} /></label>
+              <div className="json-vault__list-controls">
+                <label><input type="checkbox" checked={vaultIncludeContent} onChange={(event) => setVaultIncludeContent(event.target.checked)} />{t('vault.searchContent')}</label>
+                <select aria-label={t('vault.sort')} value={vaultSort} onChange={(event) => setVaultSort(event.target.value as VaultListSort)}>
+                  <option value="name">{t('vault.sortName')}</option>
+                  <option value="modified">{t('vault.sortModified')}</option>
+                </select>
+                <details className="json-toolbar-more json-vault-more">
+                  <summary className="icon-button" aria-label={t('vault.more')} title={t('vault.more')}><MoreHorizontal /></summary>
+                  <div>
+                    <button type="button" disabled={!vaultSelection || multipleVaultSelection || vaultBusy} onClick={() => void renameVaultEntry()}>{t('vault.rename')}</button>
+                    <button type="button" disabled={!vaultFilePaths().length || vaultBusy} onClick={() => void exportSelectedVaultFile()}>{t('vault.export')}</button>
+                    <button type="button" disabled={vaultBusy} onClick={() => void refreshVault(false)}>{t('vault.refresh')}</button>
+                    <button type="button" disabled={vaultBusy} onClick={() => void openVaultFolder()}>{t('vault.openFolder')}</button>
+                  </div>
+                </details>
+              </div>
+              <div
+                ref={vaultListRef}
+                className={vaultDropTarget === '' ? 'json-vault__files json-vault__files--drop' : 'json-vault__files'}
+                role="tree"
+                aria-multiselectable="true"
+                aria-label={t('vault.workspace')}
+                onDragOver={(event) => allowVaultDrop(event, '')}
+                onDrop={(event) => dropVaultEntry(event, '')}
+              >
+                {visibleVaultRows.length ? visibleVaultRows.map((row) => row.kind === 'folder' ? (
                   <button
                     key={`folder:${row.path}`}
-                    className={vaultSelection?.kind === 'folder' && vaultSelection.path === row.path ? 'json-vault__folder json-vault__folder--active' : 'json-vault__folder'}
+                    className={['json-vault__folder', selectedVaultPaths.includes(row.path) ? 'json-vault__folder--selected' : '', vaultSelection?.kind === 'folder' && vaultSelection.path === row.path ? 'json-vault__folder--active' : '', vaultDropTarget === row.path ? 'json-vault__folder--drop' : ''].filter(Boolean).join(' ')}
                     type="button"
                     role="treeitem"
+                    aria-selected={selectedVaultPaths.includes(row.path)}
+                    aria-expanded={expandedFolders ? expandedFolders.has(row.path) : true}
                     aria-level={row.depth + 1}
+                    data-path={row.path}
                     title={row.path}
                     style={{ paddingLeft: `${row.depth * 10 + 5}px` }}
                     disabled={vaultBusy}
-                    onClick={() => setVaultSelection({ path: row.path, kind: 'folder' })}
-                  ><FolderOpen /><span>{row.name}</span></button>
+                    draggable={!vaultBusy && !multipleVaultSelection}
+                    onDragStart={(event) => startVaultDrag(event, { path: row.path, kind: 'folder' })}
+                    onDragEnd={endVaultDrag}
+                    onDragOver={(event) => allowVaultDrop(event, row.path)}
+                    onDrop={(event) => dropVaultEntry(event, row.path)}
+                    onContextMenu={(event) => { event.preventDefault(); openVaultMenu({ path: row.path, kind: 'folder' }, event.clientX, event.clientY) }}
+                    onClick={(event) => {
+                      const entry = { path: row.path, kind: 'folder' as const }
+                      if (!chooseVaultRow(entry, event)) return
+                      setExpandedFolders((current) => {
+                        const next = new Set(current ?? resolveExpandedPaths(vaultFolderPaths(vault), jsonExpandMode, row.path))
+                        if (next.has(row.path)) next.delete(row.path)
+                        else next.add(row.path)
+                        return next
+                      })
+                    }}
+                  >{(expandedFolders ? expandedFolders.has(row.path) : true) ? <ChevronDown /> : <ChevronRight />}<FolderOpen /><span>{row.name}</span></button>
                 ) : (
                   <button
                     key={row.file.relativePath}
-                    className={vaultSelection?.kind === 'file' && vaultSelection.path === row.file.relativePath ? 'json-vault__file json-vault__file--active' : 'json-vault__file'}
+                    className={['json-vault__file', selectedVaultPaths.includes(row.file.relativePath) ? 'json-vault__file--selected' : '', vaultSelection?.kind === 'file' && vaultSelection.path === row.file.relativePath ? 'json-vault__file--active' : ''].filter(Boolean).join(' ')}
                     type="button"
                     role="treeitem"
+                    aria-selected={selectedVaultPaths.includes(row.file.relativePath)}
                     aria-level={row.depth + 1}
+                    data-path={row.file.relativePath}
                     title={row.file.relativePath}
                     style={{ paddingLeft: `${row.depth * 10 + 7}px` }}
                     disabled={vaultBusy}
-                    onClick={() => void openVaultDocument(row.file.relativePath)}
+                    draggable={!vaultBusy && !multipleVaultSelection}
+                    onDragStart={(event) => startVaultDrag(event, { path: row.file.relativePath, kind: 'file' })}
+                    onDragEnd={endVaultDrag}
+                    onContextMenu={(event) => { event.preventDefault(); openVaultMenu({ path: row.file.relativePath, kind: 'file' }, event.clientX, event.clientY) }}
+                    onClick={(event) => {
+                      const entry = { path: row.file.relativePath, kind: 'file' as const }
+                      if (!chooseVaultRow(entry, event)) return
+                      void openVaultDocument(entry.path)
+                    }}
                   >
-                    <span>{row.name}</span><small>{formatBytes(row.file.sizeBytes)}</small>
+                    <span>{row.name}{vaultDocument?.relativePath === row.file.relativePath && vaultDirty && <i className="json-vault__dirty" />}</span><small>{formatBytes(row.file.sizeBytes)}</small>
                   </button>
-                )) : <p className="json-vault__empty">{t('vault.empty')}</p>}
+                )) : <p className="json-vault__empty">{t(vaultQuery.trim() ? 'vault.noMatches' : 'vault.empty')}</p>}
               </div>
+              {multipleVaultSelection && <div className="json-vault__selection">{t('vault.selected', { count: selectedVaultPaths.length })}</div>}
               <div className="json-vault__actions">
                 <button type="button" title={t('vault.new')} disabled={vaultBusy} onClick={() => void createVaultDocument()}><FilePlus2 /></button>
                 <button type="button" title={t('vault.newFolder')} disabled={vaultBusy} onClick={() => void createVaultDirectory()}><FolderPlus /></button>
-                <button type="button" title={t('vault.move')} disabled={!vaultSelection || vaultBusy} onClick={() => void moveVaultEntry()}><Pencil /></button>
-                <button type="button" title={t('vault.duplicate')} disabled={vaultSelection?.kind !== 'file' || vaultBusy} onClick={() => void duplicateVaultDocument()}><Copy /></button>
-                <button type="button" title={t('vault.recover')} disabled={!vaultSelection || vaultBusy} onClick={() => void deleteVaultEntry()}><Trash2 /></button>
+                <button type="button" title={t(jsonExpandMode === 'expandAll' ? 'vault.collapseAll' : 'vault.expandAll')} disabled={vaultBusy} onClick={() => void save((current) => ({ ...current, vault: { ...current.vault, jsonTreeExpandMode: current.vault.jsonTreeExpandMode === 'expandAll' ? 'collapseAll' : 'expandAll' } }))}>{jsonExpandMode === 'expandAll' ? <FoldVertical /> : <UnfoldVertical />}</button>
+                <button type="button" title={t('vault.locate')} disabled={!vaultLocatePath || vaultBusy} onClick={() => { setVaultQuery(''); setVaultSelection({ path: vaultLocatePath, kind: 'file' }); setExpandedFolders((current) => ensureAncestorsExpanded(current ?? new Set(), vaultLocatePath)); setLocateVaultRequest((value) => value + 1) }}><LocateFixed /></button>
+                <button type="button" title={t('vault.move')} disabled={!vaultSelection || multipleVaultSelection || vaultBusy} onClick={() => void moveVaultEntry()}><Pencil /></button>
+                <button type="button" title={t('vault.duplicate')} disabled={!vaultFilePaths().length || vaultBusy} onClick={() => void duplicateVaultDocument()}><Copy /></button>
+                <button type="button" title={t('vault.recover')} disabled={!vaultSelection || multipleVaultSelection || vaultBusy} onClick={() => void deleteVaultEntry()}><Trash2 /></button>
+                <button type="button" title={t('git.open')} disabled={vaultBusy} onClick={() => void loadGitDetails()}><GitBranch />{vault.git.changedFiles > 0 && <span className="json-vault-git-badge">{vault.git.changedFiles > 99 ? '99+' : vault.git.changedFiles}</span>}</button>
                 <button type="button" title={t('vault.disconnect')} disabled={vaultBusy} onClick={() => void disconnectVault()}><Unplug /></button>
-              </div>
-              <div className="json-vault__git">
-                <header><GitBranch /><strong>{vault.git.repository ? vault.git.branch || 'HEAD' : 'Git'}</strong>{vault.git.dirty && <span>{vault.git.changedFiles}</span>}</header>
-                {vault.git.available ? (
-                  <div>
-                    {!vault.git.repository
-                      ? <button type="button" disabled={Boolean(gitRequestId)} onClick={() => void runGit('init')}>{t('git.init')}</button>
-                      : (
-                          <>
-                            <button type="button" title={t('git.pull')} disabled={Boolean(gitRequestId) || vaultDirty || vault.git.dirty} onClick={() => void runGit('pull')}><Download /></button>
-                            <button type="button" title={t('git.commit')} disabled={Boolean(gitRequestId) || vaultDirty || !vault.git.dirty} onClick={() => void runGit('commit')}><GitBranch /></button>
-                            <button type="button" title={t('git.push')} disabled={Boolean(gitRequestId)} onClick={() => void runGit('push')}><Upload /></button>
-                            <button type="button" title={t('git.details')} disabled={Boolean(gitRequestId)} onClick={() => void loadGitDetails()}><Search /></button>
-                          </>
-                        )}
-                    {gitRequestId && <button type="button" title={t('git.cancel')} onClick={() => void cancelGit()}><LoaderCircle className="spin" />{t('git.cancelAction')}</button>}
-                  </div>
-                ) : <p>{t('git.unavailable')}</p>}
               </div>
             </>
           ) : (
@@ -887,7 +1364,30 @@ export function JsonToolSurface() {
           )}
         </aside>
         <div className="json-editor-card">
+          {findOpen && (
+            <div className="json-find" onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); setFindOpen(false); setReplacedCount(0) } }}>
+              <input aria-label={t('find.placeholder')} autoFocus value={findQuery} placeholder={t('find.placeholder')} onChange={(event) => { findIndexRef.current = 0; setReplacedCount(0); setFindQuery(event.target.value) }} onKeyDown={(event) => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); findJsonAround(!event.shiftKey) } }} />
+              <button type="button" disabled={!findQuery} onClick={() => findJsonAround(false)}>{t('find.previous')}</button>
+              <button type="button" disabled={!findQuery} onClick={() => findJsonAround(true)}>{t('find.next')}</button>
+              <span>{findQuery ? t('find.found', { count: findMatches.length }) : ''}</span>
+              <label><input type="checkbox" checked={findOptions.matchCase} onChange={(event) => { findIndexRef.current = 0; setReplacedCount(0); setFindOptions({ ...findOptions, matchCase: event.target.checked }) }} />{t('find.matchCase')}</label>
+              <label><input type="checkbox" checked={findOptions.wholeWord} onChange={(event) => { findIndexRef.current = 0; setReplacedCount(0); setFindOptions({ ...findOptions, wholeWord: event.target.checked }) }} />{t('find.wholeWord')}</label>
+              <label><input type="checkbox" checked={findOptions.regex} onChange={(event) => { findIndexRef.current = 0; setReplacedCount(0); setFindOptions({ ...findOptions, regex: event.target.checked }) }} />{t('find.regex')}</label>
+              <input aria-label={t('find.replacePlaceholder')} value={replaceText} placeholder={t('find.replacePlaceholder')} onChange={(event) => setReplaceText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); replaceJson(false) } }} />
+              <button type="button" disabled={!findQuery} onClick={() => replaceJson(false)}>{t('find.replace')}</button>
+              <button type="button" disabled={!findQuery} onClick={() => replaceJson(true)}>{t('find.replaceAll')}</button>
+              <span>{t('find.replaced', { count: replacedCount })}</span>
+              <button type="button" aria-label={t('find.close')} onClick={() => { setFindOpen(false); setReplacedCount(0) }}><X /></button>
+            </div>
+          )}
           <div ref={hostRef} className="json-editor" />
+          <footer className="json-statusbar">
+            <span title={vaultDocument?.relativePath ?? ''}>{vaultDirty ? '• ' : ''}{vaultDocument?.relativePath ?? ''}</span>
+            <span className={validation.kind === 'valid' ? 'json-statusbar__validation json-statusbar--valid' : validation.kind === 'error' ? 'json-statusbar__validation json-statusbar--error' : 'json-statusbar__validation'}>
+              {validation.kind === 'valid' ? <CheckCircle2 size={12} /> : validation.kind === 'error' ? <XCircle size={12} /> : <FileJson size={12} />}
+              <span>{validationText}</span>
+            </span>
+          </footer>
         </div>
         <aside className="json-inspector">
           <div className="json-inspector__heading">
@@ -895,7 +1395,7 @@ export function JsonToolSurface() {
               <span className="eyebrow">INSPECTOR</span>
               <h2>{t('inspector.title')}</h2>
             </div>
-            <Braces />
+            <button className="icon-button" type="button" aria-label={t('find.close')} onClick={() => setInspectorOpen(false)}><X /></button>
           </div>
 
           <dl className="json-analysis">
@@ -937,19 +1437,106 @@ export function JsonToolSurface() {
             {t('action.query')}
           </button>
           <pre className="json-path-result">{pathResult}</pre>
+          <section className="json-inspector-result">
+            <h3>{t('inspector.result')}</h3>
+            <p className={inspectorShowsValidation && validation.kind === 'error' ? 'json-inspector-result--error' : undefined}>{inspectorShowsValidation ? validationText : noticeText}</p>
+          </section>
         </aside>
-      </ResizableThreeColumns>
+      </JsonWorkspace>
 
-      <footer className="json-workbench__footer">
-        <span>{vaultDocument ? `${vaultDocument.relativePath} · ${vaultDirty ? t('footer.unsaved') : t('footer.saved')}` : t('footer.shortcuts')}</span>
-        <code>{sessionSummary} · IME {compositionStarts}/{compositionEnds}</code>
-      </footer>
-
-      {gitDetailsOpen && <div className="json-git-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setGitDetailsOpen(false) }}><section className="json-git-dialog" role="dialog" aria-modal="true" aria-label={t('git.details')}>
-        <header><div><FolderGit2 /><span><strong>{t('git.details')}</strong><small>{vaultSelection?.kind === 'file' ? vaultSelection.path : vault?.git.branch || 'HEAD'}</small></span></div><div><button type="button" onClick={() => void configureGitRemote()}>{t('git.remote')}</button><button type="button" disabled={gitDetailsBusy} onClick={() => void loadGitDetails(false)}><RefreshCw /></button><button type="button" aria-label={t('action.clear')} onClick={() => setGitDetailsOpen(false)}><XCircle /></button></div></header>
-        <div className="json-git-remote"><span>{t('git.remote')}</span><code>{vault?.git.remote || t('git.noRemote')}</code></div>
-        <main><section><header>{t('git.diff')}</header><pre>{gitDetailsBusy ? t('git.loading') : gitDetails.diff || t('git.clean')}</pre></section><section><header>{t('git.history')}</header><div>{gitDetails.commits.length ? gitDetails.commits.map((commit) => <article key={commit.hash}><code>{commit.hash.slice(0, 8)}</code><strong>{commit.subject}</strong><span>{commit.author}</span><time>{new Date(commit.timestamp * 1000).toLocaleString(locale)}</time></article>) : <p>{t('git.noHistory')}</p>}</div></section></main>
+      {gitDetailsOpen && vault && <div className="json-git-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setGitDetailsOpen(false) }}><section className="quick-note-git" role="dialog" aria-modal="true" aria-label={t('git.details')}>
+        <header className="quick-note-git__status">
+          <div>
+            <GitBranch size={15} />
+            <strong>{vault.git.repository ? t('git.branch', { branch: vault.git.branch || 'HEAD' }) : t('git.noRepo')}</strong>
+            {vault.git.repository && <span>{t('git.sync', { ahead: String(vault.git.ahead), behind: String(vault.git.behind) })}</span>}
+          </div>
+          <div>
+            <button type="button" disabled={gitBusy} onClick={() => void loadGitDetails(false)}><RefreshCw size={13} />{t('git.refresh')}</button>
+            {!vault.git.repository && <button type="button" disabled={gitBusy || vault.git.available === false} onClick={() => void runGit('init')}><GitBranch size={13} />{t('git.init')}</button>}
+            {vault.git.repository && <button type="button" disabled={gitBusy || !vault.git.remote} onClick={() => void runGit('fetch', undefined, false)}><CloudDownload size={13} />{t('git.fetch')}</button>}
+            {vault.git.repository && <button type="button" disabled={gitBusy || vault.git.merging || !vault.git.remote} onClick={() => void pullVault()}>{t('git.pull')}</button>}
+            {vault.git.repository && <button type="button" disabled={gitBusy || vault.git.merging || !vault.git.remote} onClick={() => void runGit('push', undefined, false)}><CloudUpload size={13} />{t('git.push')}</button>}
+            {vault.git.repository && (vault.git.merging || vault.git.conflicts > 0) && <button type="button" disabled={gitBusy} onClick={() => { void dialog.confirm(t('git.confirmAbort'), { dangerous: true }).then((confirmed) => { if (confirmed) void runGit('abortMerge', undefined, false) }) }}>{t('git.abortMerge')}</button>}
+            {vault.git.repository && vault.git.merging && vault.git.conflicts === 0 && <button type="button" disabled={gitBusy} onClick={() => void runGit('continueOperation', undefined, false)}>{t('git.continueOperation')}</button>}
+            {gitRequestId && <button type="button" onClick={() => void cancelGit()}><LoaderCircle className="spin" size={13} />{t('git.cancelAction')}</button>}
+            <button type="button" onClick={() => setGitDetailsOpen(false)}>{t('git.close')}</button>
+          </div>
+        </header>
+        {vault.git.available === false ? <div className="quick-note-git__empty">{t('git.unavailable')}</div> : (
+          <>
+            <div className="quick-note-git__remote">
+              <label htmlFor="json-git-remote">{t('git.remote')}</label>
+              <input id="json-git-remote" value={gitRemoteDraft} placeholder={t('git.remotePlaceholder')} onChange={(event) => setGitRemoteDraft(event.target.value)} />
+              <button type="button" disabled={gitBusy || !vault.git.repository || (!gitRemoteDraft.trim() && !vault.git.remote)} onClick={() => void saveGitRemote()}>{gitRemoteDraft.trim() ? t('git.saveRemote') : t('git.removeRemote')}</button>
+            </div>
+            <div className="quick-note-git__workspace">
+              <div>
+                <div className="quick-note-git__tabs" role="tablist">
+                  <button className={gitTab === 'changes' ? 'utility-segment utility-segment--active' : 'utility-segment'} type="button" role="tab" aria-selected={gitTab === 'changes'} onClick={() => selectGitTab('changes')}>{t('git.changes')} {vault.git.changes.length}</button>
+                  <button className={gitTab === 'history' ? 'utility-segment utility-segment--active' : 'utility-segment'} type="button" role="tab" aria-selected={gitTab === 'history'} onClick={() => selectGitTab('history')}>{t('git.history')}</button>
+                </div>
+                <div className="quick-note-git__list">
+                  {gitTab === 'changes' ? (
+                    vault.git.changes.length ? vault.git.changes.map((change) => (
+                      <button className={gitSelected === change.path ? 'quick-note-git__item quick-note-git__item--selected' : 'quick-note-git__item'} type="button" key={`${change.status}-${change.path}`} onClick={() => void showGitDiff({ path: change.path }, change.path)}>
+                        <code>{change.status}</code><span>{change.path}</span>{change.conflict && <em>{t('git.conflict')}</em>}
+                      </button>
+                    )) : <div className="quick-note-git__empty">{t('git.emptyChanges')}</div>
+                  ) : (
+                    gitDetails.commits.length ? gitDetails.commits.map((commit) => (
+                      <button className={gitSelected === commit.hash ? 'quick-note-git__item quick-note-git__item--selected' : 'quick-note-git__item'} type="button" key={commit.hash} onClick={() => void showGitDiff({ commit: commit.hash }, commit.hash)}>
+                        <code>{commit.hash.slice(0, 7)}</code><span><strong>{commit.subject}</strong><small>{commit.author} · {new Date(commit.timestamp * 1000).toLocaleString(locale)}</small></span>
+                      </button>
+                    )) : <div className="quick-note-git__empty">{t('git.emptyHistory')}</div>
+                  )}
+                </div>
+                {vault.git.repository && gitTab === 'changes' && selectedGitChange && (
+                  <div className="quick-note-git__change-actions">
+                    <button type="button" disabled={gitBusy} onClick={() => { void dialog.confirm(t('git.confirmDiscard', { path: selectedGitChange.path }), { dangerous: true }).then((confirmed) => { if (confirmed) void runGit('discard', undefined, false, { path: selectedGitChange.path }) }) }}><Undo2 size={13} />{t('git.discard')}</button>
+                    {selectedGitChange.conflict && <>
+                      <button type="button" disabled={gitBusy} onClick={() => void runGit('resolveConflict', undefined, false, { path: selectedGitChange.path, strategy: 'ours' })}>{t('git.useOurs')}</button>
+                      <button type="button" disabled={gitBusy} onClick={() => void runGit('resolveConflict', undefined, false, { path: selectedGitChange.path, strategy: 'theirs' })}>{t('git.useTheirs')}</button>
+                    </>}
+                  </div>
+                )}
+                {vault.git.repository && gitTab === 'changes' && (
+                  <div className="quick-note-git__commit">
+                    <input aria-label={t('git.commitMessage')} value={gitCommitMessage} onChange={(event) => setGitCommitMessage(event.target.value)} />
+                    <button type="button" disabled={gitBusy || vault.git.merging || vault.git.conflicts > 0 || vault.git.changes.length === 0 || !gitCommitMessage.trim()} onClick={() => void runGit('commit', gitCommitMessage, false)}><GitCommitHorizontal size={13} />{t('git.commit')}</button>
+                  </div>
+                )}
+              </div>
+              <GitDiffView
+                files={gitDiff.files}
+                selectedPath={gitDiffPath}
+                onSelectPath={setGitDiffPath}
+                labels={{
+                  title: gitDetailsBusy ? t('git.loading') : t('git.diff'),
+                  before: t('git.diffBefore'),
+                  after: t('git.diffAfter'),
+                  empty: t('git.noDiff'),
+                  binary: t('git.diffBinary'),
+                  tooLarge: t('git.diffTooLarge'),
+                  file: t('git.diffFile')
+                }}
+              />
+            </div>
+          </>
+        )}
       </section></div>}
+
+      {vaultMenu && createPortal(
+        <div className="quick-note-tree-menu json-vault-menu" role="menu" style={{ left: vaultMenu.left, top: vaultMenu.top }} onPointerDown={(event) => event.stopPropagation()}>
+          <button type="button" role="menuitem" disabled={!vaultFilePaths(vaultMenu.paths).length || vaultBusy} onClick={() => { const paths = vaultFilePaths(vaultMenu.paths); setVaultMenu(null); void duplicateVaultDocument(paths) }}>{t('vault.contextDuplicate')}</button>
+          <button type="button" role="menuitem" disabled={!vaultFilePaths(vaultMenu.paths).length || vaultBusy} onClick={() => { const paths = vaultFilePaths(vaultMenu.paths); setVaultMenu(null); void exportSelectedVaultFile(paths) }}>{t('vault.export')}</button>
+          <button type="button" role="menuitem" disabled={vaultMenu.paths.length > 1 || vaultBusy} onClick={() => { const entry = vaultMenu.entry; setVaultMenu(null); void renameVaultEntry(entry) }}>{t('vault.rename')}</button>
+          <button type="button" role="menuitem" disabled={vaultMenu.paths.length > 1 || vaultBusy} onClick={() => { const entry = vaultMenu.entry; setVaultMenu(null); void moveVaultEntry(undefined, entry) }}>{t('vault.contextMove')}</button>
+          <button type="button" role="menuitem" disabled={vaultMenu.paths.length > 1 || vaultBusy} onClick={() => { const entry = vaultMenu.entry; setVaultMenu(null); void deleteVaultEntry(entry) }}>{t('vault.contextDelete')}</button>
+          <button type="button" role="menuitem" disabled={vaultMenu.paths.length > 1 || vaultBusy} onClick={() => { const entry = vaultMenu.entry; setVaultMenu(null); void revealVaultEntry(entry) }}>{t('vault.reveal')}</button>
+        </div>,
+        document.body
+      )}
 
       {reportError && (
         <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>
@@ -961,6 +1548,11 @@ export function JsonToolSurface() {
 type VaultRow =
   | { kind: 'folder'; path: string; name: string; depth: number }
   | { kind: 'file'; file: VaultSnapshot['files'][number]; name: string; depth: number }
+
+function vaultFolderPaths(snapshot: VaultSnapshot): string[] {
+  return buildVaultRows(snapshot.files, snapshot.directories)
+    .flatMap((row) => row.kind === 'folder' ? [row.path] : [])
+}
 
 function buildVaultRows(files: VaultSnapshot['files'], directories: VaultSnapshot['directories']): VaultRow[] {
   const folders = new Set(directories)
@@ -983,14 +1575,6 @@ function buildVaultRows(files: VaultSnapshot['files'], directories: VaultSnapsho
     const rightPath = right.kind === 'folder' ? right.path : right.file.relativePath
     return leftPath.localeCompare(rightPath)
   })
-}
-
-function duplicatePath(relativePath: string): string {
-  const slash = relativePath.lastIndexOf('/')
-  const parent = slash >= 0 ? relativePath.slice(0, slash + 1) : ''
-  const filename = slash >= 0 ? relativePath.slice(slash + 1) : relativePath
-  const stem = filename.replace(/\.json$/i, '')
-  return `${parent}${stem}-copy.json`
 }
 
 function formatBytes(value: number): string {

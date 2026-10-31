@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { productToolCatalog, toolCatalog } from './toolCatalog'
 
 describe('Tauri product feature baseline', () => {
-  it('freezes 26 product tools independently from engineering labs', () => {
-    expect(productToolCatalog).toHaveLength(26)
-    expect(new Set(productToolCatalog.map((tool) => tool.id)).size).toBe(26)
+  it('freezes 27 product tools independently from engineering labs', () => {
+    expect(productToolCatalog).toHaveLength(27)
+    expect(new Set(productToolCatalog.map((tool) => tool.id)).size).toBe(27)
     expect(productToolCatalog.every((tool) => !tool.engineeringOnly)).toBe(true)
   })
 
@@ -42,6 +42,7 @@ describe('Tauri product feature baseline', () => {
       'image',
       'pdf',
       'file-preview',
+      'batch-rename',
       'system'
     ])
   })

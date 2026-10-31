@@ -1,3 +1,5 @@
+export const OPERATION_HISTORY_LIMIT = 500
+
 export type OperationStatus = 'info' | 'success' | 'error'
 
 export interface OperationHistory {

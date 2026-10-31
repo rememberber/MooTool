@@ -12,6 +12,7 @@ import { useMemo, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import { CodeEditor } from '../../shared/CodeEditor'
+import { ResizableThreeColumns } from '../../shared/ResizableThreeColumns'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
@@ -180,7 +181,7 @@ export function EncodeSurface() {
         </button>
       </section>
 
-      <section className="encode-layout">
+      <ResizableThreeColumns id="encode-panes" className="encode-layout" initialLeft={1} initialRight={1} defaultSizes={[1, 0.32, 1]} minLeft={240} minCenter={120} minRight={240}>
         <EditorPane
           label={labels.left}
           value={pair.left}
@@ -214,7 +215,7 @@ export function EncodeSurface() {
           onChange={(right) => updatePair({ right })}
           onCopy={() => void copy('right')}
         />
-      </section>
+      </ResizableThreeColumns>
 
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}>
         <span>{failed ? <TriangleAlert /> : <CheckCircle2 />}{noticeText}</span>

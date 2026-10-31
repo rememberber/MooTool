@@ -1,3 +1,45 @@
+export type QuickNoteSyntax =
+  | 'text/plain'
+  | 'text/markdown'
+  | 'application/json'
+  | 'text/java'
+  | 'text/javascript'
+  | 'text/typescript'
+  | 'text/python'
+  | 'text/html'
+  | 'text/xml'
+  | 'text/yaml'
+  | 'text/sql'
+
+const QUICK_NOTE_SYNTAX: Record<string, QuickNoteSyntax> = {
+  plain: 'text/plain',
+  markdown: 'text/markdown',
+  json: 'application/json',
+  java: 'text/java',
+  javascript: 'text/javascript',
+  typescript: 'text/typescript',
+  python: 'text/python',
+  html: 'text/html',
+  xml: 'text/xml',
+  yaml: 'text/yaml',
+  sql: 'text/sql',
+  'text/plain': 'text/plain',
+  'text/markdown': 'text/markdown',
+  'application/json': 'application/json',
+  'text/java': 'text/java',
+  'text/javascript': 'text/javascript',
+  'text/typescript': 'text/typescript',
+  'text/python': 'text/python',
+  'text/html': 'text/html',
+  'text/xml': 'text/xml',
+  'text/yaml': 'text/yaml',
+  'text/sql': 'text/sql'
+}
+
+export function normalizeNoteSyntax(value: unknown): QuickNoteSyntax {
+  return typeof value === 'string' ? QUICK_NOTE_SYNTAX[value] ?? 'text/plain' : 'text/plain'
+}
+
 export interface QuickNote {
   id: string
   title: string
@@ -12,10 +54,18 @@ export interface QuickNote {
   lineSpacing: number
   relativePath: string
   lineWrapping: boolean
-  syntax: 'markdown' | 'plain' | 'json' | 'yaml' | 'java' | 'javascript' | 'typescript' | 'python' | 'html' | 'xml' | 'sql'
+  syntax: QuickNoteSyntax
   pinned: boolean
   createdAt: number
   updatedAt: number
+}
+
+export interface CreateQuickNoteInput {
+  title: string
+  parentPath: string
+  fontName: string
+  fontSize: number
+  lineWrap: boolean
 }
 
 export interface QuickNoteFolder {
@@ -59,8 +109,13 @@ export interface BoardMessage {
 export interface LocalDataApi {
   listNotes(): Promise<QuickNote[]>
   saveNote(note: QuickNote): Promise<QuickNote>
+  createNote(input: CreateQuickNoteInput): Promise<QuickNote>
+  duplicateNote(relativePath: string): Promise<QuickNote>
+  moveNoteEntry(relativePath: string, targetDirectory: string): Promise<QuickNote>
+  renameNoteEntry(relativePath: string, name: string): Promise<QuickNote>
   deleteNote(id: string): Promise<boolean>
   revealNoteEntry(relativePath: string): Promise<void>
+  exportNotes(directory: string, relativePaths: string[]): Promise<number>
   openNoteVault(): Promise<void>
   listNoteFolders(): Promise<QuickNoteFolder[]>
   saveNoteFolder(folder: QuickNoteFolder): Promise<QuickNoteFolder>
@@ -72,42 +127,52 @@ export interface LocalDataApi {
   listMessages(): Promise<BoardMessage[]>
   saveMessage(message: BoardMessage): Promise<BoardMessage>
   deleteMessage(id: string): Promise<boolean>
-  listHostProfiles(): Promise<HostProfile[]>
-  saveHostProfile(profile: HostProfile): Promise<HostProfile>
-  deleteHostProfile(id: string): Promise<boolean>
-  listTranslationWords(): Promise<TranslationWord[]>
-  saveTranslationWord(word: TranslationWord): Promise<TranslationWord>
-  deleteTranslationWord(id: string): Promise<boolean>
-  listTranslationHistory(): Promise<TranslationHistory[]>
-  deleteTranslationHistory(id: string): Promise<boolean>
+  listHostProfiles(keyword?: string, includeContent?: boolean): Promise<HostProfile[]>
+  saveHostProfile(profile: SaveHostProfileInput): Promise<HostProfile>
+  deleteHostProfile(id: number): Promise<boolean>
+  listTranslationWords(keyword?: string): Promise<TranslationWord[]>
+  saveTranslationWord(word: SaveTranslationWordInput): Promise<TranslationWord>
+  deleteTranslationWord(id: number): Promise<boolean>
+  listTranslationHistory(keyword?: string): Promise<TranslationHistory[]>
+  deleteTranslationHistory(id: number): Promise<boolean>
   clearTranslationHistory(): Promise<number>
 }
 
-export interface HostProfile {
-  id: string
+export interface SaveHostProfileInput {
+  id?: number
   name: string
   content: string
-  createdAt: number
-  updatedAt: number
 }
 
-export interface TranslationWord {
-  id: string
+export interface HostProfile {
+  id: number
+  name: string
+  content: string
+  createTime: string
+  modifiedTime: string
+}
+
+export interface SaveTranslationWordInput {
+  id?: number
   sourceText: string
   targetText: string
   sourceLang: string
   targetLang: string
   remark: string
-  createdAt: number
-  updatedAt: number
+}
+
+export interface TranslationWord extends SaveTranslationWordInput {
+  id: number
+  createTime: string
+  modifiedTime: string
 }
 
 export interface TranslationHistory {
-  id: string
+  id: number
   sourceText: string
   targetText: string
   sourceLang: string
   targetLang: string
-  provider: 'google' | 'bing'
-  createdAt: number
+  translatorType: 'google' | 'bing' | 'deepl'
+  createTime: string
 }

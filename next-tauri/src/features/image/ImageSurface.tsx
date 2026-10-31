@@ -6,6 +6,7 @@ import {
   Download,
   FileImage,
   FolderOpen,
+  List,
   ImageDown,
   ImageUp,
   Maximize2,
@@ -15,6 +16,7 @@ import {
   Pencil,
   Plus,
   ScanLine,
+  ScanText,
   Shapes,
   Trash2,
   TriangleAlert,
@@ -26,7 +28,7 @@ import {
 import { Image as TauriImage } from '@tauri-apps/api/image'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
 import { readImage as readClipboardImage, writeImage as writeClipboardImage } from '@tauri-apps/plugin-clipboard-manager'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
 import {
   useLocalizedMessages,
   type LocalizedMessageKey,
@@ -36,11 +38,15 @@ import { clipboardApi } from '../../platform/api/clipboardApi'
 import { imageApi } from '../../platform/api/imageApi'
 import { userFilesApi } from '../../platform/api/userFilesApi'
 import { nativeDesktopApi } from '../../platform/api/nativeDesktopApi'
+import { ocrApi } from '../../platform/api/ocrApi'
+import type { OcrSource, OcrStatus } from '../../platform/contracts/ocr'
+import { ImageOcrDialog } from './ImageOcrDialog'
 import type { ImageAsset, ImageAssetSummary, ImageVectorizeOptions } from '../../platform/contracts/image'
 import type { ReactNode } from 'react'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
+import { ResizableColumns } from '../../shared/ResizableColumns'
 import {
   compressImage,
   ensureImageDataUrl,
@@ -68,11 +74,22 @@ class ImageLocalizedError extends Error {
   }
 }
 
+function ImageWorkspace({ listVisible, children }: { listVisible: boolean; children: [ReactElement, ReactElement] }) {
+  if (!listVisible) return <div className="image-split image-split--collapsed">{children[1]}</div>
+  return (
+    <ResizableColumns id="image-library" className="image-split" initialPrimary={230} defaultSizes={[230, 770]} minPrimary={180} minSecondary={360}>
+      {children[0]}
+      {children[1]}
+    </ResizableColumns>
+  )
+}
+
 export function ImageSurface() {
   const dialog = useDesktopDialog()
   const { t } = useLocalizedMessages(imageMessages)
   const fileInput = useRef<HTMLInputElement>(null)
   const [assets, setAssets] = useState<ImageAssetSummary[]>([])
+  const [listVisible, setListVisible] = useState(true)
   const [current, setCurrent] = useState<ImageAsset>()
   const [selected, setSelected] = useState<string[]>([])
   const [zoom, setZoom] = useState(1)
@@ -107,6 +124,9 @@ export function ImageSurface() {
   })
   const [nativeDragActive, setNativeDragActive] = useState(false)
   const [captureAssets, setCaptureAssets] = useState<ImageAsset[]>([])
+  const [captureIntent, setCaptureIntent] = useState<'save' | 'ocr'>('save')
+  const [ocrStatus, setOcrStatus] = useState<OcrStatus | null>(null)
+  const [ocrSource, setOcrSource] = useState<OcrSource | null>(null)
   const noticeText = 'raw' in notice ? notice.raw : t(notice.key, notice.values)
   const base64ExportValue = current
     ? base64DataUrl ? current.dataUrl : current.dataUrl.slice(current.dataUrl.indexOf(',') + 1)
@@ -131,6 +151,7 @@ export function ImageSurface() {
   }, [current?.name])
 
   useEffect(() => { void load() }, [])
+  useEffect(() => { void ocrApi.status().then(setOcrStatus).catch(() => setOcrStatus({ available: false, engine: null, languages: [], reason: 'component' })) }, [])
 
   const processingNames = useMemo(() => selected.length ? selected : current ? [current.name] : [], [current, selected])
   const session = useMemo(() => ({
@@ -245,7 +266,9 @@ export function ImageSurface() {
     } catch (cause) { fail(cause) }
   }
 
-  async function captureScreen() {
+  async function beginCapture(intent: 'save' | 'ocr') {
+    if (intent === 'ocr' && !ocrStatus?.available) return
+    setCaptureIntent(intent)
     setBusy(true)
     if (window.__TAURI_INTERNALS__) {
       try {
@@ -255,10 +278,16 @@ export function ImageSurface() {
         setCaptureAssets(captured)
         succeed('notice.displaysCaptured', { count: result.monitorCount })
       } catch (cause) {
+        setCaptureIntent('save')
         fail(cause)
       } finally {
         setBusy(false)
       }
+      return
+    }
+    if (intent === 'ocr') {
+      setCaptureIntent('save')
+      setBusy(false)
       return
     }
     let stream: MediaStream | undefined
@@ -463,15 +492,28 @@ export function ImageSurface() {
   async function cancelCapture() {
     const names = captureAssets.map((asset) => asset.name)
     setCaptureAssets([])
+    setCaptureIntent('save')
     try {
       if (names.length) await imageApi.delete(names)
       succeed('notice.captureCancelled')
     } catch (cause) { fail(cause) }
   }
 
+  async function openCapturedText(dataUrl: string, width: number, height: number) {
+    const discard = captureAssets.map((item) => item.name)
+    if (discard.length) await imageApi.delete(discard)
+    setCaptureAssets([])
+    setCaptureIntent('save')
+    setOcrSource({ name: t('ocr.captureSource'), dataUrl, width, height })
+  }
+
   async function keepFullCapture(asset: ImageAsset) {
     setBusy(true)
     try {
+      if (captureIntent === 'ocr') {
+        await openCapturedText(asset.dataUrl, asset.width, asset.height)
+        return
+      }
       const discard = captureAssets.filter((item) => item.name !== asset.name).map((item) => item.name)
       if (discard.length) await imageApi.delete(discard)
       setCaptureAssets([])
@@ -489,6 +531,10 @@ export function ImageSurface() {
     setBusy(true)
     try {
       const dataUrl = await cropDataUrl(asset.dataUrl, selection)
+      if (captureIntent === 'ocr') {
+        await openCapturedText(dataUrl, selection.width, selection.height)
+        return
+      }
       const saved = await imageApi.save({
         name: `Screenshot-${timestamp()}.png`,
         dataUrl,
@@ -538,7 +584,9 @@ export function ImageSurface() {
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
       <div className="image-toolbar">
-        <button type="button" disabled={busy} onClick={() => void captureScreen()}><ScanLine />{t('action.screenshot')}</button>
+        <button type="button" aria-pressed={listVisible} aria-label={t('action.toggleList')} title={t('action.toggleList')} onClick={() => setListVisible((value) => !value)}><List /></button>
+        <button type="button" disabled={busy} onClick={() => void beginCapture('save')}><ScanLine />{t('action.screenshot')}</button>
+        <button type="button" disabled={busy || !ocrStatus?.available} title={!ocrStatus ? t('ocr.working') : ocrStatus.available ? t('ocr.local') : ocrStatus.reason === 'system' ? t('ocr.unavailable.system') : ocrStatus.reason === 'platform' ? t('ocr.unavailable.platform') : t('ocr.unavailable.component')} onClick={() => void beginCapture('ocr')}><ScanText />{t('ocr.capture')}</button>
         <button type="button" disabled={busy} onClick={() => void importClipboard()}><ClipboardPaste />{t('action.clipboard')}</button>
         <button type="button" disabled={busy} onClick={() => fileInput.current?.click()}><FolderOpen />{t('action.importImages')}</button>
         <button type="button" onClick={() => setPanel('base64-import')}><ImageDown />{t('action.importBase64')}</button>
@@ -554,6 +602,7 @@ export function ImageSurface() {
       </div>
       <section className="image-layout">
         {nativeDragActive && <div className="image-drop-overlay"><Upload /><strong>{t('drop.title')}</strong><span>{t('drop.hint')}</span></div>}
+        <ImageWorkspace listVisible={listVisible}>
         <aside className="image-library">
           <header><strong>{t('library.title')}</strong><span>{assets.length}</span></header>
           <div>
@@ -586,6 +635,7 @@ export function ImageSurface() {
             <span>{current ? `${current.width} × ${current.height} · ${formatBytes(current.sizeBytes)} · ${fit ? t('preview.fit') : `${Math.round(zoom * 100)}%`}` : ''}</span>
           </footer>
         </section>
+        </ImageWorkspace>
         {panel && (
           <ProcessingPanel mode={panel} onClose={() => setPanel(null)}>
             {panel === 'base64-import' ? <>
@@ -641,11 +691,13 @@ export function ImageSurface() {
         <CaptureEditor
           assets={captureAssets}
           busy={busy}
+          intent={captureIntent}
           onCancel={() => void cancelCapture()}
           onKeepFull={(asset) => void keepFullCapture(asset)}
           onSave={(asset, selection) => void saveCaptureRegion(asset, selection)}
         />
       )}
+      {ocrSource && <ImageOcrDialog source={ocrSource} status={ocrStatus} onClose={() => setOcrSource(null)} />}
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
     </main>
   )
@@ -653,9 +705,10 @@ export function ImageSurface() {
 
 interface CropRegion { x: number; y: number; width: number; height: number }
 
-function CaptureEditor({ assets, busy, onCancel, onKeepFull, onSave }: {
+function CaptureEditor({ assets, busy, intent, onCancel, onKeepFull, onSave }: {
   assets: ImageAsset[]
   busy: boolean
+  intent: 'save' | 'ocr'
   onCancel: () => void
   onKeepFull: (asset: ImageAsset) => void
   onSave: (asset: ImageAsset, selection: CropRegion) => void
@@ -724,8 +777,8 @@ function CaptureEditor({ assets, busy, onCancel, onKeepFull, onSave }: {
       </div>
       <footer>
         <span>{selection && selection.width >= 2 && selection.height >= 2 ? t('capture.selection', { width: selection.width, height: selection.height }) : t('capture.drag')}</span>
-        <button type="button" disabled={busy} onClick={() => onKeepFull(asset)}>{t('capture.keepFull')}</button>
-        <button className="primary-button" type="button" disabled={busy || !selection || selection.width < 2 || selection.height < 2} onClick={() => selection && onSave(asset, selection)}><Crop />{t('capture.saveRegion')}</button>
+        <button type="button" disabled={busy} onClick={() => onKeepFull(asset)}>{t(intent === 'ocr' ? 'capture.recognizeDisplay' : 'capture.keepFull')}</button>
+        <button className="primary-button" type="button" disabled={busy || !selection || selection.width < 2 || selection.height < 2} onClick={() => selection && onSave(asset, selection)}><Crop />{t(intent === 'ocr' ? 'capture.recognizeRegion' : 'capture.saveRegion')}</button>
       </footer>
     </section>
   )

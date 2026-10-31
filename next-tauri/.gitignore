@@ -1,6 +1,8 @@
 node_modules/
+public/pdfjs/
 dist/
 src-tauri/target/
+src-tauri/native/mootool-ocr
 .DS_Store
 *.log
 test-results/

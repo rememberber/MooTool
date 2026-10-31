@@ -42,7 +42,6 @@ export function RuntimeSurface() {
   const [runtime, setRuntime] = useState<CodeRuntimeId>('node')
   const [codes, setCodes] = useState<Record<CodeRuntimeId, string>>(() => resolveDrafts(settings.runtime.drafts))
   const [options, setOptions] = useState<RuntimeOptions>(settings.runtime.options)
-  const [timeoutSeconds, setTimeoutSeconds] = useState(settings.runtime.timeoutSeconds)
   const [hydrated, setHydrated] = useState(false)
   const [statuses, setStatuses] = useState<CodeRuntimeStatus[]>([])
   const [stdout, setStdout] = useState('')
@@ -76,7 +75,6 @@ export function RuntimeSurface() {
     if (!ready || hydrated) return
     setCodes(resolveDrafts(settings.runtime.drafts))
     setOptions(settings.runtime.options)
-    setTimeoutSeconds(settings.runtime.timeoutSeconds)
     setHydrated(true)
   }, [hydrated, ready, settings.runtime])
 
@@ -86,7 +84,7 @@ export function RuntimeSurface() {
       settings.runtime.drafts[id] === codes[id]
       && settings.runtime.options[id].argumentsText === options[id].argumentsText
       && settings.runtime.options[id].workingDirectory === options[id].workingDirectory
-    )) && settings.runtime.timeoutSeconds === timeoutSeconds
+    ))
     if (unchanged) return
     const timer = window.setTimeout(() => {
       void save((current) => ({
@@ -94,13 +92,12 @@ export function RuntimeSurface() {
         runtime: {
           ...current.runtime,
           drafts: codes,
-          options,
-          timeoutSeconds
+          options
         }
       })).catch(fail)
     }, 500)
     return () => window.clearTimeout(timer)
-  }, [codes, hydrated, options, save, settings.runtime, timeoutSeconds])
+  }, [codes, hydrated, options, save, settings.runtime])
 
   useOperationRestore('runtime', (entry) => {
     const metadata = parseOperationMetadata(entry)
@@ -165,7 +162,7 @@ export function RuntimeSurface() {
         requestId: id,
         runtime,
         code,
-        timeoutMs: timeoutSeconds * 1_000,
+        timeoutMs: settings.network.requestTimeoutMs,
         arguments: args,
         workingDirectory: option.workingDirectory
       }, (event) => {
@@ -260,14 +257,13 @@ export function RuntimeSurface() {
         </div>
         <label>{t('field.arguments')}<input value={option.argumentsText} placeholder="--name 'Moo Tool'" onChange={(event) => patchOption({ argumentsText: event.target.value })} /></label>
         <label className="runtime-working-directory">{t('field.workingDirectory')}<input value={option.workingDirectory} placeholder={t('placeholder.workingDirectory')} onChange={(event) => patchOption({ workingDirectory: event.target.value })} /><button type="button" aria-label={t('action.chooseDirectory')} title={t('action.chooseDirectory')} onClick={() => void chooseWorkingDirectory()}><FolderOpen /></button></label>
-        <label className="runtime-timeout">{t('field.timeout')}<input type="number" min="1" max="300" value={timeoutSeconds} onChange={(event) => setTimeoutSeconds(Math.min(300, Math.max(1, event.target.valueAsNumber || 30)))} /><span>s</span></label>
         <button className="secondary-button" type="button" disabled={running} onClick={() => void detect()}><RefreshCw />{t('action.detect')}</button>
         {running
           ? <button className="primary-button runtime-stop" type="button" onClick={() => void stop()}><Square />{t('action.stop')}</button>
           : <button className="primary-button" type="button" onClick={() => void run()}><Play />{t('action.run')}</button>}
       </section>
       {status && <section className={status.available ? 'runtime-status-line runtime-status-line--ok' : 'runtime-status-line'}>{status.available ? <CheckCircle2 /> : <CircleAlert />}<strong>{runtimeName(runtime)}</strong><code>{status.command}</code><span>{status.version || t('status.notInstalled')}</span></section>}
-      <ResizableColumns id="runtime-source" className="code-runtime-layout" initialPrimary={520} minPrimary={320} minSecondary={300}>
+        <ResizableColumns id="runtime-editor-output" legacyId="runtime-source" className="code-runtime-layout" initialPrimary={520} defaultSizes={[1, 1]} minPrimary={300} minSecondary={300}>
         <section className="utility-editor-card">
           <header>
             <span>{t('pane.source', { runtime: runtimeName(runtime) })}</span>
@@ -286,7 +282,7 @@ export function RuntimeSurface() {
       </ResizableColumns>
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}>
         <span>{failed ? <TriangleAlert /> : <CheckCircle2 />}{noticeText}</span>
-        <span>{t('footer.capabilities', { seconds: timeoutSeconds })}</span>
+        <span>{t('footer.capabilities', { seconds: Math.round(settings.network.requestTimeoutMs / 1_000) })}</span>
         <code>{session.summary}</code>
       </footer>
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}

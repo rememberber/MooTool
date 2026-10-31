@@ -6,10 +6,12 @@ use crate::contracts::{
     image::ImageAssetSummary,
     local_data::{
         BoardMessage, HostProfile, OperationHistory, QuickNote, QuickNoteAttachment,
+        SaveHostProfileInput, SaveTranslationHistoryInput, SaveTranslationWordInput,
+        validate_host_content, validate_host_name, validate_translation_word_fields,
         QuickNoteFolder, ToolFavorite, TranslationHistory, TranslationWord,
         validate_note_folder_path,
     },
-    network::{HttpRequestHistory, SavedHttpRequest},
+    network::{validate_saved_http_request, HttpRequestHistory, HttpRequestSpec, HttpResponseData, SaveHttpRequestInput, SavedHttpRequest},
     product_import::{ProductImportCounts, ProductImportRecords},
     translation::TranslationProvider,
 };
@@ -279,9 +281,9 @@ impl LocalDataRepository {
             .map_err(database_error)?;
         let moved = transaction
             .execute(
-                "UPDATE quick_notes SET folder_path = '', updated_at = ?2
+                "DELETE FROM quick_notes
                  WHERE folder_path = ?1 OR substr(folder_path, 1, length(?1) + 1) = ?1 || '/'",
-                params![path, updated_at],
+                [path],
             )
             .map_err(database_error)?;
         transaction
@@ -534,353 +536,412 @@ impl LocalDataRepository {
             .map_err(database_error)
     }
 
-    pub fn list_host_profiles(&self) -> Result<Vec<HostProfile>, String> {
+    pub fn list_host_profiles(
+        &self,
+        keyword: &str,
+        include_content: bool,
+    ) -> Result<Vec<HostProfile>, String> {
+        if keyword.chars().count() > 200 {
+            return Err("Invalid string value".into());
+        }
         let connection = self.lock()?;
-        let mut statement = connection
-            .prepare(
-                "SELECT id, name, content, created_at, updated_at
-                 FROM host_profiles ORDER BY updated_at DESC, id ASC",
+        let pattern = format!("%{}%", keyword.trim());
+        let (sql, values): (&str, Vec<String>) = if keyword.trim().is_empty() {
+            (
+                "SELECT id, name, content, create_time, modified_time
+                 FROM t_host ORDER BY modified_time DESC, id DESC",
+                Vec::new(),
             )
-            .map_err(database_error)?;
+        } else if include_content {
+            (
+                "SELECT id, name, content, create_time, modified_time
+                 FROM t_host WHERE name LIKE ?1 OR content LIKE ?2
+                 ORDER BY modified_time DESC, id DESC",
+                vec![pattern.clone(), pattern],
+            )
+        } else {
+            (
+                "SELECT id, name, content, create_time, modified_time
+                 FROM t_host WHERE name LIKE ?1
+                 ORDER BY modified_time DESC, id DESC",
+                vec![pattern],
+            )
+        };
+        let mut statement = connection.prepare(sql).map_err(database_error)?;
         let rows = statement
-            .query_map([], |row| {
+            .query_map(rusqlite::params_from_iter(values.iter()), |row| {
                 Ok(HostProfile {
                     id: row.get(0)?,
                     name: row.get(1)?,
                     content: row.get(2)?,
-                    created_at: row.get(3)?,
-                    updated_at: row.get(4)?,
+                    create_time: row.get(3)?,
+                    modified_time: row.get(4)?,
                 })
             })
             .map_err(database_error)?;
         rows.collect::<Result<Vec<_>, _>>().map_err(database_error)
     }
 
-    pub fn save_host_profile(&self, profile: HostProfile) -> Result<HostProfile, String> {
-        profile.validate()?;
-        self.lock()?
-            .execute(
-                "INSERT INTO host_profiles (id, name, content, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5)
-                 ON CONFLICT(id) DO UPDATE SET
-                   name = excluded.name,
-                   content = excluded.content,
-                   updated_at = excluded.updated_at",
-                params![
-                    profile.id,
-                    profile.name,
-                    profile.content,
-                    profile.created_at,
-                    profile.updated_at
-                ],
+    pub fn save_host_profile(&self, input: SaveHostProfileInput) -> Result<HostProfile, String> {
+        let name = input.name.trim();
+        validate_host_name(name)?;
+        validate_host_content(&input.content)?;
+        let id = input.id.filter(|id| *id > 0);
+        let connection = self.lock()?;
+        let existing = match id {
+            Some(id) => connection
+                .query_row("SELECT id FROM t_host WHERE id = ?1", [id], |row| row.get::<_, i64>(0))
+                .optional()
+                .map_err(database_error)?,
+            None => connection
+                .query_row("SELECT id FROM t_host WHERE name = ?1", [name], |row| row.get::<_, i64>(0))
+                .optional()
+                .map_err(database_error)?,
+        };
+        let now = sqlite_date_now();
+        let saved_id = if let Some(id) = existing {
+            connection
+                .execute(
+                    "UPDATE t_host SET name = ?1, content = ?2, modified_time = ?3 WHERE id = ?4",
+                    params![name, input.content, now, id],
+                )
+                .map_err(database_error)?;
+            id
+        } else {
+            connection
+                .execute(
+                    "INSERT INTO t_host (name, content, create_time, modified_time) VALUES (?1, ?2, ?3, ?3)",
+                    params![name, input.content, now],
+                )
+                .map_err(database_error)?;
+            connection.last_insert_rowid()
+        };
+        connection
+            .query_row(
+                "SELECT id, name, content, create_time, modified_time FROM t_host WHERE id = ?1",
+                [saved_id],
+                |row| {
+                    Ok(HostProfile {
+                        id: row.get(0)?,
+                        name: row.get(1)?,
+                        content: row.get(2)?,
+                        create_time: row.get(3)?,
+                        modified_time: row.get(4)?,
+                    })
+                },
             )
-            .map_err(database_error)?;
-        Ok(profile)
+            .map_err(database_error)
     }
 
-    pub fn delete_host_profile(&self, id: &str) -> Result<bool, String> {
-        validate_delete_id(id)?;
+    pub fn delete_host_profile(&self, id: i64) -> Result<bool, String> {
+        if id <= 0 {
+            return Err("Invalid host profile".into());
+        }
         self.lock()?
-            .execute("DELETE FROM host_profiles WHERE id = ?1", [id])
+            .execute("DELETE FROM t_host WHERE id = ?1", [id])
             .map(|affected| affected > 0)
             .map_err(database_error)
     }
 
     pub fn list_http_requests(&self, query: &str) -> Result<Vec<SavedHttpRequest>, String> {
-        if query.chars().count() > 256 {
-            return Err("HTTP saved-request search cannot exceed 256 characters".into());
-        }
         let connection = self.lock()?;
+        let trimmed = query.trim();
         let mut statement = connection
-            .prepare(
-                "SELECT payload_json FROM http_saved_requests
-                 ORDER BY updated_at DESC, id ASC LIMIT 1000",
-            )
+            .prepare(if trimmed.is_empty() {
+                "SELECT id, msg_name, method, url, params, headers, cookies, body, body_type, create_time, modified_time, response_body, response_headers, response_cookies
+                 FROM t_msg_http ORDER BY modified_time DESC, id DESC"
+            } else {
+                "SELECT id, msg_name, method, url, params, headers, cookies, body, body_type, create_time, modified_time, response_body, response_headers, response_cookies
+                 FROM t_msg_http WHERE msg_name LIKE ?1 ORDER BY modified_time DESC, id DESC"
+            })
             .map_err(database_error)?;
-        let rows = statement
-            .query_map([], |row| row.get::<_, String>(0))
-            .map_err(database_error)?;
-        let needle = query.trim().to_lowercase();
-        let mut items = Vec::new();
-        for row in rows {
-            let payload = row.map_err(database_error)?;
-            let item = serde_json::from_str::<SavedHttpRequest>(&payload)
-                .map_err(|error| format!("failed to decode saved HTTP request: {error}"))?;
-            if needle.is_empty()
-                || item.name.to_lowercase().contains(&needle)
-                || item.request.url.to_lowercase().contains(&needle)
-            {
-                items.push(item);
-            }
+        let pattern = format!("%{trimmed}%");
+        let rows = if trimmed.is_empty() {
+            statement.query_map([], map_saved_http_request)
+        } else {
+            statement.query_map(params![pattern], map_saved_http_request)
         }
-        Ok(items)
+        .map_err(database_error)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(database_error)
     }
 
-    pub fn save_http_request(
-        &self,
-        mut item: SavedHttpRequest,
-    ) -> Result<SavedHttpRequest, String> {
-        item.validate()?;
+    pub fn save_http_request(&self, input: SaveHttpRequestInput) -> Result<SavedHttpRequest, String> {
+        validate_saved_http_request(&input)?;
+        let name = {
+            let trimmed = input.name.trim();
+            if trimmed.is_empty() { "Untitled" } else { trimmed }
+        };
+        let body_type = if input.body_type.trim().is_empty() { "application/json".to_string() } else { input.body_type.trim().to_string() };
+        let id = input.id.filter(|id| *id > 0);
         let connection = self.lock()?;
-        let existing = connection
-            .query_row(
-                "SELECT id, created_at FROM http_saved_requests WHERE name = ?1",
-                [item.name.trim()],
-                |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)),
-            )
-            .optional()
-            .map_err(database_error)?;
-        if let Some((id, created_at)) = existing {
-            item.id = id;
-            item.created_at = created_at;
-        }
-        item.name = item.name.trim().to_string();
-        let payload = serde_json::to_string(&item)
-            .map_err(|error| format!("failed to encode saved HTTP request: {error}"))?;
-        if payload.len() > 12 * 1024 * 1024 {
-            return Err("saved HTTP request exceeds the 12 MiB storage limit".into());
-        }
-        connection
-            .execute(
-                "INSERT INTO http_saved_requests (id, name, payload_json, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5)
-                 ON CONFLICT(id) DO UPDATE SET
-                   name = excluded.name,
-                   payload_json = excluded.payload_json,
-                   updated_at = excluded.updated_at",
-                params![
-                    item.id,
-                    item.name,
-                    payload,
-                    item.created_at,
-                    item.updated_at
-                ],
-            )
-            .map_err(database_error)?;
-        Ok(item)
+        let existing = match id {
+            Some(id) => connection
+                .query_row("SELECT id FROM t_msg_http WHERE id = ?1", [id], |row| row.get::<_, i64>(0))
+                .optional()
+                .map_err(database_error)?,
+            None => connection
+                .query_row("SELECT id FROM t_msg_http WHERE msg_name = ?1", [name], |row| row.get::<_, i64>(0))
+                .optional()
+                .map_err(database_error)?,
+        };
+        let now = sqlite_date_now();
+        let params_json = json_text(&input.params)?;
+        let headers_json = json_text(&input.headers)?;
+        let cookies_json = json_text(&input.cookies)?;
+        let saved_id = if let Some(id) = existing {
+            connection.execute(
+                "UPDATE t_msg_http SET msg_name = ?1, method = ?2, url = ?3, params = ?4, headers = ?5, cookies = ?6, body = ?7, body_type = ?8, modified_time = ?9, response_body = ?10, response_headers = ?11, response_cookies = ?12 WHERE id = ?13",
+                params![name, input.method, input.url.trim(), params_json, headers_json, cookies_json, input.body, body_type, now, input.response_body, input.response_headers, input.response_cookies, id],
+            ).map_err(database_error)?;
+            id
+        } else {
+            connection.execute(
+                "INSERT INTO t_msg_http (msg_name, method, url, params, headers, cookies, body, body_type, create_time, modified_time, response_body, response_headers, response_cookies)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10, ?11, ?12)",
+                params![name, input.method, input.url.trim(), params_json, headers_json, cookies_json, input.body, body_type, now, input.response_body, input.response_headers, input.response_cookies],
+            ).map_err(database_error)?;
+            connection.last_insert_rowid()
+        };
+        connection.query_row(
+            "SELECT id, msg_name, method, url, params, headers, cookies, body, body_type, create_time, modified_time, response_body, response_headers, response_cookies FROM t_msg_http WHERE id = ?1",
+            [saved_id],
+            map_saved_http_request,
+        ).map_err(database_error)
     }
 
-    pub fn delete_http_request(&self, id: &str) -> Result<bool, String> {
-        validate_delete_id(id)?;
-        self.lock()?
-            .execute("DELETE FROM http_saved_requests WHERE id = ?1", [id])
-            .map(|affected| affected > 0)
-            .map_err(database_error)
+    pub fn delete_http_request(&self, id: i64) -> Result<bool, String> {
+        if id <= 0 { return Err("Invalid HTTP request".into()); }
+        self.lock()?.execute("DELETE FROM t_msg_http WHERE id = ?1", [id]).map(|affected| affected > 0).map_err(database_error)
     }
 
-    pub fn record_http_history(&self, item: HttpRequestHistory) -> Result<(), String> {
-        item.validate()?;
-        let payload = serde_json::to_string(&item)
-            .map_err(|error| format!("failed to encode HTTP request history: {error}"))?;
-        if payload.len() > 12 * 1024 * 1024 {
-            return Err("HTTP request history exceeds the 12 MiB storage limit".into());
-        }
+    pub fn record_http_history(&self, request: &HttpRequestSpec, response: &HttpResponseData) -> Result<(), String> {
         let connection = self.lock()?;
-        connection
-            .execute(
-                "INSERT INTO http_request_history (id, payload_json, created_at)
-                 VALUES (?1, ?2, ?3)",
-                params![item.id, payload, item.created_at],
-            )
-            .map_err(database_error)?;
-        connection
-            .execute(
-                "DELETE FROM http_request_history WHERE id NOT IN (
-                   SELECT id FROM http_request_history ORDER BY created_at DESC, id DESC LIMIT 500
-                 )",
-                [],
-            )
-            .map_err(database_error)?;
+        let now = sqlite_date_now();
+        let title = {
+            let trimmed = request.name.trim();
+            if trimmed.is_empty() { "Untitled" } else { trimmed }
+        };
+        let status = format!("{} {}", response.status, response.status_text.trim());
+        let status = status.trim();
+        connection.execute(
+            "INSERT INTO t_http_request_history (request_id, title, method, url, params, headers, cookies, body, body_type, response_body, response_headers, response_cookies, status, cost_time, create_time, modified_time)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?15)",
+            params![
+                request.saved_id.filter(|id| *id > 0),
+                title,
+                request.method,
+                request.url,
+                json_text(&request.params)?,
+                json_text(&request.headers)?,
+                json_text(&request.cookies)?,
+                request.body,
+                request.body_type,
+                response.body_text,
+                response.headers.iter().map(|(name, value)| format!("{name}: {value}")).collect::<Vec<_>>().join("\n"),
+                response.headers.iter().filter(|(name, _)| name.eq_ignore_ascii_case("set-cookie")).map(|(_, value)| value.as_str()).collect::<Vec<_>>().join("\n"),
+                status,
+                i64::try_from(response.duration_ms).unwrap_or(i64::MAX),
+                now
+            ],
+        ).map_err(database_error)?;
+        connection.execute(
+            "DELETE FROM t_http_request_history WHERE id NOT IN (SELECT id FROM t_http_request_history ORDER BY id DESC LIMIT 500)",
+            [],
+        ).map_err(database_error)?;
         Ok(())
     }
 
     pub fn list_http_history(&self, query: &str) -> Result<Vec<HttpRequestHistory>, String> {
-        if query.chars().count() > 256 {
-            return Err("HTTP history search cannot exceed 256 characters".into());
-        }
         let connection = self.lock()?;
+        let trimmed = query.trim();
         let mut statement = connection
-            .prepare(
-                "SELECT payload_json FROM http_request_history
-                 ORDER BY created_at DESC, id DESC LIMIT 500",
-            )
+            .prepare(if trimmed.is_empty() {
+                "SELECT id, request_id, title, method, url, params, headers, cookies, body, body_type, response_body, response_headers, response_cookies, status, cost_time, create_time, modified_time
+                 FROM t_http_request_history ORDER BY id DESC LIMIT 500"
+            } else {
+                "SELECT id, request_id, title, method, url, params, headers, cookies, body, body_type, response_body, response_headers, response_cookies, status, cost_time, create_time, modified_time
+                 FROM t_http_request_history WHERE title LIKE ?1 OR url LIKE ?1 ORDER BY id DESC LIMIT 500"
+            })
             .map_err(database_error)?;
-        let rows = statement
-            .query_map([], |row| row.get::<_, String>(0))
-            .map_err(database_error)?;
-        let needle = query.trim().to_lowercase();
-        let mut items = Vec::new();
-        for row in rows {
-            let payload = row.map_err(database_error)?;
-            let item = serde_json::from_str::<HttpRequestHistory>(&payload)
-                .map_err(|error| format!("failed to decode HTTP request history: {error}"))?;
-            if needle.is_empty()
-                || item.request.name.to_lowercase().contains(&needle)
-                || item.request.url.to_lowercase().contains(&needle)
-            {
-                items.push(item);
-            }
+        let pattern = format!("%{trimmed}%");
+        let rows = if trimmed.is_empty() {
+            statement.query_map([], map_http_history)
+        } else {
+            statement.query_map(params![pattern], map_http_history)
         }
-        Ok(items)
+        .map_err(database_error)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(database_error)
     }
 
-    pub fn delete_http_history(&self, id: &str) -> Result<bool, String> {
-        validate_delete_id(id)?;
-        self.lock()?
-            .execute("DELETE FROM http_request_history WHERE id = ?1", [id])
-            .map(|affected| affected > 0)
-            .map_err(database_error)
+    pub fn delete_http_history(&self, id: i64) -> Result<bool, String> {
+        if id <= 0 { return Err("Invalid HTTP request".into()); }
+        self.lock()?.execute("DELETE FROM t_http_request_history WHERE id = ?1", [id]).map(|affected| affected > 0).map_err(database_error)
     }
 
     pub fn clear_http_history(&self) -> Result<usize, String> {
-        self.lock()?
-            .execute("DELETE FROM http_request_history", [])
-            .map_err(database_error)
+        self.lock()?.execute("DELETE FROM t_http_request_history", []).map_err(database_error)
     }
 
-    pub fn list_translation_words(&self) -> Result<Vec<TranslationWord>, String> {
+    pub fn list_translation_words(&self, keyword: &str) -> Result<Vec<TranslationWord>, String> {
         let connection = self.lock()?;
+        let trimmed = keyword.trim();
         let mut statement = connection
-            .prepare(
-                "SELECT id, source_text, target_text, source_lang, target_lang, remark,
-                        created_at, updated_at
-                 FROM translation_words ORDER BY updated_at DESC, id ASC",
-            )
-            .map_err(database_error)?;
-        let rows = statement
-            .query_map([], |row| {
-                Ok(TranslationWord {
-                    id: row.get(0)?,
-                    source_text: row.get(1)?,
-                    target_text: row.get(2)?,
-                    source_lang: row.get(3)?,
-                    target_lang: row.get(4)?,
-                    remark: row.get(5)?,
-                    created_at: row.get(6)?,
-                    updated_at: row.get(7)?,
-                })
+            .prepare(if trimmed.is_empty() {
+                "SELECT id, source_text, target_text, source_lang, target_lang, remark, create_time, modified_time
+                 FROM t_translation_word ORDER BY modified_time DESC, id DESC"
+            } else {
+                "SELECT id, source_text, target_text, source_lang, target_lang, remark, create_time, modified_time
+                 FROM t_translation_word
+                 WHERE source_text LIKE ?1 OR target_text LIKE ?1 OR remark LIKE ?1
+                 ORDER BY modified_time DESC, id DESC"
             })
             .map_err(database_error)?;
+        let pattern = format!("%{trimmed}%");
+        let rows = if trimmed.is_empty() {
+            statement.query_map([], map_translation_word)
+        } else {
+            statement.query_map(params![pattern], map_translation_word)
+        }
+        .map_err(database_error)?;
         rows.collect::<Result<Vec<_>, _>>().map_err(database_error)
     }
 
-    pub fn save_translation_word(&self, word: TranslationWord) -> Result<TranslationWord, String> {
-        word.validate()?;
-        self.lock()?
-            .execute(
-                "INSERT INTO translation_words
-                   (id, source_text, target_text, source_lang, target_lang, remark, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
-                 ON CONFLICT(id) DO UPDATE SET
-                   source_text = excluded.source_text,
-                   target_text = excluded.target_text,
-                   source_lang = excluded.source_lang,
-                   target_lang = excluded.target_lang,
-                   remark = excluded.remark,
-                   updated_at = excluded.updated_at",
-                params![
-                    word.id,
-                    word.source_text,
-                    word.target_text,
-                    word.source_lang,
-                    word.target_lang,
-                    word.remark,
-                    word.created_at,
-                    word.updated_at
-                ],
+    pub fn save_translation_word(&self, input: SaveTranslationWordInput) -> Result<TranslationWord, String> {
+        let source_text = input.source_text.trim();
+        validate_translation_word_fields(source_text, &input.target_text, &input.source_lang, &input.target_lang, &input.remark)?;
+        let id = input.id.filter(|id| *id > 0);
+        let connection = self.lock()?;
+        let existing = match id {
+            Some(id) => connection
+                .query_row("SELECT id FROM t_translation_word WHERE id = ?1", [id], |row| row.get::<_, i64>(0))
+                .optional()
+                .map_err(database_error)?,
+            None => connection
+                .query_row(
+                    "SELECT id FROM t_translation_word WHERE source_text = ?1 AND source_lang = ?2 AND target_lang = ?3",
+                    params![source_text, input.source_lang, input.target_lang],
+                    |row| row.get::<_, i64>(0),
+                )
+                .optional()
+                .map_err(database_error)?,
+        };
+        let now = sqlite_date_now();
+        let saved_id = if let Some(id) = existing {
+            connection
+                .execute(
+                    "UPDATE t_translation_word
+                     SET source_text = ?1, target_text = ?2, source_lang = ?3, target_lang = ?4, remark = ?5, modified_time = ?6
+                     WHERE id = ?7",
+                    params![source_text, input.target_text, input.source_lang, input.target_lang, input.remark, now, id],
+                )
+                .map_err(database_error)?;
+            id
+        } else {
+            connection
+                .execute(
+                    "INSERT INTO t_translation_word
+                       (source_text, target_text, source_lang, target_lang, remark, create_time, modified_time)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)",
+                    params![source_text, input.target_text, input.source_lang, input.target_lang, input.remark, now],
+                )
+                .map_err(database_error)?;
+            connection.last_insert_rowid()
+        };
+        connection
+            .query_row(
+                "SELECT id, source_text, target_text, source_lang, target_lang, remark, create_time, modified_time
+                 FROM t_translation_word WHERE id = ?1",
+                [saved_id],
+                map_translation_word,
             )
-            .map_err(database_error)?;
-        Ok(word)
+            .map_err(database_error)
     }
 
-    pub fn delete_translation_word(&self, id: &str) -> Result<bool, String> {
-        validate_delete_id(id)?;
+    pub fn delete_translation_word(&self, id: i64) -> Result<bool, String> {
+        if id <= 0 {
+            return Err("Invalid word".into());
+        }
         self.lock()?
-            .execute("DELETE FROM translation_words WHERE id = ?1", [id])
+            .execute("DELETE FROM t_translation_word WHERE id = ?1", [id])
             .map(|affected| affected > 0)
             .map_err(database_error)
     }
 
-    pub fn list_translation_history(&self) -> Result<Vec<TranslationHistory>, String> {
+    pub fn list_translation_history(&self, keyword: &str) -> Result<Vec<TranslationHistory>, String> {
         let connection = self.lock()?;
+        let trimmed = keyword.trim();
         let mut statement = connection
-            .prepare(
-                "SELECT id, source_text, target_text, source_lang, target_lang, provider, created_at
-                 FROM translation_history ORDER BY created_at DESC, id DESC LIMIT 500",
-            )
-            .map_err(database_error)?;
-        let rows = statement
-            .query_map([], |row| {
-                let provider: String = row.get(5)?;
-                Ok(TranslationHistory {
-                    id: row.get(0)?,
-                    source_text: row.get(1)?,
-                    target_text: row.get(2)?,
-                    source_lang: row.get(3)?,
-                    target_lang: row.get(4)?,
-                    provider: if provider == "bing" {
-                        TranslationProvider::Bing
-                    } else if provider == "deepl" {
-                        TranslationProvider::DeepL
-                    } else {
-                        TranslationProvider::Google
-                    },
-                    created_at: row.get(6)?,
-                })
+            .prepare(if trimmed.is_empty() {
+                "SELECT id, source_text, target_text, source_lang, target_lang, translator_type, create_time
+                 FROM t_translation_history ORDER BY id DESC LIMIT 500"
+            } else {
+                "SELECT id, source_text, target_text, source_lang, target_lang, translator_type, create_time
+                 FROM t_translation_history
+                 WHERE source_text LIKE ?1 OR target_text LIKE ?1 OR source_lang LIKE ?1 OR target_lang LIKE ?1
+                 ORDER BY id DESC LIMIT 500"
             })
             .map_err(database_error)?;
+        let pattern = format!("%{trimmed}%");
+        let rows = if trimmed.is_empty() {
+            statement.query_map([], map_translation_history)
+        } else {
+            statement.query_map(params![pattern], map_translation_history)
+        }
+        .map_err(database_error)?;
         rows.collect::<Result<Vec<_>, _>>().map_err(database_error)
     }
 
-    pub fn save_translation_history(
-        &self,
-        history: TranslationHistory,
-    ) -> Result<TranslationHistory, String> {
-        history.validate()?;
+    pub fn save_translation_history(&self, input: SaveTranslationHistoryInput) -> Result<TranslationHistory, String> {
+        validate_translation_word_fields(&input.source_text, &input.target_text, &input.source_lang, &input.target_lang, "")?;
         let connection = self.lock()?;
+        let now = sqlite_date_now();
         connection
             .execute(
-                "INSERT INTO translation_history
-                   (id, source_text, target_text, source_lang, target_lang, provider, created_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                "INSERT INTO t_translation_history
+                   (source_text, target_text, source_lang, target_lang, translator_type, create_time)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
                 params![
-                    history.id,
-                    history.source_text,
-                    history.target_text,
-                    history.source_lang,
-                    history.target_lang,
-                    match history.provider {
-                        TranslationProvider::Google => "google",
-                        TranslationProvider::Bing => "bing",
-                        TranslationProvider::DeepL => "deepl",
-                    },
-                    history.created_at
+                    input.source_text.trim(),
+                    input.target_text,
+                    input.source_lang,
+                    input.target_lang,
+                    translator_type_name(input.translator_type),
+                    now
                 ],
             )
             .map_err(database_error)?;
+        let id = connection.last_insert_rowid();
         connection
             .execute(
-                "DELETE FROM translation_history
-                 WHERE id NOT IN (
-                   SELECT id FROM translation_history ORDER BY created_at DESC, id DESC LIMIT 500
+                "DELETE FROM t_translation_history WHERE id NOT IN (
+                   SELECT id FROM t_translation_history ORDER BY id DESC LIMIT 500
                  )",
                 [],
             )
             .map_err(database_error)?;
-        Ok(history)
+        connection
+            .query_row(
+                "SELECT id, source_text, target_text, source_lang, target_lang, translator_type, create_time
+                 FROM t_translation_history WHERE id = ?1",
+                [id],
+                map_translation_history,
+            )
+            .map_err(database_error)
     }
 
-    pub fn delete_translation_history(&self, id: &str) -> Result<bool, String> {
-        validate_delete_id(id)?;
+    pub fn delete_translation_history(&self, id: i64) -> Result<bool, String> {
+        if id <= 0 {
+            return Err("Invalid word".into());
+        }
         self.lock()?
-            .execute("DELETE FROM translation_history WHERE id = ?1", [id])
+            .execute("DELETE FROM t_translation_history WHERE id = ?1", [id])
             .map(|affected| affected > 0)
             .map_err(database_error)
     }
 
     pub fn clear_translation_history(&self) -> Result<usize, String> {
         self.lock()?
-            .execute("DELETE FROM translation_history", [])
+            .execute("DELETE FROM t_translation_history", [])
             .map_err(database_error)
     }
 
@@ -1146,27 +1207,27 @@ impl LocalDataRepository {
         for profile in records.host_profiles {
             imported.host_profiles += transaction
                 .execute(
-                    "INSERT OR IGNORE INTO host_profiles (id, name, content, created_at, updated_at)
+                    "INSERT OR IGNORE INTO t_host (id, name, content, create_time, modified_time)
                      VALUES (?1, ?2, ?3, ?4, ?5)",
-                    params![profile.id, profile.name, profile.content, profile.created_at, profile.updated_at],
+                    params![profile.id, profile.name, profile.content, profile.create_time, profile.modified_time],
                 )
                 .map_err(database_error)?;
         }
         for word in records.translation_words {
             imported.translation_words += transaction
                 .execute(
-                    "INSERT OR IGNORE INTO translation_words
-                       (id, source_text, target_text, source_lang, target_lang, remark, created_at, updated_at)
+                    "INSERT OR IGNORE INTO t_translation_word
+                       (id, source_text, target_text, source_lang, target_lang, remark, create_time, modified_time)
                      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-                    params![word.id, word.source_text, word.target_text, word.source_lang, word.target_lang, word.remark, word.created_at, word.updated_at],
+                    params![word.id, word.source_text, word.target_text, word.source_lang, word.target_lang, word.remark, word.create_time, word.modified_time],
                 )
                 .map_err(database_error)?;
         }
         for history in records.translation_history {
             imported.translation_history += transaction
                 .execute(
-                    "INSERT OR IGNORE INTO translation_history
-                       (id, source_text, target_text, source_lang, target_lang, provider, created_at)
+                    "INSERT OR IGNORE INTO t_translation_history
+                       (id, source_text, target_text, source_lang, target_lang, translator_type, create_time)
                      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
                     params![
                         history.id,
@@ -1174,12 +1235,8 @@ impl LocalDataRepository {
                         history.target_text,
                         history.source_lang,
                         history.target_lang,
-                        match history.provider {
-                            TranslationProvider::Google => "google",
-                            TranslationProvider::Bing => "bing",
-                            TranslationProvider::DeepL => "deepl",
-                        },
-                        history.created_at
+                        translator_type_name(history.translator_type),
+                        history.create_time
                     ],
                 )
                 .map_err(database_error)?;
@@ -1231,8 +1288,8 @@ impl LocalDataRepository {
             .map_err(database_error)?;
         transaction
             .execute(
-                "DELETE FROM translation_history WHERE id NOT IN (
-                   SELECT id FROM translation_history ORDER BY created_at DESC, id DESC LIMIT 500
+                "DELETE FROM t_translation_history WHERE id NOT IN (
+                   SELECT id FROM t_translation_history ORDER BY id DESC LIMIT 500
                  )",
                 [],
             )
@@ -1382,8 +1439,13 @@ fn initialize(connection: &Connection) -> Result<(), String> {
                created_at INTEGER NOT NULL,
                updated_at INTEGER NOT NULL
              );
-             CREATE INDEX IF NOT EXISTS host_profiles_order
-               ON host_profiles (updated_at DESC);
+             CREATE TABLE IF NOT EXISTS t_host (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               name TEXT UNIQUE,
+               content TEXT,
+               create_time TEXT,
+               modified_time TEXT
+             );
              CREATE TABLE IF NOT EXISTS http_saved_requests (
                id TEXT PRIMARY KEY NOT NULL,
                name TEXT NOT NULL UNIQUE,
@@ -1400,6 +1462,43 @@ fn initialize(connection: &Connection) -> Result<(), String> {
              );
              CREATE INDEX IF NOT EXISTS http_request_history_order
                ON http_request_history (created_at DESC);
+             CREATE TABLE IF NOT EXISTS t_msg_http (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               msg_name TEXT UNIQUE,
+               method TEXT,
+               url TEXT,
+               params TEXT,
+               headers TEXT,
+               cookies TEXT,
+               body TEXT,
+               body_type TEXT,
+               create_time TEXT,
+               modified_time TEXT,
+               response_body TEXT,
+               response_headers TEXT,
+               response_cookies TEXT
+             );
+             CREATE TABLE IF NOT EXISTS t_http_request_history (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               request_id INTEGER,
+               title TEXT,
+               method TEXT,
+               url TEXT,
+               params TEXT,
+               headers TEXT,
+               cookies TEXT,
+               body TEXT,
+               body_type TEXT,
+               response_body TEXT,
+               response_headers TEXT,
+               response_cookies TEXT,
+               status TEXT,
+               cost_time INTEGER,
+               create_time TEXT,
+               modified_time TEXT
+             );
+             CREATE INDEX IF NOT EXISTS t_http_history_create_time_index
+               ON t_http_request_history (create_time DESC);
              CREATE TABLE IF NOT EXISTS translation_words (
                id TEXT PRIMARY KEY NOT NULL,
                source_text TEXT NOT NULL,
@@ -1423,6 +1522,29 @@ fn initialize(connection: &Connection) -> Result<(), String> {
              );
              CREATE INDEX IF NOT EXISTS translation_history_order
                ON translation_history (created_at DESC);
+             CREATE TABLE IF NOT EXISTS t_translation_word (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               source_text TEXT NOT NULL,
+               target_text TEXT,
+               source_lang TEXT,
+               target_lang TEXT,
+               remark TEXT,
+               create_time TEXT,
+               modified_time TEXT
+             );
+             CREATE INDEX IF NOT EXISTS t_translation_word_modified_time_index
+               ON t_translation_word (modified_time DESC);
+             CREATE TABLE IF NOT EXISTS t_translation_history (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               source_text TEXT NOT NULL,
+               target_text TEXT,
+               source_lang TEXT,
+               target_lang TEXT,
+               translator_type TEXT,
+               create_time TEXT
+             );
+             CREATE INDEX IF NOT EXISTS t_translation_history_create_time_index
+               ON t_translation_history (create_time DESC);
              CREATE TABLE IF NOT EXISTS image_assets (
                name TEXT PRIMARY KEY NOT NULL,
                mime_type TEXT NOT NULL,
@@ -1525,9 +1647,398 @@ fn initialize(connection: &Connection) -> Result<(), String> {
         "metadata_json",
         "TEXT NOT NULL DEFAULT '{}'",
     )?;
+    migrate_host_profiles(connection)?;
+    migrate_translation_records(connection)?;
+    migrate_http_records(connection)?;
     connection
-        .pragma_update(None, "user_version", 12)
+        .pragma_update(None, "user_version", 15)
         .map_err(database_error)
+}
+
+fn migrate_host_profiles(connection: &Connection) -> Result<(), String> {
+    let exists: i64 = connection
+        .query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'host_profiles'",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(database_error)?;
+    if exists == 0 {
+        return Ok(());
+    }
+    let mut statement = connection
+        .prepare("SELECT name, content, created_at, updated_at FROM host_profiles ORDER BY updated_at ASC, id ASC")
+        .map_err(database_error)?;
+    let rows = statement
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, i64>(2)?,
+                row.get::<_, i64>(3)?,
+            ))
+        })
+        .map_err(database_error)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(database_error)?;
+    for (name, content, created_at, updated_at) in rows {
+        let name = unique_host_name(connection, name.trim())?;
+        if name.is_empty() {
+            continue;
+        }
+        connection
+            .execute(
+                "INSERT INTO t_host (name, content, create_time, modified_time) VALUES (?1, ?2, ?3, ?4)",
+                params![
+                    name,
+                    content,
+                    sqlite_date_from_millis(created_at),
+                    sqlite_date_from_millis(updated_at)
+                ],
+            )
+            .map_err(database_error)?;
+    }
+    connection
+        .execute("DROP TABLE host_profiles", [])
+        .map(|_| ())
+        .map_err(database_error)
+}
+
+fn migrate_translation_records(connection: &Connection) -> Result<(), String> {
+    if table_exists(connection, "translation_words")? {
+        let mut statement = connection
+            .prepare("SELECT source_text, target_text, source_lang, target_lang, remark, created_at, updated_at FROM translation_words ORDER BY updated_at ASC, id ASC")
+            .map_err(database_error)?;
+        let rows = statement
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, String>(3)?,
+                    row.get::<_, String>(4)?,
+                    row.get::<_, i64>(5)?,
+                    row.get::<_, i64>(6)?,
+                ))
+            })
+            .map_err(database_error)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(database_error)?;
+        drop(statement);
+        for (source_text, target_text, source_lang, target_lang, remark, created_at, updated_at) in rows {
+            if source_text.trim().is_empty() {
+                continue;
+            }
+            connection
+                .execute(
+                    "INSERT INTO t_translation_word
+                       (source_text, target_text, source_lang, target_lang, remark, create_time, modified_time)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                    params![
+                        source_text.trim(),
+                        target_text,
+                        source_lang,
+                        target_lang,
+                        remark,
+                        sqlite_date_from_millis(created_at),
+                        sqlite_date_from_millis(updated_at)
+                    ],
+                )
+                .map_err(database_error)?;
+        }
+        connection.execute("DROP TABLE translation_words", []).map_err(database_error)?;
+    }
+    if table_exists(connection, "translation_history")? {
+        let mut statement = connection
+            .prepare("SELECT source_text, target_text, source_lang, target_lang, provider, created_at FROM translation_history ORDER BY created_at ASC, id ASC")
+            .map_err(database_error)?;
+        let rows = statement
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, String>(3)?,
+                    row.get::<_, String>(4)?,
+                    row.get::<_, i64>(5)?,
+                ))
+            })
+            .map_err(database_error)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(database_error)?;
+        drop(statement);
+        for (source_text, target_text, source_lang, target_lang, provider, created_at) in rows {
+            if source_text.trim().is_empty() {
+                continue;
+            }
+            connection
+                .execute(
+                    "INSERT INTO t_translation_history
+                       (source_text, target_text, source_lang, target_lang, translator_type, create_time)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                    params![
+                        source_text.trim(),
+                        target_text,
+                        source_lang,
+                        target_lang,
+                        translator_type_name(provider_from_stored(&provider)),
+                        sqlite_date_from_millis(created_at)
+                    ],
+                )
+                .map_err(database_error)?;
+        }
+        connection.execute("DROP TABLE translation_history", []).map_err(database_error)?;
+    }
+    Ok(())
+}
+
+fn table_exists(connection: &Connection, name: &str) -> Result<bool, String> {
+    connection
+        .query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?1",
+            [name],
+            |row| row.get::<_, i64>(0),
+        )
+        .map(|count| count > 0)
+        .map_err(database_error)
+}
+
+fn unique_host_name(connection: &Connection, name: &str) -> Result<String, String> {
+    let mut candidate = name.chars().take(200).collect::<String>();
+    let mut suffix = 2;
+    loop {
+        let taken: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM t_host WHERE name = ?1",
+                [&candidate],
+                |row| row.get(0),
+            )
+            .map_err(database_error)?;
+        if taken == 0 {
+            return Ok(candidate);
+        }
+        let extra = format!(" ({suffix})");
+        let room = 200usize.saturating_sub(extra.chars().count());
+        candidate = format!("{}{extra}", name.chars().take(room).collect::<String>());
+        suffix += 1;
+    }
+}
+
+fn json_text<T: serde::Serialize>(value: &T) -> Result<String, String> {
+    serde_json::to_string(value).map_err(|error| format!("failed to encode HTTP fields: {error}"))
+}
+
+fn json_headers(value: &str) -> Vec<crate::contracts::network::HttpHeader> {
+    let mut entries: Vec<crate::contracts::network::HttpHeader> = serde_json::from_str(value).unwrap_or_default();
+    for (index, entry) in entries.iter_mut().enumerate() {
+        if entry.id.is_empty() {
+            entry.id = format!("entry-{index}");
+        }
+    }
+    entries
+}
+
+fn json_cookies(value: &str) -> Vec<crate::contracts::network::HttpCookie> {
+    let mut entries: Vec<crate::contracts::network::HttpCookie> = serde_json::from_str(value).unwrap_or_default();
+    for (index, entry) in entries.iter_mut().enumerate() {
+        if entry.id.is_empty() {
+            entry.id = format!("cookie-{index}");
+        }
+    }
+    entries
+}
+
+fn map_saved_http_request(row: &rusqlite::Row<'_>) -> rusqlite::Result<SavedHttpRequest> {
+    let params: String = row.get(4)?;
+    let headers: String = row.get(5)?;
+    let cookies: String = row.get(6)?;
+    Ok(SavedHttpRequest {
+        id: row.get(0)?,
+        name: row.get(1)?,
+        method: row.get(2)?,
+        url: row.get(3)?,
+        params: json_headers(&params),
+        headers: json_headers(&headers),
+        cookies: json_cookies(&cookies),
+        body: row.get(7)?,
+        body_type: row.get(8)?,
+        create_time: row.get(9)?,
+        modified_time: row.get(10)?,
+        response_body: row.get(11)?,
+        response_headers: row.get(12)?,
+        response_cookies: row.get(13)?,
+    })
+}
+
+fn map_http_history(row: &rusqlite::Row<'_>) -> rusqlite::Result<HttpRequestHistory> {
+    let title: String = row.get(2)?;
+    let params: String = row.get(5)?;
+    let headers: String = row.get(6)?;
+    let cookies: String = row.get(7)?;
+    Ok(HttpRequestHistory {
+        id: row.get(0)?,
+        request_id_value: row.get(1)?,
+        title: title.clone(),
+        name: title,
+        method: row.get(3)?,
+        url: row.get(4)?,
+        params: json_headers(&params),
+        headers: json_headers(&headers),
+        cookies: json_cookies(&cookies),
+        body: row.get(8)?,
+        body_type: row.get(9)?,
+        response_body: row.get(10)?,
+        response_headers: row.get(11)?,
+        response_cookies: row.get(12)?,
+        status: row.get(13)?,
+        cost_time: row.get(14)?,
+        create_time: row.get(15)?,
+        modified_time: row.get(16)?,
+    })
+}
+
+fn migrate_http_records(connection: &Connection) -> Result<(), String> {
+    if table_exists(connection, "http_saved_requests")? {
+        let mut statement = connection
+            .prepare("SELECT payload_json, created_at, updated_at FROM http_saved_requests ORDER BY updated_at ASC, id ASC")
+            .map_err(database_error)?;
+        let rows = statement.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?, row.get::<_, i64>(2)?))).map_err(database_error)?.collect::<Result<Vec<_>, _>>().map_err(database_error)?;
+        drop(statement);
+        for (payload, created_at, updated_at) in rows {
+            let Ok(legacy) = serde_json::from_str::<LegacySavedHttpRequest>(&payload) else { continue };
+            let _ = connection.execute(
+                "INSERT INTO t_msg_http (msg_name, method, url, params, headers, cookies, body, body_type, create_time, modified_time, response_body, response_headers, response_cookies)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+                params![
+                    if legacy.name.trim().is_empty() { legacy.request.name } else { legacy.name },
+                    legacy.request.method,
+                    legacy.request.url,
+                    json_text(&legacy.request.params).unwrap_or_else(|_| "[]".into()),
+                    json_text(&legacy.request.headers).unwrap_or_else(|_| "[]".into()),
+                    json_text(&legacy.request.cookies).unwrap_or_else(|_| "[]".into()),
+                    legacy.request.body,
+                    legacy.request.body_type,
+                    sqlite_date_from_millis(created_at),
+                    sqlite_date_from_millis(updated_at),
+                    legacy.response.as_ref().map(|response| response.body_text.clone()).unwrap_or_default(),
+                    legacy.response.as_ref().map(|response| response.headers.iter().map(|(name, value)| format!("{name}: {value}")).collect::<Vec<_>>().join("\n")).unwrap_or_default(),
+                    ""
+                ],
+            );
+        }
+        connection.execute("DROP TABLE http_saved_requests", []).map_err(database_error)?;
+    }
+    if table_exists(connection, "http_request_history")? {
+        let mut statement = connection.prepare("SELECT payload_json, created_at FROM http_request_history ORDER BY created_at ASC, id ASC").map_err(database_error)?;
+        let rows = statement.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))).map_err(database_error)?.collect::<Result<Vec<_>, _>>().map_err(database_error)?;
+        drop(statement);
+        for (payload, created_at) in rows {
+            let Ok(legacy) = serde_json::from_str::<LegacyHttpHistory>(&payload) else { continue };
+            let _ = connection.execute(
+                "INSERT INTO t_http_request_history (request_id, title, method, url, params, headers, cookies, body, body_type, response_body, response_headers, response_cookies, status, cost_time, create_time, modified_time)
+                 VALUES (NULL, ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, '', ?11, ?12, ?13, ?13)",
+                params![
+                    if legacy.request.name.trim().is_empty() { legacy.request.url.clone() } else { legacy.request.name.clone() },
+                    legacy.request.method,
+                    legacy.request.url,
+                    json_text(&legacy.request.params).unwrap_or_else(|_| "[]".into()),
+                    json_text(&legacy.request.headers).unwrap_or_else(|_| "[]".into()),
+                    json_text(&legacy.request.cookies).unwrap_or_else(|_| "[]".into()),
+                    legacy.request.body,
+                    legacy.request.body_type,
+                    legacy.response.body_text,
+                    legacy.response.headers.iter().map(|(name, value)| format!("{name}: {value}")).collect::<Vec<_>>().join("\n"),
+                    legacy.response.status.to_string(),
+                    i64::try_from(legacy.response.duration_ms).unwrap_or(i64::MAX),
+                    sqlite_date_from_millis(created_at)
+                ],
+            );
+        }
+        connection.execute("DROP TABLE http_request_history", []).map_err(database_error)?;
+    }
+    Ok(())
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacySavedHttpRequest {
+    name: String,
+    request: HttpRequestSpec,
+    response: Option<HttpResponseData>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacyHttpHistory {
+    request: HttpRequestSpec,
+    response: HttpResponseData,
+}
+
+fn map_translation_word(row: &rusqlite::Row<'_>) -> rusqlite::Result<TranslationWord> {
+    Ok(TranslationWord {
+        id: row.get(0)?,
+        source_text: row.get(1)?,
+        target_text: row.get(2)?,
+        source_lang: row.get(3)?,
+        target_lang: row.get(4)?,
+        remark: row.get(5)?,
+        create_time: row.get(6)?,
+        modified_time: row.get(7)?,
+    })
+}
+
+fn map_translation_history(row: &rusqlite::Row<'_>) -> rusqlite::Result<TranslationHistory> {
+    let translator_type: String = row.get(5)?;
+    Ok(TranslationHistory {
+        id: row.get(0)?,
+        source_text: row.get(1)?,
+        target_text: row.get(2)?,
+        source_lang: row.get(3)?,
+        target_lang: row.get(4)?,
+        translator_type: provider_from_stored(&translator_type),
+        create_time: row.get(6)?,
+    })
+}
+
+fn translator_type_name(provider: TranslationProvider) -> &'static str {
+    match provider {
+        TranslationProvider::Google => "GOOGLE",
+        TranslationProvider::Bing => "BING",
+        TranslationProvider::DeepL => "DEEPL",
+    }
+}
+
+fn provider_from_stored(value: &str) -> TranslationProvider {
+    match value.to_ascii_lowercase().as_str() {
+        "bing" => TranslationProvider::Bing,
+        "deepl" => TranslationProvider::DeepL,
+        _ => TranslationProvider::Google,
+    }
+}
+
+fn sqlite_date_now() -> String {
+    sqlite_date(time::OffsetDateTime::now_local().unwrap_or_else(|_| time::OffsetDateTime::now_utc()))
+}
+
+fn sqlite_date_from_millis(millis: i64) -> String {
+    let utc = time::OffsetDateTime::from_unix_timestamp_nanos((millis as i128).saturating_mul(1_000_000))
+        .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
+    let local = time::UtcOffset::current_local_offset()
+        .map(|offset| utc.to_offset(offset))
+        .unwrap_or(utc);
+    sqlite_date(local)
+}
+
+fn sqlite_date(value: time::OffsetDateTime) -> String {
+    format!(
+        "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
+        value.year(),
+        value.month() as u8,
+        value.day(),
+        value.hour(),
+        value.minute(),
+        value.second()
+    )
 }
 
 fn ensure_column(
@@ -1727,10 +2238,7 @@ mod tests {
                 .expect("delete folder tree"),
             1
         );
-        assert_eq!(
-            repository.list_notes().expect("list moved notes")[0].folder_path,
-            ""
-        );
+        assert!(repository.list_notes().expect("deleted notes").is_empty());
         assert!(
             repository
                 .list_note_folders()
@@ -1916,145 +2424,211 @@ mod tests {
                 .expect("lock database")
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, u32>(0))
                 .expect("read schema version"),
-            12
+            15
         );
     }
 
     #[test]
     fn persists_host_profiles_independently() {
         let repository = LocalDataRepository::open_in_memory().expect("open repository");
-        let profile = HostProfile {
-            id: "hosts-dev".into(),
-            name: "Development".into(),
-            content: "127.0.0.1 api.local\n".into(),
-            created_at: 3,
-            updated_at: 3,
-        };
-        repository
-            .save_host_profile(profile.clone())
+        let saved = repository
+            .save_host_profile(SaveHostProfileInput {
+                id: None,
+                name: "Development".into(),
+                content: "127.0.0.1 api.local\n".into(),
+            })
             .expect("save profile");
-        assert_eq!(repository.list_host_profiles().expect("list"), [profile]);
-        assert!(repository.delete_host_profile("hosts-dev").expect("delete"));
+        assert_eq!(saved.id, 1);
+        assert_eq!(saved.create_time, saved.modified_time);
+        let renamed = repository
+            .save_host_profile(SaveHostProfileInput {
+                id: None,
+                name: "Development".into(),
+                content: "127.0.0.1 api.local\n10.0.0.2 build\n".into(),
+            })
+            .expect("update by name");
+        assert_eq!(renamed.id, saved.id);
+        assert_eq!(repository.list_host_profiles("build", true).expect("search").len(), 1);
+        assert!(repository.list_host_profiles("missing", false).expect("name search").is_empty());
+        assert!(repository.delete_host_profile(saved.id).expect("delete"));
+    }
+
+    #[test]
+    fn migrates_string_host_profiles_into_integer_rows() {
+        let directory = tempfile::TempDir::new().expect("temporary directory");
+        let path = directory.path().join(DATABASE_FILE_NAME);
+        let connection = Connection::open(&path).expect("open legacy database");
+        connection
+            .execute_batch(
+                "CREATE TABLE host_profiles (
+                   id TEXT PRIMARY KEY NOT NULL,
+                   name TEXT NOT NULL,
+                   content TEXT NOT NULL,
+                   created_at INTEGER NOT NULL,
+                   updated_at INTEGER NOT NULL
+                 );
+                 INSERT INTO host_profiles (id, name, content, created_at, updated_at)
+                 VALUES ('hosts-dev', 'Development', '127.0.0.1 api.local', 1000, 2000);",
+            )
+            .expect("create legacy hosts");
+        drop(connection);
+
+        let repository = LocalDataRepository::open(path).expect("migrate repository");
+        let profiles = repository.list_host_profiles("", true).expect("list hosts");
+        assert_eq!(profiles.len(), 1);
+        assert_eq!(profiles[0].id, 1);
+        assert_eq!(profiles[0].name, "Development");
+        assert_eq!(profiles[0].create_time.len(), 19);
+        assert!(repository.list_host_profiles("api.local", true).expect("content search").len() == 1);
     }
 
     #[test]
     fn persists_http_collections_and_limits_request_history() {
-        use crate::contracts::network::{
-            HttpHeader, HttpRequestHistory, HttpRequestSpec, HttpResponseData, SavedHttpRequest,
-        };
+        use crate::contracts::network::{HttpHeader, HttpRequestSpec, HttpResponseData, SaveHttpRequestInput};
 
-        fn request(id: &str, name: &str) -> HttpRequestSpec {
+        fn request(name: &str) -> HttpRequestSpec {
             HttpRequestSpec {
-                request_id: id.into(),
+                request_id: "request".into(),
                 name: name.into(),
                 method: "POST".into(),
                 url: "https://example.com/items".into(),
-                params: vec![HttpHeader {
-                    name: "page".into(),
-                    value: "1".into(),
-                    enabled: true,
-                }],
+                params: vec![HttpHeader { id: "page".into(), name: "page".into(), value: "1".into(), enabled: true }],
                 headers: vec![],
                 cookies: vec![],
                 body: "{}".into(),
                 body_type: "application/json".into(),
                 timeout_ms: 30_000,
                 follow_redirects: true,
-            }
-        }
-
-        fn response(status: u16) -> HttpResponseData {
-            HttpResponseData {
-                status,
-                final_url: "https://example.com/items?page=1".into(),
-                headers: vec![("content-type".into(), "application/json".into())],
-                body_text: "{}".into(),
-                body_base64: String::new(),
-                content_type: "application/json".into(),
-                size_bytes: 2,
-                truncated: false,
-                duration_ms: 12,
+                saved_id: None,
             }
         }
 
         let repository = LocalDataRepository::open_in_memory().expect("open repository");
-        let saved = SavedHttpRequest {
-            id: "saved-1".into(),
+        let saved = repository.save_http_request(SaveHttpRequestInput {
+            id: None,
+            name: " Create item ".into(),
+            method: "POST".into(),
+            url: "https://example.com/items".into(),
+            params: vec![HttpHeader { id: "page".into(), name: "page".into(), value: "1".into(), enabled: true }],
+            headers: vec![],
+            cookies: vec![],
+            body: "{}".into(),
+            body_type: String::new(),
+            response_body: "{}".into(),
+            response_headers: "content-type: application/json".into(),
+            response_cookies: String::new(),
+        }).expect("save request");
+        assert_eq!(saved.id, 1);
+        assert_eq!(saved.name, "Create item");
+        assert_eq!(saved.body_type, "application/json");
+        let updated = repository.save_http_request(SaveHttpRequestInput {
+            id: None,
             name: "Create item".into(),
-            request: request("request-1", "Create item"),
-            response: Some(response(201)),
-            created_at: 10,
-            updated_at: 10,
-        };
-        repository
-            .save_http_request(saved.clone())
-            .expect("save request");
-        assert_eq!(
-            repository.list_http_requests("create").expect("list"),
-            [saved]
-        );
+            method: "PUT".into(),
+            url: "https://example.com/items".into(),
+            params: vec![],
+            headers: vec![],
+            cookies: vec![],
+            body: String::new(),
+            body_type: "text/plain".into(),
+            response_body: String::new(),
+            response_headers: String::new(),
+            response_cookies: String::new(),
+        }).expect("update by name");
+        assert_eq!(updated.id, saved.id);
+        assert_eq!(updated.method, "PUT");
+        assert_eq!(updated.create_time, saved.create_time);
+        assert_eq!(repository.list_http_requests("create").expect("name search").len(), 1);
+        assert!(repository.list_http_requests("example.com").expect("url is not searched").is_empty());
 
-        for index in 0..505 {
-            repository
-                .record_http_history(HttpRequestHistory {
-                    id: format!("history-{index}"),
-                    request: request(&format!("request-{index}"), "Create item"),
-                    response: response(201),
-                    created_at: index,
-                })
-                .expect("record history");
+        let response = HttpResponseData {
+            status: 201,
+            final_url: "https://example.com/items".into(),
+            headers: vec![("content-type".into(), "application/json".into())],
+            body_text: "{}".into(),
+            body_base64: String::new(),
+            content_type: "application/json".into(),
+            size_bytes: 2,
+            truncated: false,
+            duration_ms: 12,
+            status_text: String::new(),
+        };
+        for index in 0..501 {
+            let mut spec = request(&format!("item {index}"));
+            spec.saved_id = Some(saved.id);
+            repository.record_http_history(&spec, &response).expect("record history");
         }
-        assert_eq!(
-            repository.list_http_history("").expect("history").len(),
-            500
-        );
-        assert!(repository.delete_http_request("saved-1").expect("delete"));
+        let history = repository.list_http_history("").expect("history");
+        assert_eq!(history.len(), 500);
+        assert_eq!(history[0].id, 501);
+        assert_eq!(history[0].request_id_value, Some(1));
+        assert_eq!(history[0].status, "201");
+        assert_eq!(history[0].cost_time, 12);
+        assert!(repository.list_http_history("example.com").expect("url search").len() == 500);
+        assert!(repository.delete_http_request(saved.id).expect("delete"));
         assert_eq!(repository.clear_http_history().expect("clear"), 500);
     }
 
     #[test]
     fn persists_translation_words_history_and_limits_history() {
         let repository = LocalDataRepository::open_in_memory().expect("open repository");
-        let word = TranslationWord {
-            id: "word-1".into(),
-            source_text: "hello".into(),
-            target_text: "你好".into(),
-            source_lang: "en".into(),
-            target_lang: "zh-CN".into(),
-            remark: "greeting".into(),
-            created_at: 10,
-            updated_at: 10,
-        };
-        repository
-            .save_translation_word(word.clone())
+        let saved = repository
+            .save_translation_word(SaveTranslationWordInput {
+                id: None,
+                source_text: " hello ".into(),
+                target_text: "你好".into(),
+                source_lang: "en".into(),
+                target_lang: "zh-CN".into(),
+                remark: "greeting".into(),
+            })
             .expect("save word");
-        assert_eq!(
-            repository.list_translation_words().expect("list words"),
-            [word]
-        );
+        assert_eq!(saved.id, 1);
+        assert_eq!(saved.source_text, "hello");
+        assert_eq!(saved.create_time, saved.modified_time);
+        let updated = repository
+            .save_translation_word(SaveTranslationWordInput {
+                id: None,
+                source_text: "hello".into(),
+                target_text: "您好".into(),
+                source_lang: "en".into(),
+                target_lang: "zh-CN".into(),
+                remark: "greeting".into(),
+            })
+            .expect("update word by language pair");
+        assert_eq!(updated.id, saved.id);
+        assert_eq!(updated.create_time, saved.create_time);
+        assert_eq!(repository.list_translation_words("您好").expect("search").len(), 1);
+        assert!(repository.list_translation_words("missing").expect("miss").is_empty());
 
-        let history = TranslationHistory {
-            id: "history-1".into(),
-            source_text: "hello".into(),
-            target_text: "你好".into(),
-            source_lang: "en".into(),
-            target_lang: "zh-CN".into(),
-            provider: TranslationProvider::Google,
-            created_at: 11,
-        };
-        repository
-            .save_translation_history(history.clone())
+        let history = repository
+            .save_translation_history(SaveTranslationHistoryInput {
+                source_text: "hello".into(),
+                target_text: "你好".into(),
+                source_lang: "en".into(),
+                target_lang: "zh-CN".into(),
+                translator_type: TranslationProvider::Google,
+            })
             .expect("save history");
-        assert_eq!(
-            repository.list_translation_history().expect("list history"),
-            [history]
-        );
-        assert_eq!(repository.clear_translation_history().expect("clear"), 1);
-        assert!(
+        assert_eq!(history.id, 1);
+        assert_eq!(history.translator_type, TranslationProvider::Google);
+        assert_eq!(history.create_time.len(), 19);
+        for index in 0..500 {
             repository
-                .delete_translation_word("word-1")
-                .expect("delete")
-        );
+                .save_translation_history(SaveTranslationHistoryInput {
+                    source_text: format!("line {index}"),
+                    target_text: "x".into(),
+                    source_lang: "en".into(),
+                    target_lang: "zh-CN".into(),
+                    translator_type: TranslationProvider::Bing,
+                })
+                .expect("save extra history");
+        }
+        let listed = repository.list_translation_history("").expect("list history");
+        assert_eq!(listed.len(), 500);
+        assert_eq!(listed[0].id, 501);
+        assert!(listed.iter().all(|item| item.source_text != "hello"));
+        assert_eq!(repository.clear_translation_history().expect("clear"), 500);
+        assert!(repository.delete_translation_word(saved.id).expect("delete"));
     }
 
     #[test]
@@ -2120,11 +2694,11 @@ mod tests {
         let records = ProductImportRecords {
             quick_notes: vec![note("import-note", 10, false)],
             host_profiles: vec![HostProfile {
-                id: "import-host".into(),
+                id: 7,
                 name: "Imported hosts".into(),
                 content: "127.0.0.1 localhost".into(),
-                created_at: 10,
-                updated_at: 10,
+                create_time: "2026-10-21 12:00:00".into(),
+                modified_time: "2026-10-21 12:00:00".into(),
             }],
             ..ProductImportRecords::default()
         };
@@ -2149,7 +2723,7 @@ mod tests {
                 .expect("marker")
         );
         assert_eq!(repository.list_notes().expect("notes").len(), 1);
-        assert_eq!(repository.list_host_profiles().expect("hosts").len(), 1);
+        assert_eq!(repository.list_host_profiles("", true).expect("hosts").len(), 1);
     }
 
     #[test]

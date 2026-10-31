@@ -4,12 +4,14 @@ import type {
   HttpProgressEvent,
   HttpRequestHistory,
   HttpResponseData,
-  SavedHttpRequest
+  SavedHttpRequest,
+  SaveHttpRequestInput
 } from '../contracts/http'
+import { sqliteDate } from '../../features/host/hostProfileStore'
 
 const browserControllers = new Map<string, AbortController>()
-const SAVED_KEY = 'mootool-next-tauri:http-saved:v1'
-const HISTORY_KEY = 'mootool-next-tauri:http-history:v1'
+const SAVED_KEY = 'mootool-next-tauri:http-saved:v2'
+const HISTORY_KEY = 'mootool-next-tauri:http-history:v2'
 
 type Invoke = <T>(command: string, args?: Record<string, unknown>) => Promise<T>
 interface ProgressChannel { onmessage: (event: HttpProgressEvent) => void }
@@ -77,8 +79,29 @@ const browserApi: HttpApi = {
         truncated: false,
         durationMs: Math.round(performance.now() - started)
       }
-      const history: HttpRequestHistory = { id: request.requestId, request, response: result, createdAt: Date.now() }
-      writeList(HISTORY_KEY, [history, ...readList<HttpRequestHistory>(HISTORY_KEY)].slice(0, 500))
+      const values = readList<HttpRequestHistory>(HISTORY_KEY)
+      const now = sqliteDate()
+      const history: HttpRequestHistory = {
+        id: nextId(values),
+        requestIdValue: request.savedId ?? null,
+        title: request.name.trim() || 'Untitled',
+        name: request.name.trim() || 'Untitled',
+        method: request.method,
+        url: request.url,
+        params: request.params,
+        headers: request.headers,
+        cookies: request.cookies,
+        body: request.body,
+        bodyType: request.bodyType,
+        responseBody: result.bodyText,
+        responseHeaders: result.headers.map(([name, value]) => `${name}: ${value}`).join('\n'),
+        responseCookies: result.headers.filter(([name]) => name.toLowerCase() === 'set-cookie').map(([, value]) => value).join('\n'),
+        status: `${result.status} ${result.statusText ?? ''}`.trim(),
+        costTime: result.durationMs,
+        createTime: now,
+        modifiedTime: now
+      }
+      writeList(HISTORY_KEY, [...values, history].slice(-500))
       return result
     } finally {
       window.clearTimeout(timeout)
@@ -91,11 +114,28 @@ const browserApi: HttpApi = {
     return Boolean(controller)
   },
   listSaved: async (query = '') => filterSaved(readList<SavedHttpRequest>(SAVED_KEY), query),
-  save: async (item) => {
+  save: async (item: SaveHttpRequestInput) => {
     const values = readList<SavedHttpRequest>(SAVED_KEY)
-    const sameName = values.find((value) => value.name === item.name)
-    const saved = sameName ? { ...item, id: sameName.id, createdAt: sameName.createdAt } : item
-    writeList(SAVED_KEY, [saved, ...values.filter((value) => value.id !== saved.id && value.name !== saved.name)])
+    const name = item.name.trim() || 'Untitled'
+    const now = sqliteDate()
+    const index = item.id && item.id > 0
+      ? values.findIndex((value) => value.id === item.id)
+      : values.findIndex((value) => value.name === name)
+    const current = index >= 0 ? values[index] : undefined
+    const saved: SavedHttpRequest = {
+      ...item,
+      id: current?.id ?? nextId(values),
+      name,
+      url: item.url.trim(),
+      bodyType: item.bodyType.trim() || 'application/json',
+      responseBody: item.responseBody ?? '',
+      responseHeaders: item.responseHeaders ?? '',
+      responseCookies: item.responseCookies ?? '',
+      createTime: current?.createTime ?? now,
+      modifiedTime: now
+    }
+    const next = index >= 0 ? values.map((value, valueIndex) => valueIndex === index ? saved : value) : [saved, ...values]
+    writeList(SAVED_KEY, next)
     return saved
   },
   deleteSaved: async (id) => deleteItem<SavedHttpRequest>(SAVED_KEY, id),
@@ -121,25 +161,33 @@ function writeList<T>(key: string, values: T[]): void {
   window.localStorage.setItem(key, JSON.stringify(values))
 }
 
-function deleteItem<T extends { id: string }>(key: string, id: string): boolean {
+function deleteItem<T extends { id: number }>(key: string, id: number): boolean {
   const values = readList<T>(key)
   const next = values.filter((item) => item.id !== id)
   writeList(key, next)
   return next.length !== values.length
 }
 
+function like(value: string, query: string): boolean {
+  const pattern = `%${query.trim()}%`.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replaceAll('%', '.*').replaceAll('_', '.')
+  return new RegExp(`^${pattern}$`, 'i').test(value)
+}
+
+function nextId(values: Array<{ id: number }>): number {
+  return values.reduce((highest, item) => Math.max(highest, item.id), 0) + 1
+}
+
 function filterSaved(values: SavedHttpRequest[], query: string): SavedHttpRequest[] {
-  const needle = query.trim().toLowerCase()
   return values
-    .filter((item) => !needle || item.name.toLowerCase().includes(needle) || item.request.url.toLowerCase().includes(needle))
-    .sort((left, right) => right.updatedAt - left.updatedAt)
+    .filter((item) => !query.trim() || like(item.name, query))
+    .sort((left, right) => right.modifiedTime.localeCompare(left.modifiedTime) || right.id - left.id)
 }
 
 function filterHistory(values: HttpRequestHistory[], query: string): HttpRequestHistory[] {
-  const needle = query.trim().toLowerCase()
   return values
-    .filter((item) => !needle || item.request.name.toLowerCase().includes(needle) || item.request.url.toLowerCase().includes(needle))
-    .sort((left, right) => right.createdAt - left.createdAt)
+    .filter((item) => !query.trim() || like(item.title, query) || like(item.url, query))
+    .sort((left, right) => right.id - left.id)
+    .slice(0, 500)
 }
 
 export const httpApi: HttpApi = typeof window !== 'undefined' && window.__TAURI_INTERNALS__ ? createHttpApi() : browserApi

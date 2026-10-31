@@ -51,7 +51,7 @@ export function QuickNoteGitPanel({ open, onClose, onChanged }: {
     try {
       const result = await quickNoteGitApi.action({ action, ...extra })
       setNotice(result.message)
-      if (action === 'pull' || action === 'discard' || action === 'abort-merge' || action === 'resolve-conflict') onChanged()
+      if (action === 'pull' || action === 'discard' || action === 'abort-merge' || action === 'resolve-conflict' || action === 'continue-operation') onChanged()
       await load()
     } catch (cause) {
       setNotice(cause instanceof Error ? cause.message : String(cause))
@@ -88,6 +88,8 @@ export function QuickNoteGitPanel({ open, onClose, onChanged }: {
             {status?.repository && <button type="button" disabled={busy || !status.remote} onClick={() => void run('fetch')}><CloudDownload size={13} />{t('git.fetch')}</button>}
             {status?.repository && <button type="button" disabled={busy || !status.remote || status.merging} onClick={() => void run('pull')}>{t('git.pull')}</button>}
             {status?.repository && <button type="button" disabled={busy || !status.remote || status.merging} onClick={() => void run('push')}><CloudUpload size={13} />{t('git.push')}</button>}
+            {status?.repository && (status.merging || status.conflicts > 0) && <button type="button" disabled={busy} onClick={() => { void dialog.confirm(t('git.confirmAbort'), { dangerous: true }).then((confirmed) => { if (confirmed) return run('abort-merge') }) }}>{t('git.abortMerge')}</button>}
+            {status?.repository && status.merging && status.conflicts === 0 && <button type="button" disabled={busy} onClick={() => void run('continue-operation')}>{t('git.continueOperation')}</button>}
             <button type="button" onClick={onClose}>{t('git.close')}</button>
           </div>
         </header>

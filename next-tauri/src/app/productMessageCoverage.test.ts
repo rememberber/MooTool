@@ -4,6 +4,7 @@ import { colorMessages } from '../features/color/colorMessages'
 import { configMessages } from '../features/config/configMessages'
 import { cronMessages } from '../features/cron/cronMessages'
 import { cryptoMessages } from '../features/crypto/cryptoMessages'
+import { batchRenameMessages } from '../features/batchRename/batchRenameMessages'
 import { filePreviewMessages } from '../features/filePreview/filePreviewMessages'
 import { encodeMessages } from '../features/encode/encodeMessages'
 import { hostMessages } from '../features/host/hostMessages'
@@ -54,12 +55,13 @@ const productMessages: Partial<Record<ToolId, LocalizedCatalog>> = {
   image: imageMessages,
   pdf: pdfMessages,
   'file-preview': filePreviewMessages,
+  'batch-rename': batchRenameMessages,
   system: systemMessages
 }
 
 describe('product message coverage', () => {
   it('covers every formal tool with an aligned three-locale catalog', () => {
-    expect(productToolCatalog).toHaveLength(26)
+    expect(productToolCatalog).toHaveLength(27)
     expect(Object.keys(productMessages).sort()).toEqual(productToolCatalog.map(({ id }) => id).sort())
     for (const tool of productToolCatalog) {
       expect(validateMessageCatalog(productMessages[tool.id]!)).toEqual([])

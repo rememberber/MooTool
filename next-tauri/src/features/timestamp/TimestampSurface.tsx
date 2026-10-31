@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
-import type { OperationHistory } from '../../platform/contracts/history'
+import { OPERATION_HISTORY_LIMIT, type OperationHistory } from '../../platform/contracts/history'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { HistoryPanel } from '../history/HistoryPanel'
@@ -284,7 +284,7 @@ export function TimestampSurface({ active = true }: { active?: boolean }) {
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
       {historyOpen && (
         <HistoryPanel
-          limit={settings.data.historyLimit}
+          limit={OPERATION_HISTORY_LIMIT}
           toolId="timestamp"
           onClose={() => setHistoryOpen(false)}
           onRestore={applyHistory}

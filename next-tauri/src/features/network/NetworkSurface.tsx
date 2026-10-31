@@ -16,11 +16,13 @@ import { clipboardApi } from '../../platform/api/clipboardApi'
 import { networkToolsApi } from '../../platform/api/networkToolsApi'
 import type { NetworkConnectionInfo, NetworkInterfaceInfo, NetworkRangeScanResult, PingResult, PortScanResult, WhoisResult } from '../../platform/contracts/networkTools'
 import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
+import { ResizableColumns } from '../../shared/ResizableColumns'
+import { useSettings } from '../settings/SettingsProvider'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import { networkMessages } from './networkMessages'
-import { formatOpenPorts, parseIpv4Range, parsePortSpec } from './networkCommand'
+import { formatOpenPorts, formatPingRange, parseIpv4Range, parsePortSpec } from './networkCommand'
 import { analyzeIpv4Cidr, integerToIpv4, ipv4ToLong, NetworkToolError, type Ipv4Category } from './networkTools'
 
 type NetworkMessageKey = LocalizedMessageKey<typeof networkMessages>
@@ -28,6 +30,7 @@ type NetworkNotice = { key: NetworkMessageKey; values?: MessageValues } | { raw:
 type NetworkTab = 'calculator' | 'interfaces' | 'diagnostics'
 
 export function NetworkSurface() {
+  const { settings } = useSettings()
   const dialog = useDesktopDialog()
   const { t, locale } = useLocalizedMessages(networkMessages)
   const [input, setInput] = useState('192.168.1.10/24')
@@ -201,29 +204,36 @@ export function NetworkSurface() {
     setOutput(t('layout.running'))
     try {
       const ports = parsePortSpec(portSpec)
-      const start = ports[0] ?? 1
-      const end = ports.at(-1) ?? start
-      if (end - start + 1 !== ports.length) throw new Error('Native port lists require the Tauri desktop app')
-      const loaded = await networkToolsApi.scanPorts(requestId, portHost.trim(), start, end, 500)
+      const budgetMs = commandTimeout(settings.network.requestTimeoutMs)
+      const loaded = await networkToolsApi.scanPorts(requestId, portHost.trim(), ports, Math.min(budgetMs, 500), budgetMs)
       setScanResult(loaded)
       setOutput(formatOpenPorts(portHost.trim(), ports, loaded.openPorts))
-      succeed(loaded.cancelled ? 'notice.scanCancelled' : 'notice.scanComplete', { count: loaded.openPorts.length })
+      succeed('notice.scanComplete', { count: loaded.openPorts.length })
     } catch (cause) {
-      setOutput(cause instanceof Error ? cause.message : String(cause))
-      fail(cause)
+      finishCommand(cause)
     } finally { setBusy(''); setTaskId('') }
   }
 
   async function probeRange(): Promise<void> {
+    const requestId = crypto.randomUUID()
+    setTaskId(requestId)
     setBusy('range')
     setOutput(t('layout.running'))
     try {
       parseIpv4Range(ipRange)
-      setOutput('Native ping range requires the Tauri desktop app')
+      const loaded = await networkToolsApi.pingRange(requestId, ipRange.trim(), commandTimeout(settings.network.requestTimeoutMs))
+      setOutput(formatPingRange(loaded.reachableHosts, loaded.scannedHosts))
+      succeed('notice.pingRangeComplete', { count: loaded.reachableHosts.length })
     } catch (cause) {
-      setOutput(cause instanceof Error ? cause.message : String(cause))
-      fail(cause)
-    } finally { setBusy('') }
+      finishCommand(cause)
+    } finally { setBusy(''); setTaskId('') }
+  }
+
+  function finishCommand(cause: unknown): void {
+    const message = cause instanceof Error ? cause.message : String(cause)
+    setOutput(message)
+    if (message.includes('ABORTED')) succeed('notice.scanCancelled')
+    else fail(cause)
   }
 
   async function queryWhois(): Promise<void> {
@@ -301,7 +311,7 @@ export function NetworkSurface() {
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 
-      <section className="network-workspace">
+      <ResizableColumns id="network-workspace" className="network-workspace" initialPrimary={1.15} defaultSizes={[1.15, 0.85]} minPrimary={340} minSecondary={300}>
         <section className="network-output-panel">
           <header>
             <button type="button" disabled={Boolean(busy)} onClick={() => void loadInterfaces()}><Network />{navigator.userAgent.includes('Windows') ? 'ipconfig /all' : navigator.userAgent.includes('Linux') ? 'ip address' : 'ifconfig'}</button>
@@ -322,7 +332,7 @@ export function NetworkSurface() {
           <section><h2>{t('layout.dns')}</h2><button type="button" disabled={Boolean(busy)} onClick={() => void flushDns()}><RefreshCw />{t('action.flushDns')}</button></section>
           <section><h2>{t('layout.localAddresses')}</h2><div className="network-local-addresses"><label><span>IPv4</span><textarea readOnly aria-label="IPv4" value={interfaces.flatMap((item) => item.addresses).filter((address) => address.includes('.')).join('\n')} /></label><label><span>IPv6</span><textarea readOnly aria-label="IPv6" value={interfaces.flatMap((item) => item.addresses).filter((address) => address.includes(':')).join('\n')} /></label></div><button type="button" aria-label={t('action.refresh')} onClick={() => void loadInterfaces()}><RefreshCw /></button></section>
         </section>
-      </section>
+      </ResizableColumns>
 
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}>
         <span>{failed ? <TriangleAlert /> : <CheckCircle2 />}{noticeText}</span>
@@ -332,6 +342,10 @@ export function NetworkSurface() {
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
     </main>
   )
+}
+
+function commandTimeout(milliseconds: number): number {
+  return Number.isFinite(milliseconds) ? Math.max(1_000, Math.min(120_000, Math.round(milliseconds))) : 30_000
 }
 
 function categoryMessageKey(category: Ipv4Category): NetworkMessageKey {

@@ -241,7 +241,7 @@
 }
 
 .image-workbench .image-layout {
-  grid-template-columns: 230px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .quick-note-workbench .quick-note-editor {
@@ -249,20 +249,20 @@
   background: var(--workspace);
 }
 
-.quick-note-editor--replace {
-  padding-inline-end: 220px;
-}
-
 .quick-replace-panel {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-end: 0;
   display: flex;
   flex-direction: column;
-  width: 220px;
   overflow: auto;
   background: var(--surface);
   border-inline-start: 1px solid var(--border-soft);
+}
+
+.quick-note-layout > .quick-replace-panel {
+  position: static;
+  inset: auto;
+  width: auto;
+  min-width: 0;
+  height: 100%;
 }
 
 .quick-replace-panel header,
@@ -328,6 +328,16 @@
 
 .quick-note-tree__row:hover {
   background: var(--navigation-hover, rgb(0 0 0 / 4%));
+}
+
+.quick-note-tree__row--selected {
+  background: var(--navigation-hover, rgb(0 0 0 / 6%));
+}
+
+.quick-note-tree__selection {
+  margin: 6px 8px;
+  color: var(--text-muted, #667085);
+  font-size: 12px;
 }
 
 .quick-note-tree__row--active,
@@ -433,6 +443,12 @@
 .quick-note-git__commit input {
   flex: 1;
   min-width: 0;
+}
+
+.quick-note-git__tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
 }
 
 .quick-note-git__workspace {
@@ -1056,6 +1072,43 @@
 .color-workbench .color-library-card { grid-column: 2; grid-row: 1 / span 2; overflow: auto; }
 .color-workbench .color-scale-card { grid-column: 2; grid-row: 3; overflow: auto; border-top: 1px solid var(--border-soft); }
 
+.color-grid.resizable-columns {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.color-current-panel,
+.color-palette-panel {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.color-current-panel {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.color-palette-panel {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.color-current-panel > .color-hero-card,
+.color-current-panel > .color-format-card,
+.color-current-panel > .color-contrast-card,
+.color-palette-panel > .color-library-card,
+.color-palette-panel > .color-scale-card {
+  grid-column: 1;
+  grid-row: auto;
+}
+
+.color-palette-panel > .color-library-card {
+  grid-row: 1;
+}
+
+.color-palette-panel > .color-scale-card {
+  grid-row: 2;
+}
+
 .color-workbench .color-hero-card,
 .color-workbench .color-format-card,
 .color-workbench .color-contrast-card {
@@ -1102,6 +1155,14 @@
 .file-preview-workbench nav button { display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
 .file-preview-workbench img { max-width: 100%; max-height: 70vh; object-fit: contain; }
 .file-preview-drop { min-height: 240px; }
+.file-preview-content { display: flex; flex-direction: column; min-width: 0; min-height: 420px; }
+.file-preview-options { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.file-preview-options input[type='number'] { width: 64px; }
+.file-preview-empty { margin: 0; color: var(--text-muted); }
+.file-preview-pdf-area { position: relative; flex: 1; min-height: 360px; display: flex; }
+.file-preview-pdf { flex: 1; min-width: 0; overflow: auto; background: var(--surface-soft); padding: 24px; }
+.file-preview-pdf canvas { display: block; margin: 0 auto; background: white; box-shadow: 0 2px 12px var(--shadow); }
+.file-preview-pdf-status { position: absolute; top: 0; left: 12px; padding: 6px; background: var(--surface); color: var(--text-muted); z-index: 1; }
 .network-workbench .network-calculator {
   display: grid;
   grid-template-columns: minmax(360px, 1.15fr) minmax(300px, 0.85fr);
@@ -1455,3 +1516,11 @@
 .file-preview-workbench nav button { display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
 .file-preview-workbench img { max-width: 100%; max-height: 70vh; object-fit: contain; }
 .file-preview-drop { min-height: 240px; }
+.file-preview-content { display: flex; flex-direction: column; min-width: 0; min-height: 420px; }
+.file-preview-options { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.file-preview-options input[type='number'] { width: 64px; }
+.file-preview-empty { margin: 0; color: var(--text-muted); }
+.file-preview-pdf-area { position: relative; flex: 1; min-height: 360px; display: flex; }
+.file-preview-pdf { flex: 1; min-width: 0; overflow: auto; background: var(--surface-soft); padding: 24px; }
+.file-preview-pdf canvas { display: block; margin: 0 auto; background: white; box-shadow: 0 2px 12px var(--shadow); }
+.file-preview-pdf-status { position: absolute; top: 0; left: 12px; padding: 6px; background: var(--surface); color: var(--text-muted); z-index: 1; }

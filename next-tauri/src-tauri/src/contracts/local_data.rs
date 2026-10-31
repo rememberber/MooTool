@@ -84,6 +84,17 @@ impl QuickNote {
                     | "html"
                     | "xml"
                     | "sql"
+                    | "text/plain"
+                    | "text/markdown"
+                    | "application/json"
+                    | "text/java"
+                    | "text/javascript"
+                    | "text/typescript"
+                    | "text/python"
+                    | "text/html"
+                    | "text/xml"
+                    | "text/yaml"
+                    | "text/sql"
             )
         {
             return Err("unsupported note editor preferences".into());
@@ -168,7 +179,7 @@ fn default_note_line_spacing() -> f32 {
 }
 
 fn default_note_syntax() -> String {
-    "markdown".into()
+    "text/plain".into()
 }
 
 fn default_true() -> bool {
@@ -249,25 +260,65 @@ pub struct BoardMessage {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HostProfile {
-    pub id: String,
+pub struct SaveHostProfileInput {
+    pub id: Option<i64>,
     pub name: String,
     pub content: String,
-    pub created_at: i64,
-    pub updated_at: i64,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HostProfile {
+    pub id: i64,
+    pub name: String,
+    pub content: String,
+    pub create_time: String,
+    pub modified_time: String,
 }
 
 impl HostProfile {
     pub fn validate(&self) -> Result<(), String> {
-        validate_id(&self.id)?;
-        if self.name.trim().is_empty() || self.name.chars().count() > 256 {
-            return Err("host profile name must contain 1-256 characters".into());
+        if self.id <= 0 {
+            return Err("Invalid host profile".into());
         }
-        if self.content.len() > 2 * 1024 * 1024 {
-            return Err("host profile cannot exceed 2 MiB".into());
+        validate_host_name(&self.name)?;
+        validate_host_content(&self.content)?;
+        if !valid_sqlite_date(&self.create_time) || !valid_sqlite_date(&self.modified_time) {
+            return Err("Invalid host profile".into());
         }
-        validate_timestamps(self.created_at, self.updated_at)
+        Ok(())
     }
+}
+
+pub fn validate_host_name(name: &str) -> Result<(), String> {
+    let name = name.trim();
+    if name.is_empty() {
+        return Err("Host profile name is required".into());
+    }
+    if name.encode_utf16().count() > 200 {
+        return Err("Invalid string value".into());
+    }
+    Ok(())
+}
+
+pub fn validate_host_content(content: &str) -> Result<(), String> {
+    if content.encode_utf16().count() > 2 * 1024 * 1024 {
+        return Err("Invalid string value".into());
+    }
+    Ok(())
+}
+
+fn valid_sqlite_date(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    bytes.len() == 19
+        && bytes[4] == b'-'
+        && bytes[7] == b'-'
+        && bytes[10] == b' '
+        && bytes[13] == b':'
+        && bytes[16] == b':'
+        && bytes.iter().enumerate().all(|(index, byte)| {
+            matches!(index, 4 | 7 | 10 | 13 | 16) || byte.is_ascii_digit()
+        })
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -280,41 +331,84 @@ pub struct SystemHostsFile {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TranslationWord {
-    pub id: String,
+pub struct SaveTranslationWordInput {
+    pub id: Option<i64>,
     pub source_text: String,
     pub target_text: String,
     pub source_lang: String,
     pub target_lang: String,
     pub remark: String,
-    pub created_at: i64,
-    pub updated_at: i64,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TranslationWord {
+    pub id: i64,
+    pub source_text: String,
+    pub target_text: String,
+    pub source_lang: String,
+    pub target_lang: String,
+    pub remark: String,
+    pub create_time: String,
+    pub modified_time: String,
 }
 
 impl TranslationWord {
     pub fn validate(&self) -> Result<(), String> {
-        validate_id(&self.id)?;
-        if self.source_text.trim().is_empty() || self.source_text.chars().count() > 50_000 {
-            return Err("translation word source must contain 1 to 50000 characters".into());
+        if self.id <= 0 {
+            return Err("Invalid word".into());
         }
-        if self.target_text.chars().count() > 50_000 || self.remark.chars().count() > 2_000 {
-            return Err("translation word content exceeds local limits".into());
+        validate_translation_word_fields(
+            &self.source_text,
+            &self.target_text,
+            &self.source_lang,
+            &self.target_lang,
+            &self.remark,
+        )?;
+        if !valid_sqlite_date(&self.create_time) || !valid_sqlite_date(&self.modified_time) {
+            return Err("Invalid word".into());
         }
-        validate_language_pair(&self.source_lang, &self.target_lang)?;
-        validate_timestamps(self.created_at, self.updated_at)
+        Ok(())
     }
+}
+
+pub fn validate_translation_word_fields(
+    source_text: &str,
+    target_text: &str,
+    source_lang: &str,
+    target_lang: &str,
+    remark: &str,
+) -> Result<(), String> {
+    let source_text = source_text.trim();
+    if source_text.is_empty() {
+        return Err("Source text is required".into());
+    }
+    if utf16_len(source_text) > 50_000 || utf16_len(target_text) > 50_000 || utf16_len(remark) > 2_000 {
+        return Err("Invalid string value".into());
+    }
+    validate_language_pair(source_lang, target_lang)
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveTranslationHistoryInput {
+    pub source_text: String,
+    pub target_text: String,
+    pub source_lang: String,
+    pub target_lang: String,
+    pub translator_type: TranslationProvider,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TranslationHistory {
-    pub id: String,
+    pub id: i64,
     pub source_text: String,
     pub target_text: String,
     pub source_lang: String,
     pub target_lang: String,
-    pub provider: TranslationProvider,
-    pub created_at: i64,
+    pub translator_type: TranslationProvider,
+    pub create_time: String,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -417,16 +511,18 @@ impl OperationHistory {
 
 impl TranslationHistory {
     pub fn validate(&self) -> Result<(), String> {
-        validate_id(&self.id)?;
-        if self.source_text.trim().is_empty()
-            || self.source_text.chars().count() > 50_000
-            || self.target_text.chars().count() > 50_000
-        {
-            return Err("translation history content exceeds local limits".into());
+        if self.id <= 0 {
+            return Err("Invalid word".into());
         }
-        validate_language_pair(&self.source_lang, &self.target_lang)?;
-        if self.created_at < 0 {
-            return Err("invalid translation history timestamp".into());
+        validate_translation_word_fields(
+            &self.source_text,
+            &self.target_text,
+            &self.source_lang,
+            &self.target_lang,
+            "",
+        )?;
+        if !valid_sqlite_date(&self.create_time) {
+            return Err("Invalid word".into());
         }
         Ok(())
     }
@@ -468,6 +564,10 @@ fn validate_timestamps(created_at: i64, updated_at: i64) -> Result<(), String> {
         return Err("invalid local record timestamps".into());
     }
     Ok(())
+}
+
+fn utf16_len(value: &str) -> usize {
+    value.encode_utf16().count()
 }
 
 fn validate_language_pair(source: &str, target: &str) -> Result<(), String> {

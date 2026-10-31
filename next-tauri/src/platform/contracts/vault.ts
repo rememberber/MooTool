@@ -31,6 +31,17 @@ export interface VaultGitStatus {
   ahead: number
   behind: number
   remote: string
+  merging: boolean
+  conflicts: number
+  operation: 'none' | 'merge' | 'rebase'
+  changes: VaultGitChange[]
+}
+
+export interface VaultGitChange {
+  path: string
+  originalPath?: string
+  status: string
+  conflict: boolean
 }
 
 export interface VaultGitCommit {
@@ -45,6 +56,24 @@ export interface VaultGitDetails {
   commits: VaultGitCommit[]
 }
 
+export interface VaultGitDiffInput {
+  path?: string
+  commit?: string
+}
+
+export interface VaultGitDiffFile {
+  path: string
+  originalPath?: string
+  status: string
+  before: string
+  after: string
+  preview: 'text' | 'binary' | 'too-large'
+}
+
+export interface VaultGitDiffResult {
+  files: VaultGitDiffFile[]
+}
+
 export interface VaultSnapshot {
   rootPath: string | null
   files: VaultFileEntry[]
@@ -52,13 +81,15 @@ export interface VaultSnapshot {
   git: VaultGitStatus
 }
 
-export type VaultGitOperation = 'init' | 'pull' | 'commit' | 'push'
+export type VaultGitOperation = 'init' | 'fetch' | 'pull' | 'commit' | 'push' | 'discard' | 'abortMerge' | 'resolveConflict' | 'continueOperation'
 
 export interface VaultGitRequest {
   requestId: string
   operation: VaultGitOperation
   message?: string
   editorDirty: boolean
+  path?: string
+  strategy?: 'ours' | 'theirs'
 }
 
 export interface VaultGitResult {
@@ -87,6 +118,10 @@ export interface VaultApi {
   deleteEntry(relativePath: string, expectedFingerprint: string | null): Promise<VaultTrashResult>
   gitStatus(): Promise<VaultGitStatus>
   gitDetails(relativePath?: string): Promise<VaultGitDetails>
+  gitDiff(input: VaultGitDiffInput): Promise<VaultGitDiffResult>
+  exportFiles(directory: string, relativePaths: string[]): Promise<number>
+  revealRoot(): Promise<void>
+  revealEntry(relativePath: string): Promise<void>
   configureGitRemote(remote: string): Promise<VaultGitStatus>
   runGit(request: VaultGitRequest): Promise<VaultGitResult>
   cancelGit(requestId: string): Promise<boolean>

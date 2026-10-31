@@ -7,6 +7,8 @@ import type {
   VaultDocument,
   VaultGitRequest,
   VaultGitDetails,
+  VaultGitDiffInput,
+  VaultGitDiffResult,
   VaultGitResult,
   VaultGitStatus,
   VaultSaveRequest,
@@ -42,6 +44,10 @@ export function createVaultApi(invokeCommand: Invoke = invoke): Omit<VaultApi, '
     ),
     gitStatus: () => invokeCommand<VaultGitStatus>('get_vault_git_status'),
     gitDetails: (relativePath) => invokeCommand<VaultGitDetails>('get_vault_git_details', { relativePath }),
+    gitDiff: (input: VaultGitDiffInput) => invokeCommand<VaultGitDiffResult>('get_vault_git_diff', { input }),
+    exportFiles: (directory, relativePaths) => invokeCommand<number>('export_vault_files', { directory, relativePaths }),
+    revealRoot: () => invokeCommand<void>('reveal_vault_root'),
+    revealEntry: (relativePath) => invokeCommand<void>('reveal_vault_entry', { relativePath }),
     configureGitRemote: (remote) => invokeCommand<VaultGitStatus>('configure_vault_git_remote', { remote }),
     runGit: (request: VaultGitRequest) => invokeCommand<VaultGitResult>('run_vault_git', { request }),
     cancelGit: (requestId) => invokeCommand<boolean>('cancel_vault_git', { requestId })
@@ -60,7 +66,11 @@ const browserSnapshot: VaultSnapshot = {
     changedFiles: 0,
     ahead: 0,
     behind: 0,
-    remote: ''
+    remote: '',
+    merging: false,
+    conflicts: 0,
+    operation: 'none',
+    changes: []
   }
 }
 
@@ -90,6 +100,10 @@ export const vaultApi: VaultApi = typeof window !== 'undefined' && window.__TAUR
       deleteEntry: async () => { throw new Error('JSON Vault 需要在 Tauri 桌面应用中运行') },
       gitStatus: async () => browserSnapshot.git,
       gitDetails: async () => ({ diff: '', commits: [] }),
+      gitDiff: async () => ({ files: [] }),
+      exportFiles: async () => { throw new Error('JSON Vault 需要在 Tauri 桌面应用中运行') },
+      revealRoot: async () => { throw new Error('JSON Vault 需要在 Tauri 桌面应用中运行') },
+      revealEntry: async () => { throw new Error('JSON Vault 需要在 Tauri 桌面应用中运行') },
       configureGitRemote: async () => { throw new Error('Vault Git 需要在 Tauri 桌面应用中运行') },
       runGit: async () => { throw new Error('Vault Git 需要在 Tauri 桌面应用中运行') },
       cancelGit: async () => false,

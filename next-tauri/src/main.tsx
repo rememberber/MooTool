@@ -1,6 +1,7 @@
 import { lazy, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './app/App'
+import { EscapeHidesWindow } from './app/escapeHidesWindow'
 import { useLocalizedMessages } from './app/localizedMessages'
 import { surfaceMessages } from './app/surfaceMessages'
 import { CalculatorToolSurface } from './features/calculator/CalculatorToolSurface'
@@ -96,7 +97,9 @@ const RuntimeSurface = lazy(async () => ({ default: (await import('./features/ru
 const TranslationSurface = lazy(async () => ({ default: (await import('./features/translation/TranslationSurface')).TranslationSurface }))
 const ImageSurface = lazy(async () => ({ default: (await import('./features/image/ImageSurface')).ImageSurface }))
 const FilePreviewSurface = lazy(async () => ({ default: (await import('./features/filePreview/FilePreviewSurface')).FilePreviewSurface }))
+const BatchRenameSurface = lazy(async () => ({ default: (await import('./features/batchRename/BatchRenameSurface')).BatchRenameSurface }))
 const PdfSurface = lazy(async () => ({ default: (await import('./features/pdf/PdfSurface')).PdfSurface }))
+const HttpResponseWindow = lazy(async () => ({ default: (await import('./features/http/HttpResponseWindow')).HttpResponseWindow }))
 
 function SurfaceFallback() {
   const { t } = useLocalizedMessages(surfaceMessages)
@@ -106,6 +109,7 @@ function SurfaceFallback() {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <SettingsProvider>
+      <EscapeHidesWindow />
       <DesktopDialogProvider>
       {surface === 'calculator'
         ? <CalculatorToolSurface />
@@ -123,6 +127,12 @@ createRoot(document.getElementById('root')!).render(
             )
         : surface === 'settings'
           ? <SettingsSurface />
+        : surface === 'http-response'
+          ? (
+              <Suspense fallback={<SurfaceFallback />}>
+                <HttpResponseWindow />
+              </Suspense>
+            )
         : surface === 'text-diff'
           ? (
               <Suspense fallback={<SurfaceFallback />}>
@@ -232,6 +242,7 @@ createRoot(document.getElementById('root')!).render(
         : surface === 'image' ? <Suspense fallback={<SurfaceFallback />}><ImageSurface /></Suspense>
         : surface === 'pdf' ? <Suspense fallback={<SurfaceFallback />}><PdfSurface /></Suspense>
         : surface === 'file-preview' ? <Suspense fallback={<SurfaceFallback />}><FilePreviewSurface /></Suspense>
+        : surface === 'batch-rename' ? <Suspense fallback={<SurfaceFallback />}><BatchRenameSurface /></Suspense>
         : surface === 'tool-probe'
           ? <ToolProbePage />
           : <App />}

@@ -8,15 +8,15 @@ describe('HTTP API adapter', () => {
     const channel = { onmessage: vi.fn() }
     const api = createHttpApi(invoke, () => channel)
     const request = emptyHttpRequest()
-    const item = { id: 'saved-1', name: 'Example', request, createdAt: 1, updatedAt: 1 }
+    const item = { name: 'Example', method: 'GET', url: 'https://example.com', params: [], headers: [], cookies: [], body: '', bodyType: 'application/json' }
 
     await api.execute(request, vi.fn())
     await api.cancel(request.requestId)
     await api.listSaved('example')
     await api.save(item)
-    await api.deleteSaved('saved-1')
+    await api.deleteSaved(1)
     await api.listHistory('example')
-    await api.deleteHistory('history-1')
+    await api.deleteHistory(1)
     await api.clearHistory()
 
     expect(invoke.mock.calls).toEqual([
@@ -24,9 +24,9 @@ describe('HTTP API adapter', () => {
       ['cancel_http_request', { requestId: request.requestId }],
       ['list_saved_http_requests', { query: 'example' }],
       ['save_http_request', { item }],
-      ['delete_saved_http_request', { id: 'saved-1' }],
+      ['delete_saved_http_request', { id: 1 }],
       ['list_http_request_history', { query: 'example' }],
-      ['delete_http_request_history', { id: 'history-1' }],
+      ['delete_http_request_history', { id: 1 }],
       ['clear_http_request_history']
     ])
   })
