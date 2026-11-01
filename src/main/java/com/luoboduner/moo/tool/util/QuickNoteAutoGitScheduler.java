@@ -5,11 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.SwingWorker;
-import javax.swing.Timer;
 import java.awt.AWTEvent;
 import java.awt.Toolkit;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 空闲 / 失焦后触发 Git 检查点（对标 Tolaria useAutoGit）。
@@ -23,10 +25,10 @@ public final class QuickNoteAutoGitScheduler {
     private static volatile long windowDeactivatedAt;
     private static volatile long lastIdleCheckpointForActivity;
     private static volatile long lastInactiveCheckpointAt;
-    private static Timer tickTimer;
     private static boolean started;
     private static volatile boolean checkpointInProgress;
     private static java.awt.event.AWTEventListener windowListener;
+    private static ScheduledExecutorService scheduler;
 
     private QuickNoteAutoGitScheduler() {
     }
@@ -36,16 +38,33 @@ public final class QuickNoteAutoGitScheduler {
             return;
         }
         started = true;
-        tickTimer = new Timer(TICK_MS, e -> evaluateCheckpoint());
-        tickTimer.setRepeats(true);
-        tickTimer.start();
+        scheduler= Executors.newSingleThreadScheduledExecutor(r->{
+            Thread thread = new Thread(r, "QuickNoteAutoGitScheduler");
+            thread.setDaemon(true);
+            return thread;
+        });
+        scheduler.scheduleWithFixedDelay(()->{
+            try {
+                evaluateCheckpoint();
+            }catch (Throwable ex){
+                log.debug("Auto git checkpoint failed: {}", ex.getMessage());
+            }
+        },TICK_MS,TICK_MS, TimeUnit.MILLISECONDS);
         attachWindowListener();
     }
 
     public static void stop() {
-        if (tickTimer != null) {
-            tickTimer.stop();
-            tickTimer = null;
+        if (scheduler != null) {
+            scheduler.shutdown();
+            try {
+                if(!scheduler.awaitTermination(TICK_MS,TimeUnit.MILLISECONDS)){
+                    scheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                scheduler.shutdownNow();
+            }finally {
+                scheduler=null;
+            }
         }
         detachWindowListener();
         checkpointInProgress = false;
