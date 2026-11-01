@@ -43,3 +43,8 @@ logs/
 .cursor/
 downloads/
 jdks/
+
+### Local temporary files ###
+.DS_Store
+/tmp/
+/temp/
