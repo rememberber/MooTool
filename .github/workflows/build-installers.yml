@@ -68,7 +68,7 @@ jobs:
     needs: validate-release
     if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'mac-apple-silicon'
     name: macOS Apple Silicon
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
       - name: Checkout
