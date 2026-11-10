@@ -31,9 +31,9 @@
         <guava.version>33.6.0-jre</guava.version>
         <okhttp.version>5.4.0</okhttp.version>
         <google.zxing.core.version>3.5.4</google.zxing.core.version>
-        <flatlaf.version>3.7.2</flatlaf.version>
-        <flatlaf-extras.version>3.7.2</flatlaf-extras.version>
-        <flatlaf-intellij-themes.version>3.7.2</flatlaf-intellij-themes.version>
+        <flatlaf.version>3.8</flatlaf.version>
+        <flatlaf-extras.version>3.8</flatlaf-extras.version>
+        <flatlaf-intellij-themes.version>3.8</flatlaf-intellij-themes.version>
         <flatlaf-fonts-jetbrains-mono.version>2.304</flatlaf-fonts-jetbrains-mono.version>
         <flatlaf-fonts-inter.version>4.1</flatlaf-fonts-inter.version>
         <rsyntaxtextarea.version>4.0.1</rsyntaxtextarea.version>
