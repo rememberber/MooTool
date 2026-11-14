@@ -14,7 +14,8 @@ test('JSON and notes support multiselect, batch duplicate and collision-safe exp
     await page.evaluate(async root => {
       await window.mootool.updateSettings({ vault: { jsonPath: `${root}/json`, quickNotePath: `${root}/notes`, jsonTreeExpandMode: 'expandAll', quickNoteTreeExpandMode: 'expandAll' } })
       for (const name of ['a', 'b', 'c']) {
-        await window.mootool.saveJsonVaultFile({ relativePath: `${name}.json`, content: `{"name":"${name}"}` })
+        const extension = name === 'b' ? '.JSON' : '.json'
+        await window.mootool.saveJsonVaultFile({ relativePath: `${name}${extension}`, content: `{"name":"${name}"}` })
         const note = await window.mootool.createQuickNote({ title: name })
         await window.mootool.saveQuickNote({ ...note, content: `${name} body` })
       }
@@ -29,7 +30,7 @@ test('JSON and notes support multiselect, batch duplicate and collision-safe exp
     await expect(page.locator('.vault-tree [aria-selected="true"]')).toHaveCount(2)
     await jsonRows.nth(1).click({ button: 'right' })
     await page.getByRole('menuitem', { name: '导出选中文件' }).click()
-    await expect.poll(() => readdir(destination)).toEqual(['a.json', 'b.json'])
+    await expect.poll(async () => (await readdir(destination)).sort()).toEqual(['a.json', 'b.JSON'])
     expect(await readFile(join(destination, 'a.json'), 'utf8')).toBe('{"edited":true}')
     await jsonRows.nth(0).click({ button: 'right' })
     await page.getByRole('menuitem', { name: '复制', exact: false }).click()
@@ -59,5 +60,14 @@ test('JSON and notes support multiselect, batch duplicate and collision-safe exp
     await page.getByRole('menuitem', { name: '导出选中笔记' }).click()
     await expect.poll(() => readdir(destination)).toHaveLength(6)
     expect(await readFile(join(destination, 'b-1.txt'), 'utf8')).toBe('b body')
+
+    await noteRows.filter({ hasText: /^b$/ }).click()
+    await expect(page.getByLabel('笔记内容', { exact: true })).toHaveText('b body')
+    await page.locator('.quick-note-syntax').selectOption('text/markdown')
+    await noteRows.filter({ hasText: /^b$/ }).click({ button: 'right' })
+    await page.getByRole('menuitem', { name: '导出选中笔记' }).click()
+    await expect.poll(() => readdir(destination)).toContain('b.md')
+    expect(await readFile(join(destination, 'b.md'), 'utf8')).toBe('b body')
+    await expect(noteRows.filter({ hasText: /^b$/ })).toHaveAttribute('aria-selected', 'true')
   } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
 })

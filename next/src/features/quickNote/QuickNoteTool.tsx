@@ -14,6 +14,7 @@ import {
   ImagePlus,
   List,
   ListOrdered,
+  ListTree,
   LocateFixed,
   PanelLeftClose,
   PanelLeftOpen,
@@ -26,8 +27,7 @@ import {
   WrapText,
   X
 } from 'lucide-react'
-import { marked } from 'marked'
-import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useId, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { VaultGitDialog } from '@/features/json/VaultGitDialog'
@@ -75,6 +75,7 @@ import {
   readFileAsDataUrl,
   type TextSelection
 } from './quickNoteAttachments'
+import { renderQuickNoteMarkdown } from './quickNoteMarkdown'
 import { QuickNoteTree } from './QuickNoteTree'
 import { quickReplaceActionIds, runQuickReplace, type QuickReplaceActionId } from './quickReplace'
 
@@ -94,6 +95,7 @@ type QuickNoteState = {
   includeContent: boolean
   sort: QuickNoteSort
   treeOpen: boolean
+  outlineOpen: boolean
   quickReplaceOpen: boolean
   findOpen: boolean
   findText: string
@@ -128,6 +130,7 @@ const initialState: QuickNoteState = {
   includeContent: true,
   sort: 'modified',
   treeOpen: true,
+  outlineOpen: false,
   quickReplaceOpen: false,
   findOpen: false,
   findText: '',
@@ -298,6 +301,8 @@ export function QuickNoteTool() {
   const { settings, updateSettings } = useSettings()
   const toast = useToast()
   const editorRef = useRef<QuickNoteCodeEditorHandle>(null)
+  const previewRef = useRef<HTMLElement>(null)
+  const outlineId = useId()
   const treeScrollRef = useRef<HTMLDivElement>(null)
   const [locatePath, setLocatePath] = useState('')
   const findIndexRef = useRef(quickNoteFindIndex)
@@ -345,8 +350,21 @@ export function QuickNoteTool() {
     (current: Record<string, string>, next: Record<string, string>) => ({ ...current, ...next }),
     {}
   )
-  const previewHtml = useMemo(() => renderPreview(state.content, state.note?.metadata.syntax, attachmentUrls), [attachmentUrls, state.content, state.note?.metadata.syntax])
-  const previewMarkup = useMemo(() => ({ __html: previewHtml }), [previewHtml])
+  const language = resolveTextCodeEditorLanguage(state.note?.metadata.syntax)
+  const outlineVisible = language === 'markdown' && state.outlineOpen
+  const previewVisible = state.viewMode !== 'editor'
+  const needsMarkdown = language === 'markdown' && (previewVisible || outlineVisible)
+  const markdown = useMemo(() => {
+    return needsMarkdown ? renderQuickNoteMarkdown(state.content, outlineVisible) : null
+  }, [needsMarkdown, outlineVisible, state.content])
+  const previewMarkup = useMemo(() => {
+    if (!previewVisible) return undefined
+    let html = markdown?.html ?? `<pre>${escapeHtml(state.content)}</pre>`
+    if (markdown) {
+      for (const [path, url] of Object.entries(attachmentUrls)) html = html.replaceAll(path, url)
+    }
+    return { __html: DOMPurify.sanitize(html) }
+  }, [attachmentUrls, markdown, previewVisible, state.content])
 
   useFocusOnWindowActivate(
     () => editorRef.current?.focus(),
@@ -561,6 +579,7 @@ export function QuickNoteTool() {
         const metadataUnchanged = JSON.stringify(current.note.metadata) === snapshot.metadataSignature
         update({
           note: metadataUnchanged ? note : { ...note, metadata: current.note.metadata },
+          selectedPath: current.selectedPath === snapshot.relativePath ? note.relativePath : current.selectedPath,
           content: current.content,
           busy: showToast ? false : current.busy,
           metadataDirty: !metadataUnchanged
@@ -815,8 +834,14 @@ export function QuickNoteTool() {
   }
 
   async function exportNote(node: QuickNoteNode): Promise<void> {
-    const paths = selection.filesFor(node.relativePath)
-    if (!paths.length || (dirty && !await saveCurrent(false))) return
+    let paths = selection.filesFor(node.relativePath)
+    if (!paths.length) return
+    if (dirty && state.note) {
+      const previousPath = state.note.relativePath
+      const saved = await saveCurrent(false)
+      if (!saved) return
+      paths = paths.map(path => path === previousPath ? saved.relativePath : path)
+    }
     try {
       const count = await window.mootool.exportVaultFiles('quickNote', paths)
       if (count !== null) toast.success(t('vault.batch.exported', { count: String(count) }))
@@ -970,6 +995,14 @@ export function QuickNoteTool() {
     }
   }
 
+  function jumpToHeading(offset: number): void {
+    editorRef.current?.selectRange(offset, offset)
+    const preview = previewRef.current
+    const heading = preview?.querySelector(`:scope > [data-quick-note-heading="${offset}"]`)
+    if (!preview || !heading) return
+    preview.scrollTop += heading.getBoundingClientRect().top - preview.getBoundingClientRect().top
+  }
+
   const currentName = state.note?.metadata.title ?? directoryLeaf(state.selectedPath)
   const quickNoteColumns = 1 + Number(state.treeOpen) + Number(state.quickReplaceOpen)
   const quickNoteSizes = state.treeOpen
@@ -1054,6 +1087,16 @@ export function QuickNoteTool() {
                   </button>
                 ))}
               </div>
+              {language === 'markdown' && (
+                <IconButton
+                  label={t('quickNote.outline')}
+                  icon={ListTree}
+                  active={outlineVisible}
+                  pressed={outlineVisible}
+                  controls={outlineVisible ? outlineId : undefined}
+                  onClick={() => update({ outlineOpen: !state.outlineOpen })}
+                />
+              )}
               <span className="quick-note-toolbar__divider" aria-hidden="true" />
               <NoteColorPicker key={state.note?.relativePath ?? 'empty'} value={state.note?.metadata.color} disabled={!state.note} label={t('quickNote.color')} onChange={(color) => patchMetadata({ color })} />
               <select className="quick-note-syntax" aria-label={t('quickNote.syntax')} disabled={!state.note} value={state.note?.metadata.syntax ?? 'text/plain'} onChange={(event) => patchMetadata({ syntax: event.target.value })}>
@@ -1105,71 +1148,94 @@ export function QuickNoteTool() {
             )}
 
             {state.note ? (
-              <ResizableColumns
-                className={`quick-note-content quick-note-content--${state.viewMode}`}
-                columns={state.viewMode === 'split' ? 2 : 1}
-                defaultSizes={state.viewMode === 'split' ? [1, 1] : [1]}
-                minPaneWidths={state.viewMode === 'split' ? [260, 260] : [260]}
-                storageKey="quick-note-editor-preview"
-              >
-                {state.viewMode !== 'preview' && (
-                  <div className="quick-note-editor-pane">
-                    <QuickNoteCodeEditor
-                      ref={editorRef}
-                      value={state.content}
-                      language={resolveTextCodeEditorLanguage(state.note.metadata.syntax)}
-                      wrap={state.note.metadata.lineWrap}
-                      fontFamily={cssFontFamily(state.note.metadata.fontName)}
-                      fontSize={state.note.metadata.fontSize}
-                      lineHeight={1.65 * state.note.metadata.lineSpacing}
-                      searchQuery={state.findOpen ? state.findText : ''}
-                      searchOptions={state.findOptions}
-                      ariaLabel={t('quickNote.editorLabel')}
-                      initialViewState={quickNoteEditorViewState}
-                      onChange={(content) => update({ content })}
-                      onDragOver={(event) => {
-                        const dataTransfer = event.dataTransfer
-                        if (!dataTransfer || (!clipboardContainsImage(dataTransfer) && !dataTransferContainsFiles(dataTransfer))) return
-                        event.preventDefault()
-                        dataTransfer.dropEffect = 'copy'
-                      }}
-                      onDrop={(event) => {
-                        const dataTransfer = event.dataTransfer
-                        const files = imageFilesFromDataTransfer(dataTransfer)
-                        if (files.length === 0) {
-                          if (dataTransferContainsFiles(dataTransfer)) event.preventDefault()
-                          return
-                        }
-                        event.preventDefault()
-                        const position = editorRef.current?.getPositionAtCoordinates(event.clientX, event.clientY)
-                        const selection = position === null || position === undefined
-                          ? editorRef.current?.getSelection() ?? { start: state.content.length, end: state.content.length }
-                          : { start: position, end: position }
-                        for (const file of files) enqueueDataTransferAttachment(selection, file)
-                      }}
-                      onPaste={(event) => {
-                        if (!clipboardContainsImage(event.clipboardData)) return
-                        const file = clipboardImageFile(event.clipboardData)
-                        event.preventDefault()
-                        enqueueDataTransferAttachment(
-                          editorRef.current?.getSelection() ?? { start: state.content.length, end: state.content.length },
-                          file
-                        )
-                      }}
-                      onKeyDown={(event) => {
-                        if (isFormatShortcut(event)) {
+              <div className={outlineVisible ? 'quick-note-document quick-note-document--outline' : 'quick-note-document'}>
+                <ResizableColumns
+                  className={`quick-note-content quick-note-content--${state.viewMode}`}
+                  columns={state.viewMode === 'split' ? 2 : 1}
+                  defaultSizes={state.viewMode === 'split' ? [1, 1] : [1]}
+                  minPaneWidths={state.viewMode === 'split' ? [260, 260] : [260]}
+                  storageKey="quick-note-editor-preview"
+                >
+                  {state.viewMode !== 'preview' && (
+                    <div className="quick-note-editor-pane">
+                      <QuickNoteCodeEditor
+                        ref={editorRef}
+                        value={state.content}
+                        language={language}
+                        wrap={state.note.metadata.lineWrap}
+                        fontFamily={cssFontFamily(state.note.metadata.fontName)}
+                        fontSize={state.note.metadata.fontSize}
+                        lineHeight={1.65 * state.note.metadata.lineSpacing}
+                        searchQuery={state.findOpen ? state.findText : ''}
+                        searchOptions={state.findOptions}
+                        ariaLabel={t('quickNote.editorLabel')}
+                        initialViewState={quickNoteEditorViewState}
+                        onChange={(content) => update({ content })}
+                        onDragOver={(event) => {
+                          const dataTransfer = event.dataTransfer
+                          if (!dataTransfer || (!clipboardContainsImage(dataTransfer) && !dataTransferContainsFiles(dataTransfer))) return
                           event.preventDefault()
-                          void formatCurrent()
-                        }
-                      }}
-                      onViewStateChange={(viewState) => { quickNoteEditorViewState = viewState }}
-                    />
-                  </div>
+                          dataTransfer.dropEffect = 'copy'
+                        }}
+                        onDrop={(event) => {
+                          const dataTransfer = event.dataTransfer
+                          const files = imageFilesFromDataTransfer(dataTransfer)
+                          if (files.length === 0) {
+                            if (dataTransferContainsFiles(dataTransfer)) event.preventDefault()
+                            return
+                          }
+                          event.preventDefault()
+                          const position = editorRef.current?.getPositionAtCoordinates(event.clientX, event.clientY)
+                          const selection = position === null || position === undefined
+                            ? editorRef.current?.getSelection() ?? { start: state.content.length, end: state.content.length }
+                            : { start: position, end: position }
+                          for (const file of files) enqueueDataTransferAttachment(selection, file)
+                        }}
+                        onPaste={(event) => {
+                          if (!clipboardContainsImage(event.clipboardData)) return
+                          const file = clipboardImageFile(event.clipboardData)
+                          event.preventDefault()
+                          enqueueDataTransferAttachment(
+                            editorRef.current?.getSelection() ?? { start: state.content.length, end: state.content.length },
+                            file
+                          )
+                        }}
+                        onKeyDown={(event) => {
+                          if (isFormatShortcut(event)) {
+                            event.preventDefault()
+                            void formatCurrent()
+                          }
+                        }}
+                        onViewStateChange={(viewState) => { quickNoteEditorViewState = viewState }}
+                      />
+                    </div>
+                  )}
+                  {previewVisible && (
+                    <article ref={previewRef} className="quick-note-preview" style={{ fontFamily: cssFontFamily(state.note.metadata.fontName) }} dangerouslySetInnerHTML={previewMarkup} />
+                  )}
+                </ResizableColumns>
+                {outlineVisible && markdown && (
+                  <nav id={outlineId} className="quick-note-outline" aria-label={t('quickNote.outline')}>
+                    <h2>{t('quickNote.outline')}</h2>
+                    {markdown.headings.length ? (
+                      <ul>
+                        {markdown.headings.map(({ offset, level, label }) => (
+                          <li key={offset}>
+                            <button
+                              type="button"
+                              style={{ paddingInlineStart: 8 + (level - 1) * 10 }}
+                              title={label || t('quickNote.outline.untitled')}
+                              onClick={() => jumpToHeading(offset)}
+                            >
+                              {label || t('quickNote.outline.untitled')}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <p>{t('quickNote.outline.empty')}</p>}
+                  </nav>
                 )}
-                {state.viewMode !== 'editor' && (
-                  <article className="quick-note-preview" style={{ fontFamily: cssFontFamily(state.note.metadata.fontName) }} dangerouslySetInnerHTML={previewMarkup} />
-                )}
-              </ResizableColumns>
+              </div>
             ) : <div className="quick-note-select-empty">{t('quickNote.select')}</div>}
 
             <footer className="quick-note-statusbar">
@@ -1218,14 +1284,16 @@ type IconButtonProps = {
   icon: typeof Save
   disabled?: boolean
   active?: boolean
+  pressed?: boolean
+  controls?: string
   badge?: number
   onClick: () => void
 }
 
-function IconButton({ label, icon: Icon, disabled, active, badge = 0, onClick }: IconButtonProps) {
+function IconButton({ label, icon: Icon, disabled, active, pressed, controls, badge = 0, onClick }: IconButtonProps) {
   return (
     <Tooltip content={badge > 0 ? `${label} (${badge})` : label} side="bottom">
-      <button className={active ? 'quick-note-icon-button quick-note-icon-button--active' : 'quick-note-icon-button'} type="button" aria-label={badge > 0 ? `${label} (${badge})` : label} disabled={disabled} onClick={onClick}>
+      <button className={active ? 'quick-note-icon-button quick-note-icon-button--active' : 'quick-note-icon-button'} type="button" aria-label={badge > 0 ? `${label} (${badge})` : label} aria-pressed={pressed} aria-controls={controls} disabled={disabled} onClick={onClick}>
         <Icon size={14} />
         {badge > 0 && <span className="vault-git-badge">{badge > 99 ? '99+' : badge}</span>}
       </button>
@@ -1330,15 +1398,6 @@ function documentStats(content: string): { lines: number; words: number; charact
 function extractAttachmentPaths(content: string): string[] {
   const matches = content.matchAll(/(?:\(|src=["'])(attachments\/[A-Za-z0-9_.-]+)(?:\)|["'])/g)
   return [...new Set([...matches].map((match) => match[1]))]
-}
-
-function renderPreview(content: string, syntax: string | undefined, attachmentUrls: Record<string, string>): string {
-  if (syntax !== 'text/markdown') {
-    return DOMPurify.sanitize(`<pre>${escapeHtml(content)}</pre>`)
-  }
-  let source = content
-  for (const [path, url] of Object.entries(attachmentUrls)) source = source.replaceAll(path, url)
-  return DOMPurify.sanitize(marked.parse(source, { async: false }) as string)
 }
 
 function formatDate(value: string): string {

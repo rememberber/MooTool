@@ -1,5 +1,5 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -11,6 +11,65 @@ const show = (page: Page, name: string) => page.locator('.tool-button').filter({
 const selectedJson = (page: Page) => page.locator('.vault-tree [aria-selected="true"]')
 const selectedNote = (page: Page) => page.locator('.quick-note-tree [aria-selected="true"]')
 const savedPaths = async (root: string) => Object.values(JSON.parse(await readFile(join(root, 'user', 'mootool-next.json'), 'utf8')).vaultActiveFiles)
+
+test('navigates a Markdown note by heading in the editor, preview and split views', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'mootool-quick-note-outline-'))
+  let app: ElectronApplication | undefined
+  try {
+    const filler = Array.from({ length: 45 }, (_, index) => `Paragraph ${index + 1}\n\n`).join('')
+    const markdown = [
+      '# **中文** &amp; headings',
+      '## Repeated',
+      '```md\n# Inside a code block\n```',
+      `${filler}## Repeated`,
+      'Setext title\n------------',
+      filler
+    ].join('\n\n')
+    await mkdir(join(root, 'notes'))
+    await writeFile(join(root, 'notes', 'Outline.md'), markdown.replaceAll('\n', '\r\n'))
+    app = await launch(root)
+    const page = await app.firstWindow()
+    await page.evaluate((root) => window.mootool.updateSettings({ vault: { quickNotePath: `${root}/notes` } }), root)
+    await show(page, '随手记')
+    const editor = page.getByLabel('笔记内容', { exact: true })
+    await expect(page.getByLabel('语法')).toHaveValue('text/markdown')
+    const toggle = page.getByRole('button', { name: '大纲', exact: true })
+    const outline = page.getByRole('navigation', { name: '大纲' })
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    await expect(outline.getByRole('button')).toHaveText(['中文 & headings', 'Repeated', 'Repeated', 'Setext title'])
+
+    const repeated = outline.getByRole('button', { name: 'Repeated', exact: true })
+    const secondHeadingLine = markdown.slice(0, markdown.lastIndexOf('## Repeated')).split('\n').length
+    const activeLineNumber = page.locator('.cm-lineNumbers .cm-activeLineGutter')
+    await repeated.last().click()
+    await expect(editor).toBeFocused()
+    await expect(activeLineNumber).toHaveText(String(secondHeadingLine))
+
+    const previewTarget = page.locator('.quick-note-preview').getByRole('heading', { name: 'Repeated', exact: true }).last()
+    for (const mode of ['预览', '分栏']) {
+      await page.getByRole('tab', { name: mode }).click()
+      await repeated.first().click()
+      await expect(previewTarget).not.toBeInViewport()
+      await repeated.last().click()
+      await expect(previewTarget).toBeInViewport()
+    }
+    await expect(activeLineNumber).toHaveText(String(secondHeadingLine))
+
+    await editor.fill('## Updated\n\n### Nested')
+    await expect(outline.getByRole('button')).toHaveText(['Updated', 'Nested'])
+    await editor.fill('Plain body')
+    await expect(outline.getByText('暂无 Markdown 标题')).toBeVisible()
+    await page.getByLabel('语法').selectOption('text/plain')
+    await expect(toggle).toHaveCount(0)
+    await expect(outline).toHaveCount(0)
+    await page.getByLabel('语法').selectOption('text/markdown')
+    await expect(outline).toBeVisible()
+    await toggle.click()
+    await expect(outline).toHaveCount(0)
+  } finally { await app?.close(); await rm(root, { recursive: true, force: true }) }
+})
 
 test('empty vaults create bound files before editing, without duplicate files on reload or empty searches', async () => {
   const root = await mkdtemp(join(tmpdir(), 'mootool-workspace-empty-'))

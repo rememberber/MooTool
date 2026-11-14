@@ -40,7 +40,9 @@ export class QuickNoteVaultRepository {
     const target = await this.resolveExisting(root, normalizeNotePath(relativePath), 'file')
     const fileStat = await stat(target)
     if (fileStat.size > maxFileSize) throw new Error('Quick Note exceeds 20 MB limit')
-    const parsed = parseNote(await readFile(target, 'utf8'), basename(target, extname(target)), fileStat)
+    const extension = extname(target)
+    const fallbackSyntax = extension.toLowerCase() === '.md' ? 'text/markdown' : 'text/plain'
+    const parsed = parseNote(await readFile(target, 'utf8'), basename(target, extension), fileStat, fallbackSyntax)
     return {
       relativePath: toPortablePath(relative(root, target)),
       content: parsed.content,
@@ -376,7 +378,12 @@ export class QuickNoteVaultRepository {
   }
 }
 
-export function parseNote(raw: string, fallbackTitle: string, fileStat: { birthtime: Date; mtime: Date }): { content: string; metadata: QuickNoteMetadata } {
+export function parseNote(
+  raw: string,
+  fallbackTitle: string,
+  fileStat: { birthtime: Date; mtime: Date },
+  fallbackSyntax = 'text/plain'
+): { content: string; metadata: QuickNoteMetadata } {
   const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n)?/.exec(raw)
   let values: Record<string, unknown> = {}
   if (match) {
@@ -394,7 +401,7 @@ export function parseNote(raw: string, fallbackTitle: string, fileStat: { birtht
     metadata: {
       title: stringValue(values.title, fallbackTitle),
       style: stringValue(values.style, ''),
-      syntax: stringValue(values.syntax, 'text/plain'),
+      syntax: stringValue(values.syntax, fallbackSyntax),
       fontName: stringValue(values.font_name, ''),
       fontSize: clampFontSize(numberValue(values.font_size, 14)),
       lineSpacing: clampLineSpacing(numberValue(values.line_spacing, 1)),
@@ -480,9 +487,10 @@ function withNoteExtension(path: string, extension: string): string {
   return `${path.slice(0, -extname(path).length)}${extension}`
 }
 
-function extensionForSyntax(syntax: string): string {
+export function extensionForSyntax(syntax: string): string {
   switch (syntax) {
     case 'text/markdown': return '.md'
+    case 'text/json':
     case 'application/json': return '.json'
     case 'text/java': return '.java'
     case 'text/javascript': return '.js'

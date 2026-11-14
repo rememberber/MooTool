@@ -938,6 +938,7 @@
   min-width: 0;
   min-height: 0;
   flex-direction: column;
+  container-type: inline-size;
   background: var(--surface);
   border: 0;
   border-radius: 8px;
@@ -1196,9 +1197,21 @@
   justify-self: end;
 }
 
-.quick-note-content {
+.quick-note-document {
   display: grid;
   flex: 1;
+  min-width: 0;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.quick-note-document--outline {
+  grid-template-columns: minmax(0, 1fr) clamp(148px, 28%, 220px);
+}
+
+.quick-note-content {
+  display: grid;
   min-width: 0;
   min-height: 0;
 }
@@ -1210,6 +1223,74 @@
 
 .quick-note-content--split {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.quick-note-outline {
+  min-width: 0;
+  min-height: 0;
+  padding: 10px 8px;
+  overflow: auto;
+  background: var(--toolbar);
+  border-inline-start: 1px solid var(--border-soft);
+  font-size: var(--tool-meta-font-size);
+  scrollbar-width: thin;
+}
+
+.quick-note-outline h2,
+.quick-note-outline p {
+  margin: 0;
+  padding: 4px 8px;
+}
+
+.quick-note-outline h2 {
+  color: var(--text-strong);
+  font-size: inherit;
+}
+
+.quick-note-outline p {
+  color: var(--text-muted);
+}
+
+.quick-note-outline ul {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quick-note-outline button {
+  width: 100%;
+  min-height: 26px;
+  padding: 4px 8px;
+  overflow: hidden;
+  color: var(--text-body);
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+  font: inherit;
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-note-outline button:hover {
+  background: var(--control-hover);
+}
+
+.quick-note-outline button:focus-visible {
+  outline-offset: -2px;
+}
+
+@container (width < 560px) {
+  .quick-note-document--outline {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) min(35%, 180px);
+  }
+
+  .quick-note-outline {
+    border-inline-start: 0;
+    border-block-start: 1px solid var(--border-soft);
+  }
 }
 
 .text-code-editor {
