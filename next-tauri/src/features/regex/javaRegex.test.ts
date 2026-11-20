@@ -53,7 +53,10 @@ async function match(input: JavaRegexInput): Promise<JavaRegexResult> {
     const file = join(directory, 'MooToolRegex.java')
     await writeFile(file, javaRegexSource, 'utf8')
     const stdout = await new Promise<string>((resolve, reject) => {
-      const child = spawn('java', ['-Xmx128m', file], { stdio: ['pipe', 'pipe', 'pipe'] })
+      const child = spawn('java', ['-Xmx128m', 'MooToolRegex.java'], {
+        cwd: directory,
+        stdio: ['pipe', 'pipe', 'pipe']
+      })
       let output = ''
       let error = ''
       const timer = setTimeout(() => {

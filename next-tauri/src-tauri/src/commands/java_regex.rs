@@ -135,7 +135,7 @@ async fn run_java(
     let mut command = Command::new(&java);
     command
         .arg("-Xmx128m")
-        .arg(&file)
+        .arg("MooToolRegex.java")
         .current_dir(directory.path())
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())

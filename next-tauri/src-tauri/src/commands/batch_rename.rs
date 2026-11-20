@@ -506,7 +506,9 @@ impl BatchRenameService {
                     .map_err(|_| coded("recovery"))?;
             }
             for other in &owned {
-                if other.0 != move_.temporary && (temp.is_some() || other.0 != file.0) {
+                if other.0.as_path() != Path::new(&move_.temporary)
+                    && (temp.is_some() || other.0 != file.0)
+                {
                     fs::remove_file(&other.0).map_err(|_| coded("recovery"))?;
                 }
             }
