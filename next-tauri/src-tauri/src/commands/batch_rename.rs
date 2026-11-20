@@ -757,8 +757,9 @@ fn file_identity(path: &Path) -> Result<Option<Identity>, String> {
             mtime_ns: mtime_ns.to_string(),
         }))
     }
-    #[cfg(not(unix))]
+    #[cfg(windows)]
     {
+        let (volume, index) = windows_file_id(path)?;
         let modified = metadata
             .modified()
             .ok()
@@ -766,12 +767,82 @@ fn file_identity(path: &Path) -> Result<Option<Identity>, String> {
             .map(|time| time.as_nanos())
             .unwrap_or(0);
         Ok(Some(Identity {
-            dev: "0".into(),
-            ino: "0".into(),
+            dev: volume.to_string(),
+            ino: index.to_string(),
             size: metadata.len().to_string(),
             mtime_ns: modified.to_string(),
         }))
     }
+    #[cfg(not(any(unix, windows)))]
+    {
+        let _ = (path, metadata);
+        Err(coded("unsupported"))
+    }
+}
+
+#[cfg(windows)]
+fn windows_file_id(path: &Path) -> Result<(u32, u64), String> {
+    use std::os::windows::fs::OpenOptionsExt;
+    use std::os::windows::io::AsRawHandle;
+
+    #[repr(C)]
+    struct ByHandleFileInformation {
+        file_attributes: u32,
+        creation_low: u32,
+        creation_high: u32,
+        last_access_low: u32,
+        last_access_high: u32,
+        last_write_low: u32,
+        last_write_high: u32,
+        volume_serial_number: u32,
+        file_size_high: u32,
+        file_size_low: u32,
+        number_of_links: u32,
+        file_index_high: u32,
+        file_index_low: u32,
+    }
+
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetFileInformationByHandle(
+            file: *mut std::ffi::c_void,
+            information: *mut ByHandleFileInformation,
+        ) -> i32;
+    }
+
+    const FILE_SHARE_READ: u32 = 0x0000_0001;
+    const FILE_SHARE_WRITE: u32 = 0x0000_0002;
+    const FILE_SHARE_DELETE: u32 = 0x0000_0004;
+    let file = fs::OpenOptions::new()
+        .read(true)
+        .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE)
+        .open(path)
+        .map_err(|error| error.to_string())?;
+    let mut information = ByHandleFileInformation {
+        file_attributes: 0,
+        creation_low: 0,
+        creation_high: 0,
+        last_access_low: 0,
+        last_access_high: 0,
+        last_write_low: 0,
+        last_write_high: 0,
+        volume_serial_number: 0,
+        file_size_high: 0,
+        file_size_low: 0,
+        number_of_links: 0,
+        file_index_high: 0,
+        file_index_low: 0,
+    };
+    let read = unsafe { GetFileInformationByHandle(file.as_raw_handle(), &mut information) };
+    if read == 0 {
+        return Err(std::io::Error::last_os_error().to_string());
+    }
+    let index =
+        (u64::from(information.file_index_high) << 32) | u64::from(information.file_index_low);
+    if information.volume_serial_number == 0 && index == 0 {
+        return Err(coded("changed"));
+    }
+    Ok((information.volume_serial_number, index))
 }
 
 fn exact_identity(path: &Path) -> Result<Option<(PathBuf, Identity)>, String> {

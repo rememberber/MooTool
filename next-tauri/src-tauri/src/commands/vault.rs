@@ -1675,6 +1675,19 @@ mod tests {
             .await
             .expect("initialize");
         assert!(initialized.success, "{}", initialized.stderr);
+        for arguments in [
+            ["config", "core.autocrlf", "false"],
+            ["config", "core.eol", "lf"],
+        ] {
+            let configured = run_git_unmanaged(&root, &arguments)
+                .await
+                .expect("git config");
+            assert!(
+                configured.status.success(),
+                "{}",
+                String::from_utf8_lossy(&configured.stderr)
+            );
+        }
         let branch = run_git_unmanaged(&root, &["branch", "--show-current"])
             .await
             .expect("branch");
@@ -1726,7 +1739,9 @@ mod tests {
         assert!(!after.merging);
         assert_eq!(after.conflicts, 0);
         assert_eq!(
-            std::fs::read_to_string(root.join("example.json")).expect("restored"),
+            std::fs::read_to_string(root.join("example.json"))
+                .expect("restored")
+                .replace("\r\n", "\n"),
             "{\"value\":3}\n"
         );
         let idle = continue_operation(&root, "", control)
