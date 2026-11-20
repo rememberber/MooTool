@@ -1083,6 +1083,7 @@ mod tests {
         let (directory, mut service) = fixture();
         let first = write_file(directory.path(), "a.txt", "alpha");
         let second = write_file(directory.path(), "b.txt", "beta");
+        #[cfg(unix)]
         let before = fs::metadata(&first).expect("metadata");
         let files = service
             .select(1, &[first.clone(), second.clone()])

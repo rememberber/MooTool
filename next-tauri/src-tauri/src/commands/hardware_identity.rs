@@ -1,4 +1,6 @@
-use std::{fs, path::Path, process::Command};
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+use std::process::Command;
+use std::{fs, path::Path};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct MachineIdentity {
@@ -52,23 +54,23 @@ fn read_platform() -> PlatformHardware {
     }
     #[cfg(target_os = "linux")]
     {
-        return PlatformHardware {
+        PlatformHardware {
             manufacturer: dmi("sys_vendor"),
             model: dmi("product_name"),
             serial: dmi("product_serial"),
             performance_cores: None,
             efficiency_cores: None,
-        };
+        }
     }
     #[cfg(target_os = "windows")]
     {
-        return PlatformHardware {
+        PlatformHardware {
             manufacturer: registry_value("SystemManufacturer"),
             model: registry_value("SystemProductName"),
             serial: registry_value("SystemSerialNumber"),
             performance_cores: None,
             efficiency_cores: None,
-        };
+        }
     }
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     {
@@ -102,6 +104,7 @@ pub fn mask_serial(value: &str) -> String {
     )
 }
 
+#[cfg(any(test, target_os = "macos"))]
 pub fn ioreg_string(text: &str, key: &str) -> String {
     let marker = format!("\"{key}\"");
     for line in text.lines() {
@@ -223,6 +226,7 @@ fn registry_value(name: &str) -> String {
         .unwrap_or_default()
 }
 
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 fn command_text(program: &str, args: &[&str]) -> Option<String> {
     let output = Command::new(program)
         .args(args)
@@ -236,6 +240,7 @@ fn command_text(program: &str, args: &[&str]) -> Option<String> {
     if text.is_empty() { None } else { Some(text) }
 }
 
+#[cfg(target_os = "macos")]
 fn command_u32(program: &str, args: &[&str]) -> Option<u32> {
     command_text(program, args)?.parse().ok()
 }
