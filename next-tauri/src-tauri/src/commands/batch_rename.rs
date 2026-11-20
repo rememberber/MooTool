@@ -803,7 +803,7 @@ fn windows_file_id(path: &Path) -> Result<(u32, u64), String> {
     }
 
     #[link(name = "kernel32")]
-    extern "system" {
+    unsafe extern "system" {
         fn GetFileInformationByHandle(
             file: *mut std::ffi::c_void,
             information: *mut ByHandleFileInformation,
