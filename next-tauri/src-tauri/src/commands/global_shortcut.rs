@@ -31,8 +31,21 @@ pub struct GlobalShortcutStatus {
 }
 
 const SPECIAL_KEYS: [&str; 15] = [
-    "Space", "Return", "Tab", "Backspace", "Delete", "Insert", "Home", "End", "PageUp",
-    "PageDown", "Up", "Down", "Left", "Right", "Escape",
+    "Space",
+    "Return",
+    "Tab",
+    "Backspace",
+    "Delete",
+    "Insert",
+    "Home",
+    "End",
+    "PageUp",
+    "PageDown",
+    "Up",
+    "Down",
+    "Left",
+    "Right",
+    "Escape",
 ];
 const MODIFIER_ORDER: [&str; 5] = ["Command", "Control", "Alt", "Shift", "Super"];
 const RESERVED_KEYS: [&str; 12] = [
@@ -49,7 +62,10 @@ pub fn sync_global_shortcut(app: &AppHandle, settings: &AppSettings) {
 
 #[tauri::command]
 pub fn get_global_shortcut_status() -> GlobalShortcutStatus {
-    STATUS.lock().unwrap_or_else(|error| error.into_inner()).clone()
+    STATUS
+        .lock()
+        .unwrap_or_else(|error| error.into_inner())
+        .clone()
 }
 
 #[tauri::command]
@@ -101,7 +117,10 @@ fn apply_global_shortcut(app: &AppHandle, settings: &AppSettings) -> GlobalShort
             validation
         };
     }
-    match app.global_shortcut().register(validation.accelerator.as_str()) {
+    match app
+        .global_shortcut()
+        .register(validation.accelerator.as_str())
+    {
         Ok(()) => {
             *active = Some(validation.accelerator.clone());
             validation
@@ -171,7 +190,11 @@ fn normalize_shortcut(value: &str, platform: &str) -> Option<String> {
         };
         modifiers.push(modifier);
     }
-    if modifiers.len() != modifiers.iter().collect::<std::collections::BTreeSet<_>>().len()
+    if modifiers.len()
+        != modifiers
+            .iter()
+            .collect::<std::collections::BTreeSet<_>>()
+            .len()
         || !modifiers.iter().any(|modifier| *modifier != "Shift")
         || (platform != "darwin" && modifiers.contains(&"Command"))
     {
@@ -201,9 +224,7 @@ fn canonical_modifier(part: &str) -> Option<&'static str> {
 
 fn canonical_key(raw: &str) -> Option<String> {
     let mut characters = raw.chars();
-    let Some(character) = characters.next() else {
-        return None;
-    };
+    let character = characters.next()?;
     if characters.next().is_none() && character.is_ascii_alphanumeric() {
         return Some(character.to_ascii_uppercase().to_string());
     }

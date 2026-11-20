@@ -5,22 +5,24 @@ import {
   Clipboard,
   Copy,
   Eraser,
+  History,
   Sparkles,
   TriangleAlert
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import { localDataApi } from '../../platform/api/localDataApi'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { ResizableThreeColumns } from '../../shared/ResizableThreeColumns'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { FuncHistoryDialog } from '../history/FuncHistoryDialog'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import {
   formatYaml,
   propertiesToYaml,
-  ConfigToolError,
   validateYaml,
   yamlToProperties
 } from './configTools'
@@ -33,8 +35,9 @@ type ConfigTab = 'convert' | 'validate'
 export function ConfigSurface() {
   const { t } = useLocalizedMessages(configMessages)
   const [tab, setTab] = useState<ConfigTab>('convert')
-  const [yaml, setYaml] = useState(() => t('sample.yaml'))
-  const [properties, setProperties] = useState('')
+  const [yaml, setYaml] = useState('')
+  const [properties, setProperties] = useState('server.port=8080\napp.name=MooTool\napp.locales[0]=zh-CN\napp.locales[1]=en-US')
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [validateSource, setValidateSource] = useState('app:\n  name: MooTool\n  enabled: true\n')
   const [validationText, setValidationText] = useState('')
   const [valid, setValid] = useState<boolean | null>(null)
@@ -85,13 +88,20 @@ export function ConfigSurface() {
       setNotice({ key: success })
       setFailed(false)
       const target = success === 'notice.toProperties' ? 'properties' : 'yaml'
+      const direction = success === 'notice.toProperties' ? 'toProperties' : 'toYaml'
+      const input = direction === 'toYaml' ? properties : yaml
       recordOperation(t(success), `${yaml.length} / ${properties.length} → ${output.length}`, 'success', {
         inputText: JSON.stringify({ yaml, properties }), outputText: output, metadata: { target }
       })
+      void localDataApi.saveFuncHistory({
+        funcType: 'ymlProperties',
+        summary: t(direction === 'toYaml' ? 'action.toYaml' : 'action.toProperties'),
+        inputText: input,
+        outputText: output,
+        extraData: direction
+      })
     } catch (cause) {
-      setNotice(cause instanceof ConfigToolError
-        ? { key: `error.${cause.code}`, values: cause.values }
-        : { raw: cause instanceof Error ? cause.message : String(cause) })
+      setNotice({ raw: cause instanceof Error ? cause.message : String(cause) })
       setFailed(true)
       recordOperation(t(success), cause instanceof Error ? cause.message : String(cause), 'error', {
         inputText: JSON.stringify({ yaml, properties })
@@ -109,6 +119,13 @@ export function ConfigSurface() {
     recordOperation(t('action.validate'), message, result.valid ? 'success' : 'error', {
       inputText: validateSource, outputText: message, metadata: { direction: 'validate', valid: result.valid }
     })
+    void localDataApi.saveFuncHistory({
+      funcType: 'ymlProperties',
+      summary: t('action.validate'),
+      inputText: validateSource,
+      outputText: message,
+      extraData: 'validate'
+    })
   }
 
   function formatDocument(): void {
@@ -122,10 +139,15 @@ export function ConfigSurface() {
       recordOperation(t('action.format'), `${validateSource.length} → ${output.length}`, 'success', {
         inputText: validateSource, outputText: output, metadata: { direction: 'format' }
       })
+      void localDataApi.saveFuncHistory({
+        funcType: 'ymlProperties',
+        summary: t('action.format'),
+        inputText: validateSource,
+        outputText: output,
+        extraData: 'format'
+      })
     } catch (cause) {
-      setNotice(cause instanceof ConfigToolError
-        ? { key: `error.${cause.code}`, values: cause.values }
-        : { raw: cause instanceof Error ? cause.message : String(cause) })
+      setNotice({ raw: cause instanceof Error ? cause.message : String(cause) })
       setFailed(true)
     }
   }
@@ -154,6 +176,7 @@ export function ConfigSurface() {
             <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>{t(`tab.${id}`)}</button>
           ))}
         </div>
+        <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('action.history')}</button>
         {tab === 'convert' && <button
           className="icon-button config-clear"
           type="button"
@@ -219,6 +242,22 @@ export function ConfigSurface() {
         <code>{session.summary}</code>
       </footer>
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
+      {historyOpen && <FuncHistoryDialog funcType="ymlProperties" onClose={() => setHistoryOpen(false)} onApply={(record) => {
+        if (record.extraData === 'toProperties') {
+          setYaml(record.inputText)
+          setProperties(record.outputText)
+          setTab('convert')
+        } else if (record.extraData === 'validate' || record.extraData === 'format') {
+          setValidateSource(record.inputText)
+          setValidationText(record.outputText)
+          setTab('validate')
+        } else {
+          setProperties(record.inputText)
+          setYaml(record.outputText)
+          setTab('convert')
+        }
+        setHistoryOpen(false)
+      }} />}
     </main>
   )
 }

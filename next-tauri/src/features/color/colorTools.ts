@@ -165,6 +165,18 @@ export class ColorToolError extends Error {
   }
 }
 
+export function parseFavoriteColor(input: string): string {
+  const value = input.trim().replace(/，/g, ',')
+  if (value.includes(',')) {
+    const parts = value.replace(/^rgba?\(|\)$/gi, '').split(',').map((part) => Number(part.trim()))
+    if (parts.length < 3 || parts.slice(0, 3).some((part) => !Number.isInteger(part) || part < 0 || part > 255)) throw new ColorToolError()
+    return rgbToHex({ r: parts[0], g: parts[1], b: parts[2], a: 1 }, false)
+  }
+  const hex = value.replace(/^#/, '')
+  if (!/^(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(hex)) throw new ColorToolError()
+  return rgbToHex(parseHexColor(hex), false)
+}
+
 export function parseHexColor(value: string): RgbaColor {
   const compact = value.trim().replace(/^#/, '')
   if (!/^(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(compact)) {

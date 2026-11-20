@@ -271,6 +271,31 @@ export function SettingsSurface() {
     }
   }
 
+  async function chooseDataDirectory(): Promise<void> {
+    const directory = await diagnosticsApi.chooseExportDirectory(draft.data.directory)
+    if (directory) setDraft({ ...draft, data: { directory } })
+  }
+
+  async function chooseVaultDirectory(kind: 'quickNote' | 'json'): Promise<void> {
+    const current = kind === 'quickNote' ? draft.vault.quickNotePath : draft.vault.jsonPath
+    const directory = await diagnosticsApi.chooseExportDirectory(current)
+    if (directory) setVaultPath(kind, directory)
+  }
+
+  function setVaultPath(kind: 'quickNote' | 'json', value: string): void {
+    const quickNotePath = kind === 'quickNote' ? value : draft.vault.quickNotePath
+    const jsonPath = kind === 'json' ? value : draft.vault.jsonPath
+    setDraft({
+      ...draft,
+      vault: {
+        ...draft.vault,
+        quickNotePath,
+        jsonPath,
+        rootDirectory: jsonPath || null
+      }
+    })
+  }
+
   async function chooseDefaultExportDirectory(): Promise<void> {
     const directory = await diagnosticsApi.chooseExportDirectory(draft.tools.exportDirectory)
     if (directory) setDraft(updateTools(draft, { exportDirectory: directory }))
@@ -568,6 +593,8 @@ export function SettingsSurface() {
         </SettingsSection>
 
         <SettingsSection active={activeCategory === 'vault'} icon={<FolderGit2 />} title={t('settings.vault')}>
+          <div className="settings-complex-row"><span>{t('settings.quickNoteVault')}</span><div className="settings-directory-field"><code>{draft.vault.quickNotePath || t('settings.quickNoteVaultDefault')}</code><button className="secondary-button" type="button" onClick={() => void chooseVaultDirectory('quickNote')}><FolderInput />{t('settings.chooseDirectory')}</button>{draft.vault.quickNotePath && <button className="secondary-button" type="button" onClick={() => setVaultPath('quickNote', '')}>{t('settings.clearDirectory')}</button>}</div></div>
+          <div className="settings-complex-row"><span>{t('settings.jsonVault')}</span><div className="settings-directory-field"><code>{draft.vault.jsonPath || (draft.data.directory ? `${draft.data.directory}/json-vault` : t('settings.jsonVaultDisconnected'))}</code><button className="secondary-button" type="button" onClick={() => void chooseVaultDirectory('json')}><FolderInput />{t('settings.chooseDirectory')}</button>{draft.vault.jsonPath && <button className="secondary-button" type="button" onClick={() => setVaultPath('json', '')}>{t('settings.clearDirectory')}</button>}</div></div>
           <SettingRow label={t('settings.gitRemote')}><input value={draft.vault.gitRemote} placeholder="https://example.com/notes.git" onChange={(event) => setDraft({ ...draft, vault: { ...draft.vault, gitRemote: event.target.value } })} /></SettingRow>
           <SettingRow label={t('settings.gitUsername')}><input value={draft.vault.gitUsername} onChange={(event) => setDraft({ ...draft, vault: { ...draft.vault, gitUsername: event.target.value } })} /></SettingRow>
           <SettingRow label={t('settings.vaultAutoCommit')}>
@@ -603,6 +630,8 @@ export function SettingsSurface() {
         </SettingsSection>
 
         <SettingsSection active={activeCategory === 'data'} icon={<Database />} title={t('settings.data')}>
+          <div className="settings-complex-row"><span>{t('settings.dataDirectory')}</span><div className="settings-directory-field"><code>{draft.data.directory || t('settings.dataDirectoryDefault')}</code><button className="secondary-button" type="button" onClick={() => void chooseDataDirectory()}><FolderInput />{t('settings.chooseDirectory')}</button>{draft.data.directory && <button className="secondary-button" type="button" onClick={() => setDraft({ ...draft, data: { directory: '' } })}>{t('settings.clearDirectory')}</button>}</div></div>
+          <div className="settings-complex-row"><span>{t('settings.imageLibrary')}</span><div className="settings-directory-field"><code>{draft.data.directory ? `${draft.data.directory}/images` : t('settings.imageLibraryDefault')}</code></div></div>
           <div className="settings-storage-note">
             <strong>{t('settings.storageTitle')}</strong>
             <span>{t('settings.storageBody')}</span>

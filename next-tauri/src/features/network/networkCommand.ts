@@ -42,6 +42,17 @@ export function parsePortSpec(value?: string): number[] {
   return [...ports].sort((left, right) => left - right)
 }
 
+export type NetworkCommandErrorCode = 'ABORTED' | 'TIMEOUT' | 'INVALID_TARGET' | 'UNSUPPORTED' | 'PERMISSION' | 'COMMAND_FAILED'
+
+export function classifyNetworkCommandError(message: string): NetworkCommandErrorCode {
+  if (message.includes('ABORTED')) return 'ABORTED'
+  if (message.includes('TIMEOUT')) return 'TIMEOUT'
+  if (message.includes('INVALID_TARGET')) return 'INVALID_TARGET'
+  if (message.includes('UNSUPPORTED') || message.includes('ENOENT')) return 'UNSUPPORTED'
+  if (message.includes('EACCES') || message.includes('EPERM') || message.toLowerCase().includes('permission')) return 'PERMISSION'
+  return 'COMMAND_FAILED'
+}
+
 export function formatPingRange(reachable: string[], scanned: number): string {
   return [`Reachable hosts: ${reachable.length} / ${scanned}`, '', ...(reachable.length ? reachable : ['No reachable host found'])].join('\n')
 }

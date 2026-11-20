@@ -16,8 +16,6 @@ export interface ProtobufSchemaInfo {
   packageName: string
 }
 
-const MAX_BINARY_BYTES = 16 * 1024 * 1024
-
 export function inspectProtobufSchema(schema: string): ProtobufSchemaInfo {
   const root = parseSchema(schema)
   const messageNames: string[] = []
@@ -35,25 +33,10 @@ export function encodeProtobuf(
   format: ProtobufBinaryFormat
 ): string {
   const type = resolveType(schema, messageName)
-  let value: unknown
-  try {
-    value = JSON.parse(json)
-  } catch (cause) {
-    throw new ProtobufToolError('jsonParse', { detail: cause instanceof Error ? cause.message : String(cause) })
-  }
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw new ProtobufToolError('jsonObject')
-  }
-  let message
-  try {
-    message = type.fromObject(value)
-  } catch (cause) {
-    throw new ProtobufToolError('messageConvert', { detail: cause instanceof Error ? cause.message : String(cause) })
-  }
-  const validationError = type.verify(message)
-  if (validationError) throw new ProtobufToolError('messageValidate', { detail: validationError })
-  const bytes = type.encode(message).finish()
-  return formatBinary(bytes, format)
+  const object = JSON.parse(json) as Record<string, unknown>
+  const error = type.verify(object)
+  if (error) throw new Error(error)
+  return formatBinary(type.encode(type.fromObject(object)).finish(), format)
 }
 
 export function decodeProtobuf(
@@ -63,20 +46,8 @@ export function decodeProtobuf(
   format: ProtobufBinaryFormat
 ): string {
   const type = resolveType(schema, messageName)
-  const bytes = parseBinary(binary, format)
-  try {
-    const message = type.decode(bytes)
-    return JSON.stringify(type.toObject(message, {
-      defaults: true,
-      arrays: true,
-      objects: true,
-      longs: String,
-      enums: String,
-      bytes: String
-    }), null, 2)
-  } catch (cause) {
-    throw new ProtobufToolError('decode', { detail: cause instanceof Error ? cause.message : String(cause) })
-  }
+  const message = type.decode(parseBinary(binary, format))
+  return JSON.stringify(type.toObject(message, { defaults: true, longs: String, enums: String, bytes: String }), null, 2)
 }
 
 export function convertProtobufBinary(
@@ -117,41 +88,27 @@ export function formatProtoDefinition(proto: string): string {
 }
 
 export function parseBinary(binary: string, format: ProtobufBinaryFormat): Uint8Array {
-  const compact = binary.replace(/\s+/g, '')
-  if (!compact) return new Uint8Array()
-  if (format === 'hex') {
-    if (!/^(?:[0-9a-f]{2})+$/i.test(compact)) throw new ProtobufToolError('hex')
-  } else if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(compact)) {
-    throw new ProtobufToolError('base64')
+  const value = binary.replace(/\s+/g, '')
+  if (format === 'base64') {
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(value)) throw new Error('Invalid Base64 input')
+    return Uint8Array.from(Buffer.from(value, 'base64'))
   }
-  const bytes = Buffer.from(compact, format)
-  if (bytes.length > MAX_BINARY_BYTES) throw new ProtobufToolError('binaryLimit')
-  return Uint8Array.from(bytes)
+  if (!/^(?:[0-9a-fA-F]{2})*$/.test(value)) throw new Error('Invalid Hex input')
+  return Uint8Array.from(Buffer.from(value, 'hex'))
 }
 
 function formatBinary(bytes: Uint8Array, format: ProtobufBinaryFormat): string {
-  if (bytes.length > MAX_BINARY_BYTES) throw new ProtobufToolError('binaryLimit')
   return Buffer.from(bytes).toString(format)
 }
 
 function parseSchema(schema: string): Root {
-  if (!schema.trim()) throw new ProtobufToolError('schemaEmpty')
-  if (schema.length > 2 * 1024 * 1024) throw new ProtobufToolError('schemaLimit')
-  try {
-    return parse(schema, { keepCase: true }).root
-  } catch (cause) {
-    throw new ProtobufToolError('schemaParse', { detail: cause instanceof Error ? cause.message : String(cause) })
-  }
+  if (!schema.trim()) throw new Error('.proto definition is required')
+  return parse(schema, { keepCase: true }).root
 }
 
 function resolveType(schema: string, messageName: string): Type {
-  if (!messageName.trim()) throw new ProtobufToolError('messageRequired')
-  const root = parseSchema(schema)
-  try {
-    return root.lookupType(messageName.trim())
-  } catch {
-    throw new ProtobufToolError('messageMissing', { name: messageName.trim() })
-  }
+  if (!messageName.trim()) throw new Error('Message name is required')
+  return parseSchema(schema).lookupType(messageName.trim())
 }
 
 function collectTypes(root: Root | Namespace, prefix: string, output: string[]): void {

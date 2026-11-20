@@ -6,13 +6,13 @@ import {
   TriangleAlert
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
+import { useLocalizedMessages, type LocalizedMessageKey } from '../../app/localizedMessages'
 import { diagnosticsApi } from '../../platform/api/diagnosticsApi'
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import { nativeDesktopApi } from '../../platform/api/nativeDesktopApi'
 import type { SystemSnapshot } from '../../platform/contracts/diagnostics'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
-import { hardwareGroups, hardwarePlainText, hardwareTabs, type HardwareTab, type HardwareText } from './systemInfo'
+import { formatHardwareBytes, formatHardwareUptime, hardwareGroups, hardwarePlainText, hardwareTabs, type HardwareTab, type HardwareText } from './systemInfo'
 import { systemMessages } from './systemMessages'
 
 type SystemMessageKey = LocalizedMessageKey<typeof systemMessages>
@@ -84,14 +84,15 @@ export function SystemSurface() {
     serial: t('label.serial'), manufacturer: t('label.manufacturer'), model: t('label.model'), timeZone: t('label.timeZone'),
     brand: t('label.brand'), vendor: t('label.vendor'), physicalCores: t('fact.physicalCores'), logicalCores: t('fact.logicalCores'),
     performanceCores: t('label.performanceCores'), efficiencyCores: t('label.efficiencyCores'),
-    currentLoad: t('fact.cpuUsage'), currentFrequency: t('fact.cpuFrequency'),
+    currentLoad: t('fact.cpuUsage'), cpuManufacturer: t('label.manufacturer'), family: t('label.family'), cpuModel: t('label.model'),
+    baseSpeed: t('label.baseSpeed'), maximumSpeed: t('label.maximumSpeed'),
     total: t('label.total'), used: t('fact.used'), available: t('fact.available'), active: t('label.active'), usage: t('label.usage'),
-    diskType: t('label.type'), mtu: t('label.mtu'),
+    diskType: t('label.type'), mtu: t('label.mtu'), interfaceName: t('label.interface'), speed: t('label.speed'), status: t('label.status'),
     swapTotal: t('label.swapTotal'), swapUsed: t('label.swapUsed'),
     device: t('label.device'), capacity: t('label.capacity'), filesystem: t('label.filesystem'),
     ipv4: 'IPv4', ipv6: 'IPv6', mac: 'MAC', received: t('label.received'), sent: t('label.sent'),
-    uptimeValue: formatDuration(snapshot.uptimeSeconds, t),
-    bytes: formatBytes
+    uptimeValue: formatHardwareUptime(snapshot.uptimeSeconds),
+    bytes: formatHardwareBytes
   } : null
   const groups = snapshot && text ? hardwareGroups(snapshot, tab, text) : []
 
@@ -147,15 +148,3 @@ export function SystemSurface() {
   )
 }
 
-function formatBytes(value: number): string {
-  if (!value) return '0 B'
-  const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB']
-  const exponent = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1)
-  return `${(value / 1024 ** exponent).toFixed(exponent > 1 ? 2 : 0)} ${units[exponent]}`
-}
-
-function formatDuration(seconds: number, t: (key: SystemMessageKey, values?: MessageValues) => string): string {
-  const days = Math.floor(seconds / 86_400)
-  const hours = Math.floor((seconds % 86_400) / 3_600)
-  return t('duration', { days, hours })
-}

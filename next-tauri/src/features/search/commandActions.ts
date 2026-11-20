@@ -4,6 +4,7 @@ import { runQuickReplace } from '../quickNote/quickReplace'
 import { randomUuid } from '../crypto/electronCrypto'
 import { timestampToLocal } from '../timestamp/timeTools'
 import { clipboardHtmlToMarkdown, clipboardTableToJson } from './clipboardTransforms'
+import { commandActionSearch } from './commandPaletteMessages'
 import { commandActionIds, type CommandActionId } from './commandPaletteState'
 
 export type CommandActionInput = 'none' | 'text' | 'rich-text' | 'html'
@@ -16,20 +17,25 @@ export interface CommandAction {
   input: CommandActionInput
 }
 
+function actionSearch(id: keyof typeof commandActionSearch): Pick<CommandAction, 'keywords' | 'aliases'> {
+  const item = commandActionSearch[id]
+  return { keywords: [...item.keywords], aliases: [...item.aliases] }
+}
+
 export const commandActions: CommandAction[] = [
-  { id: 'uuid', titleKey: 'uuid', keywords: ['random', '随机'], aliases: ['uuid'], input: 'none' },
-  { id: 'timestamp', titleKey: 'timestamp', keywords: ['time', '时间'], aliases: ['timestamp', '时间戳'], input: 'text' },
-  { id: 'json-format', titleKey: 'jsonFormat', keywords: ['json', '剪贴板', 'clipboard'], aliases: ['json format', '格式化 JSON', 'json'], input: 'text' },
-  { id: 'json-minify', titleKey: 'jsonMinify', keywords: ['json', '剪贴板', 'clipboard'], aliases: ['json minify', '压缩 JSON'], input: 'text' },
-  { id: 'base64-encode', titleKey: 'base64Encode', keywords: ['base64', '剪贴板', 'clipboard'], aliases: ['base64 encode', 'base64 编码'], input: 'text' },
-  { id: 'base64-decode', titleKey: 'base64Decode', keywords: ['base64', '剪贴板', 'clipboard'], aliases: ['base64 decode', 'base64 解码'], input: 'text' },
-  { id: 'url-encode', titleKey: 'urlEncode', keywords: ['url', '剪贴板', 'clipboard'], aliases: ['url encode', 'url 编码'], input: 'text' },
-  { id: 'url-decode', titleKey: 'urlDecode', keywords: ['url', '剪贴板', 'clipboard'], aliases: ['url decode', 'url 解码'], input: 'text' },
-  { id: 'deduplicate-lines', titleKey: 'deduplicate', keywords: ['unique', '去重', '剪贴板', 'clipboard'], aliases: ['deduplicate', '按行去重'], input: 'text' },
-  { id: 'clipboard-text', titleKey: 'clipboardText', keywords: ['plain', '纯文本', '剪贴板', 'clipboard'], aliases: ['clipboard text', '剪贴板文本'], input: 'text' },
-  { id: 'clipboard-html', titleKey: 'clipboardHtml', keywords: ['html', '剪贴板', 'clipboard'], aliases: ['clipboard html', '剪贴板 HTML'], input: 'html' },
-  { id: 'html-markdown', titleKey: 'htmlMarkdown', keywords: ['markdown', 'rich text', '富文本', '剪贴板'], aliases: ['markdown', '富文本转 Markdown'], input: 'rich-text' },
-  { id: 'table-json', titleKey: 'tableJson', keywords: ['table', 'csv', 'tsv', '表格', '剪贴板'], aliases: ['table json', '表格转 JSON'], input: 'rich-text' }
+  { id: 'uuid', titleKey: 'uuid', ...actionSearch('uuid'), input: 'none' },
+  { id: 'timestamp', titleKey: 'timestamp', ...actionSearch('timestamp'), input: 'text' },
+  { id: 'json-format', titleKey: 'jsonFormat', ...actionSearch('json-format'), input: 'text' },
+  { id: 'json-minify', titleKey: 'jsonMinify', ...actionSearch('json-minify'), input: 'text' },
+  { id: 'base64-encode', titleKey: 'base64Encode', ...actionSearch('base64-encode'), input: 'text' },
+  { id: 'base64-decode', titleKey: 'base64Decode', ...actionSearch('base64-decode'), input: 'text' },
+  { id: 'url-encode', titleKey: 'urlEncode', ...actionSearch('url-encode'), input: 'text' },
+  { id: 'url-decode', titleKey: 'urlDecode', ...actionSearch('url-decode'), input: 'text' },
+  { id: 'deduplicate-lines', titleKey: 'deduplicate', ...actionSearch('deduplicate-lines'), input: 'text' },
+  { id: 'clipboard-text', titleKey: 'clipboardText', ...actionSearch('clipboard-text'), input: 'text' },
+  { id: 'clipboard-html', titleKey: 'clipboardHtml', ...actionSearch('clipboard-html'), input: 'html' },
+  { id: 'html-markdown', titleKey: 'htmlMarkdown', ...actionSearch('html-markdown'), input: 'rich-text' },
+  { id: 'table-json', titleKey: 'tableJson', ...actionSearch('table-json'), input: 'rich-text' }
 ]
 
 export interface CommandActionMatch {

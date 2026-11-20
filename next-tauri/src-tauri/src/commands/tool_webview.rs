@@ -236,11 +236,11 @@ pub async fn dismiss_escape_window(
 ) -> AppResult<()> {
     if let Some(tool_id) = ManagedToolId::from_webview_label(caller.label()) {
         let snapshot = state.snapshot(tool_id);
-        if snapshot.placement == ToolWebviewPlacement::Detached {
-            if let Some(bounds) = state.stored_bounds(tool_id) {
-                dock_tool_webview_owned(&app, state.inner(), tool_id, bounds)?;
-                return Ok(());
-            }
+        if snapshot.placement == ToolWebviewPlacement::Detached
+            && let Some(bounds) = state.stored_bounds(tool_id)
+        {
+            dock_tool_webview_owned(&app, state.inner(), tool_id, bounds)?;
+            return Ok(());
         }
     }
     caller

@@ -60,7 +60,7 @@ export function HttpSurface() {
   const { settings, save: saveSettings } = useSettings()
   const dialog = useDesktopDialog()
   const { t } = useLocalizedMessages(httpMessages)
-  const [request, setRequest] = useState<HttpRequestSpec>(() => emptyHttpRequest(settings.network.requestTimeoutMs))
+  const [request, setRequest] = useState<HttpRequestSpec>(() => emptyHttpRequest(settings.network.requestTimeoutMs, t('prompt.unnamed')))
   const [saved, setSaved] = useState<SavedHttpRequest[]>([])
   const [savedQuery, setSavedQuery] = useState('')
   const [activeSavedId, setActiveSavedId] = useState<number | null>(null)
@@ -169,9 +169,10 @@ export function HttpSurface() {
       })
       setResponse(result)
       if (separateWindow) await openHttpResponseWindow(result)
-      succeed('notice.complete', { status: result.status })
+      if (result.status === 0) fail(new HttpLocalizedError(httpFailureKey(result.statusText)))
+      else succeed('notice.complete', { status: result.status })
       const safeRequest = redactRequest(next)
-      recordOperation(t('operation.send'), `${next.method} ${next.url} · HTTP ${result.status} · ${result.durationMs} ms`, result.status < 400 ? 'success' : 'error', {
+      recordOperation(t('operation.send'), `${next.method} ${next.url} · HTTP ${result.status || result.statusText || 0} · ${result.durationMs} ms`, result.status > 0 && result.status < 400 ? 'success' : 'error', {
         inputText: JSON.stringify(safeRequest, null, 2),
         metadata: { status: result.status, durationMs: result.durationMs, redacted: JSON.stringify(safeRequest) !== JSON.stringify(next) }
       })
@@ -193,7 +194,7 @@ export function HttpSurface() {
   }
 
   function createNew() {
-    setRequest(emptyHttpRequest(settings.network.requestTimeoutMs))
+    setRequest(emptyHttpRequest(settings.network.requestTimeoutMs, t('prompt.unnamed')))
     setActiveSavedId(null)
     setResponse(undefined)
     setRequestTab('params')
@@ -361,7 +362,7 @@ export function HttpSurface() {
             {requestTab === 'body' && <div className="http-body-pane" onKeyDown={(event) => { if ((event.metaKey || event.ctrlKey) && event.shiftKey && !event.altKey && event.key.toLowerCase() === 'f') { event.preventDefault(); void formatBody() } }}><header><select value={request.bodyType} onChange={(event) => setRequest({ ...request, bodyType: event.target.value })}>{['application/json', 'text/plain', 'application/xml', 'text/xml', 'text/html', 'application/javascript'].map((value) => <option key={value}>{value}</option>)}</select><button type="button" disabled={!request.body.trim()} onClick={() => void formatBody()}><Braces />{t('action.format')}</button><button type="button" disabled={!request.body} onClick={() => setRequest({ ...request, body: '' })}><Eraser />{t('action.clear')}</button></header><CodeEditor ariaLabel={t('aria.requestBody')} value={request.body} onChange={(body) => setRequest({ ...request, body })} className="utility-code-editor" /></div>}
           </section>
           <section className="http-response-card">
-            <header><Tabs values={['body', 'headers', 'cookies']} active={responseTab} labels={[t('tab.responseBody'), t('tab.responseHeaders'), t('tab.cookies')]} onChange={(value) => setResponseTab(value as ResponseTab)} /><div className="http-response-meta">{response && <><span className={response.status < 400 ? 'http-status http-status--ok' : 'http-status http-status--error'}>{response.status}</span><span>{formatBytes(response.sizeBytes)} · {response.durationMs} ms{response.truncated ? ` · ${t('response.truncated')}` : ''}</span><button type="button" aria-label={t('action.find')} title={t('action.find')} onClick={() => { if (findVisible) closeFind(); else openFind() }}><Search /></button><button type="button" title={t('action.copyResponse')} onClick={() => void clipboardApi.writeText(responseOutput).catch(fail)}><Copy /></button></>}<button type="button" aria-label={t('action.openResponse')} title={t('action.openResponse')} disabled={!response} onClick={() => { if (response) void openHttpResponseWindow(response).catch(fail) }}><ExternalLink /></button></div></header>
+            <header><Tabs values={['body', 'headers', 'cookies']} active={responseTab} labels={[t('tab.responseBody'), t('tab.responseHeaders'), t('tab.cookies')]} onChange={(value) => setResponseTab(value as ResponseTab)} /><div className="http-response-meta">{response && <><span className={response.status > 0 && response.status < 400 ? 'http-status http-status--ok' : 'http-status http-status--error'}>{response.status || response.statusText}</span><span>{formatBytes(response.sizeBytes)} · {response.durationMs} ms{response.truncated ? ` · ${t('response.truncated')}` : ''}</span><button type="button" aria-label={t('action.find')} title={t('action.find')} onClick={() => { if (findVisible) closeFind(); else openFind() }}><Search /></button><button type="button" title={t('action.copyResponse')} onClick={() => void clipboardApi.writeText(responseOutput).catch(fail)}><Copy /></button></>}<button type="button" aria-label={t('action.openResponse')} title={t('action.openResponse')} disabled={!response} onClick={() => { if (response) void openHttpResponseWindow(response).catch(fail) }}><ExternalLink /></button></div></header>
             {findVisible && (
               <div className="http-find" onKeyDown={(event) => { if (event.key === 'ArrowUp') { event.preventDefault(); findAround(false) } else if (event.key === 'ArrowDown') { event.preventDefault(); findAround(true) } else if (event.key === 'Escape') { event.preventDefault(); closeFind() } }}>
                 <input ref={findInput} aria-label={t('find.placeholder')} placeholder={t('find.placeholder')} value={findQuery} onChange={(event) => { setFindNotice(''); setFindQuery(event.target.value) }} onKeyDown={(event) => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); findAround(!event.shiftKey); event.currentTarget.focus() } }} />
@@ -498,6 +499,13 @@ function recordToResponse(item: Pick<SavedHttpRequest, 'url' | 'responseBody' | 
     truncated: false,
     durationMs: costTime
   }
+}
+
+function httpFailureKey(statusText: string | undefined): HttpMessageKey {
+  if (statusText === 'ABORTED' || statusText === 'TIMEOUT' || statusText === 'NETWORK' || statusText === 'INVALID_REQUEST' || statusText === 'RESPONSE_TOO_LARGE') {
+    return `error.${statusText}`
+  }
+  return 'error.NETWORK'
 }
 
 function clampTimeout(value: number) { return Math.max(1_000, Math.min(120_000, Number.isFinite(value) ? Math.round(value) : 30_000)) }

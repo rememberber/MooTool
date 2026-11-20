@@ -2,11 +2,11 @@ import { ArrowLeftRight, ChevronDown, ChevronUp, Copy, History, Play, Trash2 } f
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalizedMessages } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import { localDataApi } from '../../platform/api/localDataApi'
 import { DiffCodeEditor, type DiffEditorDecoration, type DiffEditorHandle, type DiffEditorScroll } from '../../shared/DiffCodeEditor'
 import { ResizableColumns } from '../../shared/ResizableColumns'
-import { HistoryPanel } from '../history/HistoryPanel'
+import { FuncHistoryDialog } from '../history/FuncHistoryDialog'
 import { useOperationHistory } from '../history/useOperationHistory'
-import { OPERATION_HISTORY_LIMIT } from '../../platform/contracts/history'
 import { useSettings } from '../settings/SettingsProvider'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import {
@@ -87,12 +87,20 @@ export function TextDiffSurface() {
     navigationIndex.current = -1
     setStatus(left || right ? { kind: 'complete' } : { kind: 'enterText' })
     if (saveHistory && (left || right)) {
+      const summary = t('summary.line', { added: String(next.added), removed: String(next.removed), changed: String(next.changed) })
       recordOperation(
         t('action.compare'),
-        t('summary.line', { added: String(next.added), removed: String(next.removed), changed: String(next.changed) }),
+        summary,
         'success',
         { inputText: left, outputText: right, metadata: { ignoreWhitespace, highlightMode: highlightModeRef.current } }
       )
+      void localDataApi.saveFuncHistory({
+        funcType: 'textDiff',
+        summary,
+        inputText: left,
+        outputText: right,
+        extraData: JSON.stringify({ ignoreWhitespace, highlightMode: highlightModeRef.current })
+      })
     }
   }, [ignoreWhitespace, left, recordOperation, right, t])
 
@@ -259,13 +267,12 @@ export function TextDiffSurface() {
       </div>
       {(reportError || actionError) && <p className="tool-surface-report-error">{actionError || t('report.error', { error: reportError })}</p>}
       {historyOpen && (
-        <HistoryPanel
-          limit={OPERATION_HISTORY_LIMIT}
-          toolId="text-diff"
+        <FuncHistoryDialog
+          funcType="textDiff"
           onClose={() => setHistoryOpen(false)}
-          onRestore={(entry) => {
-            setLeft(entry.inputText)
-            setRight(entry.outputText)
+          onApply={(record) => {
+            setLeft(record.inputText)
+            setRight(record.outputText)
             setHistoryOpen(false)
           }}
         />

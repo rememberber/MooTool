@@ -15,6 +15,6 @@ export function describeCalculatorState(
   const { t } = createLocalizedTranslator(calculatorMessages, locale)
   return {
     stateDigest: JSON.stringify(state),
-    stateSummary: t('session.summary', { expression: state.expression, result: state.result, count: state.history.length })
+    stateSummary: t('session.summary', { expression: state.expression, result: state.result, count: state.log.length })
   }
 }

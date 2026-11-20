@@ -6,6 +6,6 @@ export interface SystemHostsFile {
 
 export interface HostApi {
   readSystem(): Promise<SystemHostsFile>
-  writeSystem(content: string, expectedContent: string): Promise<SystemHostsFile>
+  writeSystem(content: string, expectedContent: string, activeHostId?: number | null): Promise<SystemHostsFile>
   resolve(host: string): Promise<string[]>
 }

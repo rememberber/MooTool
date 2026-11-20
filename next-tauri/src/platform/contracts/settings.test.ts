@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { defaultAppSettings, normalizeCloseBehavior, normalizeCustomGroups, normalizeEditorFontName, normalizeEditorSettings, normalizeInterfaceFontFamily, normalizeLayoutSettings, normalizeNetworkSettings, normalizePaneSizes, normalizeShortcutSettings, SETTINGS_SCHEMA_VERSION, storedPaneSizes } from './settings'
+import { defaultAppSettings, normalizeCloseBehavior, normalizeCustomGroups, normalizeEditorFontName, normalizeEditorSettings, normalizeInterfaceFontFamily, normalizeLayoutSettings, normalizeNetworkSettings, normalizePaneSizes, normalizeDataSettings, normalizeRuntimeSettings, normalizeShortcutSettings, normalizeVaultSettings, SETTINGS_SCHEMA_VERSION, storedPaneSizes } from './settings'
 
 describe('settings contract', () => {
   it('owns the current custom-group schema', () => {
@@ -13,7 +13,7 @@ describe('settings contract', () => {
     expect(settings.layout.showRecent).toBe(false)
     expect(settings.general.autoDownloadUpdates).toBe(true)
     expect(settings.general.escapeHidesWindow).toBe(true)
-    expect(settings.data).toEqual({})
+    expect(settings.data).toEqual({ directory: '' })
     expect(normalizeCloseBehavior('minimizeToTray')).toBe('hide')
     expect(normalizeCloseBehavior('hide')).toBe('hide')
     expect(normalizeCloseBehavior('quit')).toBe('quit')
@@ -30,6 +30,24 @@ describe('settings contract', () => {
     expect(storedPaneSizes({ 'http-collection': [0.4, 0.6] }, 'http-workspace', 'http-collection', 2)).toEqual([0.4, 0.6])
     expect(normalizeNetworkSettings({ proxyMode: 'manual', proxyPort: 7890 })).toMatchObject({ proxyEnabled: true, proxyPort: '7890' })
     expect(normalizeNetworkSettings({ proxyMode: 'system', proxyPort: 8080 })).toMatchObject({ proxyEnabled: false, proxyPort: '' })
+    expect(normalizeRuntimeSettings({
+      options: { java: { argumentsText: '--legacy' }, node: { arguments: '--current', workingDirectory: '/tmp' } }
+    }).options.java).toEqual({ arguments: '--legacy', workingDirectory: '' })
+    expect(normalizeRuntimeSettings({
+      options: { java: { argumentsText: '--legacy' }, node: { arguments: '--current', workingDirectory: '/tmp' } }
+    }).options.node).toEqual({ arguments: '--current', workingDirectory: '/tmp' })
+    expect(normalizeVaultSettings({}).autoCommit).toBe(true)
+    expect(normalizeVaultSettings({ autoCommit: false }).autoCommit).toBe(false)
+    expect(normalizeVaultSettings({ rootDirectory: '/old/json', quickNoteTreeExpandMode: 'collapseAll' })).toMatchObject({
+      quickNotePath: '',
+      jsonPath: '/old/json',
+      rootDirectory: '/old/json',
+      quickNoteTreeExpandMode: 'collapseAll'
+    })
+    expect(normalizeVaultSettings({ jsonPath: '/new/json', rootDirectory: '/old/json' }).jsonPath).toBe('/new/json')
+    expect(normalizeDataSettings({ directory: ' /data ', historyLimit: 500 })).toEqual({ directory: '/data' })
+    expect(normalizeDataSettings({ historyLimit: 500 }).directory).toBe('')
+    expect(defaultAppSettings().runtime.options.java.arguments).toBe('')
     expect(defaultAppSettings().network.proxyEnabled).toBe(false)
     expect(defaultAppSettings().network.proxyPort).toBe('')
     expect(normalizeInterfaceFontFamily('system')).toBe('system-ui')

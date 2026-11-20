@@ -53,21 +53,16 @@ export async function generateQrSvg(value: string, options: QrOptions): Promise<
 }
 
 export async function generateQrPngDataUrl(value: string, options: QrOptions, logoDataUrl = ''): Promise<string> {
-  const text = validateContent(value)
+  if (!value.trim()) throw new Error('QR content is required')
   const width = normalizeQrSize(options.size)
-  try {
-    const dataUrl = await QRCode.toDataURL(text, {
-      width,
-      margin: 4,
-      errorCorrectionLevel: options.errorCorrection,
-      color: { dark: '#111111', light: '#FFFFFF' }
-    })
-    if (!logoDataUrl) return dataUrl
-    return addLogo(dataUrl, logoDataUrl, width)
-  } catch (cause) {
-    if (cause instanceof QrToolError) throw cause
-    throw new QrToolError('generate', { error: cause instanceof Error ? cause.message : String(cause) })
-  }
+  const dataUrl = await QRCode.toDataURL(value, {
+    width,
+    margin: 4,
+    errorCorrectionLevel: options.errorCorrection,
+    color: { dark: '#111111', light: '#FFFFFF' }
+  })
+  if (!logoDataUrl) return dataUrl
+  return addLogo(dataUrl, logoDataUrl, width)
 }
 
 async function addLogo(qrDataUrl: string, logoDataUrl: string, size: number): Promise<string> {
@@ -93,14 +88,12 @@ export function svgDataUrl(svg: string): string {
 }
 
 export async function decodeQrImage(file: File): Promise<string> {
-  if (!file.type.startsWith('image/')) throw new QrToolError('imageType')
-  if (file.size > 15 * 1024 * 1024) throw new QrToolError('imageLimit')
   const dataUrl = await readQrLogo(file)
   return recognizeQrDataUrl(dataUrl)
 }
 
 export async function recognizeQrDataUrl(dataUrl: string): Promise<string> {
-  if (!/^data:image\//.test(dataUrl)) throw new QrToolError('imageType')
+  if (!/^data:image\//.test(dataUrl)) throw new Error('A valid image is required')
   const image = await loadImage(dataUrl)
   const canvas = document.createElement('canvas')
   canvas.width = image.naturalWidth || image.width
@@ -114,18 +107,14 @@ export async function recognizeQrDataUrl(dataUrl: string): Promise<string> {
   try {
     return new BrowserQRCodeReader(hints).decodeFromCanvas(canvas).getText()
   } catch {
-    try {
-      hints.set(DecodeHintType.PURE_BARCODE, true)
-      return new BrowserQRCodeReader(hints).decodeFromCanvas(canvas).getText()
-    } catch {
-      throw new QrToolError('notFound')
-    }
+    hints.set(DecodeHintType.PURE_BARCODE, true)
+    return new BrowserQRCodeReader(hints).decodeFromCanvas(canvas).getText()
   }
 }
 
 export function readQrLogo(file: File): Promise<string> {
-  if (!file.type.startsWith('image/')) throw new QrToolError('imageType')
-  if (file.size > 5 * 1024 * 1024) throw new QrToolError('imageLimit')
+  if (!file.type.startsWith('image/')) throw new Error('Unable to read image')
+  if (file.size > 100 * 1024 * 1024) throw new Error('Image exceeds 100 MB limit')
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(String(reader.result))
@@ -145,7 +134,7 @@ function loadImage(source: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image()
     image.onload = () => resolve(image)
-    image.onerror = () => reject(new Error('Unable to decode QR image'))
+    image.onerror = () => reject(new Error('Unable to load image'))
     image.src = source
   })
 }

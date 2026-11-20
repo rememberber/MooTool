@@ -2,6 +2,7 @@ import {
   ArrowLeftRight,
   CheckCircle2,
   Copy,
+  History,
   Languages,
   Plus,
   Save,
@@ -168,12 +169,26 @@ export function TranslationSurface() {
       setTarget('')
       return
     }
-    const timer = window.setTimeout(() => void translate(source), 650)
+    const timer = window.setTimeout(() => void translate(source), 500)
     return () => {
       window.clearTimeout(timer)
       cancelActive()
     }
   }, [cancelActive, provider, source, translate])
+
+  function prepareForRetranslation() {
+    suppressNextAutomaticTranslation.current = false
+    cancelActive()
+    setTranslating(false)
+    setTarget('')
+    setProviderUsed(undefined)
+    setFallbackUsed(false)
+  }
+
+  function changeSource(value: string) {
+    prepareForRetranslation()
+    setSource(value)
+  }
 
   function exchange() {
     cancelActive()
@@ -187,10 +202,11 @@ export function TranslationSurface() {
   }
 
   function updateProvider(nextProvider: TranslationProvider) {
+    prepareForRetranslation()
     let nextSource = sourceLang
     let nextTarget = targetLang
     if (!supportsTranslationLanguage(nextProvider, nextSource, true)) nextSource = 'auto'
-    if (!supportsTranslationLanguage(nextProvider, nextTarget, false)) nextTarget = nextSource === 'en' ? 'zh-CN' : 'en'
+    if (!supportsTranslationLanguage(nextProvider, nextTarget, false)) nextTarget = 'en'
     if (nextSource !== 'auto' && nextSource === nextTarget) nextTarget = alternateTargetLanguage(nextSource)
     setProvider(nextProvider)
     setSourceLang(nextSource)
@@ -199,6 +215,7 @@ export function TranslationSurface() {
   }
 
   function updateSourceLanguage(value: string) {
+    prepareForRetranslation()
     setSourceLang(value)
     const nextTarget = value !== 'auto' && value === targetLang ? alternateTargetLanguage(value) : targetLang
     if (nextTarget !== targetLang) setTargetLang(nextTarget)
@@ -206,6 +223,7 @@ export function TranslationSurface() {
   }
 
   function updateTargetLanguage(value: string) {
+    prepareForRetranslation()
     const nextTarget = value === sourceLang ? alternateTargetLanguage(value) : value
     setTargetLang(nextTarget)
     persistDefaults({ translationTargetLang: nextTarget })
@@ -275,16 +293,16 @@ export function TranslationSurface() {
         <section className="translation-main">
           <div className="translation-toolbar">
             <LanguageSelect provider={provider} value={sourceLang} includeAuto onChange={updateSourceLanguage} />
-            <button type="button" title={t('action.exchange')} onClick={exchange}><ArrowLeftRight /></button>
+            <button className="icon-button" type="button" aria-label={t('action.exchange')} onClick={exchange}><ArrowLeftRight /></button>
             <LanguageSelect provider={provider} value={targetLang} onChange={updateTargetLanguage} />
             <span />
             <label>{t('option.provider')}<select value={provider} onChange={(event) => updateProvider(event.target.value as TranslationProvider)}><option value="google">Google</option><option value="bing">Bing</option><option value="deepl">DeepL</option></select></label>
-            <button type="button" disabled={!target} onClick={() => void copyTarget()}><Copy />{t('action.copy')}</button>
-            <button type="button" disabled={!source.trim()} onClick={() => void saveCurrentWord()}><Star />{t('action.favorite')}</button>
-            <button type="button" onClick={() => { cancelActive(); setSource(''); setTarget('') }}><X />{t('action.clear')}</button>
+            <button className="icon-button" type="button" aria-label={t('action.copy')} disabled={!target || translating} onClick={() => void copyTarget()}><Copy /></button>
+            <button className="icon-button" type="button" aria-label={t('action.favorite')} disabled={!source} onClick={() => void saveCurrentWord()}><Star /></button>
+            <button className="icon-button" type="button" aria-label={t('action.clear')} onClick={() => { prepareForRetranslation(); setSource('') }}><X /></button>
           </div>
           <div className="translation-assist-toolbar">
-            <button className="secondary-button" type="button" disabled={!source.trim() || splitIdentifiers(source) === source} onClick={() => setSource(splitIdentifiers(source))}>{t('action.splitIdentifiers')}</button>
+            <button className="secondary-button" type="button" disabled={!source.trim() || splitIdentifiers(source) === source} onClick={() => changeSource(splitIdentifiers(source))}>{t('action.splitIdentifiers')}</button>
             {provider === 'deepl' && <button className="secondary-button" type="button" disabled={!source.trim() || translating} onClick={() => void translate(source)}>{t('action.translateNow')}</button>}
             <label>{t('action.namingFormat')}<select aria-label={t('action.namingFormat')} value={namingFormat} onChange={(event) => setNamingFormat(event.target.value as NamingFormat)}>{namingFormats.map((format) => <option key={format}>{format}</option>)}</select></label>
             <button className="secondary-button" type="button" disabled={!formattedName} title={formattedName || t('action.namingHint')} onClick={() => { void clipboardApi.writeText(formattedName).then(() => { setFailed(false); setNotice({ key: 'notice.copied' }) }).catch(() => { setFailed(true); setNotice({ key: 'notice.copyFailed' }) }) }}><Copy />{t('action.copyName')}</button>
@@ -292,12 +310,18 @@ export function TranslationSurface() {
           </div>
           {provider === 'deepl' && <div className="translation-engine-hint"><span>{t('deepl.hint')}</span><button className="secondary-button" type="button" onClick={() => { window.localStorage.setItem('mootool-next-tauri:settings-category', 'tools'); void settingsApi.openWindow() }}>{t('deepl.configure')}</button></div>}
           <ResizableColumns id="translation-editor" className="translation-editor-grid" initialPrimary={1} defaultSizes={[1, 1]} minPrimary={280} minSecondary={280}>
-            <section><header><strong>{languageName(sourceLang)}</strong><span>{source.length} / 50000</span></header><CodeEditor ariaLabel={t('aria.source')} value={source} onChange={(value) => setSource(value.slice(0, 50_000))} className="utility-code-editor" lineWrapping /></section>
-            <section><header><strong>{languageName(targetLang)}</strong><span>{translating ? t('status.translating') : providerUsed ? `${providerLabel(providerUsed)}${fallbackUsed ? ` · ${t('status.fallback')}` : ''}` : t('status.result')}</span></header><CodeEditor ariaLabel={t('aria.result')} value={translating && !target ? t('status.translating') : target} readOnly className="utility-code-editor" lineWrapping /></section>
+            <CodeEditor ariaLabel={t('aria.source')} value={source} onChange={changeSource} className="utility-code-editor translation-source-editor" lineWrapping />
+            <div className="translation-result">
+              <CodeEditor ariaLabel={t('aria.result')} value={translating ? t('status.translating') : target} readOnly className="utility-code-editor" lineWrapping />
+              <footer>
+                {providerUsed && <span><Languages size={13} />{providerLabel(providerUsed)}{fallbackUsed ? ` · ${t('status.fallback')}` : ''}</span>}
+                <span>{source.length} / 50000</span>
+              </footer>
+            </div>
           </ResizableColumns>
         </section>
       )}
-      {tab === 'words' && <WordBook onApply={applyRecord} />}
+      {tab === 'words' && <WordBook provider={provider} timeoutMs={settings.network.translationTimeoutMs} onApply={applyRecord} />}
       {tab === 'history' && <HistoryPanel onApply={applyRecord} />}
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}>
         <span>{failed ? <TriangleAlert /> : <CheckCircle2 />}{noticeText}</span>
@@ -326,7 +350,7 @@ function translationErrorMessage(cause: unknown, t: (key: TranslationMessageKey)
   return code ? t(`error.${code}`) : message
 }
 
-function WordBook({ onApply }: { onApply: (word: SaveTranslationWordInput) => void }) {
+function WordBook({ provider, timeoutMs, onApply }: { provider: TranslationProvider; timeoutMs: number; onApply: (word: SaveTranslationWordInput) => void }) {
   const { t, locale } = useLocalizedMessages(translationMessages)
   const dialog = useDesktopDialog()
   const [items, setItems] = useState<TranslationWord[]>([])
@@ -342,7 +366,10 @@ function WordBook({ onApply }: { onApply: (word: SaveTranslationWordInput) => vo
       setError(errorMessage(cause))
     }
   }, [query])
-  useEffect(() => { void load() }, [load])
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void load() }, 100)
+    return () => window.clearTimeout(timer)
+  }, [load])
 
   function add() {
     setSelected({ sourceText: '', targetText: '', sourceLang: 'auto', targetLang: 'zh-CN', remark: '' })
@@ -357,6 +384,27 @@ function WordBook({ onApply }: { onApply: (word: SaveTranslationWordInput) => vo
     } catch (cause) { setError(errorMessage(cause)) }
   }
 
+  async function retranslate(): Promise<void> {
+    if (!selected?.sourceText.trim()) return
+    try {
+      if (provider === 'deepl' && !(await credentialApi.getDeepLStatus()).stored) throw new Error('DEEPL_KEY_REQUIRED')
+      const result = await translationApi.translate({
+        requestId: `word-${Date.now()}`,
+        text: selected.sourceText,
+        sourceLang: selected.sourceLang,
+        targetLang: selected.targetLang,
+        preferredProvider: provider,
+        timeoutMs
+      })
+      const saved = await localDataApi.saveTranslationWord({ ...selected, targetText: result.text })
+      setSelected(saved)
+      setError('')
+      await load()
+    } catch (cause) {
+      setError(translationErrorMessage(cause, t))
+    }
+  }
+
   async function remove() {
     if (!selected || !await dialog.confirm(t('confirm.deleteWord'), { dangerous: true })) return
     if (selected.id) await localDataApi.deleteTranslationWord(selected.id)
@@ -366,8 +414,8 @@ function WordBook({ onApply }: { onApply: (word: SaveTranslationWordInput) => vo
 
   return (
     <ResizableColumns id="translation-words" className="translation-record-layout" initialPrimary={220} defaultSizes={[220, 780]} minPrimary={170} minSecondary={360}>
-      <aside><label className="translation-search"><Search /><input value={query} placeholder={t('search.words')} onChange={(event) => setQuery(event.target.value)} /></label><div>{items.map((item) => <button className={selected?.id === item.id ? 'translation-record translation-record--active' : 'translation-record'} type="button" key={item.id} onClick={() => setSelected(item)}><strong>{item.sourceText}</strong><span>{item.targetText}</span></button>)}</div><footer><button type="button" onClick={add}><Plus />{t('action.new')}</button><button type="button" disabled={!selected} onClick={() => void remove()}><Trash2 />{t('action.delete')}</button></footer></aside>
-      <section>{selected ? <><header><strong>{languageLabel(selected.sourceLang, locale, t('language.auto'))} → {languageLabel(selected.targetLang, locale, t('language.auto'))}</strong><button type="button" onClick={() => onApply(selected)}><Languages />{t('action.apply')}</button></header><textarea value={selected.sourceText} placeholder={t('field.source')} onChange={(event) => setSelected({ ...selected, sourceText: event.target.value })} /><textarea value={selected.targetText} placeholder={t('field.target')} onChange={(event) => setSelected({ ...selected, targetText: event.target.value })} /><input value={selected.remark} placeholder={t('field.remark')} onChange={(event) => setSelected({ ...selected, remark: event.target.value })} /><button className="primary-button" type="button" onClick={() => void save()}><Save />{t('action.save')}</button></> : <div className="translation-empty">{t('words.empty')}</div>}{error && <p className="translation-error">{error}</p>}</section>
+      <aside><label className="translation-search"><Search /><input aria-label={t('search.words')} value={query} placeholder={t('search.words')} onChange={(event) => setQuery(event.target.value)} /></label><div>{items.map((item) => <button className={selected?.id === item.id ? 'translation-record translation-record--active' : 'translation-record'} type="button" key={item.id} onClick={() => setSelected(item)}><strong>{item.sourceText}</strong><span>{item.targetText}</span></button>)}</div><footer><button className="icon-button" type="button" aria-label={t('action.new')} onClick={add}><Plus /></button><button className="icon-button" type="button" disabled={!selected?.id} aria-label={t('action.delete')} onClick={() => void remove()}><Trash2 /></button></footer></aside>
+      <section>{selected ? <><header><span>{languageLabel(selected.sourceLang, locale, t('language.auto'))} → {languageLabel(selected.targetLang, locale, t('language.auto'))}</span><div><button type="button" onClick={() => onApply(selected)}><Languages />{t('action.apply')}</button><button type="button" onClick={() => void retranslate()}><History />{t('action.retranslate')}</button></div></header><CodeEditor ariaLabel={t('field.source')} value={selected.sourceText} onChange={(sourceText) => setSelected({ ...selected, sourceText })} className="utility-code-editor" lineWrapping /><CodeEditor ariaLabel={t('field.target')} value={selected.targetText} onChange={(targetText) => setSelected({ ...selected, targetText })} className="utility-code-editor" lineWrapping /><input aria-label={t('field.remark')} value={selected.remark} placeholder={t('field.remark')} onChange={(event) => setSelected({ ...selected, remark: event.target.value })} /><button type="button" onClick={() => void save()}><Save />{t('action.save')}</button></> : <div className="translation-empty">{t('words.empty')}</div>}{error && <p className="translation-error">{error}</p>}</section>
     </ResizableColumns>
   )
 }
@@ -381,14 +429,17 @@ function HistoryPanel({ onApply }: { onApply: (item: TranslationHistory) => void
   const load = useCallback(async () => {
     try { setItems(await localDataApi.listTranslationHistory(query)) } catch (cause) { setError(errorMessage(cause)) }
   }, [query])
-  useEffect(() => { void load() }, [load])
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void load() }, 100)
+    return () => window.clearTimeout(timer)
+  }, [load])
   async function clearHistory() {
     if (await dialog.confirm(t('confirm.clearHistory'), { dangerous: true })) await localDataApi.clearTranslationHistory().then(load)
   }
   return (
     <section className="translation-history-panel">
       <header><label className="translation-search"><Search /><input value={query} placeholder={t('search.history')} onChange={(event) => setQuery(event.target.value)} /></label><button type="button" disabled={!items.length} onClick={() => void clearHistory()}><Trash2 />{t('action.clearAll')}</button></header>
-      <div>{items.length ? items.map((item) => <article key={item.id}><button type="button" onClick={() => onApply(item)}><header><strong>{languageLabel(item.sourceLang, locale, t('language.auto'))} → {languageLabel(item.targetLang, locale, t('language.auto'))}</strong><span>{item.translatorType} · {item.createTime}</span></header><p>{item.sourceText}</p><p>{item.targetText}</p></button><button type="button" title={t('action.delete')} onClick={() => void localDataApi.deleteTranslationHistory(item.id).then(load)}><Trash2 /></button></article>) : <div className="translation-empty">{t('history.empty')}</div>}</div>
+      <div>{items.length ? items.map((item) => <article key={item.id}><button type="button" onClick={() => onApply(item)}><header><strong>{languageLabel(item.sourceLang, locale, t('language.auto'))} → {languageLabel(item.targetLang, locale, t('language.auto'))}</strong><span>{item.translatorType} · {item.createTime}</span></header><p>{item.sourceText}</p><p>{item.targetText}</p></button><button type="button" aria-label={t('history.delete')} onClick={() => void localDataApi.deleteTranslationHistory(item.id).then(load)}><Trash2 /></button></article>) : <div className="translation-empty">{t('history.empty')}</div>}</div>
       {error && <p className="translation-error">{error}</p>}
     </section>
   )

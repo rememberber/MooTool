@@ -89,13 +89,7 @@ pub async fn match_java_regex(
     let pid = Arc::new(AtomicU32::new(0));
     let cancelled = Arc::new(AtomicBool::new(false));
     manager.start(&request.request_id, pid.clone(), cancelled.clone())?;
-    let result = run_java(
-        &settings.snapshot().runtime,
-        &request.stdin,
-        pid,
-        cancelled,
-    )
-    .await;
+    let result = run_java(&settings.snapshot().runtime, &request.stdin, pid, cancelled).await;
     manager.finish(&request.request_id);
     Ok(result?)
 }
@@ -245,13 +239,12 @@ impl JavaRegexManager {
     }
 
     fn finish(&self, request_id: &str) {
-        if let Ok(mut active) = self.active.lock() {
-            if active
+        if let Ok(mut active) = self.active.lock()
+            && active
                 .as_ref()
                 .is_some_and(|current| current.request_id == request_id)
-            {
-                active.take();
-            }
+        {
+            active.take();
         }
     }
 
@@ -264,14 +257,13 @@ impl JavaRegexManager {
         if current.as_deref() != Some(request_id) && !request_id.is_empty() {
             return false;
         }
-        if let Ok(active) = self.active.lock() {
-            if let Some(current) = active.as_ref() {
-                if request_id.is_empty() || current.request_id == request_id {
-                    current.cancelled.store(true, Ordering::SeqCst);
-                    kill_process(current.pid.load(Ordering::SeqCst));
-                    return true;
-                }
-            }
+        if let Ok(active) = self.active.lock()
+            && let Some(current) = active.as_ref()
+            && (request_id.is_empty() || current.request_id == request_id)
+        {
+            current.cancelled.store(true, Ordering::SeqCst);
+            kill_process(current.pid.load(Ordering::SeqCst));
+            return true;
         }
         false
     }

@@ -2,6 +2,8 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock3,
+  History,
+  Star,
   Play,
   Sparkles,
   TriangleAlert
@@ -9,14 +11,16 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import { localDataApi } from '../../platform/api/localDataApi'
 import type { AppLanguage } from '../../platform/contracts/settings'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { ResizableColumns } from '../../shared/ResizableColumns'
 import { useSettings } from '../settings/SettingsProvider'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { FuncHistoryDialog } from '../history/FuncHistoryDialog'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
-import { ToolFavoriteBar } from '../favorites/ToolFavoriteBar'
+import { ManagedFavoritesDialog } from '../favorites/ManagedFavoritesDialog'
 import {
   buildCron,
   commonCronExpressions,
@@ -66,6 +70,8 @@ export function CronSurface() {
   const [descriptionLanguage, setDescriptionLanguage] = useState<AppLanguage>(settings.general.language)
   const [activeField, setActiveField] = useState<keyof CronFields>('second')
   const [examplesOpen, setExamplesOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [favoritesOpen, setFavoritesOpen] = useState(false)
   const [runs, setRuns] = useState<string[]>([])
   const [description, setDescription] = useState('')
   const [error, setError] = useState<CronError>()
@@ -116,16 +122,25 @@ export function CronSurface() {
     try { setFields(splitCron(value)) } catch { /* The expression can be partial while editing. */ }
   }
 
-  function calculate(nextExpression = expression): void {
+  function calculate(nextExpression = expression, saveHistory = false): void {
     try {
       const nextFields = splitCron(nextExpression)
-      const nextDescription = describeCron(nextExpression, settings.general.language)
+      const nextDescription = describeCron(nextExpression, descriptionLanguage)
       const nextRuns = nextCronRuns(nextExpression, timeZone, 10)
       setExpression(nextExpression)
       setFields(nextFields)
       setDescription(nextDescription)
       setRuns(nextRuns)
       setError(undefined)
+      if (saveHistory) {
+        void localDataApi.saveFuncHistory({
+          funcType: 'cron',
+          summary: t('runs.history'),
+          inputText: nextExpression,
+          outputText: nextRuns.join('\n'),
+          extraData: JSON.stringify({ timeZone, descriptionLanguage })
+        })
+      }
       recordOperation(t('action.parse'), `${nextExpression} · ${timeZone} · ${nextRuns.length}`, 'success', {
         inputText: nextExpression,
         outputText: nextRuns.join('\n'),
@@ -169,6 +184,13 @@ export function CronSurface() {
       const text = describeCron(expression, descriptionLanguage)
       setDescription(text)
       setError(undefined)
+      void localDataApi.saveFuncHistory({
+        funcType: 'cron',
+        summary: t('action.convert'),
+        inputText: expression,
+        outputText: text,
+        extraData: JSON.stringify({ timeZone, descriptionLanguage })
+      })
       recordOperation(t('action.convert'), text, 'success', {
         inputText: expression,
         outputText: text,
@@ -182,7 +204,7 @@ export function CronSurface() {
   function cronError(cause: unknown): CronError {
     return cause instanceof CronToolError
       ? { key: `error.${cause.code}`, values: cause.values }
-      : { raw: cause instanceof Error ? cause.message : String(cause) }
+      : { key: 'error.invalid', values: { message: cause instanceof Error ? cause.message : String(cause) } }
   }
 
   return (
@@ -200,45 +222,40 @@ export function CronSurface() {
             value={expression}
             spellCheck={false}
             onChange={(event) => updateExpression(event.target.value)}
-            onKeyDown={(event) => event.key === 'Enter' && calculate()}
+            onKeyDown={(event) => event.key === 'Enter' && calculate(expression, true)}
           />
           <select value={timeZone} onChange={(event) => setTimeZone(event.target.value)}>
             {zoneOptions.map((zone) => <option key={zone} value={zone}>{zone}</option>)}
           </select>
           <select aria-label={t('description.locale')} value={descriptionLanguage} onChange={(event) => setDescriptionLanguage(event.target.value as AppLanguage)}>
-            <option value="zh-CN">中文</option>
-            <option value="en-US">English</option>
-            <option value="ja-JP">日本語</option>
+            <option value="zh-CN">{t('language.zh')}</option>
+            <option value="en-US">{t('language.en')}</option>
+            <option value="ja-JP">{t('language.ja')}</option>
           </select>
           <button className="secondary-button" type="button" onClick={resolveFields}>{t('action.resolve')}</button>
           <button className="secondary-button" type="button" onClick={convertDescription}>{t('action.convert')}</button>
           <button className="secondary-button" type="button" onClick={() => void clipboardApi.writeText(expression)}>{t('action.copy')}</button>
-          <button className="primary-button" type="button" onClick={() => calculate()}>
+          <button className="toolbar-button" type="button" onClick={() => setFavoritesOpen(true)}><Star size={14} />{t('favorite.title')}</button>
+          <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('action.history')}</button>
+          <button className="primary-button" type="button" onClick={() => calculate(expression, true)}>
             <Play />{t('action.parse')}
           </button>
         </div>
       </section>
 
-      <ToolFavoriteBar
-        toolId="cron"
-        defaultName={expression || 'Cron'}
-        payload={{ expression, timeZone }}
-        onApply={(payload) => {
-          const nextExpression = typeof payload.expression === 'string' ? payload.expression : expression
-          const nextZone = typeof payload.timeZone === 'string' ? payload.timeZone : timeZone
-          setExpression(nextExpression)
-          setTimeZone(nextZone)
-          setRuns([])
-          setDescription('')
-          try {
-            setFields(splitCron(nextExpression))
-            setError(undefined)
-          } catch (cause) {
-            setError(cronError(cause))
-          }
-        }}
-      />
+      {favoritesOpen && <ManagedFavoritesDialog kind="cron" currentValue={expression} onClose={() => setFavoritesOpen(false)} onApply={updateExpression} />}
 
+      {historyOpen && <FuncHistoryDialog funcType="cron" onClose={() => setHistoryOpen(false)} onApply={(record) => {
+        updateExpression(record.inputText)
+        try {
+          const meta = JSON.parse(record.extraData ?? '{}') as { timeZone?: string; descriptionLanguage?: AppLanguage }
+          if (typeof meta.timeZone === 'string' && meta.timeZone) setTimeZone(meta.timeZone)
+          if (meta.descriptionLanguage === 'zh-CN' || meta.descriptionLanguage === 'en-US' || meta.descriptionLanguage === 'ja-JP') setDescriptionLanguage(meta.descriptionLanguage)
+        } catch {
+          // Older records only contain the expression.
+        }
+        setHistoryOpen(false)
+      }} />}
       <ResizableColumns id="cron-builder" className="cron-content" initialPrimary={660} defaultSizes={[660, 340]} minPrimary={460} minSecondary={260}>
         <div className="cron-builder">
           <header>

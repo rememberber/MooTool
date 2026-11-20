@@ -37,14 +37,6 @@ export interface WhoisResult {
   durationMs: number
 }
 
-export interface NetworkConnectionInfo {
-  protocol: string
-  localAddress: string
-  remoteAddress: string
-  state: string
-  process: string
-}
-
 export interface PingResult {
   host: string
   success: boolean
@@ -62,13 +54,14 @@ export interface PingRangeResult {
 
 export interface NetworkToolsApi {
   interfaces(): Promise<NetworkInterfaceInfo[]>
+  interfaceReport(): Promise<string>
   resolve(host: string): Promise<string[]>
   scanPorts(requestId: string, host: string, ports: number[], timeoutMs: number, budgetMs: number): Promise<PortScanResult>
   pingRange(requestId: string, prefix: string, timeoutMs: number): Promise<PingRangeResult>
   scanRange(requestId: string, cidr: string, ports: number[], timeoutMs: number): Promise<NetworkRangeScanResult>
   cancelTask(requestId: string): Promise<boolean>
   whois(query: string): Promise<WhoisResult>
-  connections(): Promise<NetworkConnectionInfo[]>
+  connections(): Promise<string>
   flushDns(): Promise<string>
   ping(host: string): Promise<PingResult>
 }

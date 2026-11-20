@@ -20,7 +20,7 @@ export interface WatermarkOptions {
   text: string
   opacity: number
   color: string
-  fontSize: number
+  fontSize: 'auto' | 'small' | 'medium' | 'large'
   position: WatermarkPosition
   diagonal: boolean
 }
@@ -132,7 +132,7 @@ export async function compressImage(dataUrl: string, options: CompressOptions): 
   }
   context.drawImage(image, 0, 0, canvas.width, canvas.height)
   const mimeType = options.format === 'jpeg' ? 'image/jpeg' : options.format === 'png' ? 'image/png' : dataUrl.startsWith('data:image/jpeg') ? 'image/jpeg' : 'image/png'
-  return canvas.toDataURL(mimeType, Math.min(1, Math.max(0.05, options.quality)))
+  return canvas.toDataURL(mimeType, Math.min(1, Math.max(0.01, options.quality)))
 }
 
 export async function watermarkImage(dataUrl: string, options: WatermarkOptions): Promise<string> {
@@ -141,22 +141,32 @@ export async function watermarkImage(dataUrl: string, options: WatermarkOptions)
   const canvas = createCanvas(image.naturalWidth, image.naturalHeight)
   const context = context2d(canvas)
   context.drawImage(image, 0, 0)
-  const fontSize = Math.min(200, Math.max(12, options.fontSize))
+  const fontSize = resolveWatermarkFontSize(image.naturalWidth, image.naturalHeight, options.fontSize)
   context.font = `700 ${fontSize}px system-ui, sans-serif`
   context.textBaseline = 'alphabetic'
   context.fillStyle = colorWithOpacity(options.color, options.opacity)
   const width = context.measureText(options.text.trim()).width
-  const height = fontSize * 1.15
-  const margin = Math.max(10, Math.round(Math.min(canvas.width, canvas.height) * 0.025))
+  const height = fontSize * 1.2
+  const margin = Math.max(8, Math.round(Math.min(canvas.width, canvas.height) * 0.02))
   if (options.position === 'tile') {
-    for (let y = -canvas.height; y < canvas.height * 2; y += height + margin * 4) {
-      for (let x = -canvas.width; x < canvas.width * 2; x += width + margin * 4) drawWatermark(context, options.text.trim(), x, y, true)
+    const stepX = width + margin * 3
+    const stepY = height + margin * 3
+    for (let y = -canvas.height; y < canvas.height * 2; y += stepY) {
+      for (let x = -canvas.width; x < canvas.width * 2; x += stepX) drawWatermark(context, options.text.trim(), x, y, options.diagonal)
     }
   } else {
     const point = watermarkPoint(canvas.width, canvas.height, width, height, margin, options.position)
     drawWatermark(context, options.text.trim(), point.x, point.y, options.diagonal)
   }
-  return canvas.toDataURL(dataUrl.startsWith('data:image/jpeg') ? 'image/jpeg' : 'image/png', 0.94)
+  return canvas.toDataURL(dataUrl.startsWith('data:image/jpeg') ? 'image/jpeg' : 'image/png', 0.92)
+}
+
+export function resolveWatermarkFontSize(width: number, height: number, mode: WatermarkOptions['fontSize']): number {
+  const base = Math.round(Math.min(width, height) * 0.05)
+  if (mode === 'small') return Math.max(16, Math.min(base, 28))
+  if (mode === 'medium') return Math.max(24, Math.min(base + 8, 42))
+  if (mode === 'large') return Math.max(32, Math.min(base + 16, 64))
+  return Math.max(18, Math.min(base, 48))
 }
 
 function watermarkPoint(canvasWidth: number, canvasHeight: number, textWidth: number, textHeight: number, margin: number, position: Exclude<WatermarkPosition, 'tile'>) {

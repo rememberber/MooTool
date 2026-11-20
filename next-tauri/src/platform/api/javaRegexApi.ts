@@ -21,7 +21,7 @@ export interface JavaRegexApi {
 
 const browserApi: JavaRegexApi = {
   match: async () => {
-    throw new Error('浏览器预览不能运行 Java 正则，请使用 Tauri 桌面应用')
+    throw new Error('JAVA_REGEX_UNAVAILABLE')
   },
   cancel: async () => false
 }

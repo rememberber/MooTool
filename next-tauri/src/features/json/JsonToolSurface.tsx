@@ -29,6 +29,7 @@ import {
   FolderPlus,
   FolderGit2,
   FolderOpen,
+  History,
   GitBranch,
   GitCommitHorizontal,
   LocateFixed,
@@ -55,6 +56,7 @@ import { createPortal } from 'react-dom'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { useI18n } from '../../app/i18n'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import { localDataApi } from '../../platform/api/localDataApi'
 import { userFilesApi } from '../../platform/api/userFilesApi'
 import { vaultApi } from '../../platform/api/vaultApi'
 import type {
@@ -86,6 +88,7 @@ import { GitDiffView } from '../quickNote/QuickNoteGitPanel'
 import { ResizableColumns } from '../../shared/ResizableColumns'
 import { ResizableThreeColumns } from '../../shared/ResizableThreeColumns'
 import { toolWebviewApis } from '../../platform/api/toolWebviewApi'
+import { FuncHistoryDialog } from '../history/FuncHistoryDialog'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import { useSettings } from '../settings/SettingsProvider'
@@ -115,6 +118,55 @@ import {
 
 type JsonMessageKey = LocalizedMessageKey<typeof jsonMessages>
 type JsonNotice = { key: JsonMessageKey; values?: MessageValues } | { raw: string }
+
+const jsonHistorySummary: Partial<Record<JsonMessageKey, JsonMessageKey>> = {
+  'notice.formatted': 'action.format',
+  'notice.minified': 'action.minify',
+  'notice.escaped': 'action.escape',
+  'notice.unescaped': 'action.unescape',
+  'notice.escapedText': 'action.escapeText',
+  'notice.unescapedText': 'action.unescapeText',
+  'notice.swapped': 'history.swap',
+  'notice.toXml': 'history.toXml',
+  'notice.toJson': 'history.toJson',
+  'notice.toBean': 'history.toBean',
+  'notice.beanToJson': 'history.beanToJson'
+}
+
+function JsonPathPicker({ entries, selectedPath, onClose, onChoose }: {
+  entries: Array<{ path: string; label: string; depth: number; value: unknown }>
+  selectedPath: string
+  onClose: () => void
+  onChoose: (path: string) => void
+}) {
+  const { t } = useLocalizedMessages(jsonMessages)
+  const [selected, setSelected] = useState(selectedPath || '$')
+  const current = entries.find((entry) => entry.path === selected)
+  const preview = current == null || current.value === undefined
+    ? ''
+    : typeof current.value === 'string' ? current.value : JSON.stringify(current.value, null, 2)
+  return (
+    <section className="http-history-modal func-history-modal" role="dialog" aria-modal="true" aria-label={t('pathPicker.title')}>
+      <div>
+        <header><div><strong>{t('pathPicker.title')}</strong></div><button type="button" aria-label={t('dialog.cancel')} onClick={onClose}><X /></button></header>
+        <div>
+          {entries.map((entry) => (
+            <button type="button" key={entry.path} onClick={() => setSelected(entry.path)} onDoubleClick={() => onChoose(entry.path)}>
+              <span style={{ paddingLeft: entry.depth * 18 }}>{entry.label}</span>
+              <small>{entry.path}</small>
+            </button>
+          ))}
+        </div>
+        <label>{t('pathPicker.path')}<code>{current?.path ?? ''}</code></label>
+        <label>{t('pathPicker.preview')}<pre>{preview}</pre></label>
+        <footer>
+          <button type="button" onClick={onClose}>{t('dialog.cancel')}</button>
+          <button type="button" disabled={!current} onClick={() => { if (current) onChoose(current.path) }}>{t('pathPicker.use')}</button>
+        </footer>
+      </div>
+    </section>
+  )
+}
 
 function JsonWorkspace({ inspectorVisible, children }: { inspectorVisible: boolean; children: [ReactElement, ReactElement, ReactElement] }) {
   if (inspectorVisible) {
@@ -150,7 +202,11 @@ export function JsonToolSurface() {
   const { t, locale } = useLocalizedMessages(jsonMessages)
   const { t: settingsText } = useI18n()
   const recordOperation = useOperationHistory('json')
-  const sampleJson = useRef(t('sample.json')).current
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [outputDialog, setOutputDialog] = useState<{ title: string; value: string } | null>(null)
+  const [inputConversion, setInputConversion] = useState<'xmlToJson' | 'beanToJson' | null>(null)
+  const [conversionInput, setConversionInput] = useState('')
+  const readOnlyCompartment = useRef(new Compartment())
   const hostRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<EditorView | undefined>(undefined)
   const sessionId = useRef(crypto.randomUUID())
@@ -165,20 +221,21 @@ export function JsonToolSurface() {
   const [findOptions, setFindOptions] = useState<FindReplaceOptions>(defaultFindReplaceOptions)
   const [replacedCount, setReplacedCount] = useState(0)
   const [metrics, setMetrics] = useState<EditorMetrics>({
-    content: sampleJson,
+    content: '',
     anchor: 0,
     head: 0,
     line: 1,
     scrollTop: 0
   })
   const [wrap, setWrap] = useState(settings.editor.softWrap)
-  const [indent, setIndent] = useState<2 | 4 | 8>(2)
+  const [indent, setIndent] = useState<2 | 4>(2)
   const [sortKeys, setSortKeys] = useState(false)
   const [ignoreCase, setIgnoreCase] = useState(false)
   const [checkDuplicateKeys, setCheckDuplicateKeys] = useState(true)
   const [className, setClassName] = useState('Root')
-  const [jsonPath, setJsonPath] = useState('$.release.channel')
-  const [pathResult, setPathResult] = useState('"next-tauri"')
+  const [jsonPath, setJsonPath] = useState('$')
+  const [pathResult, setPathResult] = useState('')
+  const [pathPickerOpen, setPathPickerOpen] = useState(false)
   const [notice, setNotice] = useState<JsonNotice>({ key: 'notice.ready' })
   const [copied, setCopied] = useState(false)
   const [compositionStarts, setCompositionStarts] = useState(0)
@@ -289,7 +346,7 @@ export function JsonToolSurface() {
 
   useOperationRestore('json', (entry) => {
     const metadata = parseOperationMetadata(entry)
-    if (metadata.indent === 2 || metadata.indent === 4 || metadata.indent === 8) setIndent(metadata.indent)
+    if (metadata.indent === 2 || metadata.indent === 4) setIndent(metadata.indent)
     if (typeof metadata.sortKeys === 'boolean') setSortKeys(metadata.sortKeys)
     if (typeof metadata.ignoreCase === 'boolean') setIgnoreCase(metadata.ignoreCase)
     if (typeof metadata.checkDuplicateKeys === 'boolean') setCheckDuplicateKeys(metadata.checkDuplicateKeys)
@@ -339,6 +396,7 @@ export function JsonToolSurface() {
             indentWithTab
           ]),
           wrapCompartment.current.of(wrap ? EditorView.lineWrapping : []),
+          readOnlyCompartment.current.of(EditorState.readOnly.of(!vaultDocument)),
           searchCompartment.current.of(findOpen ? codeEditorSearchHighlight(findQuery, findOptions) : []),
           ariaCompartment.current.of(EditorView.contentAttributes.of({
             'aria-label': t('aria.editor'),
@@ -383,6 +441,12 @@ export function JsonToolSurface() {
       view.destroy()
     }
   }, [inspectorVisible])
+
+  useEffect(() => {
+    editorRef.current?.dispatch({
+      effects: readOnlyCompartment.current.reconfigure(EditorState.readOnly.of(!vaultDocument))
+    })
+  }, [vaultDocument])
 
   useEffect(() => {
     let cancelled = false
@@ -589,7 +653,45 @@ export function JsonToolSurface() {
     })
   }
 
-  function runTransform(transform: () => string, success: JsonMessageKey): void {
+  function showOutput(transform: () => string, titleKey: JsonMessageKey): void {
+    try {
+      const input = metrics.content
+      const output = transform()
+      setOutputDialog({ title: t(titleKey), value: output })
+      setNotice({ raw: t(titleKey) })
+      recordOperation(t(titleKey), t('operation.content', { length: input.length }), 'success', {
+        inputText: input, outputText: output, metadata: { indent, sortKeys, ignoreCase, checkDuplicateKeys, wrap, jsonPath, className }
+      })
+      void localDataApi.saveFuncHistory({ funcType: 'json', summary: t(titleKey), inputText: input, outputText: output })
+    } catch (cause) {
+      const message = jsonErrorText(cause, t)
+      setNotice({ raw: message })
+      recordOperation(t(titleKey), message, 'error', {
+        inputText: metrics.content, metadata: { indent, sortKeys, ignoreCase, checkDuplicateKeys, wrap, jsonPath, className }
+      })
+    }
+  }
+
+  function runInputConversion(): void {
+    if (!inputConversion) return
+    const summaryKey = inputConversion === 'xmlToJson' ? 'history.toJson' : 'history.beanToJson'
+    try {
+      const output = inputConversion === 'xmlToJson' ? xmlToJson(conversionInput) : javaBeanToJson(conversionInput)
+      replaceDocument(output, { raw: t(summaryKey) })
+      recordOperation(t(summaryKey), t('operation.content', { length: conversionInput.length }), 'success', {
+        inputText: conversionInput, outputText: output, metadata: { indent, sortKeys, className }
+      })
+      void localDataApi.saveFuncHistory({ funcType: 'json', summary: t(summaryKey), inputText: conversionInput, outputText: output })
+      setInputConversion(null)
+      setConversionInput('')
+    } catch (cause) {
+      const message = jsonErrorText(cause, t)
+      setNotice({ raw: message })
+      recordOperation(t(summaryKey), message, 'error', { inputText: conversionInput, metadata: { indent, className } })
+    }
+  }
+
+  function runTransform(transform: () => string, success: JsonMessageKey, summary?: JsonMessageKey): void {
     try {
       const input = metrics.content
       const output = transform()
@@ -597,6 +699,8 @@ export function JsonToolSurface() {
       recordOperation(t(success), t('operation.content', { length: input.length }), 'success', {
         inputText: input, outputText: output, metadata: { indent, sortKeys, ignoreCase, checkDuplicateKeys, wrap, jsonPath, className }
       })
+      const summaryKey = summary ?? jsonHistorySummary[success]
+      if (summaryKey) void localDataApi.saveFuncHistory({ funcType: 'json', summary: t(summaryKey), inputText: input, outputText: output })
     } catch (cause) {
       const message = jsonErrorText(cause, t)
       setNotice({ raw: message })
@@ -611,7 +715,7 @@ export function JsonToolSurface() {
       const file = await userFilesApi.pickText()
       if (!file) return
       const content = file.name.toLocaleLowerCase().endsWith('.xml')
-        ? xmlToJson(file.content, indent)
+        ? xmlToJson(file.content)
         : file.content
       replaceDocument(content, { key: 'notice.imported', values: { name: file.name } })
       recordOperation(t('operation.import'), `${file.name} · ${content.length}`, 'success', {
@@ -641,10 +745,12 @@ export function JsonToolSurface() {
     try {
       const output = queryJsonPath(metrics.content, jsonPath) ?? t('path.noMatch')
       setPathResult(output)
-      setNotice({ key: 'notice.pathDone' })
+      setOutputDialog({ title: t('history.query'), value: output })
+      setNotice({ raw: t('history.query') })
       recordOperation(t('action.query'), `${jsonPath} · ${output.length}`, 'success', {
         inputText: metrics.content, outputText: output, metadata: { operation: 'jsonPath', jsonPath, indent, sortKeys, wrap }
       })
+      void localDataApi.saveFuncHistory({ funcType: 'json', summary: t('history.query'), inputText: metrics.content, outputText: output })
     } catch (cause) {
       const message = jsonErrorText(cause, t)
       setPathResult(message)
@@ -1000,7 +1106,7 @@ export function JsonToolSurface() {
           ? vaultDocument.fingerprint
           : (await vaultApi.read(selected.path)).fingerprint
         : null
-      const removed = await vaultApi.deleteEntry(
+      await vaultApi.deleteEntry(
         selected.path,
         expectedFingerprint
       )
@@ -1008,9 +1114,9 @@ export function JsonToolSurface() {
         || (selected.kind === 'folder' && vaultDocument?.relativePath.startsWith(`${selected.path}/`))
       if (removesOpenDocument) {
         setVaultDocument(undefined)
-        replaceDocument('', { key: 'notice.recovered', values: { path: removed.recoveryPath } })
+        replaceDocument('', { key: 'notice.recovered' })
       } else {
-        setNotice({ key: 'notice.recovered', values: { path: removed.recoveryPath } })
+        setNotice({ key: 'notice.recovered' })
       }
       setVaultSelection(undefined)
       recordJsonVaultActivity('Delete JSON Vault entry')
@@ -1163,7 +1269,7 @@ export function JsonToolSurface() {
           className="secondary-button"
           type="button"
           onClick={() => runTransform(
-            () => formatJson(metrics.content, { indent, sortKeys, ignoreCase, checkDuplicateKeys }),
+            () => formatJson(metrics.content, { indent: 2, sortKeys: false, checkDuplicateKeys: false }),
             'notice.formatted'
           )}
         >
@@ -1176,33 +1282,7 @@ export function JsonToolSurface() {
         >
           <UnfoldHorizontal />{t('action.minify')}
         </button>
-        <label className="json-toolbar__select">
-          {t('option.indent')}
-          <select
-            value={indent}
-            onChange={(event) => setIndent(Number(event.target.value) as 2 | 4 | 8)}
-          >
-            <option value={2}>2</option>
-            <option value={4}>4</option>
-            <option value={8}>8</option>
-          </select>
-        </label>
-        <label className="json-toolbar__check">
-          <input
-            type="checkbox"
-            checked={sortKeys}
-            onChange={(event) => setSortKeys(event.target.checked)}
-          />
-          {t('option.sortKeys')}
-        </label>
-        <label className="json-toolbar__check" title={t('option.ignoreCase')}>
-          <input type="checkbox" checked={ignoreCase} onChange={(event) => setIgnoreCase(event.target.checked)} />
-          Aa
-        </label>
-        <label className="json-toolbar__check" title={t('option.duplicateKeys')}>
-          <input type="checkbox" checked={checkDuplicateKeys} onChange={(event) => setCheckDuplicateKeys(event.target.checked)} />
-          {t('analysis.duplicates')}
-        </label>
+        <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('action.history')}</button>
         <button className="secondary-button" type="button" onClick={() => setWrap((value) => !value)}>
           <WrapText />{wrap ? t('action.wrapOff') : t('action.wrapOn')}
         </button>
@@ -1224,11 +1304,11 @@ export function JsonToolSurface() {
             <button type="button" onClick={() => runTransform(() => unescapeJsonString(metrics.content), 'notice.unescaped')}><CodeXml />{t('action.unescape')}</button>
             <button type="button" onClick={() => runTransform(() => escapeJavaString(metrics.content), 'notice.escapedText')}><Braces />{t('action.escapeText')}</button>
             <button type="button" onClick={() => runTransform(() => unescapeJsonText(metrics.content), 'notice.unescapedText')}><CodeXml />{t('action.unescapeText')}</button>
-            <button type="button" onClick={() => runTransform(() => swapJsonKeysAndValues(metrics.content, indent), 'notice.swapped')}><ArrowLeftRight />{t('action.swap')}</button>
-            <button type="button" onClick={() => runTransform(() => jsonToXml(metrics.content), 'notice.toXml')}><CodeXml />{t('action.toXml')}</button>
-            <button type="button" onClick={() => runTransform(() => xmlToJson(metrics.content, indent), 'notice.toJson')}><Braces />{t('action.toJson')}</button>
-            <button type="button" onClick={() => runTransform(() => jsonToJavaBean(metrics.content, className), 'notice.toBean')}><CodeXml />{t('action.jsonToBean')}</button>
-            <button type="button" onClick={() => runTransform(() => javaBeanToJson(metrics.content), 'notice.beanToJson')}><Braces />{t('action.beanToJson')}</button>
+            <button type="button" onClick={() => runTransform(() => swapJsonKeysAndValues(metrics.content), 'notice.swapped')}><ArrowLeftRight />{t('action.swap')}</button>
+            <button type="button" onClick={() => showOutput(() => jsonToXml(metrics.content), 'history.toXml')}><CodeXml />{t('action.toXml')}</button>
+            <button type="button" onClick={() => { setConversionInput(''); setInputConversion('xmlToJson') }}><Braces />{t('action.toJson')}</button>
+            <button type="button" onClick={() => showOutput(() => jsonToJavaBean(metrics.content, className), 'history.toBean')}><CodeXml />{t('action.jsonToBean')}</button>
+            <button type="button" onClick={() => { setConversionInput(''); setInputConversion('beanToJson') }}><Braces />{t('action.beanToJson')}</button>
           </div>
         </details>
         <button
@@ -1409,18 +1489,30 @@ export function JsonToolSurface() {
 
           {!!duplicates.length && <div className="json-duplicate-list" role="alert">{duplicates.map((path) => <code key={path}>{path}</code>)}</div>}
 
+          <section className="json-inspector-format">
+            <h2>{t('format.title')}</h2>
+            <label className="json-path-field">
+              {t('option.indent')}
+              <select value={indent} onChange={(event) => setIndent(Number(event.target.value) as 2 | 4)}>
+                <option value={2}>2</option>
+                <option value={4}>4</option>
+              </select>
+            </label>
+            <label className="json-toolbar__check"><input type="checkbox" checked={sortKeys} onChange={(event) => setSortKeys(event.target.checked)} />{t('option.sortKeys')}</label>
+            <label className="json-toolbar__check"><input type="checkbox" checked={ignoreCase} onChange={(event) => setIgnoreCase(event.target.checked)} />{t('option.ignoreCase')}</label>
+            <label className="json-toolbar__check"><input type="checkbox" checked={checkDuplicateKeys} onChange={(event) => setCheckDuplicateKeys(event.target.checked)} />{t('option.duplicateKeys')}</label>
+            <button className="secondary-button" type="button" onClick={() => runTransform(
+              () => formatJson(metrics.content, { indent, sortKeys, ignoreCase, checkDuplicateKeys }),
+              'notice.formatted',
+              'format.apply'
+            )}><Sparkles size={14} />{t('format.apply')}</button>
+          </section>
           <label className="json-path-field">
             {t('bean.className')}
             <input value={className} spellCheck={false} onChange={(event) => setClassName(event.target.value)} />
           </label>
 
-          <label className="json-path-field">
-            {t('path.picker')}
-            <select value={pathEntries.some((entry) => entry.path === jsonPath) ? jsonPath : ''} onChange={(event) => setJsonPath(event.target.value)}>
-              <option value="">—</option>
-              {pathEntries.map((entry) => <option key={entry.path} value={entry.path}>{`${'· '.repeat(entry.depth)}${entry.label}`}</option>)}
-            </select>
-          </label>
+          <button className="secondary-button" type="button" onClick={() => setPathPickerOpen(true)}>{t('path.picker')}</button>
 
           <label className="json-path-field">
             JSONPath
@@ -1541,6 +1633,35 @@ export function JsonToolSurface() {
       {reportError && (
         <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>
       )}
+      {pathPickerOpen && <JsonPathPicker entries={pathEntries} selectedPath={jsonPath} onClose={() => setPathPickerOpen(false)} onChoose={(path) => { setJsonPath(path); setNotice({ key: 'notice.pathApplied' }); setPathPickerOpen(false) }} />}
+      {outputDialog && (
+        <section className="http-history-modal func-history-modal" role="dialog" aria-modal="true" aria-label={outputDialog.title}>
+          <div>
+            <header><div><strong>{outputDialog.title}</strong></div><button type="button" aria-label={t('find.close')} onClick={() => setOutputDialog(null)}><X /></button></header>
+            <label>{t('dialog.output')}<textarea readOnly spellCheck={false} value={outputDialog.value} /></label>
+            <footer>
+              <button type="button" onClick={() => void clipboardApi.writeText(outputDialog.value)}>{t('action.copy')}</button>
+              <button type="button" onClick={() => { replaceDocument(outputDialog.value, { raw: outputDialog.title }); setOutputDialog(null) }}>{t('dialog.useOutput')}</button>
+            </footer>
+          </div>
+        </section>
+      )}
+      {inputConversion && (
+        <section className="http-history-modal func-history-modal" role="dialog" aria-modal="true" aria-label={t(inputConversion === 'xmlToJson' ? 'history.toJson' : 'history.beanToJson')}>
+          <div>
+            <header><div><strong>{t(inputConversion === 'xmlToJson' ? 'history.toJson' : 'history.beanToJson')}</strong></div><button type="button" aria-label={t('dialog.cancel')} onClick={() => setInputConversion(null)}><X /></button></header>
+            <label>{t('dialog.input')}<textarea spellCheck={false} value={conversionInput} onChange={(event) => setConversionInput(event.target.value)} /></label>
+            <footer>
+              <button type="button" onClick={() => setInputConversion(null)}>{t('dialog.cancel')}</button>
+              <button type="button" onClick={runInputConversion}>{t('dialog.run')}</button>
+            </footer>
+          </div>
+        </section>
+      )}
+      {historyOpen && <FuncHistoryDialog funcType="json" onClose={() => setHistoryOpen(false)} onApply={(record) => {
+        replaceDocument(record.outputText || record.inputText, { key: 'notice.ready' })
+        setHistoryOpen(false)
+      }} />}
     </main>
   )
 }

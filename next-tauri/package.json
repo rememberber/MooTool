@@ -1,6 +1,6 @@
 {
   "name": "mootool-next-tauri",
-  "version": "0.1.0-rc.2",
+  "version": "0.1.0-rc.3",
   "private": true,
   "description": "MooTool Next Tauri — an independent Tauri desktop product.",
   "license": "MIT",
@@ -71,6 +71,7 @@
     "cronstrue": "^3.24.0",
     "crypto-js": "^4.2.0",
     "diff": "^9.0.0",
+    "fast-xml-parser": "5.12.1",
     "hi-base32": "^0.5.1",
     "iconv-lite": "^0.7.3",
     "js-beautify": "^2.0.3",

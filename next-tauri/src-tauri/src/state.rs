@@ -126,12 +126,11 @@ impl ToolWebviewManager {
         {
             return;
         }
-        if let Some(expected) = &state.stress_expected_session_id {
-            if expected != &report.session_id
-                || state.stress_expected_state_digest != report.state_digest
-            {
-                state.last_stress_passed = Some(false);
-            }
+        if let Some(expected) = &state.stress_expected_session_id
+            && (expected != &report.session_id
+                || state.stress_expected_state_digest != report.state_digest)
+        {
+            state.last_stress_passed = Some(false);
         }
 
         state.session_id = Some(report.session_id);

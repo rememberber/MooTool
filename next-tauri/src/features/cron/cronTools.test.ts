@@ -9,17 +9,17 @@ import {
 
 describe('Cron tools', () => {
   it('builds and splits Quartz expressions with an optional year', () => {
-    expect(buildCron(defaultCronFields)).toBe('0 0 9 ? * MON-FRI')
+    expect(buildCron(defaultCronFields)).toBe('0 * * * * ?')
     expect(splitCron('0 30 8 ? * MON-FRI 2027')).toEqual({
       second: '0',
       minute: '30',
       hour: '8',
       day: '?',
       month: '*',
-      week: 'MON-FRI',
+      week: '2-6',
       year: '2027'
     })
-    expect(() => splitCron('* * *')).toThrow('CRON_TOOL_fieldCount')
+    expect(() => splitCron('* * *')).toThrow('Cron requires Linux 5 fields or Quartz 6/7 fields')
   })
 
   it('calculates deterministic future runs in the requested timezone', () => {
@@ -52,6 +52,8 @@ describe('Cron tools', () => {
     )[0]).toBe('2026-08-03 09:00:00 GMT+8')
     expect(nextCronRuns('0 0 9 L-3 * ?', 'UTC', 1, new Date('2026-02-01T00:00:00Z'))[0]).toContain('2026-02-25 09:00:00')
     expect(nextCronRuns('0 0 9 31W 2 ?', 'UTC', 1, new Date('2026-02-01T00:00:00Z'))).toEqual([])
-    expect(() => nextCronRuns('0 0 9 L-31 * ?', 'UTC', 1, new Date('2026-02-01T00:00:00Z'))).toThrow('CRON_TOOL_lastOffset')
+    expect(nextCronRuns('0 0 0 31 12 ? 2026', 'UTC', 10, new Date('2026-01-01T00:00:00Z'))).toHaveLength(1)
+    expect(nextCronRuns('0 0 0 1 1 ? 2005', 'UTC', 10, new Date('2026-01-01T00:00:00Z'))).toEqual([])
+    expect(() => nextCronRuns('0 0 9 L-31 * ?', 'UTC', 1, new Date('2026-02-01T00:00:00Z'))).toThrow('Invalid last-day offset')
   })
 })

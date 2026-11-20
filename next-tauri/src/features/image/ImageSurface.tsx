@@ -62,6 +62,7 @@ import {
   type ImageFormat,
   type WatermarkPosition
 } from './imageTools'
+import { claimScreenAction, subscribeScreenAction } from '../../app/screenTrayAction'
 import { imageMessages } from './imageMessages'
 
 type ImageMessageKey = LocalizedMessageKey<typeof imageMessages>
@@ -107,13 +108,13 @@ export function ImageSurface() {
   const [outputMode, setOutputMode] = useState<ImageOutputMode>('keep')
   const [base64Input, setBase64Input] = useState('')
   const [base64DataUrl, setBase64DataUrl] = useState(true)
-  const [quality, setQuality] = useState(0.82)
+  const [quality, setQuality] = useState(0.8)
   const [scale, setScale] = useState(1)
   const [format, setFormat] = useState<ImageFormat>('auto')
   const [watermarkText, setWatermarkText] = useState('MooTool')
-  const [watermarkOpacity, setWatermarkOpacity] = useState(0.36)
+  const [watermarkOpacity, setWatermarkOpacity] = useState(0.5)
   const [watermarkColor, setWatermarkColor] = useState('#FFFFFF')
-  const [watermarkSize, setWatermarkSize] = useState(36)
+  const [watermarkSize, setWatermarkSize] = useState<'auto' | 'small' | 'medium' | 'large'>('auto')
   const [watermarkPosition, setWatermarkPosition] = useState<WatermarkPosition>('bottom-right')
   const [watermarkDiagonal, setWatermarkDiagonal] = useState(false)
   const [vectorizeOptions, setVectorizeOptions] = useState<ImageVectorizeOptions>({
@@ -312,6 +313,13 @@ export function ImageSurface() {
       setBusy(false)
     }
   }
+
+  const beginCaptureRef = useRef(beginCapture)
+  beginCaptureRef.current = beginCapture
+  useEffect(() => subscribeScreenAction((request) => {
+    if (request.kind !== 'capture' || !claimScreenAction(request)) return
+    void beginCaptureRef.current('save')
+  }), [])
 
   async function importBase64() {
     setBusy(true)
@@ -668,7 +676,7 @@ export function ImageSurface() {
               <OutputMode value={outputMode} onChange={setOutputMode} />
               <button className="primary-button" type="button" disabled={busy || !resizeReady} onClick={() => void resizeSelected()}>{t('resize.start')}</button>
             </> : panel === 'compress' ? <>
-              <label>{t('compress.quality')} <input type="range" min="5" max="100" value={Math.round(quality * 100)} onChange={(event) => setQuality(Number(event.target.value) / 100)} /><span>{Math.round(quality * 100)}%</span></label>
+              <label>{t('compress.quality')} <input type="range" min="10" max="100" value={Math.round(quality * 100)} onChange={(event) => setQuality(Number(event.target.value) / 100)} /><span>{Math.round(quality * 100)}%</span></label>
               <label>{t('compress.scale')} <input type="range" min="10" max="100" value={Math.round(scale * 100)} onChange={(event) => setScale(Number(event.target.value) / 100)} /><span>{Math.round(scale * 100)}%</span></label>
               <label>{t('compress.format')} <select value={format} onChange={(event) => setFormat(event.target.value as ImageFormat)}><option value="auto">{t('compress.auto')}</option><option value="png">PNG</option><option value="jpeg">JPEG</option></select></label>
               <OutputMode value={outputMode} onChange={setOutputMode} />
@@ -676,8 +684,8 @@ export function ImageSurface() {
             </> : <>
               <label>{t('watermark.text')} <input value={watermarkText} onChange={(event) => setWatermarkText(event.target.value)} /></label>
               <label>{t('watermark.color')} <input type="color" value={watermarkColor} onChange={(event) => setWatermarkColor(event.target.value)} /></label>
-              <label>{t('watermark.opacity')} <input type="range" min="1" max="100" value={Math.round(watermarkOpacity * 100)} onChange={(event) => setWatermarkOpacity(Number(event.target.value) / 100)} /><span>{Math.round(watermarkOpacity * 100)}%</span></label>
-              <label>{t('watermark.fontSize')} <input type="number" min="12" max="200" value={watermarkSize} onChange={(event) => setWatermarkSize(Number(event.target.value))} /></label>
+              <label>{t('watermark.opacity')} <input type="range" min="5" max="100" value={Math.round(watermarkOpacity * 100)} onChange={(event) => setWatermarkOpacity(Number(event.target.value) / 100)} /><span>{Math.round(watermarkOpacity * 100)}%</span></label>
+              <label>{t('watermark.fontSize')} <select value={watermarkSize} onChange={(event) => setWatermarkSize(event.target.value as typeof watermarkSize)}>{(['auto', 'small', 'medium', 'large'] as const).map((size) => <option key={size} value={size}>{t(`watermark.font.${size}`)}</option>)}</select></label>
               <label>{t('watermark.position')} <select value={watermarkPosition} onChange={(event) => setWatermarkPosition(event.target.value as WatermarkPosition)}><option value="bottom-right">{t('watermark.bottomRight')}</option><option value="bottom-left">{t('watermark.bottomLeft')}</option><option value="top-right">{t('watermark.topRight')}</option><option value="top-left">{t('watermark.topLeft')}</option><option value="center">{t('watermark.center')}</option><option value="tile">{t('watermark.tile')}</option></select></label>
               <label><input type="checkbox" checked={watermarkDiagonal} onChange={(event) => setWatermarkDiagonal(event.target.checked)} />{t('watermark.diagonal')}</label>
               <OutputMode value={outputMode} onChange={setOutputMode} />

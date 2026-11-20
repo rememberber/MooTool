@@ -2,8 +2,8 @@
 
 const MD5_SHIFTS: [u32; 64] = [
     7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9,
-    14, 20, 5, 9, 14, 20, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 6, 10, 15, 21,
-    6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21,
+    14, 20, 5, 9, 14, 20, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 6, 10, 15,
+    21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21,
 ];
 
 const MD5_K: [u32; 64] = [
@@ -62,7 +62,7 @@ impl StreamingDigest for Md5 {
         let bits = self.length.wrapping_mul(8).to_le_bytes();
         let tail_len = tail.len();
         tail[tail_len - 8..].copy_from_slice(&bits);
-        for chunk in tail.chunks_exact(64) {
+        for chunk in tail.as_chunks::<64>().0 {
             md5_block(&mut self.state, chunk);
         }
         hex_le(&self.state)
@@ -103,7 +103,13 @@ impl StreamingDigest for Sha1 {
     }
 
     fn finalize(mut self) -> String {
-        finish_big_endian(&mut self.state, &self.buffer, self.offset, self.length, sha1_block);
+        finish_big_endian(
+            &mut self.state,
+            &self.buffer,
+            self.offset,
+            self.length,
+            sha1_block,
+        );
         hex_be(&self.state)
     }
 }
@@ -145,7 +151,13 @@ impl StreamingDigest for Sm3 {
     }
 
     fn finalize(mut self) -> String {
-        finish_big_endian(&mut self.state, &self.buffer, self.offset, self.length, sm3_block);
+        finish_big_endian(
+            &mut self.state,
+            &self.buffer,
+            self.offset,
+            self.length,
+            sm3_block,
+        );
         hex_be(&self.state)
     }
 }
@@ -163,7 +175,7 @@ fn finish_big_endian<const N: usize>(
     let bits = length.wrapping_mul(8).to_be_bytes();
     let tail_len = tail.len();
     tail[tail_len - 8..].copy_from_slice(&bits);
-    for chunk in tail.chunks_exact(64) {
+    for chunk in tail.as_chunks::<64>().0 {
         compress(state, chunk);
     }
 }
@@ -210,15 +222,16 @@ fn sha1_block(state: &mut [u32; 5], block: &[u8]) {
         words[index] = u32::from_be_bytes(block[index * 4..index * 4 + 4].try_into().unwrap());
     }
     for index in 16..80 {
-        words[index] = (words[index - 3] ^ words[index - 8] ^ words[index - 14] ^ words[index - 16])
-            .rotate_left(1);
+        words[index] =
+            (words[index - 3] ^ words[index - 8] ^ words[index - 14] ^ words[index - 16])
+                .rotate_left(1);
     }
     let mut a = state[0];
     let mut b = state[1];
     let mut c = state[2];
     let mut d = state[3];
     let mut e = state[4];
-    for index in 0..80 {
+    for (index, word) in words.iter().enumerate() {
         let (constant, mix) = if index < 20 {
             (0x5a827999, (b & c) | (!b & d))
         } else if index < 40 {
@@ -233,7 +246,7 @@ fn sha1_block(state: &mut [u32; 5], block: &[u8]) {
             .wrapping_add(mix)
             .wrapping_add(e)
             .wrapping_add(constant)
-            .wrapping_add(words[index]);
+            .wrapping_add(*word);
         e = d;
         d = c;
         c = b.rotate_left(30);
@@ -276,10 +289,24 @@ fn sm3_block(state: &mut [u32; 8], block: &[u8]) {
             .wrapping_add(constant.rotate_left((index % 32) as u32))
             .rotate_left(7);
         let ss2 = ss1 ^ a.rotate_left(12);
-        let ff = if index < 16 { a ^ b ^ c } else { (a & b) | (a & c) | (b & c) };
-        let gg = if index < 16 { e ^ f ^ g } else { (e & f) | (!e & g) };
-        let tt1 = ff.wrapping_add(d).wrapping_add(ss2).wrapping_add(mixed[index]);
-        let tt2 = gg.wrapping_add(h).wrapping_add(ss1).wrapping_add(words[index]);
+        let ff = if index < 16 {
+            a ^ b ^ c
+        } else {
+            (a & b) | (a & c) | (b & c)
+        };
+        let gg = if index < 16 {
+            e ^ f ^ g
+        } else {
+            (e & f) | (!e & g)
+        };
+        let tt1 = ff
+            .wrapping_add(d)
+            .wrapping_add(ss2)
+            .wrapping_add(mixed[index]);
+        let tt2 = gg
+            .wrapping_add(h)
+            .wrapping_add(ss1)
+            .wrapping_add(words[index]);
         d = c;
         c = b.rotate_left(9);
         b = a;
@@ -304,11 +331,19 @@ fn p1(value: u32) -> u32 {
 }
 
 fn hex_le(words: &[u32]) -> String {
-    words.iter().flat_map(|word| word.to_le_bytes()).map(|byte| format!("{byte:02x}")).collect()
+    words
+        .iter()
+        .flat_map(|word| word.to_le_bytes())
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
 }
 
 fn hex_be(words: &[u32]) -> String {
-    words.iter().flat_map(|word| word.to_be_bytes()).map(|byte| format!("{byte:02x}")).collect()
+    words
+        .iter()
+        .flat_map(|word| word.to_be_bytes())
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
 }
 
 #[cfg(test)]

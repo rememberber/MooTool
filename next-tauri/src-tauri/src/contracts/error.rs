@@ -99,10 +99,10 @@ impl std::error::Error for AppError {}
 
 pub fn redact_for_log(value: &str) -> String {
     let mut result = value.replace(['\n', '\r'], " ");
-    if let Ok(home) = std::env::var("HOME") {
-        if !home.is_empty() {
-            result = result.replace(&home, "~");
-        }
+    if let Ok(home) = std::env::var("HOME")
+        && !home.is_empty()
+    {
+        result = result.replace(&home, "~");
     }
     for marker in [
         "authorization=",

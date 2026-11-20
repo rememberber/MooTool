@@ -63,14 +63,7 @@ pub fn export_product_backup(
         return Err("backup destination cannot be inside the configured JSON Vault".into());
     }
 
-    write_product_backup(
-        &app,
-        &local_data,
-        &settings,
-        &vault,
-        &destination,
-        &app_data,
-    )
+    write_product_backup(&app, &local_data, &settings, &vault, &destination)
 }
 
 pub(crate) fn create_internal_backup(
@@ -85,16 +78,7 @@ pub(crate) fn create_internal_backup(
     let destination = destination
         .canonicalize()
         .map_err(|error| format!("failed to canonicalize migration backup directory: {error}"))?;
-    let app_data = app
-        .path()
-        .app_data_dir()
-        .map_err(|error| format!("failed to resolve Tauri data directory: {error}"))?;
-    fs::create_dir_all(&app_data)
-        .map_err(|error| format!("failed to initialize Tauri data directory: {error}"))?;
-    let app_data = app_data
-        .canonicalize()
-        .map_err(|error| format!("failed to canonicalize Tauri data directory: {error}"))?;
-    write_product_backup(app, local_data, settings, vault, &destination, &app_data)
+    write_product_backup(app, local_data, settings, vault, &destination)
 }
 
 fn write_product_backup(
@@ -103,7 +87,6 @@ fn write_product_backup(
     settings: &SettingsRepository,
     vault: &VaultRepository,
     destination: &Path,
-    app_data: &Path,
 ) -> AppResult<BackupExportResult> {
     let timestamp = now_millis();
     let backup_path = unique_child(
@@ -129,7 +112,7 @@ fn write_product_backup(
             .map_err(|error| format!("failed to write backup settings: {error}"))?;
 
         let image_assets = local_data.list_image_assets()?;
-        let source_images = app_data.join("images");
+        let source_images = crate::commands::settings::images_directory(app, &settings_snapshot)?;
         for asset in &image_assets {
             validate_backup_name(&asset.name)?;
             copy_regular_file(
@@ -287,7 +270,7 @@ pub fn import_product_backup(
     )
     .map_err(|error| format!("failed to write rollback settings: {error}"))?;
 
-    let current_images = app_data.join("images");
+    let current_images = crate::commands::settings::images_directory(&app, &imported_settings)?;
     let mut current_images_preserved = false;
     let mut staged_images_installed = false;
     let mut staged_vault_installed = false;

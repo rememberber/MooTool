@@ -36,14 +36,19 @@ fn read_platform() -> PlatformHardware {
     #[cfg(target_os = "macos")]
     {
         let model = command_text("sysctl", &["-n", "hw.model"]).unwrap_or_default();
-        let ioreg = command_text("ioreg", &["-rd1", "-c", "IOPlatformExpertDevice"]).unwrap_or_default();
-        return PlatformHardware {
-            manufacturer: if model.is_empty() { String::new() } else { "Apple Inc.".into() },
+        let ioreg =
+            command_text("ioreg", &["-rd1", "-c", "IOPlatformExpertDevice"]).unwrap_or_default();
+        PlatformHardware {
+            manufacturer: if model.is_empty() {
+                String::new()
+            } else {
+                "Apple Inc.".into()
+            },
             model,
             serial: ioreg_string(&ioreg, "IOPlatformSerialNumber"),
             performance_cores: command_u32("sysctl", &["-n", "hw.perflevel0.logicalcpu"]),
             efficiency_cores: command_u32("sysctl", &["-n", "hw.perflevel1.logicalcpu"]),
-        };
+        }
     }
     #[cfg(target_os = "linux")]
     {
@@ -79,21 +84,33 @@ fn read_platform() -> PlatformHardware {
 
 pub fn mask_serial(value: &str) -> String {
     let value = value.trim();
-    if value.is_empty() || value.eq_ignore_ascii_case("unknown") || value.eq_ignore_ascii_case("none") || value.eq_ignore_ascii_case("default string") {
+    if value.is_empty()
+        || value.eq_ignore_ascii_case("unknown")
+        || value.eq_ignore_ascii_case("none")
+        || value.eq_ignore_ascii_case("default string")
+    {
         return String::new();
     }
     let chars = value.chars().collect::<Vec<_>>();
     if chars.len() <= 4 {
         return value.to_string();
     }
-    format!("{}****{}", chars[..2].iter().collect::<String>(), chars[chars.len() - 2..].iter().collect::<String>())
+    format!(
+        "{}****{}",
+        chars[..2].iter().collect::<String>(),
+        chars[chars.len() - 2..].iter().collect::<String>()
+    )
 }
 
 pub fn ioreg_string(text: &str, key: &str) -> String {
     let marker = format!("\"{key}\"");
     for line in text.lines() {
-        let Some(index) = line.find(&marker) else { continue };
-        let Some(value) = line[index + marker.len()..].split('=').nth(1) else { continue };
+        let Some(index) = line.find(&marker) else {
+            continue;
+        };
+        let Some(value) = line[index + marker.len()..].split('=').nth(1) else {
+            continue;
+        };
         return value.trim().trim_matches('"').trim().to_string();
     }
     String::new()
@@ -124,11 +141,17 @@ fn zoneinfo_name(path: &Path) -> Option<String> {
 
 fn active_memory_bytes() -> Option<u64> {
     #[cfg(target_os = "macos")]
-    { macos_active_memory() }
+    {
+        macos_active_memory()
+    }
     #[cfg(target_os = "linux")]
-    { linux_active_memory() }
+    {
+        linux_active_memory()
+    }
     #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-    { None }
+    {
+        None
+    }
 }
 
 #[cfg(target_os = "macos")]
@@ -142,7 +165,9 @@ fn macos_active_memory() -> Option<u64> {
 fn linux_active_memory() -> Option<u64> {
     let text = fs::read_to_string("/proc/meminfo").ok()?;
     for line in text.lines() {
-        let Some(value) = line.strip_prefix("Active:") else { continue };
+        let Some(value) = line.strip_prefix("Active:") else {
+            continue;
+        };
         let kb = value.split_whitespace().next()?.parse::<u64>().ok()?;
         return Some(kb.saturating_mul(1024));
     }
@@ -153,8 +178,15 @@ fn linux_active_memory() -> Option<u64> {
 fn vm_stat_pages(label: &str) -> Option<u64> {
     let text = command_text("vm_stat", &[])?;
     for line in text.lines() {
-        let Some(value) = line.trim().strip_prefix(label) else { continue };
-        let digits = value.trim().trim_start_matches(':').trim().trim_end_matches('.').trim();
+        let Some(value) = line.trim().strip_prefix(label) else {
+            continue;
+        };
+        let digits = value
+            .trim()
+            .trim_start_matches(':')
+            .trim()
+            .trim_end_matches('.')
+            .trim();
         return digits.parse().ok();
     }
     None
@@ -169,14 +201,26 @@ fn dmi(name: &str) -> String {
 
 #[cfg(target_os = "windows")]
 fn registry_value(name: &str) -> String {
-    let Some(text) = command_text("reg", &["query", r"HKLM\HARDWARE\DESCRIPTION\System\BIOS", "/v", name]) else {
+    let Some(text) = command_text(
+        "reg",
+        &[
+            "query",
+            r"HKLM\HARDWARE\DESCRIPTION\System\BIOS",
+            "/v",
+            name,
+        ],
+    ) else {
         return String::new();
     };
-    text.lines().find_map(|line| {
-        let mut parts = line.split_whitespace();
-        if parts.next()? != name { return None; }
-        parts.nth(1).map(ToString::to_string)
-    }).unwrap_or_default()
+    text.lines()
+        .find_map(|line| {
+            let mut parts = line.split_whitespace();
+            if parts.next()? != name {
+                return None;
+            }
+            parts.nth(1).map(ToString::to_string)
+        })
+        .unwrap_or_default()
 }
 
 fn command_text(program: &str, args: &[&str]) -> Option<String> {
@@ -218,16 +262,30 @@ mod tests {
     #[test]
     fn reads_the_local_machine_without_a_full_serial() {
         let identity = machine_identity();
-        assert!(identity.time_zone.contains('/') || identity.time_zone.starts_with("UTC"), "{}", identity.time_zone);
+        assert!(
+            identity.time_zone.contains('/') || identity.time_zone.starts_with("UTC"),
+            "{}",
+            identity.time_zone
+        );
         if !identity.serial.is_empty() {
-            assert!(identity.serial.len() <= 4 || identity.serial.contains("****"), "{}", identity.serial);
+            assert!(
+                identity.serial.len() <= 4 || identity.serial.contains("****"),
+                "{}",
+                identity.serial
+            );
         }
         #[cfg(target_os = "macos")]
-        assert!(!identity.model.is_empty(), "macOS model should come from hw.model");
+        assert!(
+            !identity.model.is_empty(),
+            "macOS model should come from hw.model"
+        );
     }
 
     #[test]
     fn reads_a_zoneinfo_name() {
-        assert_eq!(zoneinfo_name(Path::new("/var/db/timezone/zoneinfo/Asia/Shanghai")).as_deref(), Some("Asia/Shanghai"));
+        assert_eq!(
+            zoneinfo_name(Path::new("/var/db/timezone/zoneinfo/Asia/Shanghai")).as_deref(),
+            Some("Asia/Shanghai")
+        );
     }
 }

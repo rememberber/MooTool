@@ -1,19 +1,29 @@
-import { ArrowLeft, Copy, Search, Star, WandSparkles, X } from 'lucide-react'
+import { ArrowLeft, Copy, FileInput, Save, Search, Star, WandSparkles, X } from 'lucide-react'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { homeTool, navigationToolCatalog, type ToolId } from '../../app/toolCatalog'
 import { useI18n } from '../../app/i18n'
 import { useLocalizedMessages, type LocalizedMessageKey } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import { localDataApi } from '../../platform/api/localDataApi'
+import { userFilesApi } from '../../platform/api/userFilesApi'
+import { vaultApi } from '../../platform/api/vaultApi'
 import { useSettings } from '../settings/SettingsProvider'
 import { commandActions, runCommandAction, searchCommandActions, type CommandAction, type CommandActionMatch } from './commandActions'
 import { commandPaletteMessages } from './commandPaletteMessages'
 import {
+  commandFileExtensions,
+  commandImportTarget,
+  commandNoteSyntax,
+  commandOutputFormat,
   loadCommandPaletteState,
   orderedCommandActions,
   saveCommandPaletteState,
+  syncTrayQuickActions,
+  uniqueSnippetPath,
   updateCommandPaletteState,
   type CommandActionId,
+  type CommandFileFormat,
   type CommandPaletteOperation,
   type CommandPaletteState,
   type CommandSection
@@ -21,6 +31,7 @@ import {
 
 interface CommandPaletteProps {
   open: boolean
+  actionRequest?: { actionId: CommandActionId; sequence: number } | null
   onClose(): void
   onOpenTool(toolId: ToolId): void
 }
@@ -30,7 +41,7 @@ type Result =
   | { kind: 'tool'; id: ToolId; label: string; detail: string; section?: 'tools' }
   | { kind: 'action'; match: CommandActionMatch; label: string; detail: string; section?: CommandSection }
 
-export function CommandPalette({ open, onClose, onOpenTool }: CommandPaletteProps) {
+export function CommandPalette({ open, actionRequest = null, onClose, onOpenTool }: CommandPaletteProps) {
   const { t: shell, toolTitle, groupTitle } = useI18n()
   const { t } = useLocalizedMessages(commandPaletteMessages)
   const { settings } = useSettings()
@@ -41,7 +52,11 @@ export function CommandPalette({ open, onClose, onOpenTool }: CommandPaletteProp
   const [preview, setPreview] = useState<{ actionId: CommandActionId; title: string; text: string } | null>(null)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [saved, setSaved] = useState('')
+  const [fileFormat, setFileFormat] = useState<CommandFileFormat>('text')
   const [error, setError] = useState('')
+  const handledRequest = useRef(0)
+  const runRequestedAction = useRef<(match: CommandActionMatch) => void>(() => undefined)
 
   const results = useMemo(() => {
     const tools = visibleTools(query, settings.layout.hiddenNavigationToolIds, toolTitle, groupTitle)
@@ -63,6 +78,7 @@ export function CommandPalette({ open, onClose, onOpenTool }: CommandPaletteProp
     setPreview(null)
     setError('')
     setCopied(false)
+    setSaved('')
     setPreferences(loadCommandPaletteState())
     window.requestAnimationFrame(() => inputRef.current?.focus())
   }, [open])
@@ -83,6 +99,14 @@ export function CommandPalette({ open, onClose, onOpenTool }: CommandPaletteProp
     return () => window.removeEventListener('keydown', closeOnEscape, true)
   }, [onClose, open, preview])
 
+  useEffect(() => {
+    if (!open || !actionRequest || handledRequest.current === actionRequest.sequence) return
+    handledRequest.current = actionRequest.sequence
+    const action = commandActions.find((item) => item.id === actionRequest.actionId)
+    if (!action) return
+    runRequestedAction.current({ action })
+  }, [actionRequest, open])
+
   if (!open) return null
 
   const selected = results[selectedIndex]
@@ -93,6 +117,10 @@ export function CommandPalette({ open, onClose, onOpenTool }: CommandPaletteProp
     setPreferences((current) => {
       const next = updateCommandPaletteState(current, operation)
       saveCommandPaletteState(next)
+      void syncTrayQuickActions(next, (id) => {
+        const action = commandActions.find((item) => item.id === id)
+        return action ? t(action.titleKey) : id
+      })
       return next
     })
   }
@@ -107,12 +135,70 @@ export function CommandPalette({ open, onClose, onOpenTool }: CommandPaletteProp
     setBusy(true)
     setError('')
     setCopied(false)
+    setSaved('')
     try {
       const text = await runCommandAction(match, readClipboardText, readClipboardHtml, Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC')
+      setFileFormat(commandOutputFormat(match.action.id))
       setPreview({ actionId: match.action.id, title: t(match.action.titleKey), text })
       applyPreference({ type: 'record', actionId: match.action.id })
     } catch (cause) {
       setError(actionError(cause, t))
+    } finally {
+      setBusy(false)
+    }
+  }
+  runRequestedAction.current = (requested) => { void chooseAction(requested) }
+
+  async function importResult(): Promise<void> {
+    if (!preview || busy) return
+    setBusy(true)
+    setError('')
+    try {
+      if (preview.text.length > 1_000_000) throw new Error('importFailed')
+      if (commandImportTarget(preview.actionId) === 'json') {
+        JSON.parse(preview.text)
+        const snapshot = await vaultApi.snapshot()
+        if (!snapshot.rootPath) throw new Error('importFailed')
+        await vaultApi.save({
+          relativePath: uniqueSnippetPath(snapshot.files.map((file) => file.relativePath)),
+          content: preview.text,
+          expectedFingerprint: null
+        })
+        onOpenTool('json')
+      } else {
+        const created = await localDataApi.createNote({
+          title: preview.title,
+          parentPath: '',
+          fontName: settings.editor.quickNoteFontName,
+          fontSize: settings.editor.quickNoteFontSize,
+          lineWrap: settings.editor.softWrap
+        })
+        await localDataApi.saveNote({ ...created, content: preview.text, syntax: commandNoteSyntax(preview.actionId) })
+        onOpenTool('quick-note')
+      }
+      onClose()
+    } catch {
+      setError(t('importFailed'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function saveResult(): Promise<void> {
+    if (!preview || busy) return
+    if (fileFormat === 'json') {
+      try { JSON.parse(preview.text) } catch { setError(t('invalidJsonSave')); return }
+    }
+    if (preview.text.length > 20 * 1024 * 1024) { setError(t('saveFailed')); return }
+    setBusy(true)
+    setError('')
+    setSaved('')
+    setCopied(false)
+    try {
+      const path = await userFilesApi.exportText(`clipboard.${commandFileExtensions[fileFormat]}`, preview.text)
+      if (path) setSaved(path)
+    } catch {
+      setError(t('saveFailed'))
     } finally {
       setBusy(false)
     }
@@ -161,8 +247,19 @@ export function CommandPalette({ open, onClose, onOpenTool }: CommandPaletteProp
           <div className="command-palette__preview">
             <textarea aria-label={t('preview')} readOnly value={preview.text} />
             <div className="command-palette__preview-actions">
-              <span role="status">{copied ? t('copied') : ''}</span>
-              <button type="button" onClick={() => void copyResult()}><Copy />{t('copy')}</button>
+              <span role="status">{copied ? t('copied') : saved ? t('saved') : ''}</span>
+              <button type="button" disabled={busy} onClick={() => void copyResult()}><Copy />{t('copy')}</button>
+              <button type="button" disabled={busy} onClick={() => void importResult()}><FileInput />{t(commandImportTarget(preview.actionId) === 'json' ? 'importJson' : 'importNote')}</button>
+              <label>
+                <span className="visually-hidden">{t('fileFormat')}</span>
+                <select aria-label={t('fileFormat')} value={fileFormat} disabled={busy} onChange={(event) => { setFileFormat(event.target.value as CommandFileFormat); setError(''); setSaved('') }}>
+                  <option value="text">.txt</option>
+                  <option value="markdown">.md</option>
+                  <option value="json">.json</option>
+                  <option value="html">.html</option>
+                </select>
+              </label>
+              <button type="button" disabled={busy} onClick={() => void saveResult()}><Save />{t('save')}</button>
             </div>
           </div>
         ) : (

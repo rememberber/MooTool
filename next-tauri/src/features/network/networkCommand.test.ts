@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatOpenPorts, formatPingRange, parseIpv4Range, parsePortSpec } from './networkCommand'
+import { classifyNetworkCommandError, formatOpenPorts, formatPingRange, parseIpv4Range, parsePortSpec } from './networkCommand'
 
 describe('network command specs', () => {
   it('expands a three-octet prefix to .1 through .254', () => {
@@ -22,5 +22,8 @@ describe('network command specs', () => {
 
   it('names open ports the same way as Electron', () => {
     expect(formatOpenPorts('127.0.0.1', [22, 80], [22])).toBe('Open TCP ports on 127.0.0.1: 1 / 2\n\n22/tcp open ssh')
+    expect(classifyNetworkCommandError('TIMEOUT')).toBe('TIMEOUT')
+    expect(classifyNetworkCommandError('INVALID_TARGET')).toBe('INVALID_TARGET')
+    expect(classifyNetworkCommandError('ping exited with code 2')).toBe('COMMAND_FAILED')
   })
 })

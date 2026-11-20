@@ -4,9 +4,10 @@ import type { HostApi, SystemHostsFile } from '../contracts/host'
 export const hostApi: HostApi = typeof window !== 'undefined' && window.__TAURI_INTERNALS__
   ? {
       readSystem: () => invoke<SystemHostsFile>('read_system_hosts'),
-      writeSystem: (content, expectedContent) => invoke<SystemHostsFile>('write_system_hosts', {
+      writeSystem: (content, expectedContent, activeHostId = null) => invoke<SystemHostsFile>('write_system_hosts', {
         content,
-        expectedContent
+        expectedContent,
+        activeHostId
       }),
       resolve: (host) => invoke<string[]>('resolve_host', { host })
     }

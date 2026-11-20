@@ -5,7 +5,7 @@ export interface UserTextFile {
 }
 
 export interface UserFilesApi {
-  pickText(): Promise<UserTextFile | null>
+  pickText(kind?: 'text' | 'source'): Promise<UserTextFile | null>
   exportText(defaultName: string, content: string): Promise<string | null>
   exportDataUrl(defaultName: string, dataUrl: string): Promise<string | null>
 }

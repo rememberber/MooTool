@@ -1,7 +1,10 @@
 use std::{
     collections::HashMap,
-    sync::{Arc, Mutex},
-    time::Duration,
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+    },
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use reqwest::{Client, Url, redirect::Policy};
@@ -18,16 +21,18 @@ use crate::{
     repositories::{local_data::LocalDataRepository, settings::SettingsRepository},
 };
 
-const MAX_TRANSLATION_CHARS: usize = 50_000;
 const GOOGLE_CHUNK_CHARS: usize = 1_800;
+const GOOGLE_CHUNK_CONCURRENCY: usize = 3;
+const PROVIDER_COOLDOWN_MS: u64 = 10 * 60 * 1_000;
 const TRANSLATION_USER_AGENT: &str =
-    "Mozilla/5.0 (MooTool Next Tauri) AppleWebKit/537.36 Safari/537.36";
+    "Mozilla/5.0 (MooTool Next) AppleWebKit/537.36 Chrome/138 Safari/537.36";
 
 #[derive(Clone, Debug)]
 struct BingSession {
     ig: String,
     key: String,
     token: String,
+    expires_at: u64,
     request_count: u32,
 }
 
@@ -35,6 +40,7 @@ struct BingSession {
 pub struct TranslationManager {
     active: Mutex<HashMap<String, Arc<Notify>>>,
     bing_session: tokio::sync::Mutex<Option<BingSession>>,
+    provider_cooldown_until: Mutex<HashMap<TranslationProvider, u64>>,
 }
 
 impl TranslationManager {
@@ -73,6 +79,26 @@ impl TranslationManager {
             false
         }
     }
+
+    fn should_skip_provider(&self, provider: TranslationProvider, now: u64) -> bool {
+        self.provider_cooldown_until
+            .lock()
+            .ok()
+            .and_then(|guard| guard.get(&provider).copied())
+            .is_some_and(|until| until > now)
+    }
+
+    fn mark_provider_failure(&self, provider: TranslationProvider, now: u64) {
+        if let Ok(mut guard) = self.provider_cooldown_until.lock() {
+            guard.insert(provider, now.saturating_add(PROVIDER_COOLDOWN_MS));
+        }
+    }
+
+    fn mark_provider_success(&self, provider: TranslationProvider) {
+        if let Ok(mut guard) = self.provider_cooldown_until.lock() {
+            guard.remove(&provider);
+        }
+    }
 }
 
 #[tauri::command]
@@ -92,13 +118,15 @@ pub async fn translate_text(
         execute_translation(&manager, &request, cancelled, &settings.snapshot().network).await;
     manager.finish(&request_id);
     let result = result?;
-    repository.save_translation_history(SaveTranslationHistoryInput {
+    if let Err(error) = repository.save_translation_history(SaveTranslationHistoryInput {
         source_text,
         target_text: result.text.clone(),
         source_lang,
         target_lang,
         translator_type: result.provider,
-    })?;
+    }) {
+        eprintln!("Failed to save translation history: {error}");
+    }
     Ok(result)
 }
 
@@ -149,11 +177,10 @@ async fn execute_translation(
     let client = client_builder
         .build()
         .map_err(|error| format!("failed to create translation client: {error}"))?;
-    let providers = match request.preferred_provider {
-        TranslationProvider::Google => vec![TranslationProvider::Google, TranslationProvider::Bing],
-        TranslationProvider::Bing => vec![TranslationProvider::Bing, TranslationProvider::Google],
-        TranslationProvider::DeepL => vec![TranslationProvider::DeepL],
-    };
+    let providers = translation_provider_order(
+        request.preferred_provider,
+        manager.should_skip_provider(request.preferred_provider, unix_millis()),
+    );
     let mut last_error = String::new();
     for provider in providers {
         let translated = match provider {
@@ -169,6 +196,7 @@ async fn execute_translation(
         };
         match translated {
             Ok(text) => {
+                manager.mark_provider_success(provider);
                 return Ok(TranslationResult {
                     request_id: request.request_id.clone(),
                     text,
@@ -177,7 +205,10 @@ async fn execute_translation(
                 });
             }
             Err(error) if error == "translation request cancelled" => return Err(error),
-            Err(error) => last_error = error,
+            Err(error) => {
+                manager.mark_provider_failure(provider, unix_millis());
+                last_error = error;
+            }
         }
     }
     Err(if last_error.is_empty() {
@@ -192,8 +223,7 @@ async fn translate_deepl(
     request: &TranslationRequest,
     cancelled: Arc<Notify>,
 ) -> Result<String, String> {
-    let key = super::secure_credentials::load_deepl_api_key()?
-        .unwrap_or_default();
+    let key = super::secure_credentials::load_deepl_api_key()?.unwrap_or_default();
     let key = key.trim();
     if key.is_empty() {
         return Err("DEEPL_KEY_REQUIRED".into());
@@ -287,41 +317,170 @@ async fn translate_google(
     cancelled: Arc<Notify>,
 ) -> Result<String, String> {
     let chunks = split_text(&request.text, GOOGLE_CHUNK_CHARS)?;
-    let mut output = String::new();
-    for chunk in chunks {
-        let mut url = Url::parse("https://translate.googleapis.com/translate_a/single")
-            .map_err(|error| format!("invalid Google translation endpoint: {error}"))?;
-        url.query_pairs_mut()
-            .append_pair("client", "gtx")
-            .append_pair("sl", google_language(&request.source_lang))
-            .append_pair("tl", google_language(&request.target_lang))
-            .append_pair("dt", "t")
-            .append_pair("q", &chunk);
-        let response = tokio::select! {
-            response = client.get(url).send() => response.map_err(|error| format!("Google translation failed: {error}"))?,
-            _ = cancelled.notified() => return Err("translation request cancelled".into()),
-        };
-        if !response.status().is_success() {
-            return Err(format!("Google translation HTTP {}", response.status()));
-        }
-        let payload = response
-            .json::<Value>()
-            .await
-            .map_err(|error| format!("invalid Google translation response: {error}"))?;
-        let segments = payload
-            .get(0)
-            .and_then(Value::as_array)
-            .ok_or_else(|| "Google returned no translation".to_string())?;
-        let translated = segments
-            .iter()
-            .filter_map(|segment| segment.get(0).and_then(Value::as_str))
-            .collect::<String>();
-        if translated.is_empty() {
-            return Err("Google returned no translation".into());
-        }
-        output.push_str(&translated);
+    if chunks.len() <= 1 {
+        return translate_google_chunk(
+            client,
+            chunks.first().map(String::as_str).unwrap_or(""),
+            &request.source_lang,
+            &request.target_lang,
+            cancelled.as_ref(),
+        )
+        .await;
     }
-    Ok(output)
+    let stop = Arc::new(StopFlag::new());
+    let parent = cancelled.clone();
+    let bridge_stop = stop.clone();
+    let bridge = tokio::spawn(async move {
+        parent.notified().await;
+        bridge_stop.cancel();
+    });
+    let next = Arc::new(AtomicUsize::new(0));
+    let results = Arc::new(Mutex::new(vec![String::new(); chunks.len()]));
+    let failure = Arc::new(Mutex::new(None::<String>));
+    let mut workers = Vec::with_capacity(GOOGLE_CHUNK_CONCURRENCY.min(chunks.len()));
+    for _ in 0..GOOGLE_CHUNK_CONCURRENCY.min(chunks.len()) {
+        let chunks = chunks.clone();
+        let next = next.clone();
+        let results = results.clone();
+        let failure = failure.clone();
+        let client = client.clone();
+        let source = request.source_lang.clone();
+        let target = request.target_lang.clone();
+        let stop = stop.clone();
+        workers.push(tokio::spawn(async move {
+            loop {
+                if failure
+                    .lock()
+                    .ok()
+                    .and_then(|guard| guard.clone())
+                    .is_some()
+                {
+                    break;
+                }
+                let index = next.fetch_add(1, Ordering::Relaxed);
+                if index >= chunks.len() {
+                    break;
+                }
+                match translate_google_chunk(
+                    &client,
+                    &chunks[index],
+                    &source,
+                    &target,
+                    stop.as_ref(),
+                )
+                .await
+                {
+                    Ok(text) => {
+                        if let Ok(mut guard) = results.lock() {
+                            guard[index] = text;
+                        }
+                    }
+                    Err(message) => {
+                        if let Ok(mut guard) = failure.lock()
+                            && guard.is_none()
+                        {
+                            *guard = Some(message);
+                        }
+                        break;
+                    }
+                }
+            }
+        }));
+    }
+    for worker in workers {
+        if let Err(error) = worker.await {
+            bridge.abort();
+            return Err(format!("Google translation failed: {error}"));
+        }
+    }
+    bridge.abort();
+    if let Some(message) = failure.lock().ok().and_then(|guard| guard.clone()) {
+        return Err(message);
+    }
+    results
+        .lock()
+        .map(|guard| guard.concat())
+        .map_err(|_| "Google translation failed".to_string())
+}
+
+async fn translate_google_chunk(
+    client: &Client,
+    chunk: &str,
+    source_lang: &str,
+    target_lang: &str,
+    cancelled: &impl WaitForCancel,
+) -> Result<String, String> {
+    let mut url = Url::parse("https://translate.googleapis.com/translate_a/single")
+        .map_err(|error| format!("invalid Google translation endpoint: {error}"))?;
+    url.query_pairs_mut()
+        .append_pair("client", "gtx")
+        .append_pair("sl", google_language(source_lang))
+        .append_pair("tl", google_language(target_lang))
+        .append_pair("dt", "t")
+        .append_pair("q", chunk);
+    let response = tokio::select! {
+        response = client.get(url).send() => response.map_err(|error| format!("Google translation failed: {error}"))?,
+        _ = cancelled.cancelled() => return Err("translation request cancelled".into()),
+    };
+    if !response.status().is_success() {
+        return Err(format!("Google HTTP {}", response.status()));
+    }
+    let payload = response
+        .json::<Value>()
+        .await
+        .map_err(|error| format!("invalid Google translation response: {error}"))?;
+    let segments = payload
+        .get(0)
+        .and_then(Value::as_array)
+        .ok_or_else(|| "Google returned no translation".to_string())?;
+    let translated = segments
+        .iter()
+        .filter_map(|segment| segment.get(0).and_then(Value::as_str))
+        .collect::<String>();
+    if translated.is_empty() {
+        Err("Google returned no translation".into())
+    } else {
+        Ok(translated)
+    }
+}
+
+trait WaitForCancel {
+    fn cancelled(&self) -> impl std::future::Future<Output = ()> + '_;
+}
+
+impl WaitForCancel for Notify {
+    fn cancelled(&self) -> impl std::future::Future<Output = ()> + '_ {
+        self.notified()
+    }
+}
+
+struct StopFlag {
+    flag: AtomicBool,
+    notify: Notify,
+}
+
+impl StopFlag {
+    fn new() -> Self {
+        Self {
+            flag: AtomicBool::new(false),
+            notify: Notify::new(),
+        }
+    }
+
+    fn cancel(&self) {
+        self.flag.store(true, Ordering::Release);
+        self.notify.notify_waiters();
+    }
+}
+
+impl WaitForCancel for StopFlag {
+    async fn cancelled(&self) {
+        let notified = self.notify.notified();
+        if self.flag.load(Ordering::Acquire) {
+            return;
+        }
+        notified.await;
+    }
 }
 
 async fn translate_bing(
@@ -331,8 +490,12 @@ async fn translate_bing(
     cancelled: Arc<Notify>,
 ) -> Result<String, String> {
     let mut session_guard = manager.bing_session.lock().await;
-    if session_guard.is_none() {
-        *session_guard = Some(fetch_bing_session(client, cancelled.clone()).await?);
+    let now = unix_millis();
+    if session_guard
+        .as_ref()
+        .is_none_or(|session| session.expires_at <= now)
+    {
+        *session_guard = Some(fetch_bing_session(client, cancelled.clone(), now).await?);
     }
     let session = session_guard
         .as_mut()
@@ -360,7 +523,7 @@ async fn translate_bing(
     };
     if !response.status().is_success() {
         *session_guard = None;
-        return Err(format!("Bing translation HTTP {}", response.status()));
+        return Err(format!("Bing HTTP {}", response.status()));
     }
     let payload = response
         .json::<Value>()
@@ -380,6 +543,7 @@ async fn translate_bing(
 async fn fetch_bing_session(
     client: &Client,
     cancelled: Arc<Notify>,
+    now: u64,
 ) -> Result<BingSession, String> {
     let response = tokio::select! {
         response = client.get("https://cn.bing.com/translator").send() => response.map_err(|error| format!("Bing session failed: {error}"))?,
@@ -399,20 +563,53 @@ async fn fetch_bing_session(
         .or_else(|| extract_between(&html, "params_AbusePreventionHelper=[", "]"))
         .ok_or_else(|| "Bing session token unavailable".to_string())?;
     let values = helper.split(',').map(str::trim).collect::<Vec<_>>();
-    if values.len() < 2 {
-        return Err("Bing session token unavailable".into());
-    }
+    let lifetime = values
+        .get(2)
+        .map(|value| value.trim_matches('"'))
+        .and_then(|value| value.parse::<u64>().ok())
+        .ok_or_else(|| "Bing session token unavailable".to_string())?;
     Ok(BingSession {
         ig: ig.into(),
         key: values[0].trim_matches('"').into(),
         token: values[1].trim_matches('"').into(),
+        expires_at: bing_expires_at(lifetime, now),
         request_count: 0,
     })
 }
 
+fn unix_millis() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis() as u64)
+        .unwrap_or(0)
+}
+
+fn bing_expires_at(lifetime_ms: u64, now_ms: u64) -> u64 {
+    now_ms.saturating_add(lifetime_ms).saturating_sub(60_000)
+}
+
+fn translation_provider_order(
+    preferred: TranslationProvider,
+    skip_preferred: bool,
+) -> Vec<TranslationProvider> {
+    if preferred == TranslationProvider::DeepL {
+        return vec![TranslationProvider::DeepL];
+    }
+    let alternate = if preferred == TranslationProvider::Google {
+        TranslationProvider::Bing
+    } else {
+        TranslationProvider::Google
+    };
+    if skip_preferred {
+        vec![alternate, preferred]
+    } else {
+        vec![preferred, alternate]
+    }
+}
+
 fn validate_request(request: &TranslationRequest) -> Result<(), String> {
-    if request.text.trim().is_empty() || request.text.chars().count() > MAX_TRANSLATION_CHARS {
-        return Err("translation text must contain 1 to 50000 characters".into());
+    if request.text.trim().is_empty() {
+        return Err("translation text must not be empty".into());
     }
     if !(1_000..=60_000).contains(&request.timeout_ms) {
         return Err("translation timeout must be between 1 and 60 seconds".into());
@@ -426,22 +623,66 @@ fn validate_request(request: &TranslationRequest) -> Result<(), String> {
     Ok(())
 }
 
-fn split_text(text: &str, max_chars: usize) -> Result<Vec<String>, String> {
-    if max_chars == 0 {
-        return Err("translation chunk size must be positive".into());
+fn split_text(text: &str, max_length: usize) -> Result<Vec<String>, String> {
+    if max_length < 2 {
+        return Err("Invalid translation chunk size".into());
+    }
+    let units: Vec<u16> = text.encode_utf16().collect();
+    if units.len() <= max_length {
+        return Ok(vec![text.to_string()]);
     }
     let mut chunks = Vec::new();
-    let mut current = String::new();
-    for character in text.chars() {
-        current.push(character);
-        if current.chars().count() >= max_chars {
-            chunks.push(std::mem::take(&mut current));
+    let mut offset = 0;
+    while offset < units.len() {
+        let mut end = (offset + max_length).min(units.len());
+        if end < units.len() {
+            let minimum = offset + max_length / 2;
+            let mut cursor = end;
+            while cursor > minimum {
+                if is_translation_break(units[cursor - 1]) {
+                    end = cursor;
+                    break;
+                }
+                cursor -= 1;
+            }
+            if end > 0 && end < units.len() {
+                let previous = units[end - 1];
+                let next = units[end];
+                if (0xD800..=0xDBFF).contains(&previous) && (0xDC00..=0xDFFF).contains(&next) {
+                    end -= 1;
+                }
+            }
         }
-    }
-    if !current.is_empty() {
-        chunks.push(current);
+        if end <= offset {
+            return Err("Invalid translation chunk size".into());
+        }
+        chunks.push(String::from_utf16_lossy(&units[offset..end]));
+        offset = end;
     }
     Ok(chunks)
+}
+
+fn is_translation_break(unit: u16) -> bool {
+    matches!(
+        unit,
+        0x09 | 0x0A
+            | 0x0B
+            | 0x0C
+            | 0x0D
+            | 0x20
+            | 0x2E
+            | 0x21
+            | 0x3F
+            | 0x3002
+            | 0xFF01
+            | 0xFF1F
+            | 0x2C
+            | 0xFF0C
+            | 0x3B
+            | 0xFF1B
+            | 0x3A
+            | 0xFF1A
+    ) || char::from_u32(u32::from(unit)).is_some_and(char::is_whitespace)
 }
 
 fn is_language(value: &str, include_auto: bool) -> bool {
@@ -495,16 +736,25 @@ fn google_language(value: &str) -> &str {
         "rom" => "ro",
         "slo" => "sl",
         "swe" => "sv",
+        "wyw" => "lzh",
         "vie" => "vi",
+        "" => "auto",
         other => other,
     }
 }
 
 fn bing_language(value: &str, source: bool) -> &str {
     match value {
-        "auto" if source => "auto-detect",
+        "" | "auto" => {
+            if source {
+                "auto-detect"
+            } else {
+                "zh-Hans"
+            }
+        }
         "zh-CN" => "zh-Hans",
         "cht" => "zh-Hant",
+        "wyw" => "lzh",
         "jp" => "ja",
         "kor" => "ko",
         "fra" => "fr",
@@ -547,13 +797,47 @@ mod tests {
         assert!(validate_request(&request("hello 世界")).is_ok());
         let source = "你🙂好abc";
         assert_eq!(split_text(source, 2).unwrap().concat(), source);
+        assert_eq!(
+            split_text("hello world", 8).unwrap(),
+            vec!["hello ".to_string(), "world".to_string()]
+        );
         assert!(split_text(source, 0).is_err());
     }
 
     #[test]
     fn maps_provider_language_codes() {
         assert_eq!(google_language("jp"), "ja");
+        assert_eq!(google_language("wyw"), "lzh");
+        assert_eq!(google_language(""), "auto");
         assert_eq!(bing_language("auto", true), "auto-detect");
+        assert_eq!(bing_language("auto", false), "zh-Hans");
+        assert_eq!(bing_language("wyw", false), "lzh");
         assert_eq!(bing_language("zh-CN", false), "zh-Hans");
+        assert_eq!(bing_expires_at(120_000, 1_000), 61_000);
+        assert_eq!(
+            translation_provider_order(TranslationProvider::Google, false),
+            vec![TranslationProvider::Google, TranslationProvider::Bing]
+        );
+        assert_eq!(
+            translation_provider_order(TranslationProvider::Google, true),
+            vec![TranslationProvider::Bing, TranslationProvider::Google]
+        );
+        assert_eq!(
+            translation_provider_order(TranslationProvider::DeepL, true),
+            vec![TranslationProvider::DeepL]
+        );
+        let manager = TranslationManager::default();
+        assert!(!manager.should_skip_provider(TranslationProvider::Google, 1_000));
+        manager.mark_provider_failure(TranslationProvider::Google, 1_000);
+        assert!(manager.should_skip_provider(
+            TranslationProvider::Google,
+            1_000 + PROVIDER_COOLDOWN_MS - 1
+        ));
+        assert!(
+            !manager
+                .should_skip_provider(TranslationProvider::Google, 1_000 + PROVIDER_COOLDOWN_MS)
+        );
+        manager.mark_provider_success(TranslationProvider::Google);
+        assert!(!manager.should_skip_provider(TranslationProvider::Google, 1_000));
     }
 }

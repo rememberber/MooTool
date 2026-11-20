@@ -549,9 +549,11 @@ pub fn delete_image_assets(
 }
 
 fn image_directory(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    app.path()
-        .app_data_dir()
-        .map(|path| path.join("images"))
+    let settings = app
+        .try_state::<crate::repositories::settings::SettingsRepository>()
+        .map(|repository| repository.snapshot())
+        .unwrap_or_default();
+    crate::commands::settings::images_directory(app, &settings)
         .map_err(|error| format!("failed to resolve image library directory: {error}"))
 }
 
@@ -738,10 +740,10 @@ fn validate_export_file_target(path: &Path) -> Result<(), String> {
     if !path.is_absolute() {
         return Err("image export target must be absolute".into());
     }
-    if let Ok(metadata) = fs::symlink_metadata(path) {
-        if metadata.file_type().is_symlink() || !metadata.is_file() {
-            return Err("image export target must be a regular non-symlink file".into());
-        }
+    if let Ok(metadata) = fs::symlink_metadata(path)
+        && (metadata.file_type().is_symlink() || !metadata.is_file())
+    {
+        return Err("image export target must be a regular non-symlink file".into());
     }
     let parent = path
         .parent()

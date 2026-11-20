@@ -59,32 +59,40 @@ pub async fn set_proxy_password(password: String) -> AppResult<ProxyCredentialSt
 
 #[tauri::command]
 pub async fn get_git_credential_status() -> AppResult<ProxyCredentialStatus> {
-    Ok(tauri::async_runtime::spawn_blocking(|| credential_status(GIT_TOKEN_ACCOUNT))
-        .await
-        .map_err(|error| format!("git credential task failed: {error}"))??)
+    Ok(
+        tauri::async_runtime::spawn_blocking(|| credential_status(GIT_TOKEN_ACCOUNT))
+            .await
+            .map_err(|error| format!("git credential task failed: {error}"))??,
+    )
 }
 
 #[tauri::command]
 pub async fn set_git_token(token: String) -> AppResult<ProxyCredentialStatus> {
     validate_password(&token)?;
-    Ok(tauri::async_runtime::spawn_blocking(move || store_secret(GIT_TOKEN_ACCOUNT, &token))
-        .await
-        .map_err(|error| format!("git credential task failed: {error}"))??)
+    Ok(
+        tauri::async_runtime::spawn_blocking(move || store_secret(GIT_TOKEN_ACCOUNT, &token))
+            .await
+            .map_err(|error| format!("git credential task failed: {error}"))??,
+    )
 }
 
 #[tauri::command]
 pub async fn get_deepl_credential_status() -> AppResult<ProxyCredentialStatus> {
-    Ok(tauri::async_runtime::spawn_blocking(|| credential_status(DEEPL_API_KEY_ACCOUNT))
-        .await
-        .map_err(|error| format!("DeepL credential task failed: {error}"))??)
+    Ok(
+        tauri::async_runtime::spawn_blocking(|| credential_status(DEEPL_API_KEY_ACCOUNT))
+            .await
+            .map_err(|error| format!("DeepL credential task failed: {error}"))??,
+    )
 }
 
 #[tauri::command]
 pub async fn set_deepl_api_key(api_key: String) -> AppResult<ProxyCredentialStatus> {
     validate_password(&api_key)?;
-    Ok(tauri::async_runtime::spawn_blocking(move || store_secret(DEEPL_API_KEY_ACCOUNT, &api_key))
-        .await
-        .map_err(|error| format!("DeepL credential task failed: {error}"))??)
+    Ok(
+        tauri::async_runtime::spawn_blocking(move || store_secret(DEEPL_API_KEY_ACCOUNT, &api_key))
+            .await
+            .map_err(|error| format!("DeepL credential task failed: {error}"))??,
+    )
 }
 
 pub fn load_git_token() -> Result<Option<String>, String> {
@@ -99,7 +107,9 @@ fn load_secret(account: &str, label: &str) -> Result<Option<String>, String> {
     match credential_entry(account)?.get_password() {
         Ok(secret) => Ok(Some(secret)),
         Err(KeyringError::NoEntry) => Ok(None),
-        Err(error) => Err(format!("failed to read {label} from OS credential store: {error}")),
+        Err(error) => Err(format!(
+            "failed to read {label} from OS credential store: {error}"
+        )),
     }
 }
 

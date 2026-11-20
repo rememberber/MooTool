@@ -173,7 +173,10 @@ pub fn validate_http_request_payload(request: &HttpRequestSpec) -> Result<(), St
 }
 
 pub fn validate_saved_http_request(input: &SaveHttpRequestInput) -> Result<(), String> {
-    if !matches!(input.method.as_str(), "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS") {
+    if !matches!(
+        input.method.as_str(),
+        "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS"
+    ) {
         return Err("Unsupported HTTP method".into());
     }
     if utf16_len(input.name.trim()) > 200

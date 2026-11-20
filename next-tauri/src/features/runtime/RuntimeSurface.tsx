@@ -3,6 +3,7 @@ import {
   CircleAlert,
   Eraser,
   FolderOpen,
+  History,
   Play,
   RefreshCw,
   Square,
@@ -12,11 +13,13 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { codeRuntimeApi } from '../../platform/api/codeRuntimeApi'
+import { localDataApi } from '../../platform/api/localDataApi'
 import type { CodeRunResult, CodeRuntimeId, CodeRuntimeStatus } from '../../platform/contracts/codeRuntime'
 import type { RuntimeRunOption } from '../../platform/contracts/settings'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { ResizableColumns } from '../../shared/ResizableColumns'
 import { contentFingerprint } from '../../shared/fingerprint'
+import { FuncHistoryDialog } from '../history/FuncHistoryDialog'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { useSettings } from '../settings/SettingsProvider'
@@ -30,16 +33,28 @@ type RuntimeOptions = Record<CodeRuntimeId, RuntimeRunOption>
 
 const runtimeIds: CodeRuntimeId[] = ['java', 'groovy', 'python', 'node']
 const samples: Record<CodeRuntimeId, string> = {
-  java: 'public class Main {\n  public static void main(String[] args) {\n    System.out.println("Hello from MooTool Tauri");\n  }\n}',
-  groovy: `['Java', 'Python', 'Node.js'].eachWithIndex { item, i -> println "\${i + 1}. \${item}" }`,
-  python: 'tools = ["Java", "Python", "Node.js"]\nfor index, tool in enumerate(tools, 1):\n    print(f"{index}. {tool}")',
-  node: "const tools = ['Java', 'Python', 'Node.js']\ntools.forEach((tool, index) => console.log(`\${index + 1}. \${tool}`))"
+  java: `public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello from MooTool");
+    }
+}`,
+  groovy: `def tools = ['Java', 'Python', 'Node.js']
+tools.eachWithIndex { tool, index ->
+    println "\${index + 1}. \${tool}"
+}`,
+  python: `tools = ["Java", "Python", "Node.js"]
+for index, tool in enumerate(tools, start=1):
+    print(f"{index}. {tool}")`,
+  node: `const tools = ['Java', 'Python', 'Node.js']
+tools.forEach((tool, index) => {
+  console.log(\`\${index + 1}. \${tool}\`)
+})`
 }
 
 export function RuntimeSurface() {
   const { t } = useLocalizedMessages(runtimeMessages)
   const { settings, ready, save } = useSettings()
-  const [runtime, setRuntime] = useState<CodeRuntimeId>('node')
+  const [runtime, setRuntime] = useState<CodeRuntimeId>('java')
   const [codes, setCodes] = useState<Record<CodeRuntimeId, string>>(() => resolveDrafts(settings.runtime.drafts))
   const [options, setOptions] = useState<RuntimeOptions>(settings.runtime.options)
   const [hydrated, setHydrated] = useState(false)
@@ -51,6 +66,7 @@ export function RuntimeSurface() {
   const [result, setResult] = useState<CodeRunResult>()
   const [notice, setNotice] = useState<RuntimeNotice>({ key: 'notice.detecting' })
   const [failed, setFailed] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const stdoutRef = useRef('')
   const stderrRef = useRef('')
   const code = codes[runtime]
@@ -82,7 +98,7 @@ export function RuntimeSurface() {
     if (!hydrated) return
     const unchanged = runtimeIds.every((id) => (
       settings.runtime.drafts[id] === codes[id]
-      && settings.runtime.options[id].argumentsText === options[id].argumentsText
+      && settings.runtime.options[id].arguments === options[id].arguments
       && settings.runtime.options[id].workingDirectory === options[id].workingDirectory
     ))
     if (unchanged) return
@@ -108,7 +124,7 @@ export function RuntimeSurface() {
     setOptions((current) => ({
       ...current,
       [nextRuntime]: {
-        argumentsText: typeof metadata.argumentsText === 'string' ? metadata.argumentsText : '',
+        arguments: typeof metadata.arguments === 'string' ? metadata.arguments : typeof metadata.argumentsText === 'string' ? metadata.argumentsText : '',
         workingDirectory: typeof metadata.workingDirectory === 'string' ? metadata.workingDirectory : ''
       }
     }))
@@ -147,7 +163,7 @@ export function RuntimeSurface() {
       return
     }
     let args: string[]
-    try { args = parseRuntimeArguments(option.argumentsText) } catch (cause) { fail(cause); return }
+    try { args = parseRuntimeArguments(option.arguments) } catch (cause) { fail(cause); return }
     const id = crypto.randomUUID()
     setRequestId(id)
     setRunning(true)
@@ -188,6 +204,13 @@ export function RuntimeSurface() {
         outputText: `${completed.stdout}\n\u0000stderr\u0000\n${completed.stderr}`,
         metadata: { runtime, ...option, exitCode: completed.exitCode, durationMs: completed.durationMs }
       })
+      void localDataApi.saveFuncHistory({
+        funcType: `runtime-${runtime}`,
+        summary: `${runtimeName(runtime)} · ${completed.exitCode ?? '-'}`,
+        inputText: code,
+        outputText: [completed.stdout, completed.stderr].filter(Boolean).join('\n'),
+        extraData: JSON.stringify({ arguments: option.arguments, workingDirectory: option.workingDirectory })
+      })
     } catch (cause) {
       fail(cause)
       recordOperation(t('operation.run'), `${runtimeName(runtime)} · ${runtimeErrorText(cause, t)}`, 'error', {
@@ -204,6 +227,14 @@ export function RuntimeSurface() {
     if (!requestId) return
     await codeRuntimeApi.cancel(requestId)
     setNotice({ key: 'notice.stopping' })
+  }
+
+  function clearOutput() {
+    stdoutRef.current = ''
+    stderrRef.current = ''
+    setStdout('')
+    setStderr('')
+    setResult(undefined)
   }
 
   async function formatSource() {
@@ -242,7 +273,12 @@ export function RuntimeSurface() {
   }
 
   return (
-    <main className="utility-workbench code-runtime-workbench">
+    <main className="utility-workbench code-runtime-workbench" onKeyDown={(event) => {
+      if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'f') {
+        event.preventDefault()
+        void formatSource()
+      }
+    }}>
       <header className="utility-header">
         <h1 className="visually-hidden">{t('title')}</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
@@ -255,12 +291,15 @@ export function RuntimeSurface() {
             </button>
           ))}
         </div>
-        <label>{t('field.arguments')}<input value={option.argumentsText} placeholder="--name 'Moo Tool'" onChange={(event) => patchOption({ argumentsText: event.target.value })} /></label>
+        <label>{t('field.arguments')}<input value={option.arguments} placeholder="--name 'Moo Tool'" onChange={(event) => patchOption({ arguments: event.target.value })} /></label>
         <label className="runtime-working-directory">{t('field.workingDirectory')}<input value={option.workingDirectory} placeholder={t('placeholder.workingDirectory')} onChange={(event) => patchOption({ workingDirectory: event.target.value })} /><button type="button" aria-label={t('action.chooseDirectory')} title={t('action.chooseDirectory')} onClick={() => void chooseWorkingDirectory()}><FolderOpen /></button></label>
+        <button className="secondary-button" type="button" disabled={running} onClick={() => void formatSource()}><WandSparkles size={13} />{t('action.format')}</button>
         <button className="secondary-button" type="button" disabled={running} onClick={() => void detect()}><RefreshCw />{t('action.detect')}</button>
         {running
           ? <button className="primary-button runtime-stop" type="button" onClick={() => void stop()}><Square />{t('action.stop')}</button>
           : <button className="primary-button" type="button" onClick={() => void run()}><Play />{t('action.run')}</button>}
+        <button className="secondary-button" type="button" onClick={clearOutput}><Eraser size={13} />{t('action.clear')}</button>
+        <button className="toolbar-button" type="button" disabled={running} onClick={() => setHistoryOpen(true)}><History size={14} />{t('action.history')}</button>
       </section>
       {status && <section className={status.available ? 'runtime-status-line runtime-status-line--ok' : 'runtime-status-line'}>{status.available ? <CheckCircle2 /> : <CircleAlert />}<strong>{runtimeName(runtime)}</strong><code>{status.command}</code><span>{status.version || t('status.notInstalled')}</span></section>}
         <ResizableColumns id="runtime-editor-output" legacyId="runtime-source" className="code-runtime-layout" initialPrimary={520} defaultSizes={[1, 1]} minPrimary={300} minSecondary={300}>
@@ -286,12 +325,26 @@ export function RuntimeSurface() {
         <code>{session.summary}</code>
       </footer>
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
+      {historyOpen && <FuncHistoryDialog funcType={`runtime-${runtime}`} onClose={() => setHistoryOpen(false)} onApply={(record) => {
+        setCodes((current) => ({ ...current, [runtime]: record.outputText || record.inputText }))
+        setHistoryOpen(false)
+      }} />}
     </main>
   )
 }
 
+const legacySamples: Record<CodeRuntimeId, string> = {
+  java: 'public class Main {\n  public static void main(String[] args) {\n    System.out.println("Hello from MooTool Tauri");\n  }\n}',
+  groovy: `['Java', 'Python', 'Node.js'].eachWithIndex { item, i -> println "\${i + 1}. \${item}" }`,
+  python: 'tools = ["Java", "Python", "Node.js"]\nfor index, tool in enumerate(tools, 1):\n    print(f"{index}. {tool}")',
+  node: "const tools = ['Java', 'Python', 'Node.js']\ntools.forEach((tool, index) => console.log(`\${index + 1}. \${tool}`))"
+}
+
 function resolveDrafts(drafts: Record<CodeRuntimeId, string>): Record<CodeRuntimeId, string> {
-  return Object.fromEntries(runtimeIds.map((id) => [id, drafts[id] || samples[id]])) as Record<CodeRuntimeId, string>
+  return Object.fromEntries(runtimeIds.map((id) => {
+    const draft = drafts[id]
+    return [id, !draft || draft === legacySamples[id] ? samples[id] : draft]
+  })) as Record<CodeRuntimeId, string>
 }
 
 function isRuntimeId(value: unknown): value is CodeRuntimeId {

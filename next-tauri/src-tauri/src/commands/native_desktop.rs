@@ -268,16 +268,16 @@ fn hide_visible_windows(app: &tauri::AppHandle) -> Result<Vec<HiddenWindow>, Str
 
 fn restore_windows(app: &tauri::AppHandle, hidden: &[HiddenWindow]) {
     for item in hidden {
-        if let Some(window) = app.get_webview_window(&item.label) {
-            if let Err(error) = window.show() {
-                tracing::warn!(error = %error, window = %item.label, "failed to restore window after screen capture");
-            }
+        if let Some(window) = app.get_webview_window(&item.label)
+            && let Err(error) = window.show()
+        {
+            tracing::warn!(error = %error, window = %item.label, "failed to restore window after screen capture");
         }
     }
-    if let Some(item) = hidden.iter().find(|item| item.focused) {
-        if let Some(window) = app.get_webview_window(&item.label) {
-            let _ = window.set_focus();
-        }
+    if let Some(item) = hidden.iter().find(|item| item.focused)
+        && let Some(window) = app.get_webview_window(&item.label)
+    {
+        let _ = window.set_focus();
     }
 }
 

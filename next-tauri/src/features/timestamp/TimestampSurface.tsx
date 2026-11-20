@@ -7,7 +7,6 @@ import {
   Copy,
   Expand,
   History,
-  RefreshCw,
   TriangleAlert,
   X
 } from 'lucide-react'
@@ -15,10 +14,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
-import { OPERATION_HISTORY_LIMIT, type OperationHistory } from '../../platform/contracts/history'
+import { localDataApi } from '../../platform/api/localDataApi'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
-import { HistoryPanel } from '../history/HistoryPanel'
+import { FuncHistoryDialog } from '../history/FuncHistoryDialog'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import { useSettings } from '../settings/SettingsProvider'
@@ -29,8 +28,6 @@ import {
   localToTimestamp,
   quickTimezones,
   timestampToLocal,
-  TimeToolError,
-  type TimeConversion,
   type TimestampUnit
 } from './timeTools'
 import { timestampMessages } from './timestampMessages'
@@ -48,9 +45,6 @@ export function TimestampSurface({ active = true }: { active?: boolean }) {
   const [localTime, setLocalTime] = useState(formatLocalTime(initialNow, systemZone))
   const [unit, setUnit] = useState<TimestampUnit>('second')
   const [zone, setZone] = useState(systemZone)
-  const [details, setDetails] = useState<TimeConversion>(() => (
-    timestampToLocal(String(Math.trunc(initialNow / 1000)), 'second', systemZone, locale)
-  ))
   const [notice, setNotice] = useState<TimestampNotice>({ key: 'notice.ready' })
   const [error, setError] = useState<TimestampNotice>()
   const [copied, setCopied] = useState('')
@@ -91,7 +85,7 @@ export function TimestampSurface({ active = true }: { active?: boolean }) {
       setLocalTime(entry.inputText)
       setTimestamp(entry.outputText)
     }
-    try { setDetails(timestampToLocal(direction === 'toLocal' ? entry.inputText : entry.outputText, nextUnit, nextZone, locale)); setError(undefined) } catch (cause) { setError(timestampError(cause)) }
+    setError(undefined)
   })
 
   useEffect(() => {
@@ -102,45 +96,40 @@ export function TimestampSurface({ active = true }: { active?: boolean }) {
   function toLocal(): void {
     try {
       const result = timestampToLocal(timestamp, unit, zone, locale)
-      setDetails(result)
       setLocalTime(result.localTime)
       setUnit(result.unit)
+      const notice = t('notice.toLocal', { zone })
       setNotice({ key: 'notice.toLocal', values: { zone } })
       setError(undefined)
+      saveConversion(notice, timestamp, result.localTime)
       recordOperation(t('action.toLocal'), `${timestamp} · ${zone} → ${result.localTime}`, 'success', {
         inputText: timestamp, outputText: result.localTime, metadata: { direction: 'toLocal', unit, zone }
       })
-    } catch (cause) {
-      setError(timestampError(cause))
+    } catch {
+      setError({ key: 'error.timestamp' })
     }
   }
 
   function toTimestamp(): void {
     try {
       const result = localToTimestamp(localTime, unit, zone)
-      const nextDetails = timestampToLocal(result, unit, zone, locale)
       setTimestamp(result)
-      setDetails(nextDetails)
-      setNotice({ key: 'notice.toTimestamp', values: { unit: t(unit === 'second' ? 'unit.second' : 'unit.millisecond') } })
+      const notice = t('notice.toTimestamp')
+      setNotice({ key: 'notice.toTimestamp' })
       setError(undefined)
+      saveConversion(notice, localTime, result)
       recordOperation(t('action.toTimestamp'), `${localTime} · ${zone} → ${result}`, 'success', {
         inputText: localTime, outputText: result, metadata: { direction: 'toTimestamp', unit, zone }
       })
-    } catch (cause) {
-      setError(timestampError(cause))
+    } catch {
+      setError({ key: 'error.localTime' })
     }
   }
 
   function selectZone(nextZone: string): void {
     setZone(nextZone)
-    try {
-      const result = timestampToLocal(timestamp, unit, nextZone, locale)
-      setLocalTime(result.localTime)
-      setDetails(result)
-      setError(undefined)
-    } catch (cause) {
-      setError(timestampError(cause))
-    }
+    setLocalTime(formatLocalTime(now, nextZone))
+    setError(undefined)
   }
 
   async function copy(label: string, value: string): Promise<void> {
@@ -153,32 +142,24 @@ export function TimestampSurface({ active = true }: { active?: boolean }) {
     }
   }
 
-  function applyHistory(entry: OperationHistory): void {
-    const value = entry.outputText || entry.inputText
+  function saveConversion(summary: string, inputText: string, outputText: string): void {
+    void localDataApi.saveFuncHistory({
+      funcType: 'timeConvert',
+      summary,
+      inputText,
+      outputText,
+      extraData: JSON.stringify({ zone, unit })
+    })
+  }
+
+  function applyHistory(value: string): void {
     if (/^[-+]?\d+$/.test(value.trim())) setTimestamp(value)
     else setLocalTime(value)
     setHistoryOpen(false)
   }
 
-  function useNow(): void {
-    const value = Date.now()
-    const nextTimestamp = unit === 'second' ? String(Math.trunc(value / 1000)) : String(value)
-    setTimestamp(nextTimestamp)
-    const result = timestampToLocal(nextTimestamp, unit, zone, locale)
-    setLocalTime(result.localTime)
-    setDetails(result)
-    setNotice({ key: 'notice.now' })
-    setError(undefined)
-  }
-
   const currentSeconds = String(Math.trunc(now / 1000))
   const currentLocal = formatLocalTime(now, zone)
-
-  function timestampError(cause: unknown): TimestampNotice {
-    return cause instanceof TimeToolError
-      ? { key: `error.${cause.code}`, values: cause.values }
-      : { raw: cause instanceof Error ? cause.message : String(cause) }
-  }
 
   return (
     <main className="utility-workbench time-workbench">
@@ -196,7 +177,6 @@ export function TimestampSurface({ active = true }: { active?: boolean }) {
         <div className="time-current-actions">
           <button type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('action.history')}</button>
           <button type="button" onClick={() => setClockOpen(true)}><Expand size={14} />{t('action.clock')}</button>
-          <button type="button" onClick={useNow}><RefreshCw size={14} />{t('action.now')}</button>
           <div className="status-pill"><Clock3 size={14} />{formatTimezoneLabel(zone, now, t('timezone.invalid'))}</div>
         </div>
       </section>
@@ -267,13 +247,6 @@ export function TimestampSurface({ active = true }: { active?: boolean }) {
             </div>
           </label>
         </div>
-
-        <dl className="time-details">
-          <Detail label="ISO 8601" value={details.iso} />
-          <Detail label="RFC 2822" value={details.rfc2822} />
-          <Detail label={t('detail.weekday')} value={details.weekday} />
-          <Detail label={t('detail.offset')} value={details.offset} />
-        </dl>
       </section>
 
       <footer className={error ? 'utility-status utility-status--error' : 'utility-status'}>
@@ -283,11 +256,10 @@ export function TimestampSurface({ active = true }: { active?: boolean }) {
       </footer>
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
       {historyOpen && (
-        <HistoryPanel
-          limit={OPERATION_HISTORY_LIMIT}
-          toolId="timestamp"
+        <FuncHistoryDialog
+          funcType="timeConvert"
           onClose={() => setHistoryOpen(false)}
-          onRestore={applyHistory}
+          onApply={(record) => applyHistory(record.outputText || record.inputText)}
         />
       )}
       {clockOpen && <ClockOverlay active={active} now={now} zone={zone} onClose={() => setClockOpen(false)} />}
@@ -327,15 +299,11 @@ function TimeValue({ label, value, copied, onCopy }: {
     <div className="time-current-value">
       <span>{label}</span>
       <strong>{value}</strong>
-      <button className="utility-copy" type="button" aria-label={t('action.copyValue', { label })} title={t('action.copyValue', { label })} onClick={onCopy}>
+      <button className="utility-copy" type="button" aria-label={t('action.copy')} title={t('action.copy')} onClick={onCopy}>
         {copied ? <Clipboard /> : <Copy />}
       </button>
     </div>
   )
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  return <div><dt>{label}</dt><dd>{value || '—'}</dd></div>
 }
 
 function localizeTimestampNotice(notice: TimestampNotice, t: (key: TimestampMessageKey, values?: MessageValues) => string): string {

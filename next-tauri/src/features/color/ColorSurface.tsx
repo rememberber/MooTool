@@ -6,6 +6,8 @@ import {
   Contrast,
   Copy,
   Dices,
+  History,
+  Star,
   Monitor,
   Palette,
   Pipette,
@@ -19,15 +21,17 @@ import {
   type MessageValues
 } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import { localDataApi } from '../../platform/api/localDataApi'
 import { imageApi } from '../../platform/api/imageApi'
 import { nativeDesktopApi } from '../../platform/api/nativeDesktopApi'
 import type { ImageAsset } from '../../platform/contracts/image'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { ResizableColumns } from '../../shared/ResizableColumns'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { FuncHistoryDialog } from '../history/FuncHistoryDialog'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { useOperationRestore } from '../history/operationRestore'
-import { ToolFavoriteBar } from '../favorites/ToolFavoriteBar'
+import { ColorFavoritesDialog } from './ColorFavoritesDialog'
 import {
   applyColorOperation,
   bestTextColor,
@@ -42,6 +46,7 @@ import {
   rgbToHex,
   standardColors
 } from './colorTools'
+import { claimScreenAction, subscribeScreenAction } from '../../app/screenTrayAction'
 import { colorMessages } from './colorMessages'
 
 type ColorMessageKey = LocalizedMessageKey<typeof colorMessages>
@@ -55,8 +60,10 @@ class ColorLocalizedError extends Error {
 
 export function ColorSurface() {
   const { t } = useLocalizedMessages(colorMessages)
-  const [hex, setHex] = useState('#2F6FED')
-  const [contrastHex, setContrastHex] = useState('#FFFFFF')
+  const [hex, setHex] = useState('#DE8F7D')
+  const [contrastHex, setContrastHex] = useState('#4F83CC')
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [favoriteMode, setFavoriteMode] = useState<'save' | 'manage' | null>(null)
   const [notice, setNotice] = useState<Notice>({ key: 'notice.ready' })
   const [failed, setFailed] = useState(false)
   const [copied, setCopied] = useState('')
@@ -103,11 +110,21 @@ export function ColorSurface() {
     setFailed(false)
   })
 
-  function updateHex(value: string): void {
+  function updateHex(value: string, historySummary?: string): void {
+    const before = formats.hex
     setHex(value.toUpperCase())
     try {
-      parseHexColor(value)
+      const next = rgbToHex(parseHexColor(value))
       succeed('notice.updated')
+      if (historySummary) {
+        void localDataApi.saveFuncHistory({
+          funcType: 'colorBoard',
+          summary: historySummary,
+          inputText: before,
+          outputText: next,
+          extraData: historySummary
+        })
+      }
     } catch (cause) {
       fail(cause)
     }
@@ -138,7 +155,7 @@ export function ColorSurface() {
       setContrastHex(value)
       succeed('notice.comparisonUpdated', { value })
     } else {
-      updateHex(value)
+      updateHex(value, t('history.select'))
     }
   }
 
@@ -146,6 +163,13 @@ export function ColorSurface() {
     const value = rgbToHex(applyColorOperation(operation, parsed, comparison))
     setHex(value)
     succeed('notice.operationApplied', { operation: t(`operation.${operation}`), value })
+    void localDataApi.saveFuncHistory({
+      funcType: 'colorBoard',
+      summary: t(`operation.${operation}`),
+      inputText: `${formats.hex} / ${colorFormats(comparison).hex}`,
+      outputText: value,
+      extraData: operation
+    })
     recordOperation(t(`operation.${operation}`), value, 'success', {
       inputText: JSON.stringify({ hex, contrastHex, operation }), outputText: value,
       metadata: { operation, secondary: contrastHex }
@@ -158,6 +182,13 @@ export function ColorSurface() {
     setHex(nextPrimary)
     setContrastHex(nextComparison)
     succeed('notice.swapped')
+    void localDataApi.saveFuncHistory({
+      funcType: 'colorBoard',
+      summary: t('history.swap'),
+      inputText: `${formats.hex} / ${colorFormats(comparison).hex}`,
+      outputText: `${nextPrimary} / ${nextComparison}`,
+      extraData: 'swap'
+    })
   }
 
   async function sampleScreen(): Promise<void> {
@@ -178,7 +209,7 @@ export function ColorSurface() {
         if (!EyeDropper) throw new ColorLocalizedError('error.eyeDropper')
         value = (await new EyeDropper().open()).sRGBHex
       }
-      updateHex(value)
+      updateHex(value, t('history.picker'))
       succeed('notice.screenColor', { value: value.toUpperCase() })
     } catch (cause) {
       fail(cause)
@@ -186,6 +217,13 @@ export function ColorSurface() {
       setSampling(false)
     }
   }
+
+  const sampleScreenRef = useRef(sampleScreen)
+  sampleScreenRef.current = sampleScreen
+  useEffect(() => subscribeScreenAction((request) => {
+    if (request.kind !== 'color' || !claimScreenAction(request)) return
+    void sampleScreenRef.current()
+  }), [])
 
   async function closeScreenPicker() {
     const names = screenAssets.map((asset) => asset.name)
@@ -203,7 +241,7 @@ export function ColorSurface() {
     setScreenAssets([])
     try {
       if (names.length) await imageApi.delete(names)
-      updateHex(sample.hex)
+      updateHex(sample.hex, t('history.picker'))
       succeed('notice.screenColorPosition', { value: sample.hex, x: sample.x, y: sample.y })
       recordOperation(t('action.pickScreen'), `${sample.hex} · ${sample.x},${sample.y}`, 'success', {
         inputText: JSON.stringify({ hex, contrastHex }), outputText: sample.hex,
@@ -230,16 +268,6 @@ export function ColorSurface() {
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 
-      <ToolFavoriteBar
-        toolId="color"
-        defaultName={formats.hex}
-        payload={{ hex, contrastHex }}
-        onApply={(payload) => {
-          if (typeof payload.hex === 'string') updateHex(payload.hex)
-          if (typeof payload.contrastHex === 'string') setContrastHex(payload.contrastHex.toUpperCase())
-        }}
-      />
-
       <ResizableColumns id="color-board" className="color-grid" initialPrimary={0.34} defaultSizes={[0.34, 0.66]} minPrimary={240} minSecondary={420}>
         <div className="color-current-panel">
         <section className="color-hero-card">
@@ -253,12 +281,15 @@ export function ColorSurface() {
               aria-label={t('picker.label')}
               type="color"
               value={formats.hex.slice(0, 7)}
-              onChange={(event) => updateHex(event.target.value)}
+              onChange={(event) => updateHex(event.target.value, t('history.freePick'))}
             />
             <label>HEX
-              <input value={hex} onChange={(event) => updateHex(event.target.value)} />
+              <input value={hex} onChange={(event) => updateHex(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') updateHex(hex, t('history.input')) }} />
             </label>
             <button className="secondary-button" type="button" onClick={randomize}><Dices />{t('action.random')}</button>
+            <button className="toolbar-button" type="button" onClick={() => setFavoriteMode('save')}><Star size={14} />{t('action.favorite')}</button>
+            <button className="toolbar-button" type="button" onClick={() => setFavoriteMode('manage')}><Star size={14} />{t('action.favorites')}</button>
+            <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('action.history')}</button>
             <button className="secondary-button" type="button" disabled={sampling} onClick={() => void sampleScreen()}>
               <Pipette />{t(sampling ? 'action.waiting' : 'action.pickScreen')}
             </button>
@@ -396,6 +427,12 @@ export function ColorSurface() {
         />
       )}
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
+      {favoriteMode && <ColorFavoritesDialog color={formats.hex} open mode={favoriteMode} onClose={() => setFavoriteMode(null)} onApply={(value) => updateHex(value, t('history.favorites'))} />}
+      {historyOpen && <FuncHistoryDialog funcType="colorBoard" onClose={() => setHistoryOpen(false)} onApply={(record) => {
+        const color = (record.outputText || record.inputText).match(/#[0-9a-fA-F]{6}/)?.[0]
+        if (color) updateHex(color, record.summary)
+        setHistoryOpen(false)
+      }} />}
     </main>
   )
 }

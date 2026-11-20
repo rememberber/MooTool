@@ -7,7 +7,6 @@ export interface UaResult {
   engineVersion: string
   os: string
   osVersion: string
-  cpu: string
   deviceType: string
   deviceBrand: string
   deviceModel: string
@@ -15,7 +14,7 @@ export interface UaResult {
   bot: boolean
 }
 
-export type UaToolErrorCode = 'empty' | 'tooLong'
+export type UaToolErrorCode = 'empty'
 
 export class UaToolError extends Error {
   constructor(readonly code: UaToolErrorCode) {
@@ -46,18 +45,10 @@ export function parseUserAgent(value: string): UaResult {
     engineVersion: result.engine.version || 'Unknown',
     os: result.os.name || 'Unknown',
     osVersion: result.os.version || 'Unknown',
-    cpu: result.cpu.architecture || inferArchitecture(source),
     deviceType,
     deviceBrand: result.device.vendor || 'Unknown',
     deviceModel: result.device.model || 'Unknown',
     mobile: ['mobile', 'tablet'].includes(result.device.type ?? '') || /mobile|android|iphone|ipad/i.test(source),
     bot
   }
-}
-
-function inferArchitecture(source: string): string {
-  if (/arm64|aarch64/i.test(source)) return 'arm64'
-  if (/x86_64|win64|x64|amd64/i.test(source)) return 'amd64'
-  if (/i[3-6]86|x86/i.test(source)) return 'ia32'
-  return 'Unknown'
 }

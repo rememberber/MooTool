@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { defaultFindReplaceOptions } from '../../shared/findReplace'
-import { classifyPreview, decodePreviewText, jsonPreview, readPreviewBytes, scanPreviewMatches } from './filePreview'
+import { classifyPreview, decodePreviewText, jsonPreview, previewLanguage, readPreviewBytes, scanPreviewMatches } from './filePreview'
 
 describe('file preview', () => {
   it('classifies local files without executing HTML or SVG', () => {
@@ -11,6 +11,9 @@ describe('file preview', () => {
     expect(classifyPreview('remote.svg')).toBe('text')
     expect(classifyPreview('Dockerfile')).toBe('text')
     expect(classifyPreview('archive.zip')).toBe('unsupported')
+    expect(previewLanguage('App.tsx')).toBe('typescript')
+    expect(previewLanguage('notes.md')).toBe('markdown')
+    expect(previewLanguage('readme.txt')).toBe('text')
   })
 
   it('decodes UTF-8 and UTF-16 BOMs and Chinese legacy text explicitly', () => {

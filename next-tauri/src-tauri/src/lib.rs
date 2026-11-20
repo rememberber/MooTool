@@ -32,6 +32,7 @@ pub fn run() {
         )
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(commands::desktop::DesktopLifecycle::default())
+        .manage(commands::desktop::TrayMenuState::default())
         .manage(state::ToolWebviewManager::default())
         .manage(commands::http::HttpRequestManager::default())
         .manage(commands::code_runtime::CodeExecutionManager::default())
@@ -78,17 +79,16 @@ pub fn run() {
                 app.handle(),
                 app.state::<repositories::vault::VaultRepository>().inner(),
                 &settings_snapshot,
+                native_acceptance
+                    .as_ref()
+                    .map(|config| config.data_root.as_path()),
             );
             let database_path = match &native_acceptance {
                 Some(config) => config
                     .data_root
                     .join("data")
                     .join(repositories::local_data::DATABASE_FILE_NAME),
-                None => app
-                    .path()
-                    .app_data_dir()
-                    .map_err(|error| format!("failed to resolve Tauri data directory: {error}"))?
-                    .join(repositories::local_data::DATABASE_FILE_NAME),
+                None => commands::settings::database_file(app.handle(), &settings_snapshot)?,
             };
             let local_data = repositories::local_data::LocalDataRepository::open(database_path)
                 .map_err(|error| format!("failed to initialize local data: {error}"))?;
@@ -115,6 +115,7 @@ pub fn run() {
             commands::batch_rename::undo_batch_rename,
             commands::batch_rename::get_batch_rename_status,
             commands::diagnostics::get_environment_variables,
+            commands::diagnostics::read_runtime_process,
             commands::diagnostics::read_persistent_environment,
             commands::diagnostics::write_persistent_environment,
             commands::diagnostics::get_system_snapshot,
@@ -156,6 +157,7 @@ pub fn run() {
             commands::secure_credentials::get_deepl_credential_status,
             commands::secure_credentials::set_deepl_api_key,
             commands::desktop::resolve_close_request,
+            commands::desktop::sync_tray_quick_actions,
             commands::local_data::list_quick_notes,
             commands::local_data::save_quick_note,
             commands::local_data::create_quick_note,
@@ -183,6 +185,20 @@ pub fn run() {
             commands::local_data::export_quick_note_attachment,
             commands::local_data::delete_quick_note_attachment,
             commands::local_data::read_quick_note_attachment_file,
+            commands::local_data::list_func_history,
+            commands::local_data::save_func_history,
+            commands::local_data::delete_func_history,
+            commands::local_data::clear_func_history,
+            commands::local_data::list_favorite_folders,
+            commands::local_data::create_favorite_folder,
+            commands::local_data::rename_favorite_folder,
+            commands::local_data::delete_favorite_folder,
+            commands::local_data::list_named_favorites,
+            commands::local_data::save_named_favorite,
+            commands::local_data::delete_named_favorite,
+            commands::local_data::move_named_favorite,
+            commands::local_data::get_tool_draft,
+            commands::local_data::save_tool_draft,
             commands::local_data::list_board_messages,
             commands::local_data::save_board_message,
             commands::local_data::delete_board_message,
@@ -199,6 +215,7 @@ pub fn run() {
             commands::local_data::write_system_hosts,
             commands::local_data::resolve_host,
             commands::network_tools::list_network_interfaces,
+            commands::network_tools::read_network_interface_report,
             commands::network_tools::resolve_network_host,
             commands::network_tools::scan_tcp_ports,
             commands::network_tools::scan_ipv4_range,

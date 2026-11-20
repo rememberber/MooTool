@@ -2,20 +2,11 @@ export const reformatTypes = ['nginx', 'java', 'xml', 'html'] as const
 
 export type ReformatType = (typeof reformatTypes)[number]
 
-export type ReformatToolErrorCode = 'unclosedBlock' | 'unexpectedClosingBrace' | 'unclosedString'
-
-export class ReformatToolError extends Error {
-  constructor(readonly code: ReformatToolErrorCode) {
-    super(code)
-    this.name = 'ReformatToolError'
-  }
-}
-
 export const reformatSamples: Record<ReformatType, string> = {
-  nginx: 'server { listen 80; location /api { proxy_pass http://127.0.0.1:3000; } }',
-  java: 'class Demo{public static void main(String[] args){System.out.println("MooTool Next Tauri");}}',
-  xml: '<root><tool id="mootool"><name>MooTool</name><runtime>Tauri</runtime></tool></root>',
-  html: '<main><h1>MooTool</h1><p>Independent Tauri desktop toolbox</p></main>'
+  nginx: 'server { listen 80; location / { proxy_pass http://127.0.0.1:3000; } }',
+  java: 'class Demo{public static void main(String[] args){System.out.println("MooTool");}}',
+  xml: '<root><tool id="mootool"><name>MooTool</name></tool></root>',
+  html: '<main><h1>MooTool</h1><p>Desktop toolbox</p></main>'
 }
 
 export async function formatCode(
@@ -63,10 +54,9 @@ export function formatNginx(input: string, indent = 4): string {
   let level = 0
   for (const token of tokens) {
     if (token === '}') level = Math.max(0, level - 1)
-    lines.push(`${' '.repeat(level * clampIndent(indent))}${token}`)
+    if (token) lines.push(`${' '.repeat(level * indent)}${token}`)
     if (token.endsWith('{')) level += 1
   }
-  if (level !== 0) throw new ReformatToolError('unclosedBlock')
   return lines.join('\n')
 }
 
@@ -76,15 +66,15 @@ function tokenizeNginx(input: string): string[] {
   let quote = ''
   let escaped = false
   let comment = false
-  let balance = 0
 
-  const flush = () => {
+  const flush = (): void => {
     const value = current.trim()
     if (value) tokens.push(value)
     current = ''
   }
 
-  for (const char of input) {
+  for (let index = 0; index < input.length; index += 1) {
+    const char = input[index]
     if (comment) {
       current += char
       if (char === '\n') {
@@ -119,12 +109,9 @@ function tokenizeNginx(input: string): string[] {
       continue
     }
     if (char === '{') {
-      balance += 1
       current = `${current.trimEnd()} {`
       flush()
     } else if (char === '}') {
-      balance -= 1
-      if (balance < 0) throw new ReformatToolError('unexpectedClosingBrace')
       flush()
       tokens.push('}')
     } else if (char === ';') {
@@ -137,7 +124,6 @@ function tokenizeNginx(input: string): string[] {
     }
   }
   flush()
-  if (quote) throw new ReformatToolError('unclosedString')
   return tokens
 }
 

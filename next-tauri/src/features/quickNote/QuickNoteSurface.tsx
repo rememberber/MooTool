@@ -24,13 +24,10 @@ import {
   Paperclip,
   Palette,
   Pencil,
-  Pin,
-  PinOff,
   Replace,
   Save,
   Search,
   Sparkles,
-  Tag,
   Trash2,
   TriangleAlert,
   UnfoldVertical,
@@ -139,8 +136,6 @@ export function QuickNoteSurface() {
   const [includeContent, setIncludeContent] = useState(true)
   const [noteSort, setNoteSort] = useState<NoteSort>('modified')
   const [locateRequest, setLocateRequest] = useState(0)
-  const [tagFilter, setTagFilter] = useState('')
-  const [tagText, setTagText] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('editor')
   const [dirty, setDirty] = useState(false)
   const [notice, setNotice] = useState<Notice>({ key: 'notice.loading' })
@@ -171,17 +166,16 @@ export function QuickNoteSurface() {
     : folderFilter === '*' ? '' : folderFilter
   const treeExpanded = settings.vault.quickNoteTreeExpandMode === 'collapseAll' ? 'collapseAll' : 'expandAll'
   const noteTree = useMemo(
-    () => buildNoteTree(notes, folders, query, tagFilter, { includeContent, sort: noteSort }),
-    [folders, includeContent, noteSort, notes, query, tagFilter]
+    () => buildNoteTree(notes, folders, query, '', { includeContent, sort: noteSort }),
+    [folders, includeContent, noteSort, notes, query]
   )
-  const allTags = useMemo(() => [...new Set(notes.flatMap((note) => note.tags))].sort((left, right) => left.localeCompare(right)), [notes])
   const matchCount = useMemo(() => findAllMatches(draft.content, find, findOptions).length, [draft.content, find, findOptions])
   const stats = useMemo(() => documentStats(draft.content), [draft.content])
   const noticeText = 'raw' in notice ? notice.raw : t(notice.key, notice.values)
   const session = useMemo(() => ({
-    digest: JSON.stringify({ count: notes.length, activeId, titleHash: contentFingerprint(draft.title), contentHash: contentFingerprint(draft.content), tagHash: contentFingerprint(tagText), dirty }),
+    digest: JSON.stringify({ count: notes.length, activeId, titleHash: contentFingerprint(draft.title), contentHash: contentFingerprint(draft.content), dirty }),
     summary: t('session.summary', { count: notes.length, state: t(dirty ? 'session.unsaved' : 'session.saved') })
-  }), [activeId, dirty, draft.content, draft.title, notes.length, t, tagText])
+  }), [activeId, dirty, draft.content, draft.title, notes.length, t])
   const { sessionId, reportError } = useToolSessionReport('quick-note', session.digest, session.summary)
   const recordOperation = useOperationHistory('quick-note')
 
@@ -195,9 +189,8 @@ export function QuickNoteSurface() {
         color: restored.color ?? 'default', folderPath: restored.folderPath ?? '',
         editorFont: restored.editorFont ?? 'default', lineHeight: restored.lineHeight ?? 'normal',
         fontSize: restored.fontSize ?? settings.editor.quickNoteFontSize, fontName: restored.fontName ?? '',
-        lineSpacing: restored.lineSpacing ?? 1, lineWrapping: restored.lineWrapping ?? true, syntax: normalizeNoteSyntax(restored.syntax)
+        lineSpacing: restored.lineSpacing ?? 1, lineWrapping: restored.lineWrapping ?? true,         syntax: normalizeNoteSyntax(restored.syntax)
       })
-      setTagText((restored.tags ?? []).join(', '))
       setFolderFilter(restored.folderPath ?? '')
       setDirty(true)
       setViewMode('split')
@@ -269,7 +262,7 @@ export function QuickNoteSurface() {
     if (!dirty || busy || !activeNote) return
     const timer = window.setTimeout(() => { void persistDraft(false) }, 250)
     return () => window.clearTimeout(timer)
-  }, [activeId, activeNote, busy, dirty, draft.color, draft.content, draft.editorFont, draft.folderPath, draft.lineHeight, draft.lineWrapping, draft.syntax, draft.title, tagText])
+  }, [activeId, activeNote, busy, dirty, draft.color, draft.content, draft.editorFont, draft.folderPath, draft.lineHeight, draft.lineWrapping, draft.syntax, draft.title])
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -292,7 +285,6 @@ export function QuickNoteSurface() {
     setActiveId(note.id)
     setFolderFilter(note.folderPath)
     setDraft(noteDraft(note))
-    setTagText(note.tags.join(', '))
     setDirty(false)
   }
 
@@ -300,7 +292,6 @@ export function QuickNoteSurface() {
     revisionRef.current += 1
     setActiveId('')
     setDraft(emptyDraft(folderFilter === '*' ? '' : folderFilter))
-    setTagText('')
     setAttachments([])
     setDirty(false)
     setViewMode('editor')
@@ -317,7 +308,6 @@ export function QuickNoteSurface() {
     setActiveId('')
     setFolderFilter(path)
     setDraft(emptyDraft(path === '*' ? '' : path))
-    setTagText('')
     setAttachments([])
     setDirty(false)
     setInfoVisible(false)
@@ -367,12 +357,6 @@ export function QuickNoteSurface() {
     setDirty(true)
   }
 
-  function patchTags(value: string): void {
-    revisionRef.current += 1
-    setTagText(value)
-    setDirty(true)
-  }
-
   async function persistDraft(announce: boolean): Promise<string | false> {
     if (busy) return false
     if (!draft.title.trim() && !draft.content.trim()) {
@@ -388,7 +372,7 @@ export function QuickNoteSurface() {
         id: activeNote?.id ?? crypto.randomUUID(),
         title: snapshot.title.trim() || firstContentLine(snapshot.content) || t('note.untitled'),
         content: snapshot.content,
-        tags: parseTags(tagText),
+        tags: snapshot.tags,
         color: snapshot.color,
         folderPath: snapshot.folderPath,
         editorFont: snapshot.editorFont,
@@ -399,7 +383,7 @@ export function QuickNoteSurface() {
         relativePath: activeNote?.relativePath ?? '',
         lineWrapping: snapshot.lineWrapping,
         syntax: snapshot.syntax,
-        pinned: activeNote?.pinned ?? false,
+        pinned: false,
         createdAt: activeNote?.createdAt ?? now,
         updatedAt: now
       }
@@ -409,7 +393,6 @@ export function QuickNoteSurface() {
       const unchanged = revisionRef.current === revision
       if (unchanged) {
         setDraft(noteDraft(saved))
-        setTagText(saved.tags.join(', '))
         setDirty(false)
       }
       recordQuickNoteActivity(activeNote ? 'Update Quick Note' : 'Create Quick Note')
@@ -425,43 +408,6 @@ export function QuickNoteSurface() {
       fail(cause)
       return false
     } finally { setBusy(false) }
-  }
-
-  async function togglePinned(): Promise<void> {
-    if (!activeNote || busy) return
-    setBusy(true)
-    try {
-      const revision = revisionRef.current
-      const snapshot = draft
-      const saved = await localDataApi.saveNote({
-        ...activeNote,
-        title: snapshot.title.trim() || firstContentLine(snapshot.content) || t('note.untitled'),
-        content: snapshot.content,
-        tags: parseTags(tagText),
-        color: snapshot.color,
-        folderPath: snapshot.folderPath,
-        editorFont: snapshot.editorFont,
-        lineHeight: snapshot.lineHeight,
-        fontSize: snapshot.fontSize,
-        fontName: snapshot.fontName,
-        lineSpacing: snapshot.lineSpacing,
-        lineWrapping: snapshot.lineWrapping,
-        syntax: snapshot.syntax,
-        pinned: !activeNote.pinned,
-        updatedAt: Date.now()
-      })
-      setNotes((items) => sortNotes([saved, ...items.filter((item) => item.id !== saved.id)]))
-      const unchanged = revisionRef.current === revision
-      if (unchanged) {
-        setDraft(noteDraft(saved))
-        setTagText(saved.tags.join(', '))
-        setDirty(false)
-      }
-      recordQuickNoteActivity('Update Quick Note')
-      succeed(saved.pinned
-        ? unchanged ? 'notice.pinned' : 'notice.pinnedPending'
-        : unchanged ? 'notice.unpinned' : 'notice.unpinnedPending')
-    } catch (cause) { fail(cause) } finally { setBusy(false) }
   }
 
   async function duplicate(): Promise<void> {
@@ -533,7 +479,6 @@ export function QuickNoteSurface() {
       setActiveId('')
       setFolderFilter(saved.path)
       setDraft(emptyDraft(saved.path))
-      setTagText('')
       setAttachments([])
       setDirty(false)
       recordQuickNoteActivity('Create Quick Note folder')
@@ -623,7 +568,7 @@ export function QuickNoteSurface() {
         const saved = await localDataApi.renameNoteEntry(current.relativePath || node.path, name)
         recordQuickNoteActivity('Rename Quick Note entry')
         setNotes((items) => sortNotes([saved, ...items.filter((item) => item.id !== saved.id)]))
-        if (movingActive) { setDraft(noteDraft(saved)); setTagText(saved.tags.join(', ')); setDirty(false) }
+        if (movingActive) { setDraft(noteDraft(saved)); setDirty(false) }
         succeed('notice.renamed', { name: saved.title })
       } catch (cause) { fail(cause) }
       return
@@ -702,7 +647,6 @@ export function QuickNoteSurface() {
         setNotes((items) => sortNotes([saved, ...items.filter((item) => item.id !== saved.id)]))
         if (movingActive) {
           setDraft(noteDraft(saved))
-          setTagText(saved.tags.join(', '))
           setDirty(false)
           setFolderFilter(saved.folderPath)
         }
@@ -1045,7 +989,6 @@ export function QuickNoteSurface() {
               </span>
             </header>
           </section>
-          <label className="quick-note-tag-filter"><Tag /><select value={tagFilter} aria-label={t('tags.filter')} onChange={(event) => setTagFilter(event.target.value)}><option value="">{t('tags.all')}</option>{allTags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}</select></label>
           <div className="quick-note-tree-scroll">
             <QuickNoteTree
               nodes={noteTree}
@@ -1086,7 +1029,6 @@ export function QuickNoteSurface() {
               <button className={viewMode === 'split' ? 'utility-segment utility-segment--active' : 'utility-segment'} type="button" onClick={() => setViewMode('split')}><Columns2 />{t('view.split')}</button>
               <button className={viewMode === 'preview' ? 'utility-segment utility-segment--active' : 'utility-segment'} type="button" onClick={() => setViewMode('preview')}><Eye />{t('view.preview')}</button>
             </div>
-            <button className="secondary-button" type="button" disabled={!activeNote || busy} onClick={() => void togglePinned()}>{activeNote?.pinned ? <PinOff /> : <Pin />}{t(activeNote?.pinned ? 'action.unpin' : 'action.pin')}</button>
             <button className="secondary-button quick-note-delete" type="button" disabled={!activeNote || busy} onClick={() => void remove()}><Trash2 />{t('action.delete')}</button>
             <button className="primary-button" type="button" disabled={!activeNote || !dirty || busy} onClick={() => void persistDraft(true)}><Save />{t(busy ? 'action.saving' : 'action.save')}</button>
           </header>
@@ -1101,7 +1043,6 @@ export function QuickNoteSurface() {
             <button type="button" title={t('replace.openVault')} onClick={() => void openVault()}><FolderOpen /></button>
             <button type="button" title={t('attachment.add')} disabled={!activeNote || busy} onClick={() => void importAttachment()}><Paperclip /></button>
             <label className="quick-note-transform"><Sparkles /><select aria-label={t('transform.label')} disabled={!activeNote} value={transform} onChange={(event) => setTransform(event.target.value)}><option value="uppercase">{t('transform.uppercase')}</option><option value="lowercase">{t('transform.lowercase')}</option><option value="trimLines">{t('transform.trimLines')}</option><option value="sortLines">{t('transform.sortLines')}</option><option value="uniqueLines">{t('transform.uniqueLines')}</option><option value="jsonPretty">{t('transform.jsonPretty')}</option></select><button type="button" disabled={!activeNote} onClick={applyQuickTransform}>{t('transform.apply')}</button></label>
-            <label><Tag /><input value={tagText} disabled={!activeNote} placeholder={t('tags.placeholder')} onChange={(event) => patchTags(event.target.value)} /></label>
             <label><Palette /><select value={draft.color} disabled={!activeNote} aria-label={t('color.label')} onChange={(event) => patchDraft({ color: event.target.value as QuickNote['color'] })}>{NOTE_COLORS.map((color) => <option key={color} value={color}>{t(`color.${color}` as QuickNoteMessageKey)}</option>)}</select></label>
             <label><Folder /><select value={draft.folderPath} disabled={!activeNote} aria-label={t('folder.move')} onChange={(event) => patchDraft({ folderPath: event.target.value })}><option value="">{t('folder.root')}</option>{folders.map((folder) => <option key={folder.path} value={folder.path}>{folder.path}</option>)}</select></label>
             <label>{t('editor.syntax')}<select value={draft.syntax} disabled={!activeNote} onChange={(event) => patchDraft({ syntax: event.target.value as QuickNote['syntax'] })}>{NOTE_SYNTAX.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
@@ -1346,7 +1287,7 @@ function markdownBlocks(value: string): Array<{ kind: 'text' | 'code'; value: st
   return blocks
 }
 
-function sortNotes(notes: QuickNote[]): QuickNote[] { return notes.sort((left, right) => Number(right.pinned) - Number(left.pinned) || right.updatedAt - left.updatedAt) }
+function sortNotes(notes: QuickNote[]): QuickNote[] { return notes.sort((left, right) => right.updatedAt - left.updatedAt) }
 function sortFolders(folders: QuickNoteFolder[]): QuickNoteFolder[] { return folders.sort((left, right) => left.path.localeCompare(right.path)) }
 function sanitizeFolderName(value: string): string {
   const title = value.trim()
@@ -1377,6 +1318,4 @@ function formatNoteDate(value: number | undefined, locale: string): string {
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString(locale)
 }
 const NOTE_COLORS: QuickNote['color'][] = ['default', 'coral', 'yellow', 'green', 'blue', 'purple', 'red']
-function parseTags(value: string): string[] { return normalizeTags(value.split(/[,，]/)) }
-function normalizeTags(values: string[]): string[] { return [...new Set(values.map((value) => value.trim().replace(/^#/, '')).filter(Boolean))].slice(0, 32) }
 function formatBytes(value: number): string { return value < 1024 ? `${value} B` : value < 1024 * 1024 ? `${(value / 1024).toFixed(1)} KB` : `${(value / (1024 * 1024)).toFixed(1)} MB` }

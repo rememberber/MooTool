@@ -21,7 +21,7 @@ export type TranslationProvider = 'google' | 'bing' | 'deepl'
 export type VaultTreeExpandMode = 'expandAll' | 'collapseAll'
 
 export interface RuntimeRunOption {
-  argumentsText: string
+  arguments: string
   workingDirectory: string
 }
 
@@ -94,9 +94,13 @@ export interface AppSettings {
     drafts: Record<RuntimeSettingsId, string>
     options: Record<RuntimeSettingsId, RuntimeRunOption>
   }
-  data: Record<string, never>
+  data: {
+    directory: string
+  }
   vault: {
     autoCommit: boolean
+    quickNotePath: string
+    jsonPath: string
     rootDirectory: string | null
     gitRemote: string
     gitUsername: string
@@ -200,15 +204,19 @@ export function defaultAppSettings(): AppSettings {
       environment: {},
       drafts: { java: '', groovy: '', python: '', node: '' },
       options: {
-        java: { argumentsText: '', workingDirectory: '' },
-        groovy: { argumentsText: '', workingDirectory: '' },
-        python: { argumentsText: '', workingDirectory: '' },
-        node: { argumentsText: '', workingDirectory: '' }
+        java: { arguments: '', workingDirectory: '' },
+        groovy: { arguments: '', workingDirectory: '' },
+        python: { arguments: '', workingDirectory: '' },
+        node: { arguments: '', workingDirectory: '' }
       }
     },
-    data: {},
+    data: {
+      directory: ''
+    },
     vault: {
-      autoCommit: false,
+      autoCommit: true,
+      quickNotePath: '',
+      jsonPath: '',
       rootDirectory: null,
       gitRemote: '',
       gitUsername: '',
@@ -373,6 +381,73 @@ export function normalizeEditorSettings(editor: unknown): AppSettings['editor'] 
 function clampTimeoutMs(value: unknown, fallback: number): number {
   const number = typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : fallback
   return Math.max(1_000, Math.min(120_000, number))
+}
+
+const RUNTIME_OPTION_IDS = ['java', 'groovy', 'python', 'node'] as const
+
+export function normalizeRuntimeOption(value: unknown): RuntimeRunOption {
+  const record = value && typeof value === 'object' ? value as Record<string, unknown> : {}
+  const args = typeof record.arguments === 'string'
+    ? record.arguments
+    : typeof record.argumentsText === 'string' ? record.argumentsText : ''
+  return {
+    arguments: args.slice(0, 8_192),
+    workingDirectory: typeof record.workingDirectory === 'string' ? record.workingDirectory : ''
+  }
+}
+
+export function normalizeRuntimeSettings(value: unknown): AppSettings['runtime'] {
+  const defaults = defaultAppSettings().runtime
+  const record = value && typeof value === 'object' ? value as Record<string, unknown> : {}
+  const optionsRecord = record.options && typeof record.options === 'object' ? record.options as Record<string, unknown> : {}
+  const draftsRecord = record.drafts && typeof record.drafts === 'object' ? record.drafts as Record<string, unknown> : {}
+  const options = { ...defaults.options }
+  const drafts = { ...defaults.drafts }
+  for (const id of RUNTIME_OPTION_IDS) {
+    options[id] = normalizeRuntimeOption(optionsRecord[id])
+    drafts[id] = typeof draftsRecord[id] === 'string' ? draftsRecord[id] : defaults.drafts[id]
+  }
+  return {
+    ...defaults,
+    autoDetect: typeof record.autoDetect === 'boolean' ? record.autoDetect : defaults.autoDetect,
+    javaPath: typeof record.javaPath === 'string' ? record.javaPath : defaults.javaPath,
+    groovyPath: typeof record.groovyPath === 'string' ? record.groovyPath : defaults.groovyPath,
+    pythonPath: typeof record.pythonPath === 'string' ? record.pythonPath : defaults.pythonPath,
+    nodePath: typeof record.nodePath === 'string' ? record.nodePath : defaults.nodePath,
+    environment: record.environment && typeof record.environment === 'object' && !Array.isArray(record.environment)
+      ? record.environment as AppSettings['runtime']['environment']
+      : defaults.environment,
+    drafts,
+    options
+  }
+}
+
+export function normalizeDataSettings(value: unknown): AppSettings['data'] {
+  const record = value && typeof value === 'object' ? value as Record<string, unknown> : {}
+  return { directory: typeof record.directory === 'string' ? record.directory.trim() : '' }
+}
+
+export function normalizeVaultSettings(value: unknown): AppSettings['vault'] {
+  const defaults = defaultAppSettings().vault
+  const record = value && typeof value === 'object' ? value as Record<string, unknown> : {}
+  const legacyRoot = typeof record.rootDirectory === 'string' ? record.rootDirectory.trim() : ''
+  const jsonPath = typeof record.jsonPath === 'string' && record.jsonPath.trim() ? record.jsonPath.trim() : legacyRoot
+  const quickNotePath = typeof record.quickNotePath === 'string' ? record.quickNotePath.trim() : ''
+  return {
+    ...defaults,
+    autoCommit: typeof record.autoCommit === 'boolean' ? record.autoCommit : defaults.autoCommit,
+    quickNotePath,
+    jsonPath,
+    rootDirectory: jsonPath || null,
+    gitRemote: typeof record.gitRemote === 'string' ? record.gitRemote : defaults.gitRemote,
+    gitUsername: typeof record.gitUsername === 'string' ? record.gitUsername : defaults.gitUsername,
+    autoCommitIdleSeconds: typeof record.autoCommitIdleSeconds === 'number' ? record.autoCommitIdleSeconds : defaults.autoCommitIdleSeconds,
+    autoCommitInactiveSeconds: typeof record.autoCommitInactiveSeconds === 'number' ? record.autoCommitInactiveSeconds : defaults.autoCommitInactiveSeconds,
+    autoPullMinutes: typeof record.autoPullMinutes === 'number' ? record.autoPullMinutes : defaults.autoPullMinutes,
+    hideGitignoredFiles: typeof record.hideGitignoredFiles === 'boolean' ? record.hideGitignoredFiles : defaults.hideGitignoredFiles,
+    quickNoteTreeExpandMode: record.quickNoteTreeExpandMode === 'collapseAll' ? 'collapseAll' : 'expandAll',
+    jsonTreeExpandMode: record.jsonTreeExpandMode === 'collapseAll' ? 'collapseAll' : 'expandAll'
+  }
 }
 
 export function normalizeNetworkSettings(value: unknown): AppSettings['network'] {

@@ -8,6 +8,7 @@ import type {
   SaveHttpRequestInput
 } from '../contracts/http'
 import { sqliteDate } from '../../features/host/hostProfileStore'
+import { httpFailureCode, prepareHttpExchange } from '../../features/http/httpTools'
 
 const browserControllers = new Map<string, AbortController>()
 const SAVED_KEY = 'mootool-next-tauri:http-saved:v2'
@@ -40,13 +41,10 @@ const browserApi: HttpApi = {
   execute: async (request, onProgress) => {
     const controller = new AbortController()
     browserControllers.set(request.requestId, controller)
-    const timeout = window.setTimeout(() => controller.abort(), request.timeoutMs)
+    const timeout = window.setTimeout(() => controller.abort(new Error('TIMEOUT')), request.timeoutMs)
     const started = performance.now()
     onProgress({ kind: 'started' })
-    const url = new URL(request.url)
-    for (const entry of request.params.filter((item) => item.enabled && item.name.trim())) {
-      url.searchParams.append(entry.name.trim(), entry.value)
-    }
+    const prepared = prepareHttpExchange(request)
     const headers = new Headers()
     for (const entry of request.headers.filter((item) => item.enabled && item.name.trim())) {
       headers.append(entry.name.trim(), entry.value)
@@ -56,17 +54,28 @@ const browserApi: HttpApi = {
       .map((item) => `${item.name.trim()}=${item.value}`)
       .join('; ')
     if (cookies) headers.set('Cookie', cookies)
-    if (request.body && request.bodyType && !headers.has('Content-Type')) headers.set('Content-Type', request.bodyType)
+    if (prepared.body && prepared.contentType && !headers.has('Content-Type')) headers.set('Content-Type', prepared.contentType)
     try {
-      const response = await fetch(url, {
+      const response = await fetch(prepared.url, {
         method: request.method,
         headers,
-        body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
+        body: prepared.body,
         redirect: request.followRedirects ? 'follow' : 'manual',
         signal: controller.signal
       })
       onProgress({ kind: 'headers', status: response.status })
-      const bodyText = await response.text()
+      const declaredLength = Number(response.headers.get('content-length') || 0)
+      if (declaredLength > 10 * 1024 * 1024) return finishBrowserFailure(request, 'RESPONSE_TOO_LARGE', started)
+      const bytes = new Uint8Array(await response.arrayBuffer())
+      if (bytes.byteLength > 10 * 1024 * 1024) return finishBrowserFailure(request, 'RESPONSE_TOO_LARGE', started)
+      const charset = /charset=([^;]+)/i.exec(response.headers.get('content-type') ?? '')?.[1]?.trim().replace(/^['"]|['"]$/g, '') || 'utf-8'
+      let rawBody: string
+      try {
+        rawBody = new TextDecoder(charset).decode(bytes)
+      } catch {
+        return finishBrowserFailure(request, 'INVALID_REQUEST', started)
+      }
+      const bodyText = prettyJson(rawBody)
       onProgress({ kind: 'download', receivedBytes: bodyText.length })
       const result: HttpResponseData = {
         status: response.status,
@@ -75,7 +84,7 @@ const browserApi: HttpApi = {
         bodyText,
         bodyBase64: '',
         contentType: response.headers.get('content-type') ?? '',
-        sizeBytes: new Blob([bodyText]).size,
+        sizeBytes: bytes.byteLength,
         truncated: false,
         durationMs: Math.round(performance.now() - started)
       }
@@ -84,8 +93,8 @@ const browserApi: HttpApi = {
       const history: HttpRequestHistory = {
         id: nextId(values),
         requestIdValue: request.savedId ?? null,
-        title: request.name.trim() || 'Untitled',
-        name: request.name.trim() || 'Untitled',
+        title: request.name.trim(),
+        name: request.name.trim(),
         method: request.method,
         url: request.url,
         params: request.params,
@@ -103,6 +112,10 @@ const browserApi: HttpApi = {
       }
       writeList(HISTORY_KEY, [...values, history].slice(-500))
       return result
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      const reason = controller.signal.reason instanceof Error ? controller.signal.reason.message : ''
+      return finishBrowserFailure(request, httpFailureCode(`${message} ${reason}`, controller.signal.aborted), started)
     } finally {
       window.clearTimeout(timeout)
       browserControllers.delete(request.requestId)
@@ -116,7 +129,7 @@ const browserApi: HttpApi = {
   listSaved: async (query = '') => filterSaved(readList<SavedHttpRequest>(SAVED_KEY), query),
   save: async (item: SaveHttpRequestInput) => {
     const values = readList<SavedHttpRequest>(SAVED_KEY)
-    const name = item.name.trim() || 'Untitled'
+    const name = item.name.trim()
     const now = sqliteDate()
     const index = item.id && item.id > 0
       ? values.findIndex((value) => value.id === item.id)
@@ -171,6 +184,52 @@ function deleteItem<T extends { id: number }>(key: string, id: number): boolean 
 function like(value: string, query: string): boolean {
   const pattern = `%${query.trim()}%`.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replaceAll('%', '.*').replaceAll('_', '.')
   return new RegExp(`^${pattern}$`, 'i').test(value)
+}
+
+function finishBrowserFailure(request: Parameters<HttpApi['execute']>[0], statusText: string, started: number): HttpResponseData {
+  const result: HttpResponseData = {
+    status: 0,
+    finalUrl: request.url,
+    headers: [],
+    bodyText: '',
+    bodyBase64: '',
+    contentType: '',
+    sizeBytes: 0,
+    truncated: false,
+    durationMs: Math.round(performance.now() - started),
+    statusText
+  }
+  const values = readList<HttpRequestHistory>(HISTORY_KEY)
+  const now = sqliteDate()
+  writeList(HISTORY_KEY, [...values, {
+    id: nextId(values),
+    requestIdValue: request.savedId ?? null,
+    title: request.name.trim(),
+    name: request.name.trim(),
+    method: request.method,
+    url: request.url,
+    params: request.params,
+    headers: request.headers,
+    cookies: request.cookies,
+    body: request.body,
+    bodyType: request.bodyType,
+    responseBody: '',
+    responseHeaders: '',
+    responseCookies: '',
+    status: `0 ${statusText}`,
+    costTime: result.durationMs,
+    createTime: now,
+    modifiedTime: now
+  }].slice(-500))
+  return result
+}
+
+function prettyJson(value: string): string {
+  try {
+    return JSON.stringify(JSON.parse(value), null, 2)
+  } catch {
+    return value
+  }
 }
 
 function nextId(values: Array<{ id: number }>): number {

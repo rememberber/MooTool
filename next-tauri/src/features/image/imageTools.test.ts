@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { ensureImageDataUrl, overwriteImageName, processedImageName, resizeGeometry, scaledDimensions, type ResizeImageOptions } from './imageTools'
+import { ensureImageDataUrl, overwriteImageName, processedImageName, resizeGeometry, resolveWatermarkFontSize, scaledDimensions, type ResizeImageOptions } from './imageTools'
 
 describe('image tools', () => {
   it('creates deterministic processed names', () => {
     expect(processedImageName('moo.JPG', 'compressed', 'auto')).toBe('moo_compressed.jpg')
     expect(processedImageName('moo', 'watermarked', 'png')).toBe('moo_watermarked.png')
+    expect(resolveWatermarkFontSize(400, 200, 'auto')).toBe(18)
+    expect(resolveWatermarkFontSize(2000, 2000, 'small')).toBe(28)
+    expect(resolveWatermarkFontSize(2000, 2000, 'large')).toBe(64)
   })
 
   it('clamps scaled dimensions and normalizes base64', () => {

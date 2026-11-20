@@ -9,6 +9,7 @@ use super::file_digest::{Md5, Sha1, Sm3, StreamingDigest};
 use crate::{contracts::error::AppResult, repositories::settings::SettingsRepository};
 
 const MAX_TEXT_BYTES: u64 = 5 * 1024 * 1024;
+const MAX_SOURCE_BYTES: u64 = 20 * 1024 * 1024;
 const MAX_BINARY_BYTES: usize = 20 * 1024 * 1024;
 
 #[derive(Serialize)]
@@ -96,15 +97,46 @@ pub(super) fn digest_path(path: &Path, algorithm: &str) -> Result<String, String
     })
 }
 
+struct TextPick {
+    name: &'static str,
+    extensions: &'static [&'static str],
+    limit: u64,
+    limit_message: &'static str,
+    follow_symlinks: bool,
+}
+
+fn text_pick(kind: Option<&str>) -> TextPick {
+    if kind == Some("source") {
+        TextPick {
+            name: "Source files",
+            extensions: &[
+                "java", "xml", "html", "htm", "conf", "nginx", "txt", "text", "log",
+            ],
+            limit: MAX_SOURCE_BYTES,
+            limit_message: "File exceeds 20 MB limit",
+            follow_symlinks: true,
+        }
+    } else {
+        TextPick {
+            name: "Text files",
+            extensions: &["txt", "hosts", "conf", "md", "json", "yaml", "yml", "svg"],
+            limit: MAX_TEXT_BYTES,
+            limit_message: "selected text file must be a regular UTF-8 file up to 5 MiB",
+            follow_symlinks: false,
+        }
+    }
+}
+
 #[tauri::command]
-pub async fn pick_text_file(app: tauri::AppHandle) -> AppResult<Option<UserTextFile>> {
+pub async fn pick_text_file(
+    app: tauri::AppHandle,
+    kind: Option<String>,
+) -> AppResult<Option<UserTextFile>> {
+    let pick = text_pick(kind.as_deref());
     let selection = app
         .dialog()
         .file()
-        .add_filter(
-            "Text files",
-            &["txt", "hosts", "conf", "md", "json", "yaml", "yml", "svg"],
-        )
+        .add_filter(pick.name, pick.extensions)
         .blocking_pick_file();
     let Some(selection) = selection else {
         return Ok(None);
@@ -112,10 +144,21 @@ pub async fn pick_text_file(app: tauri::AppHandle) -> AppResult<Option<UserTextF
     let path = selection
         .into_path()
         .map_err(|_| "selected text file is not a local filesystem path")?;
-    let metadata = fs::symlink_metadata(&path)
-        .map_err(|error| format!("failed to inspect selected text file: {error}"))?;
-    if !metadata.is_file() || metadata.file_type().is_symlink() || metadata.len() > MAX_TEXT_BYTES {
-        return Err("selected text file must be a regular UTF-8 file up to 5 MiB".into());
+    let metadata = if pick.follow_symlinks {
+        fs::metadata(&path)
+    } else {
+        fs::symlink_metadata(&path)
+    }
+    .map_err(|error| format!("failed to inspect selected text file: {error}"))?;
+    if !metadata.is_file()
+        || (!pick.follow_symlinks && metadata.file_type().is_symlink())
+        || metadata.len() > pick.limit
+    {
+        return Err(if metadata.len() > pick.limit {
+            pick.limit_message.into()
+        } else {
+            "selected text file must be a regular UTF-8 file up to 5 MiB".into()
+        });
     }
     let content = fs::read_to_string(&path)
         .map_err(|error| format!("failed to read selected UTF-8 text file: {error}"))?;
@@ -230,10 +273,10 @@ fn validate_export_target(path: &Path) -> Result<(), String> {
     if !path.is_absolute() {
         return Err("export target must be an absolute path".into());
     }
-    if let Ok(metadata) = fs::symlink_metadata(path) {
-        if metadata.file_type().is_symlink() || !metadata.is_file() {
-            return Err("export target must be a regular non-symlink file".into());
-        }
+    if let Ok(metadata) = fs::symlink_metadata(path)
+        && (metadata.file_type().is_symlink() || !metadata.is_file())
+    {
+        return Err("export target must be a regular non-symlink file".into());
     }
     let parent = path
         .parent()
@@ -249,6 +292,15 @@ fn validate_export_target(path: &Path) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn opens_reformat_sources_with_the_electron_limit() {
+        let source = text_pick(Some("source"));
+        assert_eq!(source.limit, 20 * 1024 * 1024);
+        assert_eq!(source.limit_message, "File exceeds 20 MB limit");
+        assert!(source.extensions.contains(&"nginx"));
+        assert_eq!(text_pick(None).limit, 5 * 1024 * 1024);
+    }
 
     #[test]
     fn validates_safe_default_export_names() {

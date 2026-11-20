@@ -230,7 +230,7 @@ export function HostSurface() {
   async function applySystem(): Promise<void> {
     if (!system || !await dialog.confirm(t('confirm.apply', { path: system.path }))) return
     setBusy(true)
-    try { const updated = await hostApi.writeSystem(content, system.content); setSystem(updated); succeed('notice.systemWritten'); recordOperation(t('operation.writeSystem'), updated.path, 'success') } catch (cause) { fail(cause); recordOperation(t('operation.writeSystem'), cause instanceof Error ? cause.message : String(cause), 'error') } finally { setBusy(false) }
+    try { const updated = await hostApi.writeSystem(content, system.content, active?.id ?? null); setSystem(updated); succeed('notice.systemWritten'); recordOperation(t('operation.writeSystem'), updated.path, 'success') } catch (cause) { fail(cause); recordOperation(t('operation.writeSystem'), cause instanceof Error ? cause.message : String(cause), 'error') } finally { setBusy(false) }
   }
 
   async function resolve(): Promise<void> {

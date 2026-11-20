@@ -60,16 +60,15 @@ export function analyzeIpv4Cidr(input: string): Ipv4CidrResult {
 export function ipv4ToLong(value: string): number {
   const parts = value.trim().split('.')
   if (parts.length !== 4 || parts.some((part) => !/^\d{1,3}$/.test(part) || Number(part) > 255)) {
-    throw new NetworkToolError('ipv4Input')
+    throw new Error('Invalid IPv4 address')
   }
   return parts.reduce((result, part) => result * 256 + Number(part), 0) >>> 0
 }
 
 export function integerToIpv4(value: string): string {
-  if (!/^\d+$/.test(value.trim())) throw new NetworkToolError('integerFormat')
-  const parsed = Number(value)
+  const parsed = Number(value.trim())
   if (!Number.isSafeInteger(parsed) || parsed < 0 || parsed > 0xffffffff) {
-    throw new NetworkToolError('integerRange')
+    throw new Error('Invalid IPv4 number')
   }
   return formatIpv4(parsed)
 }

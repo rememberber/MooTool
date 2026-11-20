@@ -33,14 +33,15 @@ export function VariablesSurface() {
   const [value, setValue] = useState('')
   const [notice, setNotice] = useState('')
   const [failed, setFailed] = useState(false)
-  const runtimeEntries = useMemo(() => runtimeProperties(), [])
+  const [runtimeInfo, setRuntimeInfo] = useState<RuntimeProcessInfo>()
+  const runtimeEntries = useMemo(() => runtimeProperties(runtimeInfo), [runtimeInfo])
   const userEntries = useMemo(() => parseEnvironmentContent(userContent), [userContent])
   const systemEntries = useMemo(() => parseEnvironmentContent(systemContent), [systemContent])
   const sourceEntries = tab === 'runtime'
     ? runtimeEntries
     : scope === 'process' ? processEntries : scope === 'user' ? userEntries : systemEntries
   const entries = useMemo(() => {
-    const needle = query.trim().toLowerCase()
+    const needle = query.toLowerCase()
     return needle ? sourceEntries.filter((entry) => `${entry.key}\n${entry.value}`.toLowerCase().includes(needle)) : sourceEntries
   }, [query, sourceEntries])
   const canEdit = tab === 'environment'
@@ -56,11 +57,13 @@ export function VariablesSurface() {
   async function refresh(): Promise<void> {
     setLoading(true)
     try {
-      const [processVariables, userFile, systemFile] = await Promise.all([
+      const [processVariables, userFile, systemFile, processInfo] = await Promise.all([
         diagnosticsApi.environment(true),
         readPersistent('user'),
-        readPersistent('system')
+        readPersistent('system'),
+        readRuntimeProcess()
       ])
+      setRuntimeInfo(processInfo)
       setProcessEntries(processVariables.map((item) => ({ key: item.name, value: item.value })).sort((left, right) => left.key.localeCompare(right.key)))
       setUserContent(userFile)
       setSystemContent(systemFile)
@@ -228,20 +231,39 @@ export function VariablesSurface() {
   )
 }
 
-function runtimeProperties(): EnvironmentEntry[] {
+interface RuntimeProcessInfo {
+  platform: string
+  arch: string
+  execPath: string
+  cwd: string
+}
+
+function runtimeProperties(info: RuntimeProcessInfo = browserRuntimeProcess()): EnvironmentEntry[] {
   const locale = Intl.DateTimeFormat().resolvedOptions()
   return [
     ['process.version', ''],
     ['process.versions.electron', ''],
     ['process.versions.chrome', ''],
     ['process.versions.node', ''],
-    ['process.execPath', ''],
-    ['process.platform', navigator.platform],
-    ['process.arch', navigator.userAgent.includes('arm64') || navigator.userAgent.includes('aarch64') ? 'arm64' : 'unknown'],
-    ['process.cwd', ''],
+    ['process.execPath', info.execPath],
+    ['process.platform', info.platform],
+    ['process.arch', info.arch],
+    ['process.cwd', info.cwd],
     ['process.locale', locale.locale],
     ['process.timeZone', locale.timeZone ?? '']
   ].map(([key, value]) => ({ key, value })).sort((left, right) => left.key.localeCompare(right.key))
+}
+
+function browserRuntimeProcess(): RuntimeProcessInfo {
+  const agent = navigator.userAgent
+  const platform = /Win/.test(navigator.platform) ? 'win32' : /Linux/.test(navigator.platform) ? 'linux' : /Mac/.test(navigator.platform) ? 'darwin' : navigator.platform
+  const arch = /arm64|aarch64/i.test(agent) ? 'arm64' : /x64|x86_64|Win64|WOW64/i.test(agent) ? 'x64' : /i686|ia32/i.test(agent) ? 'ia32' : ''
+  return { platform, arch, execPath: '', cwd: '' }
+}
+
+async function readRuntimeProcess(): Promise<RuntimeProcessInfo> {
+  if (window.__TAURI_INTERNALS__) return invoke<RuntimeProcessInfo>('read_runtime_process')
+  return browserRuntimeProcess()
 }
 
 function syncProcessEntry(

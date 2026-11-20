@@ -4,6 +4,7 @@ import {
   Copy,
   Dices,
   FileSearch,
+  History,
   KeyRound,
   LockKeyhole,
   Play,
@@ -15,12 +16,14 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import { localDataApi } from '../../platform/api/localDataApi'
 import { fileDigestApi } from '../../platform/api/fileDigestApi'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { ResizableColumns } from '../../shared/ResizableColumns'
 import { ResizableThreeColumns } from '../../shared/ResizableThreeColumns'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { FuncHistoryDialog } from '../history/FuncHistoryDialog'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import { useSettings } from '../settings/SettingsProvider'
@@ -67,6 +70,10 @@ import {
 import { cryptoMessages } from './cryptoMessages'
 
 type CryptoTab = 'symmetric' | 'asymmetric' | 'digest' | 'aes' | 'rsa' | 'compatibility' | 'base' | 'random'
+
+const digestNames: Record<HashAlgorithm, string> = {
+  md5: 'MD5', sha1: 'SHA-1', sha256: 'SHA-256', sha384: 'SHA-384', sha512: 'SHA-512', sm3: 'SM3'
+}
 type CryptoMessageKey = LocalizedMessageKey<typeof cryptoMessages>
 type CryptoNotice = { key: CryptoMessageKey; values?: MessageValues } | { raw: string }
 
@@ -74,6 +81,7 @@ export function CryptoSurface() {
   const { t } = useLocalizedMessages(cryptoMessages)
   const { settings, ready: settingsReady, save: saveSettings } = useSettings()
   const [tab, setTab] = useState<CryptoTab>('symmetric')
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [source, setSource] = useState('MooTool parity')
   const [symAlgorithm, setSymAlgorithm] = useState<SymmetricAlgorithm>('AES')
   const [symKey, setSymKey] = useState('')
@@ -155,6 +163,7 @@ export function CryptoSurface() {
       recordOperation(t('operation.digest'), `${hashAlgorithm.toUpperCase()} · ${digestInput.length}`, 'success', {
         inputText: digestInput, outputText: result, metadata: { tab: 'digest', hashAlgorithm }
       })
+      rememberCrypto(`${digestNames[hashAlgorithm]} ${t('history.digest')}`, digestInput, result, 'digest|text')
     } catch (cause) {
       fail(cause)
     }
@@ -170,6 +179,7 @@ export function CryptoSurface() {
       recordOperation(t('operation.fileDigest'), `${result.name} · ${hashAlgorithm.toUpperCase()} · ${result.digest}`, 'success', {
         outputText: result.digest, metadata: { tab: 'digest', operation: 'fileDigest', fileName: result.name, hashAlgorithm }
       })
+      rememberCrypto(`${digestNames[hashAlgorithm]} ${t('action.fileDigest')}`, result.path, result.digest, 'digest|file')
     } catch (cause) { fail(cause) }
   }
 
@@ -198,6 +208,7 @@ export function CryptoSurface() {
       recordOperation(t(mode === 'encrypt' ? 'action.encrypt' : 'action.decrypt'), `${symAlgorithm} · ${result.length}`, 'success', {
         inputText: source, outputText: result, metadata: { tab: 'symmetric', algorithm: symAlgorithm, sensitive: true }
       })
+      rememberCrypto(`${symAlgorithm} ${t(mode === 'encrypt' ? 'action.encrypt' : 'action.decrypt')}`, source, result, `symmetric|${mode}`)
     } catch (cause) { fail(cause) }
   }
 
@@ -234,6 +245,8 @@ export function CryptoSurface() {
       recordOperation(t(`action.${mode}`), asymAlgorithm, 'success', {
         inputText: source, outputText: result, metadata: { tab: 'asymmetric', algorithm: asymAlgorithm, sensitive: true }
       })
+      const summaryAlgorithm = mode === 'privateEncrypt' || mode === 'publicDecrypt' ? 'RSA' : asymAlgorithm
+      rememberCrypto(`${summaryAlgorithm} ${t(`action.${mode}`)}`, source, result, `asymmetric|${mode}`)
     } catch (cause) { fail(cause) }
   }
 
@@ -246,6 +259,7 @@ export function CryptoSurface() {
       recordOperation(t(mode === 'encode' ? 'operation.encode' : 'operation.decode'), `${baseAlgorithm.toUpperCase()} · ${source.length}`, 'success', {
         inputText: source, outputText: result, metadata: { tab: 'base', mode, baseAlgorithm }
       })
+      rememberCrypto(`${algorithm} ${t(mode === 'encode' ? 'action.encode' : 'action.decode')}`, source, result, `base|${mode}`)
     } catch (cause) { fail(cause) }
   }
 
@@ -332,6 +346,7 @@ export function CryptoSurface() {
       recordOperation(t('operation.random'), `${kind} · ${kind === 'uuid' ? 36 : length}`, 'success', {
         outputText: result, metadata: { tab: 'random', randomKind: kind, randomLength: length }
       })
+      rememberCrypto(t(`random.${kind}`), kind === 'uuid' ? '' : String(length), result, `random|${kind}`)
       if (settingsReady && length !== settings.tools.randomStringLength) void saveSettings({ ...settings, tools: { ...settings.tools, randomStringLength: length } })
     } catch (cause) {
       fail(cause)
@@ -363,6 +378,28 @@ export function CryptoSurface() {
   function succeed(key: CryptoMessageKey, values?: MessageValues): void {
     setNotice({ key, values })
     setFailed(false)
+  }
+
+  function rememberCrypto(summary: string, inputText: string, outputText: string, extraData: string): void {
+    void localDataApi.saveFuncHistory({ funcType: 'crypto', summary, inputText, outputText, extraData })
+  }
+
+  function applyCryptoHistory(record: { extraData: string | null; inputText: string; outputText: string }): void {
+    const [historyTab, operation] = (record.extraData ?? '').split('|')
+    if (historyTab === 'symmetric' || historyTab === 'asymmetric' || historyTab === 'digest' || historyTab === 'base' || historyTab === 'random') setTab(historyTab)
+    if (historyTab === 'symmetric' || historyTab === 'asymmetric' || historyTab === 'base') {
+      setSource(record.inputText)
+      setOutput(record.outputText)
+    } else if (historyTab === 'digest') {
+      setDigestInput(record.inputText)
+      setDigestOutput(record.outputText)
+    } else if (historyTab === 'random') {
+      if (operation === 'uuid') setUuid(record.outputText)
+      else if (operation === 'digits') setDigits(record.outputText)
+      else if (operation === 'string') setRandomText(record.outputText)
+      else if (operation === 'password') setPassword(record.outputText)
+      setOutput(record.outputText)
+    }
   }
 
   function fail(cause: unknown): void {
@@ -397,6 +434,7 @@ export function CryptoSurface() {
             </button>
           ))}
         </div>
+        <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('action.history')}</button>
         {tab === 'digest' && (
           <>
             <label className="utility-select">
@@ -569,6 +607,7 @@ export function CryptoSurface() {
         <code>{session.summary}</code>
       </footer>
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
+      {historyOpen && <FuncHistoryDialog funcType="crypto" onClose={() => setHistoryOpen(false)} onApply={(record) => { applyCryptoHistory(record); setHistoryOpen(false) }} />}
     </main>
   )
 }

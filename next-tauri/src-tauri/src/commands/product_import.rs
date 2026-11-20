@@ -22,7 +22,10 @@ use crate::{
             ProductImportCounts, ProductImportPreview, ProductImportRecords, ProductImportResult,
             ProductImportSource,
         },
-        settings::{AccentColor, AppLanguage, AppSettings, NavigationStyle, ThemePreference, OPERATION_HISTORY_LIMIT},
+        settings::{
+            AccentColor, AppLanguage, AppSettings, NavigationStyle, OPERATION_HISTORY_LIMIT,
+            ThemePreference,
+        },
         translation::TranslationProvider,
     },
     repositories::{
@@ -200,8 +203,10 @@ pub fn run_product_import(
         &app_data.join("migration-backups"),
     )?;
 
+    let image_library = super::settings::images_directory(&app, &settings.snapshot())?;
     let installed = install_import_files(
         &app_data,
+        &image_library,
         source_product,
         timestamp,
         &source.vault_files,
@@ -759,8 +764,16 @@ fn read_database_hosts(
             id: source_id,
             name: truncate_chars(name.trim(), 200),
             content: truncate_utf8_bytes(&content, 2 * 1024 * 1024),
-            create_time: if valid_import_date(&create_time) { create_time } else { fallback.clone() },
-            modified_time: if valid_import_date(&modified_time) { modified_time } else { fallback },
+            create_time: if valid_import_date(&create_time) {
+                create_time
+            } else {
+                fallback.clone()
+            },
+            modified_time: if valid_import_date(&modified_time) {
+                modified_time
+            } else {
+                fallback
+            },
         });
     }
     Ok(())
@@ -798,8 +811,16 @@ fn read_database_translation_words(
         })
         .map_err(|error| format!("failed to query source translation words: {error}"))?;
     for (index, row) in rows.enumerate() {
-        let (source_id, source_text, target_text, source_lang, target_lang, remark, create_time, modified_time) =
-            row.map_err(|error| format!("failed to read source translation word: {error}"))?;
+        let (
+            source_id,
+            source_text,
+            target_text,
+            source_lang,
+            target_lang,
+            remark,
+            create_time,
+            modified_time,
+        ) = row.map_err(|error| format!("failed to read source translation word: {error}"))?;
         if source_text.trim().is_empty() || source_id <= 0 {
             continue;
         }
@@ -812,8 +833,16 @@ fn read_database_translation_words(
             source_lang,
             target_lang,
             remark: truncate_chars(remark.trim(), 2_000),
-            create_time: if valid_import_date(&create_time) { create_time } else { fallback.clone() },
-            modified_time: if valid_import_date(&modified_time) { modified_time } else { fallback },
+            create_time: if valid_import_date(&create_time) {
+                create_time
+            } else {
+                fallback.clone()
+            },
+            modified_time: if valid_import_date(&modified_time) {
+                modified_time
+            } else {
+                fallback
+            },
         });
     }
     Ok(())
@@ -996,6 +1025,7 @@ fn scan_images(files: &[SourceFile]) -> Result<Vec<SourceImage>, String> {
 
 fn install_import_files(
     app_data: &Path,
+    image_library_root: &Path,
     source_product: ProductImportSource,
     timestamp: i64,
     vault_files: &[SourceFile],
@@ -1027,8 +1057,8 @@ fn install_import_files(
             installed.vault_path = Some(vault_root);
         }
 
-        let image_root = app_data.join("images");
-        fs::create_dir_all(&image_root)
+        let image_root = image_library_root;
+        fs::create_dir_all(image_root)
             .map_err(|error| format!("failed to create Tauri image library: {error}"))?;
         let mut used_names = local_data
             .list_image_assets()?
@@ -1233,9 +1263,12 @@ fn parse_electron_settings(bytes: &[u8]) -> Result<SafeSettingsPatch, String> {
         compact_navigation: json_bool(settings, &["layout", "compactNavigation"]),
         show_separators: json_bool(settings, &["layout", "showSeparators"]),
         show_recent: json_bool(settings, &["layout", "showRecent"]),
-        hidden_navigation_tool_ids: json_string_array(settings, &["layout", "hiddenNavigationToolIds"])
-            .or_else(|| json_string_array(settings, &["layout", "hiddenTools"]))
-            .map(|values| map_electron_hidden_tools(values)),
+        hidden_navigation_tool_ids: json_string_array(
+            settings,
+            &["layout", "hiddenNavigationToolIds"],
+        )
+        .or_else(|| json_string_array(settings, &["layout", "hiddenTools"]))
+        .map(map_electron_hidden_tools),
         editor_font_size: json_u64(settings, &["editor", "fontSize"])
             .or_else(|| json_u64(settings, &["editor", "jsonFontSize"]))
             .and_then(|value| u8::try_from(value).ok())
@@ -1422,8 +1455,9 @@ fn normalize_tool_id(value: &str) -> String {
 }
 
 fn sqlite_import_date(millis: i64) -> String {
-    let utc = time::OffsetDateTime::from_unix_timestamp_nanos((millis as i128).saturating_mul(1_000_000))
-        .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
+    let utc =
+        time::OffsetDateTime::from_unix_timestamp_nanos((millis as i128).saturating_mul(1_000_000))
+            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
     let local = time::UtcOffset::current_local_offset()
         .map(|offset| utc.to_offset(offset))
         .unwrap_or(utc);
@@ -1446,7 +1480,10 @@ fn valid_import_date(value: &str) -> bool {
         && bytes.get(10) == Some(&b' ')
         && bytes.get(13) == Some(&b':')
         && bytes.get(16) == Some(&b':')
-        && bytes.iter().enumerate().all(|(index, byte)| matches!(index, 4 | 7 | 10 | 13 | 16) || byte.is_ascii_digit())
+        && bytes
+            .iter()
+            .enumerate()
+            .all(|(index, byte)| matches!(index, 4 | 7 | 10 | 13 | 16) || byte.is_ascii_digit())
 }
 
 fn imported_id(fingerprint: &str, category: &str, source_id: &str) -> String {

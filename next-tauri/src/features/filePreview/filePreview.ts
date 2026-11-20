@@ -1,4 +1,5 @@
 import { applyEdits, format, parse, type ParseError } from 'jsonc-parser'
+import type { CodeEditorViewState } from '../../shared/codeEditorViewState'
 import { buildSearchRegExp, defaultFindReplaceOptions, type FindMatch, type FindReplaceOptions } from '../../shared/findReplace'
 
 export type PreviewKind = 'text' | 'json' | 'image' | 'pdf' | 'unsupported'
@@ -13,12 +14,36 @@ export type PreviewViewState = {
   imageZoom?: number | null
   pdfPage?: number
   pdfZoom?: number
+  editor?: CodeEditorViewState
 }
 
 export const previewBatchLimit = 100
 export const previewLimits = { text: 2 * 1024 ** 2, json: 2 * 1024 ** 2, image: 32 * 1024 ** 2, pdf: 50 * 1024 ** 2, unsupported: 0 }
 
-const languages = new Set(['json', 'jsonc', 'md', 'markdown', 'java', 'js', 'jsx', 'mjs', 'cjs', 'ts', 'tsx', 'py', 'xml', 'html', 'htm', 'yml', 'yaml', 'sql'])
+const previewLanguages = {
+  json: 'json',
+  jsonc: 'json',
+  md: 'markdown',
+  markdown: 'markdown',
+  java: 'java',
+  js: 'javascript',
+  jsx: 'javascript',
+  mjs: 'javascript',
+  cjs: 'javascript',
+  ts: 'typescript',
+  tsx: 'typescript',
+  py: 'python',
+  xml: 'xml',
+  html: 'html',
+  htm: 'html',
+  yml: 'yaml',
+  yaml: 'yaml',
+  sql: 'sql'
+} as const
+
+export type PreviewLanguage = (typeof previewLanguages)[keyof typeof previewLanguages] | 'text'
+
+const languages = new Set<string>(Object.keys(previewLanguages))
 const textExtensions = new Set(['txt', 'log', 'csv', 'tsv', 'ini', 'conf', 'config', 'properties', 'toml', 'sh', 'bat', 'ps1', 'c', 'h', 'cpp', 'hpp', 'cs', 'go', 'rs', 'rb', 'php', 'css', 'scss', 'svg', 'vue', 'svelte', 'proto', 'gradle', ...languages])
 
 export function scanPreviewMatches(content: string, query: string, options: FindReplaceOptions, from = 0, forward = true): { count: number; match: FindMatch | null; wrapped: boolean } {
@@ -39,6 +64,10 @@ export function scanPreviewMatches(content: string, query: string, options: Find
   }
   const direct = forward ? next : previous
   return { count, match: direct ?? (forward ? first : last), wrapped: count > 0 && direct === null }
+}
+
+export function previewLanguage(name: string): PreviewLanguage {
+  return previewLanguages[previewExtension(name) as keyof typeof previewLanguages] ?? 'text'
 }
 
 export function previewExtension(name: string): string {

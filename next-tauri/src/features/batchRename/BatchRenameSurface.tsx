@@ -107,7 +107,7 @@ export function BatchRenameSurface() {
       <div className="batch-rename-toolbar">
         <span>{t('counts', { selected: selected.length, changed: preview?.changedCount ?? 0 })}</span>
         <button type="button" disabled={busy || selected.length === 0 || status?.recoveryRequired} onClick={() => void buildPreview()}><RefreshCw size={14} />{t('action.preview')}</button>
-        <button type="button" disabled={busy || !preview?.token} onClick={() => void execute()}><Play size={14} />{t('action.execute')}</button>
+        <button type="button" disabled={busy || !preview?.token} onClick={() => void execute()}><Play size={14} />{busy ? t('action.processing') : t('action.execute')}</button>
       </div>
       {error && <p className="batch-rename-error" role="alert">{error}</p>}
       {preview?.rows.some((row) => row.status === 'conflict') && <p className="batch-rename-error" role="alert">{t('conflicts')}</p>}

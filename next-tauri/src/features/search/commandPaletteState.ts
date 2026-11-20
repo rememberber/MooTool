@@ -6,6 +6,8 @@ export const commandActionIds = [
 
 export type CommandActionId = (typeof commandActionIds)[number]
 export type CommandSection = 'pinned' | 'recent' | 'all'
+export type CommandFileFormat = 'text' | 'markdown' | 'json' | 'html'
+export const commandFileExtensions: Record<CommandFileFormat, string> = { text: 'txt', markdown: 'md', json: 'json', html: 'html' }
 export type CommandPaletteState = { pinnedActionIds: CommandActionId[]; recentActionIds: CommandActionId[] }
 export const defaultCommandPaletteState: CommandPaletteState = { pinnedActionIds: [], recentActionIds: [] }
 export const COMMAND_PALETTE_STORAGE_KEY = 'mootool-next-tauri:command-palette'
@@ -14,6 +16,33 @@ export type CommandPaletteOperation =
   | { type: 'pin'; actionId: CommandActionId; pinned: boolean }
   | { type: 'record'; actionId: CommandActionId }
   | { type: 'clear-recent' }
+
+export function commandOutputFormat(actionId: CommandActionId): CommandFileFormat {
+  if (actionId === 'html-markdown') return 'markdown'
+  if (actionId === 'clipboard-html') return 'html'
+  return actionId === 'json-format' || actionId === 'json-minify' || actionId === 'table-json' ? 'json' : 'text'
+}
+
+export function commandImportTarget(actionId: CommandActionId): 'json' | 'quick-note' {
+  return commandOutputFormat(actionId) === 'json' ? 'json' : 'quick-note'
+}
+
+export function commandNoteSyntax(actionId: CommandActionId): 'text/plain' | 'text/markdown' | 'text/html' {
+  const format = commandOutputFormat(actionId)
+  if (format === 'markdown') return 'text/markdown'
+  if (format === 'html') return 'text/html'
+  return 'text/plain'
+}
+
+export function uniqueSnippetPath(paths: readonly string[]): string {
+  const taken = new Set(paths)
+  for (let index = 0; index < 10_000; index += 1) {
+    const suffix = index === 0 ? '' : ` (${index + 1})`
+    const candidate = `snippet${suffix}.json`
+    if (!taken.has(candidate)) return candidate
+  }
+  throw new Error('importFailed')
+}
 
 export function isCommandActionId(value: unknown): value is CommandActionId {
   return typeof value === 'string' && commandActionIds.includes(value as CommandActionId)
@@ -43,6 +72,19 @@ export function updateCommandPaletteState(value: unknown, operation: CommandPale
       ? [...new Set([...state.pinnedActionIds, actionId])]
       : state.pinnedActionIds.filter((id) => id !== actionId)
   }
+}
+
+export function trayCommandActions(value: unknown): CommandActionId[] {
+  const state = normalizeCommandPaletteState(value)
+  return state.pinnedActionIds.length ? state.pinnedActionIds : ['uuid', 'json-format', 'base64-decode']
+}
+
+export async function syncTrayQuickActions(state: unknown, label: (id: CommandActionId) => string): Promise<void> {
+  if (typeof window === 'undefined' || !window.__TAURI_INTERNALS__) return
+  const { invoke } = await import('@tauri-apps/api/core')
+  await invoke('sync_tray_quick_actions', {
+    actions: trayCommandActions(state).map((id) => ({ id, label: label(id) }))
+  })
 }
 
 export function orderedCommandActions(value: unknown): Array<{ actionId: CommandActionId; section: CommandSection }> {

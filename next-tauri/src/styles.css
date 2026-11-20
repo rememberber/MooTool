@@ -6120,6 +6120,40 @@ input:focus {
   min-height: 0;
 }
 
+.translation-editor-grid > .translation-source-editor,
+.translation-result {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.translation-editor-grid > .translation-source-editor {
+  border-right: 1px solid var(--border-soft);
+}
+
+.translation-result {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 34px;
+}
+
+.translation-result footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 12px;
+  color: var(--text-faint, var(--subtle));
+  background: var(--toolbar);
+  border-top: 1px solid var(--border-soft, var(--border));
+  font-size: 10px;
+}
+
+.translation-result footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .translation-editor-grid > section {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);

@@ -3,7 +3,7 @@ import { defineMessages } from '../../app/localizedMessages'
 export const cryptoMessages = defineMessages({
   'zh-CN': {
     'title': '加解密 / 随机', 'session.label': '会话', 'session.summary': '{tab} · {count} 字符输出',
-    'tab.digest': '摘要', 'action.textDigest': '文本摘要', 'digest.input': '摘要输入', 'digest.result': '摘要结果', 'tab.aes': 'AES-GCM', 'tab.rsa': 'RSA', 'tab.compatibility': '兼容算法', 'tab.base': 'Base 编码', 'tab.random': '安全随机',
+    'tab.digest': '摘要', 'action.textDigest': '文本摘要', 'action.history': '历史', 'history.digest': '计算摘要', 'digest.input': '摘要输入', 'digest.result': '摘要结果', 'tab.aes': 'AES-GCM', 'tab.rsa': 'RSA', 'tab.compatibility': '兼容算法', 'tab.base': 'Base 编码', 'tab.random': '安全随机',
     'tab.symmetric': '对称加密', 'tab.asymmetric': '非对称加密', 'field.key': '密钥', 'field.public': '公钥', 'field.private': '私钥', 'hint.aesKey': 'AES 密钥必须为 16、24 或 32 个 UTF-8 字节，不截断、不补零。', 'hint.symmetricKey': '请输入符合算法长度要求的密钥', 'option.legacyAes': '旧 Electron 密钥处理（仅解密）',
     'notice.symmetricEncrypted': '加密完成', 'notice.symmetricDecrypted': '解密完成', 'notice.keyPairGenerated': '密钥对已生成', 'notice.asymmetricEncrypted': '加密完成', 'notice.asymmetricDecrypted': '解密完成', 'notice.signedContent': '签名完成', 'notice.signatureValid': '签名有效', 'notice.signatureInvalid': '签名无效', 'action.privateEncrypt': '私钥加密', 'action.publicDecrypt': '公钥解密',
     'notice.ready': '{tab}已就绪',
@@ -41,7 +41,7 @@ export const cryptoMessages = defineMessages({
   },
   'en-US': {
     'title': 'Crypto / Random', 'session.label': 'Session', 'session.summary': '{tab} · {count} output chars',
-    'tab.digest': 'Digest', 'action.textDigest': 'Text digest', 'digest.input': 'Digest input', 'digest.result': 'Digest result', 'tab.aes': 'AES-GCM', 'tab.rsa': 'RSA', 'tab.compatibility': 'Compatibility', 'tab.base': 'Base encoding', 'tab.random': 'Secure Random',
+    'tab.digest': 'Digest', 'action.textDigest': 'Text digest', 'action.history': 'History', 'history.digest': 'Calculate digest', 'digest.input': 'Digest input', 'digest.result': 'Digest result', 'tab.aes': 'AES-GCM', 'tab.rsa': 'RSA', 'tab.compatibility': 'Compatibility', 'tab.base': 'Base encoding', 'tab.random': 'Secure Random',
     'tab.symmetric': 'Symmetric', 'tab.asymmetric': 'Asymmetric', 'field.key': 'Key', 'field.public': 'Public key', 'field.private': 'Private key', 'hint.aesKey': 'AES requires exactly 16, 24 or 32 UTF-8 bytes, without truncation or padding.', 'hint.symmetricKey': 'Enter a key with the length required by the algorithm', 'option.legacyAes': 'Legacy Electron key handling (decrypt only)',
     'notice.symmetricEncrypted': 'Encrypted', 'notice.symmetricDecrypted': 'Decrypted', 'notice.keyPairGenerated': 'Key pair generated', 'notice.asymmetricEncrypted': 'Encrypted', 'notice.asymmetricDecrypted': 'Decrypted', 'notice.signedContent': 'Signed', 'notice.signatureValid': 'Signature is valid', 'notice.signatureInvalid': 'Signature is invalid', 'action.privateEncrypt': 'Private-key encrypt', 'action.publicDecrypt': 'Public-key decrypt',
     'notice.ready': '{tab} ready',
@@ -67,8 +67,8 @@ export const cryptoMessages = defineMessages({
     'pane.settings': 'Generation settings', 'pane.aesInput': 'Plaintext or ciphertext', 'pane.source': 'Source', 'random.secure': 'Uses the system cryptographic random source',
     'random.detail': 'Avoids modulo bias; generated values stay in local memory.', 'action.generate': 'Generate now',
     'aria.input': 'Crypto input', 'action.calculate': 'Calculate', 'action.fileDigest': 'File digest', 'action.encrypt': 'Encrypt', 'action.decrypt': 'Decrypt',
-    'action.generateKeys': 'Generate keys', 'action.generating': 'Generating…', 'action.keys': 'View keys', 'action.publicEncrypt': 'Public encrypt',
-    'action.privateDecrypt': 'Private decrypt', 'action.sign': 'Sign', 'action.verify': 'Verify', 'action.encode': 'Encode', 'action.decode': 'Decode',
+    'action.generateKeys': 'Generate keys', 'action.generating': 'Generating…', 'action.keys': 'View keys', 'action.publicEncrypt': 'Public-key encrypt',
+    'action.privateDecrypt': 'Private-key decrypt', 'action.sign': 'Sign', 'action.verify': 'Verify', 'action.encode': 'Encode', 'action.decode': 'Decode',
     'pane.rsaInput': 'Plaintext, ciphertext, or verification content',
     'pane.compatibilityInput': 'Plaintext, legacy ciphertext, or verification content',
     'pane.output': 'Output', 'action.copied': 'Copied', 'action.copy': 'Copy', 'aria.output': 'Crypto output',
@@ -79,7 +79,7 @@ export const cryptoMessages = defineMessages({
   },
   'ja-JP': {
     'title': '暗号化 / ランダム', 'session.label': 'セッション', 'session.summary': '{tab} · 出力 {count} 文字',
-    'tab.digest': 'ダイジェスト', 'action.textDigest': 'テキストダイジェスト', 'digest.input': '入力', 'digest.result': 'ダイジェスト結果', 'tab.aes': 'AES-GCM', 'tab.rsa': 'RSA', 'tab.compatibility': '互換アルゴリズム', 'tab.base': 'Base エンコード', 'tab.random': '安全な乱数',
+    'tab.digest': 'ダイジェスト', 'action.textDigest': 'テキストダイジェスト', 'action.history': '履歴', 'history.digest': 'ダイジェスト計算', 'digest.input': '入力', 'digest.result': 'ダイジェスト結果', 'tab.aes': 'AES-GCM', 'tab.rsa': 'RSA', 'tab.compatibility': '互換アルゴリズム', 'tab.base': 'Base エンコード', 'tab.random': '安全な乱数',
     'tab.symmetric': '共通鍵暗号', 'tab.asymmetric': '公開鍵暗号', 'field.key': 'キー', 'field.public': '公開鍵', 'field.private': '秘密鍵', 'hint.aesKey': 'AES キーは UTF-8 で 16、24、32 バイトです。切り詰めや補完は行いません。', 'hint.symmetricKey': 'アルゴリズムに合う長さのキーを入力してください', 'option.legacyAes': '旧 Electron のキー処理（復号のみ）',
     'notice.symmetricEncrypted': '暗号化しました', 'notice.symmetricDecrypted': '復号しました', 'notice.keyPairGenerated': '鍵ペアを生成しました', 'notice.asymmetricEncrypted': '暗号化しました', 'notice.asymmetricDecrypted': '復号しました', 'notice.signedContent': '署名しました', 'notice.signatureValid': '署名は有効です', 'notice.signatureInvalid': '署名は無効です', 'action.privateEncrypt': '秘密鍵で暗号化', 'action.publicDecrypt': '公開鍵で復号',
     'notice.ready': '{tab} の準備ができました',

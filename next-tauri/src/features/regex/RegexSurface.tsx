@@ -2,33 +2,39 @@ import {
   CheckCircle2,
   Copy,
   Eraser,
+  History,
+  Star,
   Play,
   Replace,
   Search,
   TriangleAlert
 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type SetStateAction } from 'react'
 import { useLocalizedMessages } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import { localDataApi } from '../../platform/api/localDataApi'
 import { javaRegexApi } from '../../platform/api/javaRegexApi'
 import { DiffCodeEditor, type DiffEditorDecoration, type DiffEditorHandle } from '../../shared/DiffCodeEditor'
 import { ResizableColumns } from '../../shared/ResizableColumns'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
-import { ToolFavoriteBar } from '../favorites/ToolFavoriteBar'
+import { ManagedFavoritesDialog } from '../favorites/ManagedFavoritesDialog'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import {
   commonRegexes,
+  normalizeRegexDraft,
   regexFlags,
   replaceRegex,
+  type RegexEngine,
   type RegexMatch,
   type RegexOptions
 } from './regexTools'
 import { regexMessages } from './regexMessages'
+import { FuncHistoryDialog } from '../history/FuncHistoryDialog'
+import { readStoredToolDraft, writeStoredToolDraft } from '../toolDraft'
 
 type RegexTab = 'test' | 'common'
-type RegexEngine = 'java' | 'javascript'
 
 const regexDraftKey = 'mootool.regex.draft'
 const defaultOptions: RegexOptions = {
@@ -36,41 +42,14 @@ const defaultOptions: RegexOptions = {
   ignoreCase: false,
   multiline: false,
   dotAll: false,
-  unicode: true
+  unicode: false
 }
 
-function readRegexDraft(): { pattern: string; source: string; replacement: string; options: RegexOptions; engine: RegexEngine } {
-  const fallback = {
-    pattern: '(moo)(\\d+)',
-    source: 'moo1\nMOO22\nmoo333',
-    replacement: '$1-$2',
-    options: defaultOptions,
-    engine: 'javascript' as const
-  }
+function readRegexDraft() {
   try {
-    const value = JSON.parse(window.localStorage.getItem(regexDraftKey) ?? 'null') as {
-      pattern?: unknown
-      source?: unknown
-      replacement?: unknown
-      engine?: unknown
-      options?: Partial<RegexOptions>
-    } | null
-    if (!value || typeof value.pattern !== 'string' || typeof value.source !== 'string') return fallback
-    return {
-      pattern: value.pattern,
-      source: value.source,
-      replacement: typeof value.replacement === 'string' ? value.replacement : fallback.replacement,
-      engine: value.engine === 'java' ? 'java' : 'javascript',
-      options: {
-        global: value.options?.global !== false,
-        ignoreCase: value.options?.ignoreCase === true,
-        multiline: value.options?.multiline === true,
-        dotAll: value.options?.dotAll === true,
-        unicode: value.options?.unicode !== false
-      }
-    }
+    return normalizeRegexDraft(JSON.parse(window.localStorage.getItem(regexDraftKey) ?? 'null'))
   } catch {
-    return fallback
+    return normalizeRegexDraft(null)
   }
 }
 
@@ -78,11 +57,33 @@ export function RegexSurface() {
   const { t } = useLocalizedMessages(regexMessages)
   const initialDraft = useMemo(readRegexDraft, [])
   const [tab, setTab] = useState<RegexTab>('test')
-  const [pattern, setPattern] = useState(initialDraft.pattern)
-  const [source, setSource] = useState(initialDraft.source)
-  const [replacement, setReplacement] = useState(initialDraft.replacement)
-  const [options, setOptions] = useState(initialDraft.options)
-  const [engine, setEngine] = useState<RegexEngine>(initialDraft.engine)
+  const [pattern, setPatternState] = useState(initialDraft.pattern)
+  const [source, setSourceState] = useState(initialDraft.source)
+  const [replacement, setReplacementState] = useState(initialDraft.replacement)
+  const [options, setOptionsState] = useState(initialDraft.options)
+  const [engine, setEngineState] = useState<RegexEngine>(initialDraft.engine)
+  const [draftReady, setDraftReady] = useState(false)
+  const draftRevision = useRef(0)
+  function setPattern(value: string): void {
+    draftRevision.current += 1
+    setPatternState(value)
+  }
+  function setSource(value: string): void {
+    draftRevision.current += 1
+    setSourceState(value)
+  }
+  function setReplacement(value: string): void {
+    draftRevision.current += 1
+    setReplacementState(value)
+  }
+  function setOptions(value: SetStateAction<RegexOptions>): void {
+    draftRevision.current += 1
+    setOptionsState(value)
+  }
+  function setEngine(value: RegexEngine): void {
+    draftRevision.current += 1
+    setEngineState(value)
+  }
   const [matches, setMatches] = useState<RegexMatch[]>([])
   const [error, setError] = useState('')
   const [limited, setLimited] = useState(false)
@@ -90,6 +91,8 @@ export function RegexSurface() {
   const [selected, setSelected] = useState(-1)
   const [hasRun, setHasRun] = useState(false)
   const [patternFilter, setPatternFilter] = useState('')
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [favoritesOpen, setFavoritesOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [copyFailed, setCopyFailed] = useState(false)
   const replacementPreview = useMemo(() => {
@@ -124,15 +127,31 @@ export function RegexSurface() {
     className: 'regex-match-highlight'
   })), [matches])
   useEffect(() => {
-    const timer = window.setTimeout(() => {
+    let alive = true
+    void readStoredToolDraft('regex').then((raw) => {
+      if (!alive || draftRevision.current !== 0 || raw === null) return
       try {
-        window.localStorage.setItem(regexDraftKey, JSON.stringify({ pattern, source, replacement, options, engine }))
+        const next = normalizeRegexDraft(JSON.parse(raw))
+        setPatternState(next.pattern)
+        setSourceState(next.source)
+        setReplacementState(next.replacement)
+        setOptionsState(next.options)
+        setEngineState(next.engine)
       } catch {
-        // Draft persistence is best effort when storage is unavailable.
+        // Keep the current draft when the stored document is not JSON.
       }
+    }).finally(() => {
+      if (alive) setDraftReady(true)
+    })
+    return () => { alive = false }
+  }, [])
+  useEffect(() => {
+    if (!draftReady) return
+    const timer = window.setTimeout(() => {
+      writeStoredToolDraft('regex', JSON.stringify({ pattern, source, replacement, options, engine }))
     }, 250)
     return () => window.clearTimeout(timer)
-  }, [engine, options, pattern, replacement, source])
+  }, [draftReady, engine, options, pattern, replacement, source])
   useEffect(() => {
     const timer = window.setTimeout(() => { void run(false) }, 300)
     return () => {
@@ -194,6 +213,13 @@ export function RegexSurface() {
           outputText,
           metadata: { pattern, replacement, options, engine }
         })
+        void localDataApi.saveFuncHistory({
+          funcType: 'regex',
+          summary: t('result.matches', { count: String(result.length) }),
+          inputText: pattern,
+          outputText: source,
+          extraData: JSON.stringify({ options, engine, matchCount: result.length })
+        })
       }
     } catch (cause) {
       if (version !== requestSeq.current) return
@@ -202,7 +228,7 @@ export function RegexSurface() {
       const timedOut = message.includes('REGEX_TIMEOUT')
       const display = timedOut
         ? t('match.timeout')
-        : message.includes('浏览器预览不能运行 Java')
+        : message.includes('JAVA_REGEX_UNAVAILABLE')
           ? t('engine.hint')
           : message
       setMatches([])
@@ -272,23 +298,8 @@ export function RegexSurface() {
             {t('tab.common')}
           </button>
         </div>
-        <ToolFavoriteBar
-          toolId="regex"
-          defaultName={pattern || 'Regex'}
-          payload={{ pattern, source, replacement, options }}
-          onApply={(payload) => {
-            if (typeof payload.pattern === 'string') setPattern(payload.pattern)
-            if (typeof payload.source === 'string') setSource(payload.source)
-            if (typeof payload.replacement === 'string') setReplacement(payload.replacement)
-            if (payload.options && typeof payload.options === 'object' && !Array.isArray(payload.options)) {
-              setOptions({ ...defaultOptions, ...payload.options as Partial<RegexOptions> })
-            }
-            setMatches([])
-            setHasRun(false)
-            setError('')
-            setTab('test')
-          }}
-        />
+        <button className="toolbar-button" type="button" onClick={() => setFavoritesOpen(true)}><Star size={14} />{t('favorite.title')}</button>
+        <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('action.history')}</button>
         <button
           className="icon-button"
           type="button"
@@ -305,6 +316,29 @@ export function RegexSurface() {
         </button>
       </section>
 
+      {favoritesOpen && <ManagedFavoritesDialog kind="regex" currentValue={pattern} onClose={() => setFavoritesOpen(false)} onApply={(nextPattern) => {
+        setPattern(nextPattern)
+        setMatches([])
+        setHasRun(false)
+        setError('')
+        setTab('test')
+      }} />}
+      {historyOpen && <FuncHistoryDialog funcType="regex" onClose={() => setHistoryOpen(false)} onApply={(record) => {
+        setPattern(record.inputText)
+        setSource(record.outputText)
+        try {
+          const meta = JSON.parse(record.extraData ?? '{}') as { options?: Partial<RegexOptions>; engine?: RegexEngine }
+          if (meta.options) setOptions({ ...defaultOptions, ...meta.options })
+          setEngine(meta.engine === 'javascript' ? 'javascript' : 'java')
+        } catch {
+          setEngine('java')
+        }
+        setMatches([])
+        setHasRun(false)
+        setError('')
+        setTab('test')
+        setHistoryOpen(false)
+      }} />}
       {tab === 'test'
         ? (
             <section className="regex-test">

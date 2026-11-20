@@ -79,22 +79,11 @@ export function textToBase64(value: string): string {
 }
 
 export function base64ToText(value: string): string {
-  const normalized = value
-    .trim()
-    .replace(/^data:[^,]*;base64,/i, '')
-    .replace(/\s+/g, '')
-    .replace(/-/g, '+')
-    .replace(/_/g, '/')
-  if (!normalized) return ''
-  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(normalized) || normalized.length % 4 === 1) {
-    throw new EncodeToolError('base64')
+  const normalized = value.replace(/\s+/g, '')
+  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(normalized)) {
+    throw new Error('Invalid Base64')
   }
-  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
-  const bytes = Buffer.from(padded, 'base64')
-  const output = new TextDecoder('utf-8', { fatal: true }).decode(bytes)
-  const canonical = bytes.toString('base64').replace(/=+$/, '')
-  if (canonical !== padded.replace(/=+$/, '')) throw new EncodeToolError('base64')
-  return output
+  return new TextDecoder('utf-8', { fatal: true }).decode(Buffer.from(normalized, 'base64'))
 }
 
 export function textToHex(value: string): string {
@@ -107,7 +96,7 @@ export function textToHex(value: string): string {
 export function hexToText(value: string): string {
   const normalized = value.replace(/[\s:_-]+/g, '')
   if (!normalized || normalized.length % 2 !== 0 || !/^[\da-fA-F]+$/.test(normalized)) {
-    throw new EncodeToolError('hex')
+    throw new Error('Invalid hexadecimal input')
   }
   const bytes = Uint8Array.from(
     normalized.match(/../g) ?? [],
@@ -128,11 +117,8 @@ export function asciiToText(value: string): string {
   return value.trim().split(/[\s,;]+/).map((part) => {
     const radix = /^0x/i.test(part) || /[a-f]/i.test(part) ? 16 : 10
     const normalized = part.replace(/^0x/i, '')
-    if (!/^[\da-f]+$/i.test(normalized)) throw new EncodeToolError('codePoint', { value: part })
     const codePoint = Number.parseInt(normalized, radix)
-    if (!Number.isInteger(codePoint) || codePoint < 0 || codePoint > 0x10ffff) {
-      throw new EncodeToolError('codePointRange', { value: part })
-    }
+    if (!Number.isInteger(codePoint) || codePoint < 0 || codePoint > 0x10ffff) throw new Error(`Invalid code point: ${part}`)
     return String.fromCodePoint(codePoint)
   }).join('')
 }

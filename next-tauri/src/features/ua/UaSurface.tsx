@@ -2,14 +2,17 @@ import {
   CheckCircle2,
   ClipboardPaste,
   Eraser,
+  History,
   TriangleAlert
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey } from '../../app/localizedMessages'
+import { localDataApi } from '../../platform/api/localDataApi'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { ResizableColumns } from '../../shared/ResizableColumns'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { FuncHistoryDialog } from '../history/FuncHistoryDialog'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { useOperationRestore } from '../history/operationRestore'
 import { parseUserAgent, uaPresets, UaToolError, type UaResult } from './uaTools'
@@ -25,6 +28,7 @@ export function UaSurface() {
   const [source, setSource] = useState<string>(defaultUa)
   const [result, setResult] = useState<UaResult | null>(() => parseUserAgent(defaultUa))
   const [error, setError] = useState<UaError>()
+  const [historyOpen, setHistoryOpen] = useState(false)
   const errorText = error ? ('raw' in error ? error.raw : t(error.key)) : ''
   const deviceType = result ? displayDeviceType(result.deviceType, t) : ''
   const session = useMemo(() => ({
@@ -56,7 +60,14 @@ export function UaSurface() {
       setSource(nextSource)
       setError(undefined)
       recordOperation(t('action.parse'), `${next.browser || '—'} · ${next.os || '—'} · ${next.deviceType || '—'}`, 'success', {
-        inputText: nextSource, outputText: JSON.stringify(next, null, 2)
+        inputText: nextSource, outputText: JSON.stringify(next)
+      })
+      void localDataApi.saveFuncHistory({
+        funcType: 'uaParse',
+        summary: t('title'),
+        inputText: nextSource,
+        outputText: JSON.stringify(next),
+        extraData: 'UaParse'
       })
     } catch (cause) {
       setError(cause instanceof UaToolError
@@ -83,7 +94,10 @@ export function UaSurface() {
 
       <ResizableColumns id="ua-parser" className="ua-content" initialPrimary={1} defaultSizes={[0.9, 1.1]} minPrimary={300} minSecondary={300}>
         <section className="utility-editor-card ua-input">
-          <header><span>{t('input.label')}</span></header>
+          <header>
+            <span>{t('input.label')}</span>
+            <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('action.history')}</button>
+          </header>
           <CodeEditor
             ariaLabel={t('input.label')}
             value={source}
@@ -115,7 +129,7 @@ export function UaSurface() {
             [t('fact.mobile'), result.mobile ? t('value.yes') : t('value.no')],
             [t('fact.bot'), result.bot ? t('value.yes') : t('value.no')]
           ] as const).map(([label, value]) => (
-            <div className="ua-result-row" key={label}><span>{label}</span><strong>{displayValue(value, t)}</strong></div>
+            <div className="ua-result-row" key={label}><span>{label}</span><strong>{value}</strong></div>
           ))}
         </section>
       </ResizableColumns>
@@ -128,6 +142,16 @@ export function UaSurface() {
         <code>{session.summary}</code>
       </footer>
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
+      {historyOpen && <FuncHistoryDialog funcType="uaParse" onClose={() => setHistoryOpen(false)} onApply={(record) => {
+        setSource(record.inputText)
+        try {
+          setResult(JSON.parse(record.outputText) as UaResult)
+          setError(undefined)
+        } catch {
+          setResult(null)
+        }
+        setHistoryOpen(false)
+      }} />}
     </main>
   )
 }

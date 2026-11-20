@@ -35,21 +35,23 @@ describe('Protobuf tools', () => {
     const hex = encodeProtobuf(
       schema,
       'mootool.demo.Person',
-      '{"id":"9007199254740993","name":"MooTool","tags":["tauri"],"role":"ADMIN"}',
+      '{"id":7,"name":"MooTool","tags":["tauri"],"role":1}',
       'hex'
     )
     expect(hex).toMatch(/^[0-9a-f]+$/)
     expect(JSON.parse(decodeProtobuf(schema, 'mootool.demo.Person', hex, 'hex'))).toMatchObject({
-      id: '9007199254740993',
+      id: '7',
       name: 'MooTool',
       tags: ['tauri'],
       role: 'ADMIN'
     })
+    expect(() => encodeProtobuf(schema, 'mootool.demo.Person', '{"id":"7"}', 'hex')).toThrow('id: integer|Long expected')
+    expect(() => encodeProtobuf(schema, 'mootool.demo.Person', '{"role":"ADMIN"}', 'hex')).toThrow('role: enum value expected')
     expect(convertProtobufBinary(hex, 'hex', 'base64')).toMatch(/^[A-Za-z0-9+/]+=*$/)
   })
 
   it('inspects wire fields without a schema', () => {
-    const hex = encodeProtobuf(schema, 'mootool.demo.Person', '{"id":"7","name":"Moo"}', 'hex')
+    const hex = encodeProtobuf(schema, 'mootool.demo.Person', '{"id":7,"name":"Moo"}', 'hex')
     const output = inspectWire(hex, 'hex')
     expect(output).toContain('field=1')
     expect(output).toContain('wire_type=0 (Varint)')
@@ -63,9 +65,13 @@ describe('Protobuf tools', () => {
       .toContain('message Person {\n  string name = 1;')
   })
 
-  it('rejects malformed schema, JSON and binary input', () => {
-    expect(() => inspectProtobufSchema('message {')).toThrow('PROTOBUF_TOOL_schemaParse')
-    expect(() => encodeProtobuf(schema, 'mootool.demo.Person', '[]', 'hex')).toThrow('PROTOBUF_TOOL_jsonObject')
-    expect(() => decodeProtobuf(schema, 'mootool.demo.Person', 'abc', 'hex')).toThrow('PROTOBUF_TOOL_hex')
+  it('rejects malformed schema, JSON and binary input the same way as Electron', () => {
+    expect(() => inspectProtobufSchema('message {')).toThrow("illegal type name '{' (line 1)")
+    expect(encodeProtobuf(schema, 'mootool.demo.Person', '[]', 'hex')).toBe('')
+    expect(() => decodeProtobuf(schema, 'mootool.demo.Person', 'abc', 'hex')).toThrow('Invalid Hex input')
+    expect(() => convertProtobufBinary('***', 'base64', 'hex')).toThrow('Invalid Base64 input')
+    expect(convertProtobufBinary('QQ', 'base64', 'hex')).toBe('41')
+    expect(() => encodeProtobuf('', 'Person', '{}', 'hex')).toThrow('.proto definition is required')
+    expect(() => encodeProtobuf(schema, '  ', '{}', 'hex')).toThrow('Message name is required')
   })
 })

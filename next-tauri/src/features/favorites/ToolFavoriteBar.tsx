@@ -2,62 +2,55 @@ import { Save, Star, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useLocalizedMessages } from '../../app/localizedMessages'
 import { localDataApi } from '../../platform/api/localDataApi'
-import type { ToolFavorite } from '../../platform/contracts/localData'
+import type { NamedFavorite, NamedFavoriteKind } from '../../platform/contracts/localData'
 import { errorMessage } from '../../shared/errors'
 import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import { toolFavoriteMessages } from './toolFavoriteMessages'
 
-export function ToolFavoriteBar({ toolId, defaultName, payload, onApply }: {
-  toolId: string
+export function ToolFavoriteBar({ kind, defaultName, value, onApply }: {
+  kind: NamedFavoriteKind
   defaultName: string
-  payload: Record<string, unknown>
-  onApply(payload: Record<string, unknown>): void
+  value: string
+  onApply(value: string): void
 }) {
   const { t } = useLocalizedMessages(toolFavoriteMessages)
   const dialog = useDesktopDialog()
-  const [items, setItems] = useState<ToolFavorite[]>([])
+  const [items, setItems] = useState<NamedFavorite[]>([])
   const [selectedId, setSelectedId] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
     let cancelled = false
-    void localDataApi.listToolFavorites(toolId).then((loaded) => {
+    void localDataApi.listNamedFavorites(kind).then((loaded) => {
       if (!cancelled) { setItems(loaded); setError('') }
     }).catch((cause: unknown) => { if (!cancelled) setError(errorMessage(cause)) })
     return () => { cancelled = true }
-  }, [toolId])
+  }, [kind])
 
   function apply(id: string): void {
     setSelectedId(id)
-    const item = items.find((candidate) => candidate.id === id)
+    const item = items.find((candidate) => String(candidate.id) === id)
     if (!item) return
-    try {
-      const value = JSON.parse(item.payloadJson) as unknown
-      if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(t('error.payload'))
-      onApply(value as Record<string, unknown>)
-      setError('')
-    } catch (cause) { setError(errorMessage(cause)) }
+    onApply(item.value)
+    setError('')
   }
 
   async function save(): Promise<void> {
     const name = (await dialog.prompt(t('prompt.name'), defaultName.slice(0, 80)))?.trim()
-    if (!name) return
-    const now = Date.now()
+    if (!name || !value.trim()) return
     try {
-      const saved = await localDataApi.saveToolFavorite({
-        id: crypto.randomUUID(), toolId, name, payloadJson: JSON.stringify(payload), createdAt: now, updatedAt: now
-      })
-      setItems((current) => [saved, ...current.filter((item) => item.id !== saved.id && item.name !== saved.name)])
-      setSelectedId(saved.id)
+      const saved = await localDataApi.saveNamedFavorite({ kind, name, value })
+      setItems((current) => [saved, ...current.filter((item) => item.id !== saved.id)])
+      setSelectedId(String(saved.id))
       setError('')
     } catch (cause) { setError(errorMessage(cause)) }
   }
 
   async function remove(): Promise<void> {
-    const selected = items.find((item) => item.id === selectedId)
+    const selected = items.find((item) => String(item.id) === selectedId)
     if (!selected || !await dialog.confirm(t('confirm.delete', { name: selected.name }), { dangerous: true })) return
     try {
-      await localDataApi.deleteToolFavorite(selected.id)
+      await localDataApi.deleteNamedFavorite(selected.id)
       setItems((current) => current.filter((item) => item.id !== selected.id))
       setSelectedId('')
       setError('')

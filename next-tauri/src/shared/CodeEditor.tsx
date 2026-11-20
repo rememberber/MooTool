@@ -10,6 +10,7 @@ import {
   lineNumbers
 } from '@codemirror/view'
 import { useEffect, useRef } from 'react'
+import { clampCodeEditorSelection, readCodeEditorViewState, type CodeEditorViewState } from './codeEditorViewState'
 import { electronCodeHighlighting } from './codeHighlight'
 import { codeEditorSearchHighlight } from './codeEditorSearchHighlight'
 import { defaultFindReplaceOptions, type FindReplaceOptions } from './findReplace'
@@ -25,6 +26,8 @@ interface CodeEditorProps {
   lineWrapping?: boolean
   searchQuery?: string
   searchOptions?: FindReplaceOptions
+  initialViewState?: CodeEditorViewState
+  onViewStateChange?(state: CodeEditorViewState): void
 }
 
 export function CodeEditor({
@@ -37,15 +40,21 @@ export function CodeEditor({
   readOnly = false,
   lineWrapping = true,
   searchQuery,
-  searchOptions
+  searchOptions,
+  initialViewState,
+  onViewStateChange
 }: CodeEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | undefined>(undefined)
   const searchCompartment = useRef(new Compartment())
   const onChangeRef = useRef(onChange)
   const onReadyRef = useRef(onReady)
+  const onViewStateChangeRef = useRef(onViewStateChange)
+  const initialViewStateRef = useRef(initialViewState)
   onChangeRef.current = onChange
   onReadyRef.current = onReady
+  onViewStateChangeRef.current = onViewStateChange
+  initialViewStateRef.current = initialViewState
 
   useEffect(() => {
     const host = hostRef.current
@@ -54,6 +63,7 @@ export function CodeEditor({
       parent: host,
       state: EditorState.create({
         doc: value,
+        selection: clampCodeEditorSelection(initialViewStateRef.current, value.length),
         extensions: [
           history(),
           lineNumbers(),
@@ -80,14 +90,25 @@ export function CodeEditor({
           }),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) onChangeRef.current?.(update.state.doc.toString())
+            if (update.docChanged || update.selectionSet) onViewStateChangeRef.current?.(readCodeEditorViewState(update.view))
           }),
           ...extensions
         ]
       })
     })
     viewRef.current = view
+    const saved = initialViewStateRef.current
+    const restoreFrame = window.requestAnimationFrame(() => {
+      if (!saved) return
+      view.scrollDOM.scrollTop = saved.scrollTop
+      view.scrollDOM.scrollLeft = saved.scrollLeft
+    })
+    const handleScroll = () => onViewStateChangeRef.current?.(readCodeEditorViewState(view))
+    view.scrollDOM.addEventListener('scroll', handleScroll, { passive: true })
     onReadyRef.current?.(view)
     return () => {
+      window.cancelAnimationFrame(restoreFrame)
+      view.scrollDOM.removeEventListener('scroll', handleScroll)
       viewRef.current = undefined
       view.destroy()
     }

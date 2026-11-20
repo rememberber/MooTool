@@ -2,16 +2,17 @@ import { describe, expect, it } from 'vitest'
 import { parseUserAgent, uaPresets, UaToolError } from './uaTools'
 
 describe('User-Agent analyzer', () => {
-  it('parses desktop browser, engine, OS and architecture', () => {
-    expect(parseUserAgent(uaPresets[0][1])).toMatchObject({
+  it('parses desktop browser, engine and OS without a CPU field', () => {
+    const result = parseUserAgent(uaPresets[0][1])
+    expect(result).toMatchObject({
       browser: 'Chrome',
       engine: 'Blink',
       os: 'Windows',
-      cpu: 'amd64',
       deviceType: 'desktop',
       mobile: false,
       bot: false
     })
+    expect(result).not.toHaveProperty('cpu')
   })
 
   it('detects mobile devices and bots', () => {

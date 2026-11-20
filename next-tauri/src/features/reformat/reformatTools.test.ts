@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatCode, formatNginx, ReformatToolError } from './reformatTools'
+import { formatCode, formatNginx } from './reformatTools'
 
 describe('reformat tools', () => {
   it('formats nested Nginx blocks without splitting quoted semicolons', () => {
@@ -8,13 +8,10 @@ describe('reformat tools', () => {
     )
   })
 
-  it('rejects unbalanced Nginx blocks', () => {
-    expect(() => formatNginx('server { listen 80;')).toThrowError(
-      expect.objectContaining<Partial<ReformatToolError>>({ code: 'unclosedBlock' })
-    )
-    expect(() => formatNginx('server }')).toThrowError(
-      expect.objectContaining<Partial<ReformatToolError>>({ code: 'unexpectedClosingBrace' })
-    )
+  it('keeps unbalanced Nginx blocks instead of rejecting them', () => {
+    expect(formatNginx('server { listen 80;')).toBe('server {\n    listen 80;')
+    expect(formatNginx('server }')).toBe('server\n}')
+    expect(formatNginx('set $value "a;')).toBe('set $value "a;')
   })
 
   it('formats XML, HTML and Java through isolated formatter plugins', async () => {

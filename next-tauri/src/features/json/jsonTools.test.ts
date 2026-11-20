@@ -15,7 +15,8 @@ import {
   swapJsonKeysAndValues,
   unescapeJsonString,
   unescapeJsonText,
-  validateJson
+  validateJson,
+  xmlToJson
 } from './jsonTools'
 
 describe('Tauri JSON tools', () => {
@@ -30,6 +31,11 @@ describe('Tauri JSON tools', () => {
   it('validates input and reports structural metrics', () => {
     expect(validateJson('').kind).toBe('idle')
     expect(validateJson('{"items":[1,2]}')).toMatchObject({ kind: 'valid', rootType: 'Object' })
+    expect(validateJson('"moo"')).toMatchObject({ kind: 'valid', rootType: 'string' })
+    expect(validateJson('12')).toMatchObject({ kind: 'valid', rootType: 'number' })
+    expect(validateJson('true')).toMatchObject({ kind: 'valid', rootType: 'boolean' })
+    expect(validateJson('null')).toMatchObject({ kind: 'valid', rootType: 'object' })
+    expect(validateJson('[1]')).toMatchObject({ kind: 'valid', rootType: 'Array' })
     const invalid = validateJson('{')
     expect(invalid.kind).toBe('error')
     if (invalid.kind === 'error') {
@@ -60,13 +66,17 @@ describe('Tauri JSON tools', () => {
 
   it('swaps scalar object keys and values without silently losing duplicates', () => {
     expect(swapJsonKeysAndValues('{"one":1,"two":2}')).toBe('{\n  "1": "one",\n  "2": "two"\n}')
-    expect(() => swapJsonKeysAndValues('{"one":1,"uno":1}')).toThrow('JSON_TOOL_swapValue')
-    expect(() => swapJsonKeysAndValues('{"nested":{}}')).toThrow('JSON_TOOL_swapValue')
+    expect(JSON.parse(swapJsonKeysAndValues('{"one":1,"uno":1}'))).toEqual({ 1: 'uno' })
+    expect(JSON.parse(swapJsonKeysAndValues('{"nested":{"first":"one"},"items":[1]}'))).toEqual({ nested: { one: 'first' }, '[1]': 'items' })
+    expect(queryJsonPath('{"name":"Moo"}', '$.missing')).toBe('undefined')
+    expect(() => xmlToJson('  ')).toThrow('JSON_TOOL_emptyXml')
   })
 
   it('converts JSON values to escaped XML', () => {
     expect(jsonToXml('{"message":"A & B","items":[1,2]}')).toContain('<message>A &amp; B</message>')
     expect(jsonToXml('{"items":[1,2]}')).toContain('<items>1</items>\n  <items>2</items>')
+    expect(JSON.parse(xmlToJson('<tool><name>MooTool</name><enabled>true</enabled></tool>')))
+      .toEqual({ tool: { name: 'MooTool', enabled: true } })
   })
 
   it('detects duplicate keys without losing their JSON paths', () => {
@@ -78,8 +88,8 @@ describe('Tauri JSON tools', () => {
     const java = jsonToJavaBean('{"user":{"name":"Moo"},"items":[{"id":1}],"active":true}', 'Payload')
     expect(java).toContain('public class Payload')
     expect(java).toContain('private User user;')
-    expect(java).toContain('private java.util.List<Item> items;')
-    expect(jsonToJavaBean('{"class":"demo"}', 'Payload')).toContain('private String class_;')
+    expect(java).toContain('private List<Item> items;')
+    expect(jsonToJavaBean('{"class":"demo"}', 'Payload')).toContain('private String class;')
     expect(javaBeanToJson('class User { private String name; private long id; private boolean active; }')).toBe('{\n  "name": "",\n  "id": 0,\n  "active": false\n}')
   })
 

@@ -69,7 +69,38 @@ export function parseCurl(command: string, timeoutMs = 30_000): HttpRequestSpec 
   if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].includes(method)) {
     throw new HttpToolError('httpMethod', { method })
   }
-  return { ...emptyHttpRequest(timeoutMs), method, url, headers, cookies, body, bodyType }
+  return { ...emptyHttpRequest(timeoutMs, 'Imported cURL'), method, url, headers, cookies, body, bodyType }
+}
+
+export function httpFailureCode(message: string, aborted = false): 'ABORTED' | 'TIMEOUT' | 'RESPONSE_TOO_LARGE' | 'INVALID_REQUEST' | 'NETWORK' {
+  if (message.includes('RESPONSE_TOO_LARGE')) return 'RESPONSE_TOO_LARGE'
+  if (aborted || message.includes('ABORTED') || /cancel/i.test(message)) return message.includes('TIMEOUT') || /timed out/i.test(message) ? 'TIMEOUT' : 'ABORTED'
+  if (message.includes('TIMEOUT') || /timed out/i.test(message)) return 'TIMEOUT'
+  if (/invalid|url/i.test(message)) return 'INVALID_REQUEST'
+  return 'NETWORK'
+}
+
+export function prepareHttpExchange(request: Pick<HttpRequestSpec, 'method' | 'url' | 'params' | 'body' | 'bodyType'>): {
+  url: string
+  body?: string
+  contentType?: string
+} {
+  const trimmed = request.url.trim()
+  const normalized = /^https?:\/\//i.test(trimmed) || trimmed.includes('://') ? trimmed : `http://${trimmed}`
+  const url = new URL(normalized)
+  const method = request.method.toUpperCase()
+  const params = request.params.filter((entry) => entry.enabled && entry.name.trim())
+  if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
+    for (const entry of params) url.searchParams.append(entry.name, entry.value)
+    return { url: url.toString() }
+  }
+  if (request.body) return { url: url.toString(), body: request.body, contentType: request.bodyType || 'text/plain' }
+  if (!params.length) return { url: url.toString() }
+  return {
+    url: url.toString(),
+    body: new URLSearchParams(params.map((entry) => [entry.name, entry.value])).toString(),
+    contentType: 'application/x-www-form-urlencoded'
+  }
 }
 
 export function buildCurl(request: HttpRequestSpec): string {

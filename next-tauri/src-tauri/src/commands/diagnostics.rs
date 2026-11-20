@@ -214,6 +214,29 @@ pub fn get_environment_variables(reveal_sensitive: bool) -> Vec<EnvironmentVaria
     variables
 }
 
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RuntimeProcessInfo {
+    platform: String,
+    arch: String,
+    exec_path: String,
+    cwd: String,
+}
+
+#[tauri::command]
+pub fn read_runtime_process() -> RuntimeProcessInfo {
+    RuntimeProcessInfo {
+        platform: electron_platform(std::env::consts::OS),
+        arch: electron_arch(std::env::consts::ARCH),
+        exec_path: std::env::current_exe()
+            .map(|path| path.display().to_string())
+            .unwrap_or_default(),
+        cwd: std::env::current_dir()
+            .map(|path| path.display().to_string())
+            .unwrap_or_default(),
+    }
+}
+
 #[tauri::command]
 pub fn read_persistent_environment(scope: String) -> Result<String, String> {
     let path = persistent_environment_path(&scope)?;
@@ -257,7 +280,8 @@ fn set_environment_mode(path: &Path, mode: u32) -> Result<(), String> {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(path, fs::Permissions::from_mode(mode)).map_err(|error| error.to_string())
+        fs::set_permissions(path, fs::Permissions::from_mode(mode))
+            .map_err(|error| error.to_string())
     }
     #[cfg(not(unix))]
     {
@@ -285,7 +309,13 @@ fn write_environment_elevated(path: &Path, content: &str, mode: u32) -> Result<(
     );
     let result = if cfg!(target_os = "macos") {
         std::process::Command::new("/usr/bin/osascript")
-            .args(["-e", &format!("do shell script {} with administrator privileges", apple_script_string(&copy))])
+            .args([
+                "-e",
+                &format!(
+                    "do shell script {} with administrator privileges",
+                    apple_script_string(&copy)
+                ),
+            ])
             .status()
             .map_err(|error| error.to_string())
             .and_then(|status| {
@@ -322,6 +352,34 @@ fn sync_user_launch_environment(previous: &str, next: &str) {
                 .status();
         }
     }
+}
+
+fn interface_address(value: &str) -> String {
+    value.split('/').next().unwrap_or(value).to_string()
+}
+
+fn electron_platform(os: &str) -> String {
+    match os {
+        "macos" => "darwin",
+        "windows" => "win32",
+        "linux" => "linux",
+        "freebsd" => "freebsd",
+        "openbsd" => "openbsd",
+        "aix" => "aix",
+        other => other,
+    }
+    .to_string()
+}
+
+fn electron_arch(arch: &str) -> String {
+    match arch {
+        "aarch64" => "arm64",
+        "x86_64" => "x64",
+        "x86" => "ia32",
+        "arm" => "arm",
+        other => other,
+    }
+    .to_string()
 }
 
 fn environment_assignments(content: &str) -> std::collections::BTreeMap<String, String> {
@@ -381,7 +439,11 @@ fn persistent_environment_path(scope: &str) -> Result<PathBuf, String> {
 
 fn ensure_user_environment_profile(environment_path: &Path) -> Result<(), String> {
     let home = std::env::var("HOME").map_err(|_| "home directory is unavailable".to_string())?;
-    let profile_name = if cfg!(target_os = "macos") { ".zshenv" } else { ".profile" };
+    let profile_name = if cfg!(target_os = "macos") {
+        ".zshenv"
+    } else {
+        ".profile"
+    };
     let profile = PathBuf::from(home).join(profile_name);
     let current = match fs::read_to_string(&profile) {
         Ok(content) => content,
@@ -392,9 +454,14 @@ fn ensure_user_environment_profile(environment_path: &Path) -> Result<(), String
     if current.contains(MARKER) {
         return Ok(());
     }
-    let separator = if current.is_empty() || current.ends_with('\n') { "" } else { "\n" };
+    let separator = if current.is_empty() || current.ends_with('\n') {
+        ""
+    } else {
+        "\n"
+    };
     let quoted = environment_path.to_string_lossy().replace('\'', "'\\''");
-    let block = format!("{MARKER}\n[ -f '{quoted}' ] && . '{quoted}'\n# <<< MooTool environment <<<\n");
+    let block =
+        format!("{MARKER}\n[ -f '{quoted}' ] && . '{quoted}'\n# <<< MooTool environment <<<\n");
     fs::write(&profile, format!("{current}{separator}{block}")).map_err(|error| error.to_string())
 }
 
@@ -439,7 +506,7 @@ fn collect_system_snapshot() -> SystemSnapshot {
             addresses: network
                 .ip_networks()
                 .iter()
-                .map(ToString::to_string)
+                .map(|network| interface_address(&network.to_string()))
                 .collect(),
             mac_address: network.mac_address().to_string(),
             mtu: network.mtu(),
@@ -453,7 +520,7 @@ fn collect_system_snapshot() -> SystemSnapshot {
         os_version: System::os_version().unwrap_or_else(|| "Unknown".into()),
         kernel_version: System::kernel_version().unwrap_or_else(|| "Unknown".into()),
         host_name: System::host_name().unwrap_or_else(|| "Unknown".into()),
-        architecture: std::env::consts::ARCH.into(),
+        architecture: electron_arch(std::env::consts::ARCH),
         serial: identity.serial,
         manufacturer: identity.manufacturer,
         model: identity.model,
@@ -635,6 +702,15 @@ mod tests {
         assert!(is_sensitive_name("SENTRY_DSN"));
         assert!(!is_sensitive_name("PATH"));
         assert!(!is_sensitive_name("JAVA_HOME"));
+    }
+
+    #[test]
+    fn names_the_process_like_electron() {
+        assert_eq!(electron_platform("macos"), "darwin");
+        assert_eq!(electron_platform("windows"), "win32");
+        assert_eq!(electron_arch("aarch64"), "arm64");
+        assert_eq!(electron_arch("x86_64"), "x64");
+        assert_eq!(interface_address("192.168.1.20/24"), "192.168.1.20");
     }
 
     #[test]

@@ -4,7 +4,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-use base64::{Engine as _, engine::general_purpose::STANDARD};
 use futures_util::StreamExt;
 use reqwest::{
     Method, Url,
@@ -17,14 +16,14 @@ use tokio::sync::Notify;
 use crate::contracts::{
     error::AppResult,
     network::{
-        HttpProgressEvent, HttpRequestHistory, HttpRequestSpec, HttpResponseData, SaveHttpRequestInput, SavedHttpRequest,
-        validate_http_request_payload,
+        HttpProgressEvent, HttpRequestHistory, HttpRequestSpec, HttpResponseData,
+        SaveHttpRequestInput, SavedHttpRequest, validate_http_request_payload,
     },
     settings::NetworkSettings,
 };
 use crate::repositories::{local_data::LocalDataRepository, settings::SettingsRepository};
 
-const MAX_RESPONSE_BYTES: usize = 5 * 1024 * 1024;
+const MAX_RESPONSE_BYTES: usize = 10 * 1024 * 1024;
 
 #[derive(Default)]
 pub struct HttpRequestManager {
@@ -81,7 +80,13 @@ pub async fn execute_http_request(
     request: HttpRequestSpec,
     progress: Channel<HttpProgressEvent>,
 ) -> AppResult<HttpResponseData> {
-    validate_request(&request)?;
+    if let Err(error) = validate_request(&request) {
+        let failed = http_failure(&request.url, &error, 0);
+        if repository.record_http_history(&request, &failed).is_ok() {
+            let _ = app.emit("mootool://local-data-changed", "http-history");
+        }
+        return Ok(failed);
+    }
     let notify = manager.register(&request.request_id)?;
     let request_id = request.request_id.clone();
     let history_request = request.clone();
@@ -89,24 +94,7 @@ pub async fn execute_http_request(
     manager.finish(&request_id);
     let response = match result {
         Ok(response) => response,
-        Err(error) => {
-            let failed = HttpResponseData {
-                status: 0,
-                final_url: history_request.url.clone(),
-                headers: Vec::new(),
-                body_text: String::new(),
-                body_base64: String::new(),
-                content_type: String::new(),
-                size_bytes: 0,
-                truncated: false,
-                duration_ms: 0,
-                status_text: error.clone(),
-            };
-            if repository.record_http_history(&history_request, &failed).is_ok() {
-                let _ = app.emit("mootool://local-data-changed", "http-history");
-            }
-            return Err(error.into());
-        }
+        Err(error) => http_failure(&history_request.url, &error, 0),
     };
     if let Err(error) = repository.record_http_history(&history_request, &response) {
         tracing::warn!(error = %error, "HTTP request completed but history could not be saved");
@@ -199,13 +187,12 @@ async fn execute(
     let timeout = Duration::from_millis(request.timeout_ms);
     let mut client_builder = reqwest::Client::builder()
         .redirect(if request.follow_redirects {
-            Policy::limited(5)
+            Policy::limited(10)
         } else {
             Policy::none()
         })
         .connect_timeout(timeout.min(Duration::from_secs(30)))
-        .timeout(timeout)
-        .user_agent("MooTool-Next-Tauri/0.1");
+        .timeout(timeout);
     if !network.proxy_enabled {
         client_builder = client_builder.no_proxy();
     } else {
@@ -238,20 +225,14 @@ async fn execute(
         .map_err(|error| format!("failed to create HTTP client: {error}"))?;
     let method = Method::from_bytes(request.method.as_bytes())
         .map_err(|_| "invalid HTTP method".to_string())?;
-    let mut url = Url::parse(&request.url).map_err(|error| format!("invalid HTTP URL: {error}"))?;
-    {
-        let mut pairs = url.query_pairs_mut();
-        for entry in request
-            .params
-            .iter()
-            .filter(|entry| entry.enabled && !entry.name.trim().is_empty())
-        {
-            pairs.append_pair(entry.name.trim(), &entry.value);
-        }
-    }
-    let mut builder = client.request(method, url);
+    let prepared = prepare_http_exchange(&request)?;
+    let mut builder = client.request(method, prepared.url);
     let mut has_content_type = false;
-    for header in request.headers.into_iter().filter(|header| header.enabled) {
+    for header in request
+        .headers
+        .into_iter()
+        .filter(|header| header.enabled && !header.name.trim().is_empty())
+    {
         let name = HeaderName::from_bytes(header.name.trim().as_bytes())
             .map_err(|_| format!("invalid HTTP header name: {}", header.name))?;
         let value = HeaderValue::from_str(&header.value)
@@ -269,21 +250,25 @@ async fn execute(
     if !cookies.is_empty() {
         builder = builder.header(COOKIE, cookies);
     }
-    if !request.body.is_empty() {
-        if !has_content_type && !request.body_type.trim().is_empty() {
-            let content_type = HeaderValue::from_str(request.body_type.trim())
+    if let Some(body) = prepared.body {
+        if !has_content_type && let Some(content_type) = prepared.content_type {
+            let content_type = HeaderValue::from_str(&content_type)
                 .map_err(|_| "invalid HTTP body content type".to_string())?;
             builder = builder.header(CONTENT_TYPE, content_type);
         }
-        builder = builder.body(request.body);
+        builder = builder.body(body);
     }
     let _ = progress.send(HttpProgressEvent::Started);
     let response = tokio::select! {
         response = builder.send() => response.map_err(|error| format!("HTTP request failed: {error}"))?,
-        _ = cancelled.notified() => return Err("HTTP request cancelled".into()),
+        _ = cancelled.notified() => return Err("ABORTED".into()),
     };
     let status = response.status().as_u16();
-    let status_text = response.status().canonical_reason().unwrap_or("").to_string();
+    let status_text = response
+        .status()
+        .canonical_reason()
+        .unwrap_or("")
+        .to_string();
     let final_url = response.url().to_string();
     let content_type = response
         .headers()
@@ -302,51 +287,176 @@ async fn execute(
         })
         .collect::<Vec<_>>();
     let _ = progress.send(HttpProgressEvent::Headers { status });
+    if let Some(length) = response.content_length()
+        && length > MAX_RESPONSE_BYTES as u64
+    {
+        return Err("RESPONSE_TOO_LARGE".into());
+    }
     let mut bytes = Vec::new();
     let mut stream = response.bytes_stream();
-    let mut truncated = false;
     loop {
         let chunk = tokio::select! {
             chunk = stream.next() => chunk,
-            _ = cancelled.notified() => return Err("HTTP request cancelled".into()),
+            _ = cancelled.notified() => return Err("ABORTED".into()),
         };
         let Some(chunk) = chunk else { break };
         let chunk = chunk.map_err(|error| format!("failed to read HTTP response: {error}"))?;
         let remaining = MAX_RESPONSE_BYTES.saturating_sub(bytes.len());
         if chunk.len() > remaining {
-            bytes.extend_from_slice(&chunk[..remaining]);
-            truncated = true;
-            break;
+            return Err("RESPONSE_TOO_LARGE".into());
         }
         bytes.extend_from_slice(&chunk);
         let _ = progress.send(HttpProgressEvent::Download {
             received_bytes: bytes.len(),
         });
     }
-    let textual = content_type.starts_with("text/")
-        || content_type.contains("json")
-        || content_type.contains("xml")
-        || content_type.contains("javascript")
-        || std::str::from_utf8(&bytes).is_ok();
+    let text = decode_http_body(&bytes, &content_type)?;
     Ok(HttpResponseData {
         status,
         final_url,
         headers,
-        body_text: if textual {
-            String::from_utf8_lossy(&bytes).into_owned()
-        } else {
-            String::new()
-        },
-        body_base64: if textual {
-            String::new()
-        } else {
-            STANDARD.encode(&bytes)
-        },
+        body_text: pretty_json(&text),
+        body_base64: String::new(),
         content_type,
         size_bytes: bytes.len(),
-        truncated,
+        truncated: false,
         duration_ms: started.elapsed().as_millis(),
         status_text,
+    })
+}
+
+fn decode_http_body(bytes: &[u8], content_type: &str) -> Result<String, String> {
+    let label = content_type_charset(content_type).unwrap_or_else(|| "utf-8".to_string());
+    let encoding = encoding_rs::Encoding::for_label(label.as_bytes())
+        .ok_or_else(|| format!("Invalid charset: {label}"))?;
+    Ok(encoding.decode(bytes).0.into_owned())
+}
+
+fn content_type_charset(content_type: &str) -> Option<String> {
+    let lower = content_type.to_ascii_lowercase();
+    let start = lower.find("charset=")? + "charset=".len();
+    let rest = content_type[start..].trim();
+    let end = rest.find(';').unwrap_or(rest.len());
+    let label = rest[..end]
+        .trim()
+        .trim_matches(|character| character == '"' || character == '\'');
+    if label.is_empty() {
+        None
+    } else {
+        Some(label.to_string())
+    }
+}
+
+fn classify_http_failure(message: &str) -> &'static str {
+    if message.contains("RESPONSE_TOO_LARGE") {
+        "RESPONSE_TOO_LARGE"
+    } else if message.contains("TIMEOUT") || message.to_ascii_lowercase().contains("timed out") {
+        "TIMEOUT"
+    } else if message.contains("ABORTED") || message.to_ascii_lowercase().contains("cancel") {
+        "ABORTED"
+    } else if message.contains("invalid HTTP")
+        || message.contains("Invalid proxy")
+        || message.contains("Unsupported")
+    {
+        "INVALID_REQUEST"
+    } else {
+        "NETWORK"
+    }
+}
+
+fn http_failure(url: &str, message: &str, duration_ms: u128) -> HttpResponseData {
+    HttpResponseData {
+        status: 0,
+        final_url: url.to_string(),
+        headers: Vec::new(),
+        body_text: String::new(),
+        body_base64: String::new(),
+        content_type: String::new(),
+        size_bytes: 0,
+        truncated: false,
+        duration_ms,
+        status_text: classify_http_failure(message).to_string(),
+    }
+}
+
+fn pretty_json(value: &str) -> String {
+    match serde_json::from_str::<serde_json::Value>(value) {
+        Ok(parsed) => serde_json::to_string_pretty(&parsed).unwrap_or_else(|_| value.to_string()),
+        Err(_) => value.to_string(),
+    }
+}
+
+struct PreparedHttpExchange {
+    url: Url,
+    body: Option<String>,
+    content_type: Option<String>,
+}
+
+fn normalize_http_url(value: &str) -> String {
+    let trimmed = value.trim();
+    let lower = trimmed.to_ascii_lowercase();
+    if lower.starts_with("http://") || lower.starts_with("https://") || trimmed.contains("://") {
+        trimmed.to_string()
+    } else {
+        format!("http://{trimmed}")
+    }
+}
+
+fn prepare_http_exchange(request: &HttpRequestSpec) -> Result<PreparedHttpExchange, String> {
+    let mut url = Url::parse(&normalize_http_url(&request.url))
+        .map_err(|error| format!("invalid HTTP URL: {error}"))?;
+    if !matches!(url.scheme(), "http" | "https") || url.host_str().is_none() {
+        return Err("HTTP URL must use http/https and include a host".into());
+    }
+    let params = request
+        .params
+        .iter()
+        .filter(|entry| entry.enabled && !entry.name.trim().is_empty())
+        .collect::<Vec<_>>();
+    let method = request.method.to_ascii_uppercase();
+    if matches!(method.as_str(), "GET" | "HEAD" | "OPTIONS") {
+        {
+            let mut pairs = url.query_pairs_mut();
+            for entry in params {
+                pairs.append_pair(&entry.name, &entry.value);
+            }
+        }
+        return Ok(PreparedHttpExchange {
+            url,
+            body: None,
+            content_type: None,
+        });
+    }
+    if !request.body.is_empty() {
+        let content_type = if request.body_type.trim().is_empty() {
+            "text/plain".to_string()
+        } else {
+            request.body_type.trim().to_string()
+        };
+        return Ok(PreparedHttpExchange {
+            url,
+            body: Some(request.body.clone()),
+            content_type: Some(content_type),
+        });
+    }
+    if params.is_empty() {
+        return Ok(PreparedHttpExchange {
+            url,
+            body: None,
+            content_type: None,
+        });
+    }
+    let mut form = Url::parse("http://form.invalid/").expect("form encoder");
+    {
+        let mut pairs = form.query_pairs_mut();
+        for entry in params {
+            pairs.append_pair(&entry.name, &entry.value);
+        }
+    }
+    Ok(PreparedHttpExchange {
+        url,
+        body: Some(form.query().unwrap_or_default().to_string()),
+        content_type: Some("application/x-www-form-urlencoded".to_string()),
     })
 }
 
@@ -355,17 +465,7 @@ fn validate_request(request: &HttpRequestSpec) -> Result<(), String> {
     if !(1_000..=120_000).contains(&request.timeout_ms) {
         return Err("HTTP timeout must be between 1 and 120 seconds".into());
     }
-    let url = Url::parse(&request.url).map_err(|error| format!("invalid HTTP URL: {error}"))?;
-    if !matches!(url.scheme(), "http" | "https")
-        || url.host_str().is_none()
-        || !url.username().is_empty()
-        || url.password().is_some()
-    {
-        return Err(
-            "HTTP URL must use http/https, include a host, and omit embedded credentials".into(),
-        );
-    }
-    Ok(())
+    prepare_http_exchange(request).map(|_| ())
 }
 
 #[tauri::command]
@@ -410,10 +510,86 @@ mod tests {
     }
 
     #[test]
+    fn builds_get_query_and_post_form_like_electron() {
+        let mut get = request("example.com/api");
+        get.params.push(header("q", "moo tool"));
+        get.body = "ignored".into();
+        let prepared = prepare_http_exchange(&get).expect("get");
+        assert_eq!(prepared.url.as_str(), "http://example.com/api?q=moo+tool");
+        assert!(prepared.body.is_none());
+
+        let mut post = request("https://example.com/api");
+        post.method = "POST".into();
+        post.params.push(header("q", "1"));
+        post.body = "{\"ok\":true}".into();
+        post.body_type = "application/json".into();
+        let prepared = prepare_http_exchange(&post).expect("post body");
+        assert_eq!(prepared.url.as_str(), "https://example.com/api");
+        assert_eq!(prepared.body.as_deref(), Some("{\"ok\":true}"));
+        assert_eq!(prepared.content_type.as_deref(), Some("application/json"));
+
+        post.body.clear();
+        let prepared = prepare_http_exchange(&post).expect("post form");
+        assert_eq!(prepared.body.as_deref(), Some("q=1"));
+        assert_eq!(
+            prepared.content_type.as_deref(),
+            Some("application/x-www-form-urlencoded")
+        );
+    }
+
+    fn header(name: &str, value: &str) -> crate::contracts::network::HttpHeader {
+        crate::contracts::network::HttpHeader {
+            id: String::new(),
+            name: name.into(),
+            value: value.into(),
+            enabled: true,
+        }
+    }
+
+    #[test]
+    fn decodes_response_bodies_with_the_content_type_charset() {
+        assert_eq!(
+            decode_http_body(b"{\"a\":1}", "application/json").expect("utf-8"),
+            "{\"a\":1}"
+        );
+        assert_eq!(
+            decode_http_body(&[0xC4, 0xE3, 0xBA, 0xC3], "text/plain; charset=gbk").expect("gbk"),
+            "你好"
+        );
+        assert!(decode_http_body(b"moo", "text/plain; charset=not-a-charset").is_err());
+    }
+
+    #[test]
+    fn classifies_transport_failures_like_electron() {
+        assert_eq!(classify_http_failure("ABORTED"), "ABORTED");
+        assert_eq!(classify_http_failure("operation timed out"), "TIMEOUT");
+        assert_eq!(
+            classify_http_failure("RESPONSE_TOO_LARGE"),
+            "RESPONSE_TOO_LARGE"
+        );
+        assert_eq!(
+            classify_http_failure("invalid HTTP URL: relative URL"),
+            "INVALID_REQUEST"
+        );
+        assert_eq!(classify_http_failure("connection refused"), "NETWORK");
+        assert_eq!(
+            http_failure("https://example.com", "ABORTED", 12).status_text,
+            "ABORTED"
+        );
+    }
+
+    #[test]
+    fn pretty_prints_json_response_bodies() {
+        assert_eq!(pretty_json("{\"a\":1}"), "{\n  \"a\": 1\n}");
+        assert_eq!(pretty_json("not json"), "not json");
+    }
+
+    #[test]
     fn rejects_unsafe_or_unsupported_urls() {
         assert!(validate_request(&request("https://example.com")).is_ok());
+        assert!(validate_request(&request("example.com")).is_ok());
         assert!(validate_request(&request("file:///etc/passwd")).is_err());
-        assert!(validate_request(&request("https://user:pass@example.com")).is_err());
+        assert!(validate_request(&request("https://user:pass@example.com")).is_ok());
     }
 
     #[test]

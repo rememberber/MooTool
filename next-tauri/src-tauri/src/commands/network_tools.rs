@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    net::{Ipv4Addr, SocketAddr},
+    net::{IpAddr, Ipv4Addr, SocketAddr},
     process::Stdio,
     sync::{
         Arc, Mutex,
@@ -20,6 +20,7 @@ use tokio::{
 };
 
 use crate::contracts::error::AppResult;
+use crate::repositories::settings::SettingsRepository;
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -68,16 +69,6 @@ pub struct WhoisResult {
     server: String,
     output: String,
     duration_ms: u128,
-}
-
-#[derive(Clone, Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NetworkConnectionInfo {
-    protocol: String,
-    local_address: String,
-    remote_address: String,
-    state: String,
-    process: String,
 }
 
 #[derive(Default)]
@@ -148,7 +139,7 @@ pub fn list_network_interfaces() -> Vec<NetworkInterfaceInfo> {
             addresses: network
                 .ip_networks()
                 .iter()
-                .map(ToString::to_string)
+                .map(|network| interface_address(&network.to_string()))
                 .collect(),
             mac_address: network.mac_address().to_string(),
             mtu: network.mtu(),
@@ -161,15 +152,24 @@ pub fn list_network_interfaces() -> Vec<NetworkInterfaceInfo> {
 }
 
 #[tauri::command]
+pub async fn read_network_interface_report(
+    settings: tauri::State<'_, SettingsRepository>,
+) -> AppResult<String> {
+    let timeout_ms = clamp_network_timeout(settings.snapshot().network.request_timeout_ms);
+    let (program, arguments) = interface_command();
+    command_output(program, arguments, timeout_ms, "ifconfig")
+        .await
+        .map_err(Into::into)
+}
+
+#[tauri::command]
 pub async fn resolve_network_host(host: String) -> AppResult<Vec<String>> {
     validate_host(&host)?;
-    let mut addresses = tokio::net::lookup_host((host.as_str(), 0))
+    let addresses = tokio::net::lookup_host((host.as_str(), 0))
         .await
-        .map_err(|error| format!("DNS lookup failed: {error}"))?
-        .map(|address| address.ip().to_string())
+        .map_err(|error| error.to_string())?
+        .map(|address| format_resolved_address(address.ip()))
         .collect::<Vec<_>>();
-    addresses.sort();
-    addresses.dedup();
     Ok(addresses)
 }
 
@@ -191,22 +191,9 @@ pub async fn scan_tcp_ports(
         return Err("network command timeout must be between 1 and 120 seconds".into());
     }
     let cancelled = manager.begin(&request_id)?;
-    let resolved = match tokio::net::lookup_host((host.as_str(), ports[0])).await {
-        Ok(mut addresses) => match addresses.next() {
-            Some(address) => address.ip(),
-            None => {
-                manager.finish(&request_id);
-                return Err("host lookup returned no address".into());
-            }
-        },
-        Err(error) => {
-            manager.finish(&request_id);
-            return Err(format!("host lookup failed: {error}").into());
-        }
-    };
     let started = Instant::now();
     let open_ports = match collect_open_ports(
-        resolved,
+        &host,
         &ports,
         Duration::from_millis(timeout_ms),
         started + Duration::from_millis(budget_ms),
@@ -222,8 +209,8 @@ pub async fn scan_tcp_ports(
     };
     manager.finish(&request_id);
     Ok(PortScanResult {
+        resolved_address: host.clone(),
         host,
-        resolved_address: resolved.to_string(),
         start_port: ports[0],
         end_port: *ports.last().unwrap_or(&ports[0]),
         open_ports,
@@ -334,24 +321,20 @@ pub fn cancel_network_task(
 }
 
 #[tauri::command]
-pub async fn query_network_whois(query: String) -> AppResult<WhoisResult> {
-    validate_host(&query)?;
+pub async fn query_network_whois(
+    settings: tauri::State<'_, SettingsRepository>,
+    query: String,
+) -> AppResult<WhoisResult> {
+    let query = normalize_whois_query(&query)?;
+    let timeout_ms = clamp_network_timeout(settings.snapshot().network.request_timeout_ms);
     let started = Instant::now();
-    let mut server = "whois.iana.org".to_string();
-    let initial = query_whois_server(&server, &query).await?;
-    if let Some(referral) = initial.lines().find_map(|line| {
-        line.strip_prefix("refer:")
-            .or_else(|| line.strip_prefix("whois:"))
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-    }) {
-        validate_host(referral)?;
-        server = referral.to_string();
-    }
+    let initial = query_whois_server("whois.iana.org", &query, timeout_ms).await?;
+    let server = whois_referral(&initial).unwrap_or_else(|| "whois.iana.org".to_string());
     let output = if server == "whois.iana.org" {
         initial
     } else {
-        query_whois_server(&server, &query).await?
+        validate_host(&server)?;
+        query_whois_server(&server, &query, timeout_ms).await?
     };
     Ok(WhoisResult {
         query,
@@ -362,16 +345,13 @@ pub async fn query_network_whois(query: String) -> AppResult<WhoisResult> {
 }
 
 #[tauri::command]
-pub async fn list_network_connections() -> AppResult<Vec<NetworkConnectionInfo>> {
-    let (program, arguments): (&str, &[&str]) = if cfg!(target_os = "windows") {
-        ("netstat.exe", &["-ano"])
-    } else if cfg!(target_os = "macos") {
-        ("netstat", &["-anv", "-p", "tcp"])
-    } else {
-        ("ss", &["-tunap"])
-    };
+pub async fn list_network_connections(
+    settings: tauri::State<'_, SettingsRepository>,
+) -> AppResult<String> {
+    let timeout_ms = clamp_network_timeout(settings.snapshot().network.request_timeout_ms);
+    let (program, arguments) = connection_command();
     let output = timeout(
-        Duration::from_secs(8),
+        Duration::from_millis(timeout_ms),
         Command::new(program)
             .args(arguments)
             .stdin(Stdio::null())
@@ -380,92 +360,96 @@ pub async fn list_network_connections() -> AppResult<Vec<NetworkConnectionInfo>>
             .output(),
     )
     .await
-    .map_err(|_| "connection listing timed out".to_string())?
+    .map_err(|_| "TIMEOUT".to_string())?
     .map_err(|error| format!("failed to list network connections: {error}"))?;
-    if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr)
-            .trim()
-            .to_string()
-            .into());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    if stdout.len() > 2 * 1024 * 1024 || stderr.len() > 2 * 1024 * 1024 {
+        return Err("Command output exceeds 2 MB".into());
     }
-    Ok(parse_connections(&String::from_utf8_lossy(&output.stdout)))
+    if !output.status.success() {
+        let message = stderr.trim();
+        return Err(if message.is_empty() {
+            format!(
+                "netstat exited with code {}",
+                output.status.code().unwrap_or(-1)
+            )
+        } else {
+            message.to_string()
+        }
+        .into());
+    }
+    let text = if stdout.trim().is_empty() {
+        stderr.trim()
+    } else {
+        stdout.trim()
+    };
+    Ok(text.to_string())
 }
 
 #[tauri::command]
-pub async fn flush_network_dns_cache() -> AppResult<String> {
+pub async fn flush_network_dns_cache(
+    settings: tauri::State<'_, SettingsRepository>,
+) -> AppResult<String> {
+    let timeout_ms = clamp_network_timeout(settings.snapshot().network.request_timeout_ms);
     let (program, arguments): (&str, &[&str]) = if cfg!(target_os = "windows") {
         ("ipconfig.exe", &["/flushdns"])
     } else if cfg!(target_os = "macos") {
-        ("dscacheutil", &["-flushcache"])
+        ("/usr/bin/dscacheutil", &["-flushcache"])
     } else {
         ("resolvectl", &["flush-caches"])
     };
-    let output = timeout(
-        Duration::from_secs(10),
-        Command::new(program)
-            .args(arguments)
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .output(),
-    )
-    .await
-    .map_err(|_| "DNS cache flush timed out".to_string())?
-    .map_err(|error| format!("failed to start DNS cache flush: {error}"))?;
-    let mut text = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    if !output.stderr.is_empty() {
-        if !text.is_empty() {
-            text.push('\n');
-        }
-        text.push_str(String::from_utf8_lossy(&output.stderr).trim());
-    }
-    if !output.status.success() {
-        return Err(if text.is_empty() {
-            "DNS cache flush requires elevated system permission".into()
-        } else {
-            text.into()
-        });
-    }
-    Ok(if text.is_empty() {
-        "DNS cache flushed".into()
-    } else {
-        text
-    })
+    command_output(program, arguments, timeout_ms, "flush-dns")
+        .await
+        .map_err(Into::into)
 }
 
 #[tauri::command]
-pub async fn ping_network_host(host: String) -> AppResult<PingResult> {
+pub async fn ping_network_host(
+    settings: tauri::State<'_, SettingsRepository>,
+    host: String,
+) -> AppResult<PingResult> {
     validate_host(&host)?;
+    let timeout_ms = clamp_network_timeout(settings.snapshot().network.request_timeout_ms);
     let started = Instant::now();
-    let mut command = Command::new(if cfg!(windows) { "ping.exe" } else { "ping" });
-    if cfg!(windows) {
-        command.args(["-n", "4", "-w", "2000", host.as_str()]);
-    } else {
-        command.args(["-c", "4", host.as_str()]);
-    }
+    let (program, arguments) = ping_command(&host);
+    let mut command = Command::new(program);
     command
+        .args(arguments)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
-    let output = timeout(Duration::from_secs(12), command.output())
+    let output = timeout(Duration::from_millis(timeout_ms), command.output())
         .await
-        .map_err(|_| "ping timed out".to_string())?
+        .map_err(|_| "TIMEOUT".to_string())?
         .map_err(|error| format!("failed to start ping: {error}"))?;
-    let mut text = String::from_utf8_lossy(&output.stdout).into_owned();
-    if !output.stderr.is_empty() {
-        if !text.is_empty() {
-            text.push('\n');
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    if stdout.len() > 2 * 1024 * 1024 || stderr.len() > 2 * 1024 * 1024 {
+        return Err("Command output exceeds 2 MB".into());
+    }
+    if !output.status.success() {
+        let message = stderr.trim();
+        return Err(if message.is_empty() {
+            format!(
+                "ping exited with code {}",
+                output.status.code().unwrap_or(-1)
+            )
+        } else {
+            message.to_string()
         }
-        text.push_str(&String::from_utf8_lossy(&output.stderr));
+        .into());
     }
-    if text.len() > 64 * 1024 {
-        text.truncate(64 * 1024);
-    }
+    let text = if stdout.trim().is_empty() {
+        stderr.trim()
+    } else {
+        stdout.trim()
+    };
     Ok(PingResult {
         host,
-        success: output.status.success(),
-        output: text,
+        success: true,
+        output: text.to_string(),
         duration_ms: started.elapsed().as_millis(),
     })
 }
@@ -518,7 +502,7 @@ fn validate_host(value: &str) -> Result<(), String> {
             !(character.is_ascii_alphanumeric() || matches!(character, '.' | '-' | ':' | '_'))
         })
     {
-        return Err("host name or IP address is invalid".into());
+        return Err("INVALID_TARGET".into());
     }
     Ok(())
 }
@@ -552,96 +536,156 @@ fn parse_ipv4_cidr(value: &str) -> Result<(Ipv4Addr, u32), String> {
     Ok((address, prefix))
 }
 
-async fn query_whois_server(server: &str, query: &str) -> Result<String, String> {
-    let mut stream = timeout(Duration::from_secs(8), TcpStream::connect((server, 43)))
-        .await
-        .map_err(|_| format!("WHOIS connection to {server} timed out"))?
-        .map_err(|error| format!("failed to connect to WHOIS server {server}: {error}"))?;
-    timeout(
-        Duration::from_secs(3),
-        stream.write_all(format!("{query}\r\n").as_bytes()),
-    )
-    .await
-    .map_err(|_| "WHOIS request timed out".to_string())?
-    .map_err(|error| format!("failed to send WHOIS request: {error}"))?;
-    let mut output = Vec::new();
-    timeout(
-        Duration::from_secs(12),
-        stream.take(512 * 1024).read_to_end(&mut output),
-    )
-    .await
-    .map_err(|_| "WHOIS response timed out".to_string())?
-    .map_err(|error| format!("failed to read WHOIS response: {error}"))?;
-    Ok(String::from_utf8_lossy(&output).into_owned())
+fn interface_address(value: &str) -> String {
+    value.split('/').next().unwrap_or(value).to_string()
 }
 
-fn parse_connections(output: &str) -> Vec<NetworkConnectionInfo> {
-    output
-        .lines()
-        .filter_map(|line| {
-            let columns = line.split_whitespace().collect::<Vec<_>>();
-            if columns.len() < 4 {
-                return None;
-            }
-            if cfg!(not(any(target_os = "windows", target_os = "macos")))
-                && matches!(columns[0], "tcp" | "udp")
-                && columns.len() >= 6
-            {
-                return Some(NetworkConnectionInfo {
-                    protocol: columns[0].to_ascii_uppercase(),
-                    state: normalize_connection_state(columns[1]),
-                    local_address: columns[4].to_string(),
-                    remote_address: columns[5].to_string(),
-                    process: columns.get(6).copied().unwrap_or("").to_string(),
-                });
-            }
-            if matches!(
-                columns[0].to_ascii_lowercase().as_str(),
-                "tcp" | "tcp4" | "tcp6" | "udp" | "udp4" | "udp6"
-            ) {
-                let protocol = columns[0].to_ascii_uppercase();
-                let (local_index, remote_index) = if cfg!(target_os = "windows") {
-                    (1, 2)
-                } else {
-                    (3, 4)
-                };
-                if columns.len() <= remote_index {
-                    return None;
-                }
-                return Some(NetworkConnectionInfo {
-                    protocol,
-                    local_address: columns[local_index].to_string(),
-                    remote_address: columns[remote_index].to_string(),
-                    state: columns
-                        .get(remote_index + 1)
-                        .copied()
-                        .map(normalize_connection_state)
-                        .unwrap_or_default(),
-                    process: if cfg!(target_os = "macos") {
-                        columns.get(10).copied().unwrap_or("")
-                    } else {
-                        columns.last().copied().unwrap_or("")
-                    }
-                    .to_string(),
-                });
-            }
-            None
-        })
-        .take(10_000)
-        .collect()
-}
-
-fn normalize_connection_state(state: &str) -> String {
-    match state.to_ascii_uppercase().as_str() {
-        "ESTAB" => "ESTABLISHED".to_string(),
-        normalized => normalized.to_string(),
+fn interface_command() -> (&'static str, &'static [&'static str]) {
+    if cfg!(windows) {
+        ("ipconfig.exe", &["/all"])
+    } else if cfg!(target_os = "macos") {
+        ("/sbin/ifconfig", &[])
+    } else {
+        ("ip", &["-details", "address"])
     }
+}
+
+async fn command_output(
+    program: &str,
+    arguments: &[&str],
+    timeout_ms: u64,
+    name: &str,
+) -> Result<String, String> {
+    let output = timeout(
+        Duration::from_millis(timeout_ms),
+        Command::new(program)
+            .args(arguments)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output(),
+    )
+    .await
+    .map_err(|_| "TIMEOUT".to_string())?
+    .map_err(|error| format!("failed to start {name}: {error}"))?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    if stdout.len() > 2 * 1024 * 1024 || stderr.len() > 2 * 1024 * 1024 {
+        return Err("Command output exceeds 2 MB".into());
+    }
+    if !output.status.success() {
+        let message = stderr.trim();
+        return Err(if message.is_empty() {
+            format!(
+                "{name} exited with code {}",
+                output.status.code().unwrap_or(-1)
+            )
+        } else {
+            message.to_string()
+        });
+    }
+    Ok((if stdout.trim().is_empty() {
+        stderr.trim()
+    } else {
+        stdout.trim()
+    })
+    .to_string())
+}
+
+fn format_resolved_address(ip: IpAddr) -> String {
+    let family = if ip.is_ipv4() { "IPv4" } else { "IPv6" };
+    format!("{ip}\t{family}")
+}
+
+fn connection_command() -> (&'static str, &'static [&'static str]) {
+    if cfg!(windows) {
+        ("netstat.exe", &["-ano"])
+    } else {
+        ("netstat", &["-nat"])
+    }
+}
+
+fn normalize_whois_query(value: &str) -> Result<String, String> {
+    let target = value.trim().to_ascii_lowercase();
+    if target.is_empty()
+        || target.len() > 253
+        || !target.bytes().all(|byte| {
+            byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'.' | b'-')
+        })
+    {
+        return Err("INVALID_TARGET".into());
+    }
+    Ok(target)
+}
+
+fn whois_referral(response: &str) -> Option<String> {
+    for line in response.lines() {
+        let lower = line.to_ascii_lowercase();
+        let prefix_len = if lower.starts_with("refer:") {
+            "refer:".len()
+        } else if lower.starts_with("whois:") {
+            "whois:".len()
+        } else {
+            continue;
+        };
+        let server = line[prefix_len..].split_whitespace().next().unwrap_or("");
+        if server.is_empty() {
+            continue;
+        }
+        if server == "whois.iana.org" {
+            return None;
+        }
+        return Some(server.to_string());
+    }
+    None
+}
+
+fn clamp_network_timeout(value: u32) -> u64 {
+    u64::from(value.clamp(1_000, 120_000))
+}
+
+fn ping_command(host: &str) -> (&'static str, Vec<String>) {
+    if cfg!(windows) {
+        ("ping.exe", vec!["-n".into(), "4".into(), host.into()])
+    } else {
+        ("/sbin/ping", vec!["-c".into(), "4".into(), host.into()])
+    }
+}
+
+async fn query_whois_server(server: &str, query: &str, timeout_ms: u64) -> Result<String, String> {
+    timeout(Duration::from_millis(timeout_ms), async move {
+        let mut stream = TcpStream::connect((server, 43))
+            .await
+            .map_err(|error| format!("failed to connect to WHOIS server {server}: {error}"))?;
+        stream
+            .write_all(format!("{query}\r\n").as_bytes())
+            .await
+            .map_err(|error| format!("failed to send WHOIS request: {error}"))?;
+        let mut output = Vec::new();
+        let mut buffer = [0_u8; 8192];
+        loop {
+            let read = stream
+                .read(&mut buffer)
+                .await
+                .map_err(|error| format!("failed to read WHOIS response: {error}"))?;
+            if read == 0 {
+                break;
+            }
+            if output.len() + read > 2 * 1024 * 1024 {
+                return Err("WHOIS response exceeds 2 MB".to_string());
+            }
+            output.extend_from_slice(&buffer[..read]);
+        }
+        Ok(String::from_utf8_lossy(&output).trim().to_string())
+    })
+    .await
+    .map_err(|_| "TIMEOUT".to_string())?
 }
 
 fn normalize_ports(mut ports: Vec<u16>) -> Result<Vec<u16>, String> {
     ports.sort_unstable();
     ports.dedup();
-    if ports.is_empty() || ports.len() > 4_096 || ports.iter().any(|port| *port == 0) {
+    if ports.is_empty() || ports.len() > 4_096 || ports.contains(&0) {
         return Err("INVALID_TARGET".into());
     }
     Ok(ports)
@@ -654,9 +698,15 @@ fn ipv4_prefix_hosts(value: &str) -> Result<Vec<Ipv4Addr>, String> {
         return Err("INVALID_TARGET".into());
     }
     let mut parts = core.split('.');
-    let Some(first) = parts.next() else { return Err("INVALID_TARGET".into()); };
-    let Some(second) = parts.next() else { return Err("INVALID_TARGET".into()); };
-    let Some(third) = parts.next() else { return Err("INVALID_TARGET".into()); };
+    let Some(first) = parts.next() else {
+        return Err("INVALID_TARGET".into());
+    };
+    let Some(second) = parts.next() else {
+        return Err("INVALID_TARGET".into());
+    };
+    let Some(third) = parts.next() else {
+        return Err("INVALID_TARGET".into());
+    };
     if parts.next().is_some() {
         return Err("INVALID_TARGET".into());
     }
@@ -664,18 +714,22 @@ fn ipv4_prefix_hosts(value: &str) -> Result<Vec<Ipv4Addr>, String> {
         .map(parse_octet)
         .into_iter()
         .collect::<Result<Vec<_>, _>>()?;
-    Ok((1..=254).map(|host| Ipv4Addr::new(octets[0], octets[1], octets[2], host)).collect())
+    Ok((1..=254)
+        .map(|host| Ipv4Addr::new(octets[0], octets[1], octets[2], host))
+        .collect())
 }
 
 fn parse_octet(value: &str) -> Result<u8, String> {
     if value.is_empty() || value.len() > 3 || !value.bytes().all(|byte| byte.is_ascii_digit()) {
         return Err("INVALID_TARGET".into());
     }
-    value.parse::<u8>().map_err(|_| "INVALID_TARGET".to_string())
+    value
+        .parse::<u8>()
+        .map_err(|_| "INVALID_TARGET".to_string())
 }
 
 async fn collect_open_ports(
-    resolved: std::net::IpAddr,
+    host: &str,
     ports: &[u16],
     probe_timeout: Duration,
     deadline: Instant,
@@ -683,10 +737,12 @@ async fn collect_open_ports(
 ) -> Result<Vec<u16>, String> {
     let next = Arc::new(AtomicUsize::new(0));
     let open_ports = Arc::new(Mutex::new(Vec::new()));
+    let host = Arc::<str>::from(host);
     let workers = std::cmp::min(96, ports.len());
     let results = futures_util::future::join_all((0..workers).map(|_| {
         let next = next.clone();
         let open_ports = open_ports.clone();
+        let host = host.clone();
         async move {
             loop {
                 if cancelled.load(Ordering::Relaxed) {
@@ -696,23 +752,32 @@ async fn collect_open_ports(
                     return Err("TIMEOUT".to_string());
                 }
                 let index = next.fetch_add(1, Ordering::Relaxed);
-                let Some(port) = ports.get(index).copied() else { return Ok(()); };
-                if tcp_open(SocketAddr::new(resolved, port), probe_timeout, cancelled).await {
-                    open_ports.lock().map_err(|_| "network task manager state poisoned".to_string())?.push(port);
+                let Some(port) = ports.get(index).copied() else {
+                    return Ok(());
+                };
+                if tcp_open(&host, port, probe_timeout, cancelled).await {
+                    open_ports
+                        .lock()
+                        .map_err(|_| "network task manager state poisoned".to_string())?
+                        .push(port);
                 }
             }
         }
-    })).await;
+    }))
+    .await;
     if let Some(error) = results.into_iter().find_map(Result::err) {
         return Err(error);
     }
-    let mut open_ports = open_ports.lock().map_err(|_| "network task manager state poisoned".to_string())?.clone();
+    let mut open_ports = open_ports
+        .lock()
+        .map_err(|_| "network task manager state poisoned".to_string())?
+        .clone();
     open_ports.sort_unstable();
     Ok(open_ports)
 }
 
-async fn tcp_open(address: SocketAddr, probe_timeout: Duration, cancelled: &AtomicBool) -> bool {
-    let connect = timeout(probe_timeout, TcpStream::connect(address));
+async fn tcp_open(host: &str, port: u16, probe_timeout: Duration, cancelled: &AtomicBool) -> bool {
+    let connect = timeout(probe_timeout, TcpStream::connect((host, port)));
     tokio::pin!(connect);
     loop {
         tokio::select! {
@@ -747,19 +812,31 @@ async fn ping_addresses(
                     return Err("TIMEOUT".to_string());
                 }
                 let index = next.fetch_add(1, Ordering::Relaxed);
-                let Some(address) = addresses.get(index).copied() else { return Ok(()); };
+                let Some(address) = addresses.get(index).copied() else {
+                    return Ok(());
+                };
                 if ping_once(&address.to_string(), probe_timeout, cancelled).await? {
-                    reachable.lock().map_err(|_| "network task manager state poisoned".to_string())?.push(address);
+                    reachable
+                        .lock()
+                        .map_err(|_| "network task manager state poisoned".to_string())?
+                        .push(address);
                 }
             }
         }
-    })).await;
+    }))
+    .await;
     if let Some(error) = results.into_iter().find_map(Result::err) {
         return Err(error);
     }
-    let mut reachable = reachable.lock().map_err(|_| "network task manager state poisoned".to_string())?.clone();
+    let mut reachable = reachable
+        .lock()
+        .map_err(|_| "network task manager state poisoned".to_string())?
+        .clone();
     reachable.sort_by_key(|address| u32::from(*address));
-    Ok(reachable.into_iter().map(|address| address.to_string()).collect())
+    Ok(reachable
+        .into_iter()
+        .map(|address| address.to_string())
+        .collect())
 }
 
 async fn ping_once(address: &str, timeout_ms: u64, cancelled: &AtomicBool) -> Result<bool, String> {
@@ -795,18 +872,102 @@ async fn ping_once(address: &str, timeout_ms: u64, cancelled: &AtomicBool) -> Re
 
 fn ping_once_command(host: &str, timeout_ms: u64) -> (&'static str, Vec<String>) {
     if cfg!(windows) {
-        ("ping.exe", vec!["-n".into(), "1".into(), "-w".into(), timeout_ms.to_string(), host.into()])
+        (
+            "ping.exe",
+            vec![
+                "-n".into(),
+                "1".into(),
+                "-w".into(),
+                timeout_ms.to_string(),
+                host.into(),
+            ],
+        )
     } else if cfg!(target_os = "macos") {
-        ("/sbin/ping", vec!["-c".into(), "1".into(), "-W".into(), timeout_ms.to_string(), host.into()])
+        (
+            "/sbin/ping",
+            vec![
+                "-c".into(),
+                "1".into(),
+                "-W".into(),
+                timeout_ms.to_string(),
+                host.into(),
+            ],
+        )
     } else {
         let seconds = timeout_ms.div_ceil(1_000).max(1);
-        ("ping", vec!["-c".into(), "1".into(), "-W".into(), seconds.to_string(), host.into()])
+        (
+            "ping",
+            vec![
+                "-c".into(),
+                "1".into(),
+                "-W".into(),
+                seconds.to_string(),
+                host.into(),
+            ],
+        )
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn follows_whois_referrals_and_ping_arguments_like_electron() {
+        assert_eq!(
+            normalize_whois_query(" Example.COM ").expect("query"),
+            "example.com"
+        );
+        assert!(normalize_whois_query("bad_host").is_err());
+        assert_eq!(
+            whois_referral("Refer: whois.verisign-grs.com\n"),
+            Some("whois.verisign-grs.com".to_string())
+        );
+        assert_eq!(
+            whois_referral("whois: whois.iana.org\nrefer: whois.example\n"),
+            None
+        );
+        let (program, arguments) = ping_command("127.0.0.1");
+        assert_eq!(arguments[0], if cfg!(windows) { "-n" } else { "-c" });
+        assert_eq!(arguments[1], "4");
+        assert_eq!(arguments.last().map(String::as_str), Some("127.0.0.1"));
+        assert_eq!(
+            program,
+            if cfg!(windows) {
+                "ping.exe"
+            } else {
+                "/sbin/ping"
+            }
+        );
+        assert_eq!(
+            format_resolved_address(IpAddr::from([127, 0, 0, 1])),
+            "127.0.0.1\tIPv4"
+        );
+        assert_eq!(
+            format_resolved_address(IpAddr::from([0, 0, 0, 0, 0, 0, 0, 1])),
+            "::1\tIPv6"
+        );
+        assert_eq!(
+            connection_command().1,
+            if cfg!(windows) {
+                &["-ano"][..]
+            } else {
+                &["-nat"][..]
+            }
+        );
+        assert_eq!(interface_address("192.168.1.20/24"), "192.168.1.20");
+        assert_eq!(interface_address("fe80::1/64"), "fe80::1");
+        assert_eq!(
+            interface_command(),
+            if cfg!(windows) {
+                ("ipconfig.exe", &["/all"][..])
+            } else if cfg!(target_os = "macos") {
+                ("/sbin/ifconfig", &[][..])
+            } else {
+                ("ip", &["-details", "address"][..])
+            }
+        );
+    }
 
     #[test]
     fn rejects_shell_like_hosts() {
@@ -827,13 +988,31 @@ mod tests {
         let hosts = ipv4_prefix_hosts("192.168.10").expect("prefix");
         assert_eq!(hosts.len(), 254);
         assert_eq!(hosts[0], Ipv4Addr::new(192, 168, 10, 1));
-        assert_eq!(*hosts.last().expect("last host"), Ipv4Addr::new(192, 168, 10, 254));
-        assert_eq!(ipv4_prefix_hosts("192.168.10.").expect("trailing dot").len(), 254);
+        assert_eq!(
+            *hosts.last().expect("last host"),
+            Ipv4Addr::new(192, 168, 10, 254)
+        );
+        assert_eq!(
+            ipv4_prefix_hosts("192.168.10.")
+                .expect("trailing dot")
+                .len(),
+            254
+        );
         assert!(ipv4_prefix_hosts("192.168.10.1").is_err());
         assert!(ipv4_prefix_hosts("192.168.10..").is_err());
-        assert_eq!(normalize_ports(vec![3306, 80, 80, 22]).expect("ports"), vec![22, 80, 3306]);
+        assert_eq!(
+            normalize_ports(vec![3306, 80, 80, 22]).expect("ports"),
+            vec![22, 80, 3306]
+        );
         assert!(normalize_ports(vec![0]).is_err());
-        assert!(normalize_ports((1..=4_097).map(|port| u16::try_from(port).expect("port")).collect()).is_err());
+        assert!(
+            normalize_ports(
+                (1..=4_097)
+                    .map(|port| u16::try_from(port).expect("port"))
+                    .collect()
+            )
+            .is_err()
+        );
 
         let manager = NetworkTaskManager::default();
         let flag = manager.begin("scan-1").expect("begin task");
@@ -847,23 +1026,10 @@ mod tests {
     #[tokio::test]
     async fn pings_the_loopback_address_once() {
         let cancelled = AtomicBool::new(false);
-        assert!(ping_once("127.0.0.1", 800, &cancelled).await.expect("ping loopback"));
-    }
-
-    #[test]
-    fn parses_platform_connection_output() {
-        #[cfg(target_os = "macos")]
-        let output = "tcp4 0 0 127.0.0.1.58090 127.0.0.1.9674 ESTABLISHED 3164 982 407040 146988 codex:21749 00102";
-        #[cfg(target_os = "windows")]
-        let output = "TCP 127.0.0.1:58090 127.0.0.1:9674 ESTABLISHED 21749";
-        #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-        let output =
-            "tcp ESTAB 0 0 127.0.0.1:58090 127.0.0.1:9674 users:((\"codex\",pid=21749,fd=9))";
-
-        let connections = parse_connections(output);
-        assert_eq!(connections.len(), 1);
-        assert_eq!(connections[0].state, "ESTABLISHED");
-        assert!(connections[0].process.contains("21749"));
-        assert_eq!(normalize_connection_state("estab"), "ESTABLISHED");
+        assert!(
+            ping_once("127.0.0.1", 800, &cancelled)
+                .await
+                .expect("ping loopback")
+        );
     }
 }

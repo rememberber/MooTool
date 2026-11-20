@@ -5,6 +5,9 @@ import {
   normalizeCloseBehavior,
   normalizeCustomGroups,
   normalizeEditorSettings,
+  normalizeDataSettings,
+  normalizeRuntimeSettings,
+  normalizeVaultSettings,
   normalizeInterfaceFontFamily,
   normalizeLayoutSettings,
   normalizeNetworkSettings,
@@ -69,14 +72,9 @@ function loadBrowserSettings(): AppSettings {
       layout: normalizeLayoutSettings(parsed.layout),
       editor: normalizeEditorSettings(parsed.editor),
       network: normalizeNetworkSettings(parsed.network),
-      runtime: { ...defaults.runtime, ...parsed.runtime },
-      data: {},
-      vault: {
-        ...defaults.vault,
-        ...parsed.vault,
-        quickNoteTreeExpandMode: parsed.vault?.quickNoteTreeExpandMode === 'collapseAll' ? 'collapseAll' : 'expandAll',
-        jsonTreeExpandMode: parsed.vault?.jsonTreeExpandMode === 'collapseAll' ? 'collapseAll' : 'expandAll'
-      },
+      runtime: normalizeRuntimeSettings(parsed.runtime),
+      data: normalizeDataSettings(parsed.data),
+      vault: normalizeVaultSettings(parsed.vault),
       shortcuts: normalizeShortcutSettings(parsed.shortcuts),
       tools: { ...defaults.tools, ...parsed.tools },
       schemaVersion: SETTINGS_SCHEMA_VERSION

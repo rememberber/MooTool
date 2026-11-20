@@ -4,7 +4,7 @@ use std::{
     path::{Component, Path, PathBuf},
     sync::{Mutex, mpsc},
     thread,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, UNIX_EPOCH},
 };
 
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
@@ -139,26 +139,16 @@ impl VaultRepository {
         )
     }
 
-    pub fn trash_document(
-        &self,
-        relative_path: &str,
-        trash_root: &Path,
-    ) -> Result<VaultTrashResult, String> {
-        trash_document_at(&self.root()?, relative_path, trash_root)
+    pub fn trash_document(&self, relative_path: &str) -> Result<VaultTrashResult, String> {
+        trash_document_at(&self.root()?, relative_path)
     }
 
     pub fn trash_entry(
         &self,
         relative_path: &str,
         expected_fingerprint: Option<&str>,
-        trash_root: &Path,
     ) -> Result<VaultTrashResult, String> {
-        trash_entry_at(
-            &self.root()?,
-            relative_path,
-            expected_fingerprint,
-            trash_root,
-        )
+        trash_entry_at(&self.root()?, relative_path, expected_fingerprint)
     }
 
     #[cfg(test)]
@@ -347,10 +337,10 @@ fn save_document_at(root: &Path, request: VaultSaveRequest) -> Result<VaultDocum
             .ok_or_else(|| "JSON Vault document name is invalid".to_string())?,
     );
     let existing = path.symlink_metadata().ok();
-    if let Some(metadata) = &existing {
-        if metadata.file_type().is_symlink() || !metadata.is_file() {
-            return Err("JSON Vault document target is not a regular file".into());
-        }
+    if let Some(metadata) = &existing
+        && (metadata.file_type().is_symlink() || !metadata.is_file())
+    {
+        return Err("JSON Vault document target is not a regular file".into());
     }
     match (&request.expected_fingerprint, existing.is_some()) {
         (None, true) => return Err("JSON Vault document already exists".into()),
@@ -491,32 +481,14 @@ fn duplicate_document_at(
     )
 }
 
-fn trash_document_at(
-    root: &Path,
-    relative_path: &str,
-    trash_root: &Path,
-) -> Result<VaultTrashResult, String> {
+fn trash_document_at(root: &Path, relative_path: &str) -> Result<VaultTrashResult, String> {
     let relative = normalize_relative_json_path(relative_path)?;
     let source = resolve_existing(root, &relative, false)?;
-    let timestamp = unix_millis();
-    let target = trash_root.join(timestamp.to_string()).join(&relative);
-    let parent = target
-        .parent()
-        .ok_or_else(|| "vault recovery path has no parent".to_string())?;
-    fs::create_dir_all(parent)
-        .map_err(|error| format!("failed to create Vault recovery directory: {error}"))?;
-    fs::copy(&source, &target)
-        .map_err(|error| format!("failed to preserve deleted Vault document: {error}"))?;
-    fs::OpenOptions::new()
-        .write(true)
-        .open(&target)
-        .and_then(|file| file.sync_all())
-        .map_err(|error| format!("failed to sync recovered Vault document: {error}"))?;
     fs::remove_file(&source)
         .map_err(|error| format!("failed to remove JSON Vault document: {error}"))?;
     Ok(VaultTrashResult {
         relative_path: relative_text(Path::new(""), &relative)?,
-        recovery_path: target.to_string_lossy().into_owned(),
+        recovery_path: String::new(),
     })
 }
 
@@ -524,7 +496,6 @@ fn trash_entry_at(
     root: &Path,
     relative_path: &str,
     expected_fingerprint: Option<&str>,
-    trash_root: &Path,
 ) -> Result<VaultTrashResult, String> {
     let relative = normalize_relative_entry_path(relative_path)?;
     let source = resolve_existing_any(root, &relative)?;
@@ -541,25 +512,16 @@ fn trash_entry_at(
                 "JSON Vault document changed outside MooTool; reload before deleting".into(),
             );
         }
-        return trash_document_at(root, relative_path, trash_root);
+        return trash_document_at(root, relative_path);
     }
     if !metadata.is_dir() {
         return Err("JSON Vault entry is not a regular file or directory".into());
     }
-    let target = trash_root.join(unix_millis().to_string()).join(&relative);
-    let parent = target
-        .parent()
-        .ok_or_else(|| "vault recovery path has no parent".to_string())?;
-    fs::create_dir_all(parent)
-        .map_err(|error| format!("failed to create Vault recovery directory: {error}"))?;
-    fs::rename(&source, &target).map_err(|error| {
-        format!(
-            "failed to move JSON Vault directory to recovery storage without data loss: {error}"
-        )
-    })?;
+    fs::remove_dir_all(&source)
+        .map_err(|error| format!("failed to remove JSON Vault directory: {error}"))?;
     Ok(VaultTrashResult {
         relative_path: relative_text(Path::new(""), &relative)?,
-        recovery_path: target.to_string_lossy().into_owned(),
+        recovery_path: String::new(),
     })
 }
 
@@ -687,13 +649,6 @@ fn modified_millis(metadata: &fs::Metadata) -> u64 {
         .unwrap_or_default()
 }
 
-fn unix_millis() -> u128 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -701,7 +656,6 @@ mod tests {
     #[test]
     fn saves_reads_lists_and_recovers_json_documents() {
         let vault = tempfile::TempDir::new().expect("vault directory");
-        let trash = tempfile::TempDir::new().expect("trash directory");
         let repository = VaultRepository::default();
         repository
             .configure_without_watcher(vault.path().to_path_buf())
@@ -728,9 +682,10 @@ mod tests {
             .expect("update document");
         assert!(updated.content.contains('2'));
         let trashed = repository
-            .trash_document("example.json", trash.path())
-            .expect("trash document");
-        assert!(Path::new(&trashed.recovery_path).is_file());
+            .trash_document("example.json")
+            .expect("delete document");
+        assert!(trashed.recovery_path.is_empty());
+        assert!(!vault.path().join("example.json").exists());
         assert!(repository.list_files().expect("list files").is_empty());
     }
 
@@ -783,7 +738,6 @@ mod tests {
     #[test]
     fn creates_lists_moves_duplicates_and_recovers_vault_entries() {
         let vault = tempfile::TempDir::new().expect("vault directory");
-        let trash = tempfile::TempDir::new().expect("trash directory");
         let repository = VaultRepository::default();
         repository
             .configure_without_watcher(vault.path().to_path_buf())
@@ -836,13 +790,9 @@ mod tests {
             "archive"
         );
         let recovered = repository
-            .trash_entry("archive", None, trash.path())
-            .expect("recover directory");
-        assert!(
-            Path::new(&recovered.recovery_path)
-                .join("moved.json")
-                .is_file()
-        );
+            .trash_entry("archive", None)
+            .expect("delete directory");
+        assert!(recovered.recovery_path.is_empty());
         assert!(!vault.path().join("archive").exists());
     }
 }

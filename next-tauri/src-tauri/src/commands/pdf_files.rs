@@ -324,10 +324,10 @@ fn validate_export_file_target(path: &Path) -> Result<(), String> {
     if !path.is_absolute() {
         return Err("PDF export target must be absolute".into());
     }
-    if let Ok(metadata) = fs::symlink_metadata(path) {
-        if metadata.file_type().is_symlink() || !metadata.is_file() {
-            return Err("PDF export target must be a regular non-symlink file".into());
-        }
+    if let Ok(metadata) = fs::symlink_metadata(path)
+        && (metadata.file_type().is_symlink() || !metadata.is_file())
+    {
+        return Err("PDF export target must be a regular non-symlink file".into());
     }
     let parent = path
         .parent()

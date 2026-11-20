@@ -1,3 +1,4 @@
+import { XMLBuilder, XMLParser } from 'fast-xml-parser'
 import { JSONPath } from 'jsonpath-plus'
 export { contentFingerprint } from '../../shared/fingerprint'
 
@@ -6,7 +7,7 @@ export type JsonValidation =
   | { kind: 'valid'; rootType: string }
   | { kind: 'error'; cause: unknown }
 
-export type JsonToolErrorCode = 'pathEmpty' | 'notString' | 'contentEmpty' | 'parseDetail' | 'parsePosition' | 'swapValue' | 'xmlParse' | 'duplicateKeys' | 'objectRequired' | 'emptyJavaBean' | 'noJavaFields'
+export type JsonToolErrorCode = 'pathEmpty' | 'notString' | 'contentEmpty' | 'parseDetail' | 'parsePosition' | 'swapValue' | 'xmlParse' | 'emptyXml' | 'duplicateKeys' | 'objectRequired' | 'emptyJavaBean' | 'noJavaFields'
 
 export class JsonToolError extends Error {
   constructor(readonly code: JsonToolErrorCode, readonly values?: Record<string, string | number>) {
@@ -108,9 +109,7 @@ export function queryJsonPath(input: string, path: string): string | undefined {
     json: parseJson(input) as object,
     wrap: false
   })
-  if (result === undefined) {
-    return undefined
-  }
+  if (result === undefined) return 'undefined'
   return typeof result === 'string'
     ? JSON.stringify(result)
     : JSON.stringify(result, null, 2)
@@ -144,30 +143,31 @@ export function unescapeJsonText(input: string): string {
   return JSON.parse(`"${quoted}"`) as string
 }
 
-export function swapJsonKeysAndValues(input: string, indent = 2): string {
+export function swapJsonKeysAndValues(input: string): string {
   const value = parseJson(input)
-  if (!isJsonObject(value) || Object.values(value).some((item) => !['string', 'number', 'boolean'].includes(typeof item))) {
-    throw new JsonToolError('swapValue')
-  }
-  const swapped: Record<string, string> = {}
-  for (const [key, item] of Object.entries(value)) {
-    const swappedKey = String(item)
-    if (Object.hasOwn(swapped, swappedKey)) throw new JsonToolError('swapValue')
-    swapped[swappedKey] = key
-  }
-  return JSON.stringify(swapped, null, indent)
+  if (!isJsonObject(value)) throw new JsonToolError('objectRequired')
+  return JSON.stringify(swapObject(value), null, 2)
 }
 
 export function jsonToXml(input: string): string {
   const value = parseJson(input)
-  return `<?xml version="1.0" encoding="UTF-8"?>\n${xmlNode('root', value, 0)}`
+  const builder = new XMLBuilder({
+    format: true,
+    ignoreAttributes: false,
+    suppressEmptyNode: true
+  })
+  return builder.build({ root: value })
 }
 
-export function xmlToJson(input: string, indent = 2): string {
-  const parser = new DOMParser()
-  const document = parser.parseFromString(input, 'application/xml')
-  if (document.querySelector('parsererror') || !document.documentElement) throw new JsonToolError('xmlParse')
-  return JSON.stringify({ [document.documentElement.tagName]: xmlElementValue(document.documentElement) }, null, indent)
+export function xmlToJson(input: string): string {
+  if (!input.trim()) throw new JsonToolError('emptyXml')
+  const parser = new XMLParser({
+    ignoreAttributes: false,
+    parseTagValue: true,
+    parseAttributeValue: true,
+    trimValues: true
+  })
+  return JSON.stringify(parser.parse(input), null, 2)
 }
 
 export function analyzeJson(input: string): JsonAnalysis | undefined {
@@ -268,13 +268,13 @@ function inferJavaType(key: string, value: unknown, children: Array<{ name: stri
   if (typeof value === 'number') return Number.isInteger(value) ? 'Long' : 'Double'
   if (Array.isArray(value)) {
     const first = value.find((item) => item !== null)
-    if (first === undefined) return 'java.util.List<Object>'
+    if (first === undefined) return 'List<Object>'
     if (isJsonObject(first)) {
       const name = toPascalCase(singularize(key))
       children.push({ name, value: first })
-      return `java.util.List<${name}>`
+      return `List<${name}>`
     }
-    return `java.util.List<${inferJavaType(key, first, children)}>`
+    return `List<${inferJavaType(key, first, children)}>`
   }
   if (isJsonObject(value)) {
     const name = toPascalCase(key)
@@ -292,22 +292,12 @@ function toPascalCase(value: string): string {
 
 function toJavaIdentifier(value: string): string {
   const normalized = value.replace(/[^a-zA-Z0-9_$]/g, '_') || 'value'
-  const identifier = /^\d/.test(normalized) ? `_${normalized}` : normalized
-  return JAVA_RESERVED_WORDS.has(identifier) ? `${identifier}_` : identifier
+  return /^\d/.test(normalized) ? `_${normalized}` : normalized
 }
 
 function singularize(value: string): string {
   return value.endsWith('ies') ? `${value.slice(0, -3)}y` : value.endsWith('s') ? value.slice(0, -1) : value
 }
-
-const JAVA_RESERVED_WORDS = new Set([
-  'abstract', 'assert', 'boolean', 'break', 'byte', 'case', 'catch', 'char', 'class',
-  'const', 'continue', 'default', 'do', 'double', 'else', 'enum', 'extends', 'final',
-  'finally', 'float', 'for', 'goto', 'if', 'implements', 'import', 'instanceof', 'int',
-  'interface', 'long', 'native', 'new', 'package', 'private', 'protected', 'public',
-  'return', 'short', 'static', 'strictfp', 'super', 'switch', 'synchronized', 'this',
-  'throw', 'throws', 'transient', 'try', 'void', 'volatile', 'while'
-])
 
 class DuplicateKeyParser {
   private index = 0
@@ -365,39 +355,20 @@ function isJsonObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function xmlNode(name: string, value: unknown, depth: number): string {
-  const padding = '  '.repeat(depth)
-  const safeName = /^[A-Za-z_][\w.-]*$/.test(name) ? name : 'item'
-  if (Array.isArray(value)) return value.map((item) => xmlNode(safeName, item, depth)).join('\n')
-  if (isJsonObject(value)) {
-    const children = Object.entries(value).map(([key, item]) => xmlNode(key, item, depth + 1)).join('\n')
-    return `${padding}<${safeName}>${children ? `\n${children}\n${padding}` : ''}</${safeName}>`
+function swapObject(value: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const [key, item] of Object.entries(value)) {
+    if (isJsonObject(item)) {
+      result[key] = swapObject(item)
+      continue
+    }
+    result[Array.isArray(item) ? JSON.stringify(item) : String(item)] = key
   }
-  if (value === null) return `${padding}<${safeName} />`
-  return `${padding}<${safeName}>${escapeXml(String(value))}</${safeName}>`
-}
-
-function xmlElementValue(element: Element): unknown {
-  const children = [...element.children]
-  if (!children.length) return element.textContent ?? ''
-  const output: Record<string, unknown> = {}
-  for (const child of children) {
-    const value = xmlElementValue(child)
-    const current = output[child.tagName]
-    output[child.tagName] = current === undefined ? value : Array.isArray(current) ? [...current, value] : [current, value]
-  }
-  return output
-}
-
-function escapeXml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;')
+  return result
 }
 
 function jsonType(value: unknown): string {
   if (Array.isArray(value)) return 'Array'
-  if (value === null) return 'Null'
-  if (typeof value === 'object') return 'Object'
-  return value === undefined
-    ? 'Undefined'
-    : `${typeof value}`.replace(/^./, (letter) => letter.toUpperCase())
+  if (typeof value === 'object' && value !== null) return 'Object'
+  return typeof value
 }

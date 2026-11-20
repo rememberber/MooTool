@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import { networkToolsApi } from '../../platform/api/networkToolsApi'
-import type { NetworkConnectionInfo, NetworkInterfaceInfo, NetworkRangeScanResult, PingResult, PortScanResult, WhoisResult } from '../../platform/contracts/networkTools'
+import type { NetworkInterfaceInfo, NetworkRangeScanResult, PingResult, PortScanResult, WhoisResult } from '../../platform/contracts/networkTools'
 import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import { ResizableColumns } from '../../shared/ResizableColumns'
 import { useSettings } from '../settings/SettingsProvider'
@@ -22,7 +22,7 @@ import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import { networkMessages } from './networkMessages'
-import { formatOpenPorts, formatPingRange, parseIpv4Range, parsePortSpec } from './networkCommand'
+import { classifyNetworkCommandError, formatOpenPorts, formatPingRange, parseIpv4Range, parsePortSpec } from './networkCommand'
 import { analyzeIpv4Cidr, integerToIpv4, ipv4ToLong, NetworkToolError, type Ipv4Category } from './networkTools'
 
 type NetworkMessageKey = LocalizedMessageKey<typeof networkMessages>
@@ -51,8 +51,6 @@ export function NetworkSurface() {
   const [copied, setCopied] = useState('')
   const [tab, setTab] = useState<NetworkTab>('calculator')
   const [interfaces, setInterfaces] = useState<NetworkInterfaceInfo[]>([])
-  const [connections, setConnections] = useState<NetworkConnectionInfo[]>([])
-  const [connectionQuery, setConnectionQuery] = useState('')
   const [target, setTarget] = useState('localhost')
   const [dnsResults, setDnsResults] = useState<string[]>([])
   const [pingResult, setPingResult] = useState<PingResult>()
@@ -137,7 +135,6 @@ export function NetworkSurface() {
       setIpv4(next)
       setIntegerResult(next)
       succeed('notice.converted')
-      recordOperation(t('action.convert'), `${longValue} → ${next}`, 'success', { inputText: longValue, outputText: next, metadata: { operation: 'integer' } })
     } catch (cause) {
       fail(cause)
     }
@@ -157,44 +154,50 @@ export function NetworkSurface() {
 
   async function loadInterfaces(publish = true): Promise<void> {
     setBusy('interfaces')
+    if (publish) setOutput(t('layout.running'))
     try {
       const loaded = await networkToolsApi.interfaces()
       setInterfaces(loaded)
-      if (publish) setOutput(loaded.map((item) => `${item.name}  ${item.addresses.join(' ')}`).join('\n') || t('layout.noOutput'))
+      if (publish) {
+        const report = await networkToolsApi.interfaceReport()
+        setOutput(report || t('layout.noOutput'))
+      }
       succeed('notice.interfaces', { count: loaded.length })
-    } catch (cause) { fail(cause) } finally { setBusy('') }
+    } catch (cause) { reportCommandFailure(cause) } finally { setBusy('') }
   }
 
   async function loadConnections(): Promise<void> {
     setBusy('connections')
+    setOutput(t('layout.running'))
     try {
       const loaded = await networkToolsApi.connections()
-      setConnections(loaded)
-      setOutput(loaded.map((item) => `${item.protocol}  ${item.localAddress}  ${item.remoteAddress}  ${item.state}  ${item.process}`).join('\n') || t('layout.noOutput'))
-      succeed('notice.connections', { count: loaded.length })
-    } catch (cause) { fail(cause) } finally { setBusy('') }
+      setOutput(loaded || t('layout.noOutput'))
+      succeed('notice.connections', { count: loaded ? loaded.split('\n').length : 0 })
+    } catch (cause) { reportCommandFailure(cause) } finally { setBusy('') }
   }
 
   async function resolveTarget(): Promise<void> {
     setBusy('dns')
+    setOutput(t('layout.running'))
     try {
       const loaded = await networkToolsApi.resolve(resolveHost.trim())
       setDnsResults(loaded)
       setOutput(loaded.join('\n') || t('layout.noOutput'))
       succeed('notice.resolved', { count: loaded.length })
       recordOperation(t('operation.dns'), `${target} · ${loaded.join(', ')}`, 'success', { inputText: target.trim(), outputText: loaded.join('\n'), metadata: { operation: 'dns' } })
-    } catch (cause) { fail(cause); recordOperation(t('operation.dns'), String(cause), 'error', { inputText: target.trim(), metadata: { operation: 'dns' } }) } finally { setBusy('') }
+    } catch (cause) { reportCommandFailure(cause); recordOperation(t('operation.dns'), String(cause), 'error', { inputText: target.trim(), metadata: { operation: 'dns' } }) } finally { setBusy('') }
   }
 
   async function runPing(): Promise<void> {
     setBusy('ping')
+    setOutput(t('layout.running'))
     try {
       const loaded = await networkToolsApi.ping(pingTarget.trim())
       setPingResult(loaded)
       setOutput(loaded.output || t('layout.noOutput'))
       succeed(loaded.success ? 'notice.pingComplete' : 'notice.pingFailed')
       recordOperation(t('operation.ping'), `${target} · ${loaded.durationMs} ms`, loaded.success ? 'success' : 'error', { inputText: target.trim(), outputText: loaded.output, metadata: { operation: 'ping', durationMs: loaded.durationMs, success: loaded.success } })
-    } catch (cause) { fail(cause); recordOperation(t('operation.ping'), String(cause), 'error', { inputText: target.trim(), metadata: { operation: 'ping' } }) } finally { setBusy('') }
+    } catch (cause) { reportCommandFailure(cause); recordOperation(t('operation.ping'), String(cause), 'error', { inputText: target.trim(), metadata: { operation: 'ping' } }) } finally { setBusy('') }
   }
 
   async function scanTarget(): Promise<void> {
@@ -210,7 +213,7 @@ export function NetworkSurface() {
       setOutput(formatOpenPorts(portHost.trim(), ports, loaded.openPorts))
       succeed('notice.scanComplete', { count: loaded.openPorts.length })
     } catch (cause) {
-      finishCommand(cause)
+      reportCommandFailure(cause)
     } finally { setBusy(''); setTaskId('') }
   }
 
@@ -225,26 +228,32 @@ export function NetworkSurface() {
       setOutput(formatPingRange(loaded.reachableHosts, loaded.scannedHosts))
       succeed('notice.pingRangeComplete', { count: loaded.reachableHosts.length })
     } catch (cause) {
-      finishCommand(cause)
+      reportCommandFailure(cause)
     } finally { setBusy(''); setTaskId('') }
   }
 
-  function finishCommand(cause: unknown): void {
+  function reportCommandFailure(cause: unknown): void {
     const message = cause instanceof Error ? cause.message : String(cause)
-    setOutput(message)
-    if (message.includes('ABORTED')) succeed('notice.scanCancelled')
-    else fail(cause)
+    setOutput(message || t('layout.noOutput'))
+    const code = classifyNetworkCommandError(message)
+    if (code === 'ABORTED') {
+      setFailed(false)
+      return
+    }
+    setNotice({ key: `error.${code}` })
+    setFailed(true)
   }
 
   async function queryWhois(): Promise<void> {
     setBusy('whois')
+    setOutput(t('layout.running'))
     try {
       const loaded = await networkToolsApi.whois(whoisTarget.trim())
       setWhoisResult(loaded)
       setOutput(loaded.output || t('layout.noOutput'))
       succeed('notice.whois', { server: loaded.server })
       recordOperation(t('operation.whois'), `${loaded.query} · ${loaded.server}`, 'success', { inputText: loaded.query, outputText: loaded.output, metadata: { operation: 'whois', server: loaded.server, durationMs: loaded.durationMs } })
-    } catch (cause) { fail(cause); recordOperation(t('operation.whois'), String(cause), 'error', { inputText: target.trim(), metadata: { operation: 'whois' } }) } finally { setBusy('') }
+    } catch (cause) { reportCommandFailure(cause); recordOperation(t('operation.whois'), String(cause), 'error', { inputText: target.trim(), metadata: { operation: 'whois' } }) } finally { setBusy('') }
   }
 
   async function scanRange(): Promise<void> {
@@ -271,13 +280,13 @@ export function NetworkSurface() {
   async function flushDns(): Promise<void> {
     if (!await dialog.confirm(t('confirm.flushDns'))) return
     setBusy('flush')
-    try { await networkToolsApi.flushDns(); succeed('notice.dnsFlushed') } catch (cause) { fail(cause) } finally { setBusy('') }
+    setOutput(t('layout.running'))
+    try {
+      const report = await networkToolsApi.flushDns()
+      setOutput(report || t('layout.noOutput'))
+      succeed('notice.dnsFlushed')
+    } catch (cause) { reportCommandFailure(cause) } finally { setBusy('') }
   }
-
-  const visibleConnections = connections.filter((item) => {
-    const needle = connectionQuery.trim().toLowerCase()
-    return !needle || `${item.protocol} ${item.localAddress} ${item.remoteAddress} ${item.state} ${item.process}`.toLowerCase().includes(needle)
-  })
 
   function succeed(key: NetworkMessageKey, values?: MessageValues): void {
     setNotice({ key, values })
@@ -314,7 +323,7 @@ export function NetworkSurface() {
       <ResizableColumns id="network-workspace" className="network-workspace" initialPrimary={1.15} defaultSizes={[1.15, 0.85]} minPrimary={340} minSecondary={300}>
         <section className="network-output-panel">
           <header>
-            <button type="button" disabled={Boolean(busy)} onClick={() => void loadInterfaces()}><Network />{navigator.userAgent.includes('Windows') ? 'ipconfig /all' : navigator.userAgent.includes('Linux') ? 'ip address' : 'ifconfig'}</button>
+            <button type="button" disabled={Boolean(busy)} onClick={() => void loadInterfaces(true)}><Network />{navigator.userAgent.includes('Windows') ? 'ipconfig /all' : navigator.userAgent.includes('Linux') ? 'ip address' : 'ifconfig'}</button>
             <button type="button" disabled={Boolean(busy)} onClick={() => void loadConnections()}><Globe2 />netstat</button>
             {busy && <button type="button" onClick={() => void cancelScan()}><Square />{t('action.stop')}</button>}
             <button type="button" aria-label={t('action.copyOutput')} disabled={!output} onClick={() => void copy(output)}><ClipboardCopy /></button>
@@ -330,7 +339,7 @@ export function NetworkSurface() {
           <section><h2>{t('layout.resolve')}</h2><div className="network-command-row"><Search /><input aria-label={t('layout.resolve')} value={resolveHost} onChange={(event) => setResolveHost(event.target.value)} /><button type="button" disabled={Boolean(busy)} onClick={() => void resolveTarget()}><Play />{t('layout.resolveAction')}</button></div></section>
           <section><h2>{t('layout.whois')}</h2><div className="network-command-row"><Search /><input aria-label={t('layout.whois')} value={whoisTarget} onChange={(event) => setWhoisTarget(event.target.value)} /><button type="button" disabled={Boolean(busy)} onClick={() => void queryWhois()}><Play />{t('layout.query')}</button></div></section>
           <section><h2>{t('layout.dns')}</h2><button type="button" disabled={Boolean(busy)} onClick={() => void flushDns()}><RefreshCw />{t('action.flushDns')}</button></section>
-          <section><h2>{t('layout.localAddresses')}</h2><div className="network-local-addresses"><label><span>IPv4</span><textarea readOnly aria-label="IPv4" value={interfaces.flatMap((item) => item.addresses).filter((address) => address.includes('.')).join('\n')} /></label><label><span>IPv6</span><textarea readOnly aria-label="IPv6" value={interfaces.flatMap((item) => item.addresses).filter((address) => address.includes(':')).join('\n')} /></label></div><button type="button" aria-label={t('action.refresh')} onClick={() => void loadInterfaces()}><RefreshCw /></button></section>
+          <section><h2>{t('layout.localAddresses')}</h2><div className="network-local-addresses"><label><span>IPv4</span><textarea readOnly aria-label="IPv4" value={uniqueAddresses(interfaces, false)} /></label><label><span>IPv6</span><textarea readOnly aria-label="IPv6" value={uniqueAddresses(interfaces, true)} /></label></div><button type="button" aria-label={t('action.refresh')} onClick={() => void loadInterfaces(false)}><RefreshCw /></button></section>
         </section>
       </ResizableColumns>
 
@@ -342,6 +351,10 @@ export function NetworkSurface() {
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
     </main>
   )
+}
+
+function uniqueAddresses(interfaces: NetworkInterfaceInfo[], ipv6: boolean): string {
+  return [...new Set(interfaces.flatMap((item) => item.addresses).filter((address) => ipv6 ? address.includes(':') : address.includes('.') && !address.includes(':')))].sort().join('\n')
 }
 
 function commandTimeout(milliseconds: number): number {

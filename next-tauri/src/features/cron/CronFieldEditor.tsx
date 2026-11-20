@@ -1,11 +1,6 @@
 import { useState } from 'react'
 import type { CronFields } from './cronTools'
-
-export const cronFieldLabels = {
-  'zh-CN': { every: '每个值', unspecified: '不指定', range: '范围', step: '从指定值开始，每隔', list: '指定值（可多选）', nearest: '最近工作日', last: '每月最后一天', lastWork: '每月最后工作日', nth: '每月第 N 个星期', lastWeek: '每月最后一个星期', custom: '自定义', from: '开始', to: '结束', interval: '间隔', weekday: '星期（1=周日，7=周六）', ordinal: '第几次' },
-  'en-US': { every: 'Every value', unspecified: 'Unspecified', range: 'Range', step: 'Start / interval', list: 'Select values', nearest: 'Nearest weekday', last: 'Last day of month', lastWork: 'Last weekday of month', nth: 'Nth weekday of month', lastWeek: 'Last weekday occurrence', custom: 'Custom', from: 'Start', to: 'End', interval: 'Interval', weekday: 'Weekday (1=Sun, 7=Sat)', ordinal: 'Occurrence' },
-  'ja-JP': { every: 'すべて', unspecified: '指定なし', range: '範囲', step: '開始値 / 間隔', list: '値を選択（複数可）', nearest: '最寄りの平日', last: '月末日', lastWork: '月末の平日', nth: '毎月第 N 曜日', lastWeek: '毎月最後の曜日', custom: 'カスタム', from: '開始', to: '終了', interval: '間隔', weekday: '曜日（1=日、7=土）', ordinal: '第何回' }
-} as const
+import { cronFieldLabels } from './cronMessages'
 
 type Mode = 'every' | 'unspecified' | 'range' | 'step' | 'list' | 'nearest' | 'last' | 'lastWork' | 'nth' | 'lastWeek' | 'custom'
 

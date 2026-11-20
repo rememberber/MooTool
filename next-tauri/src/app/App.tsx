@@ -44,6 +44,10 @@ import { UaHost } from '../features/ua/UaHost'
 import { VariablesHost } from '../features/variables/VariablesHost'
 import { SystemHost } from '../features/system/SystemHost'
 import { CommandPalette } from '../features/search/CommandPalette'
+import { commandActions } from '../features/search/commandActions'
+import { commandPaletteMessages } from '../features/search/commandPaletteMessages'
+import { isCommandActionId, loadCommandPaletteState, syncTrayQuickActions, type CommandActionId } from '../features/search/commandPaletteState'
+import { publishScreenAction, screenTrayAction } from './screenTrayAction'
 import { HistoryPanel } from '../features/history/HistoryPanel'
 import { WebviewLab } from '../features/webviewLab/WebviewLab'
 import { runtimeApi } from '../platform/api/runtimeApi'
@@ -57,6 +61,7 @@ import type { RuntimeInfo } from '../platform/contracts/runtime'
 import type { AppLanguage } from '../platform/contracts/settings'
 import { errorMessage, reportProductError, toProductError } from '../shared/errors'
 import { useI18n } from './i18n'
+import { useLocalizedMessages } from './localizedMessages'
 import {
   homeTool,
   navigationToolCatalog,
@@ -101,16 +106,19 @@ const toolHosts: Array<{ id: Exclude<ToolId, 'home'>; Host: ComponentType<{ acti
 export function App() {
   const { settings, ready: settingsReady, error: settingsError, save, openWindow } = useSettings()
   const { locale, t, toolTitle, groupTitle } = useI18n()
+  const { t: commandLabel } = useLocalizedMessages(commandPaletteMessages)
   const [activeTool, setActiveTool] = useState<ToolId>('home')
   const [visitedTools, setVisitedTools] = useState<ReadonlySet<ToolId>>(() => new Set(['home']))
   const [runtimeInfo, setRuntimeInfo] = useState<RuntimeInfo>()
   const [notice, setNotice] = useState('')
   const [customGroupsOpen, setCustomGroupsOpen] = useState(false)
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const [commandActionRequest, setCommandActionRequest] = useState<{ actionId: CommandActionId; sequence: number } | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [closeRequest, setCloseRequest] = useState<DesktopCloseRequest>()
   const [rememberCloseChoice, setRememberCloseChoice] = useState(false)
   const automaticUpdateActive = useRef(false)
+  const openToolRef = useRef<(toolId: ToolId) => void>(() => undefined)
 
   useEffect(() => {
     if (!notice) return
@@ -191,6 +199,51 @@ export function App() {
       else dispose = unlisten
     }).catch((cause: unknown) => setNotice(errorMessage(cause)))
     return () => { cancelled = true; dispose?.() }
+  }, [])
+
+  useEffect(() => {
+    void syncTrayQuickActions(loadCommandPaletteState(), (id) => {
+      const action = commandActions.find((item) => item.id === id)
+      return action ? commandLabel(action.titleKey) : id
+    }).catch((cause: unknown) => setNotice(errorMessage(cause)))
+  }, [commandLabel, settings.general.language])
+
+  useEffect(() => {
+    if (!window.__TAURI_INTERNALS__) return
+    let disposed = false
+    const stops: Array<() => void> = []
+    void import('@tauri-apps/api/event').then(async ({ listen }) => {
+      const stopAction = await listen<string>('mootool://run-command-action', (event) => {
+        const actionId = event.payload
+        if (!isCommandActionId(actionId)) return
+        setCommandActionRequest((current) => ({ actionId, sequence: (current?.sequence ?? 0) + 1 }))
+        setCommandPaletteOpen(true)
+      })
+      const stopTool = await listen<string>('mootool://open-tool', (event) => {
+        if (isToolId(event.payload)) openToolRef.current(event.payload)
+      })
+      const stopNotice = await listen<string>('mootool://tray-notice', (event) => {
+        if (event.payload) setNotice(event.payload)
+      })
+      const stopScreen = await listen<string>('mootool://start-screen-action', (event) => {
+        const action = screenTrayAction(event.payload)
+        if (!action) return
+        openToolRef.current(action === 'color' ? 'color' : 'image')
+        publishScreenAction(action)
+      })
+      if (disposed) {
+        stopAction()
+        stopTool()
+        stopNotice()
+        stopScreen()
+      } else {
+        stops.push(stopAction, stopTool, stopNotice, stopScreen)
+      }
+    }).catch((cause: unknown) => setNotice(errorMessage(cause)))
+    return () => {
+      disposed = true
+      stops.forEach((stop) => stop())
+    }
   }, [])
 
   useEffect(() => {
@@ -292,6 +345,7 @@ export function App() {
       })).catch((cause: unknown) => setNotice(errorMessage(cause)))
     }
   }
+  openToolRef.current = openTool
 
   function restoreOperation(entry: OperationHistory): void {
     if (!isToolId(entry.toolId) || entry.toolId === 'home') return
@@ -512,6 +566,7 @@ export function App() {
         <CustomGroupDialog open={customGroupsOpen} onClose={() => setCustomGroupsOpen(false)} />
         <CommandPalette
           open={commandPaletteOpen}
+          actionRequest={commandActionRequest}
           onClose={() => setCommandPaletteOpen(false)}
           onOpenTool={openTool}
         />

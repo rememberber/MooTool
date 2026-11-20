@@ -34,7 +34,11 @@ export interface HardwareText {
   performanceCores: string
   efficiencyCores: string
   currentLoad: string
-  currentFrequency: string
+  cpuManufacturer: string
+  family: string
+  cpuModel: string
+  baseSpeed: string
+  maximumSpeed: string
   total: string
   used: string
   available: string
@@ -42,6 +46,9 @@ export interface HardwareText {
   usage: string
   diskType: string
   mtu: string
+  interfaceName: string
+  speed: string
+  status: string
   swapTotal: string
   swapUsed: string
   device: string
@@ -66,11 +73,11 @@ export function hardwareGroups(snapshot: SystemSnapshot, tab: HardwareTab, text:
         item(text.kernel, snapshot.kernelVersion),
         item(text.architecture, snapshot.architecture),
         item(text.hostName, snapshot.hostName),
-        ...present(text.serial, snapshot.serial),
-        ...present(text.manufacturer, snapshot.manufacturer),
-        ...present(text.model, snapshot.model),
+        item(text.serial, snapshot.serial),
+        item(text.manufacturer, snapshot.manufacturer),
+        item(text.model, snapshot.model),
         item(text.uptime, text.uptimeValue),
-        ...present(text.timeZone, snapshot.timeZone)
+        item(text.timeZone, snapshot.timeZone)
       ]
     }]
   }
@@ -78,14 +85,18 @@ export function hardwareGroups(snapshot: SystemSnapshot, tab: HardwareTab, text:
     return [{
       title: text.processor,
       items: [
+        item(text.cpuManufacturer, ''),
         item(text.brand, snapshot.cpuBrand),
-        ...present(text.vendor, snapshot.cpuVendor),
+        item(text.vendor, snapshot.cpuVendor),
+        item(text.family, ''),
+        item(text.cpuModel, ''),
         item(text.physicalCores, String(snapshot.physicalCores)),
         item(text.logicalCores, String(snapshot.logicalCores)),
-        ...present(text.performanceCores, snapshot.performanceCores == null ? '' : String(snapshot.performanceCores)),
-        ...present(text.efficiencyCores, snapshot.efficiencyCores == null ? '' : String(snapshot.efficiencyCores)),
-        item(text.currentLoad, `${snapshot.cpuUsagePercent.toFixed(1)}%`),
-        item(text.currentFrequency, formatFrequency(snapshot.cpuFrequencyMhz))
+        item(text.performanceCores, snapshot.performanceCores == null ? '' : String(snapshot.performanceCores)),
+        item(text.efficiencyCores, snapshot.efficiencyCores == null ? '' : String(snapshot.efficiencyCores)),
+        item(text.baseSpeed, ghz(snapshot.cpuFrequencyMhz)),
+        item(text.maximumSpeed, ''),
+        item(text.currentLoad, `${snapshot.cpuUsagePercent.toFixed(1)}%`)
       ]
     }]
   }
@@ -98,7 +109,7 @@ export function hardwareGroups(snapshot: SystemSnapshot, tab: HardwareTab, text:
         item(text.total, text.bytes(snapshot.totalMemoryBytes)),
         item(text.used, text.bytes(used)),
         item(text.available, text.bytes(snapshot.availableMemoryBytes)),
-        ...present(text.active, snapshot.activeMemoryBytes == null ? '' : text.bytes(snapshot.activeMemoryBytes)),
+        item(text.active, snapshot.activeMemoryBytes == null ? '' : text.bytes(snapshot.activeMemoryBytes)),
         item(text.usage, `${usage.toFixed(1)}%`),
         item(text.swapTotal, text.bytes(snapshot.totalSwapBytes)),
         item(text.swapUsed, text.bytes(snapshot.usedSwapBytes))
@@ -109,22 +120,26 @@ export function hardwareGroups(snapshot: SystemSnapshot, tab: HardwareTab, text:
     return snapshot.disks.map((disk) => ({
       title: disk.mountPoint || disk.name,
       items: [
-        item(text.device, disk.name),
-        ...present(text.diskType, disk.kind),
-        item(text.capacity, text.bytes(disk.totalBytes)),
         item(text.filesystem, disk.fileSystem),
+        item(text.diskType, disk.kind),
+        item(text.total, text.bytes(disk.totalBytes)),
         item(text.used, text.bytes(Math.max(0, disk.totalBytes - disk.availableBytes))),
-        item(text.available, text.bytes(disk.availableBytes))
+        item(text.available, text.bytes(disk.availableBytes)),
+        item(text.usage, disk.totalBytes ? `${(Math.max(0, disk.totalBytes - disk.availableBytes) * 100 / disk.totalBytes).toFixed(1)}%` : '')
       ]
     }))
   }
   return snapshot.networkInterfaces.map((entry) => ({
     title: entry.name,
     items: [
-      item(text.ipv4, entry.addresses.filter((address) => address.includes('.')).join(', ')),
-      item(text.ipv6, entry.addresses.filter((address) => address.includes(':')).join(', ')),
+      item(text.interfaceName, entry.name),
+      item(text.diskType, ''),
+      item(text.ipv4, firstAddress(entry.addresses, false)),
+      item(text.ipv6, firstAddress(entry.addresses, true)),
       item(text.mac, entry.macAddress),
-      ...present(text.mtu, entry.mtu ? String(entry.mtu) : ''),
+      item(text.mtu, entry.mtu ? String(entry.mtu) : ''),
+      item(text.speed, ''),
+      item(text.status, ''),
       item(text.received, text.bytes(entry.receivedBytes)),
       item(text.sent, text.bytes(entry.transmittedBytes))
     ]
@@ -139,15 +154,36 @@ export function hardwarePlainText(groups: HardwareGroup[]): string {
   ]).join('\n')
 }
 
-function item(label: string, value: string): HardwareItem {
-  return { label, value: value || '—' }
+export function formatHardwareBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return '-'
+  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+  let value = bytes
+  let index = 0
+  while (value >= 1024 && index < units.length - 1) {
+    value /= 1024
+    index += 1
+  }
+  return `${value.toFixed(2)} ${units[index]}`
 }
 
-function present(label: string, value: string | undefined): HardwareItem[] {
-  return value ? [item(label, value)] : []
+export function formatHardwareUptime(seconds: number): string {
+  const days = Math.floor(seconds / 86400)
+  const hours = Math.floor((seconds % 86400) / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  return `${days}d ${hours}h ${minutes}m`
 }
 
-function formatFrequency(mhz: number): string {
-  if (mhz >= 1000) return `${(mhz / 1000).toFixed(2)} GHz`
-  return `${mhz} MHz`
+function item(label: string, value: string | undefined): HardwareItem {
+  const text = value?.trim() ?? ''
+  return { label, value: text && text !== 'undefined' ? text : '-' }
+}
+
+function ghz(mhz: number): string {
+  return mhz > 0 ? `${mhz / 1000} GHz` : ''
+}
+
+function firstAddress(addresses: string[], ipv6: boolean): string {
+  return addresses
+    .map((address) => address.split('/')[0] ?? address)
+    .find((address) => ipv6 ? address.includes(':') : address.includes('.') && !address.includes(':')) ?? ''
 }

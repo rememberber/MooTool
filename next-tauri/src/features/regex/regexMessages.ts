@@ -4,7 +4,7 @@ export const regexMessages = defineMessages({
   'zh-CN': {
     'session.label': '会话', 'session.summary': '/{flags} · {count} 个匹配{error}', 'session.error': ' · 表达式错误',
     'tab.test': '表达式测试', 'tab.common': '常用正则', 'action.clear': '清空测试内容', 'field.pattern': '正则表达式',
-    'action.copied': '已复制', 'action.copy': '复制', 'action.run': '运行', 'aria.flags': '正则标志',
+    'action.copied': '已复制', 'action.copy': '复制', 'action.run': '运行', 'action.history': '历史', 'favorite.title': '收藏夹', 'aria.flags': '正则标志',
     'flag.global': 'g · 全局', 'flag.ignoreCase': 'i · 忽略大小写', 'flag.multiline': 'm · 多行',
     'flag.dotAll': 's · 点匹配换行', 'pane.source': '测试文本', 'pane.characters': '{count} 字符', 'aria.source': 'Regex 测试文本',
     'result.invalid': '无效正则：{error}', 'result.matches': '{count} 个匹配', 'result.waiting': '等待运行',
@@ -26,7 +26,7 @@ export const regexMessages = defineMessages({
   'en-US': {
     'session.label': 'Session', 'session.summary': '/{flags} · {count} matches{error}', 'session.error': ' · Expression error',
     'tab.test': 'Expression test', 'tab.common': 'Common patterns', 'action.clear': 'Clear test content', 'field.pattern': 'Regular expression',
-    'action.copied': 'Copied', 'action.copy': 'Copy', 'action.run': 'Run', 'aria.flags': 'Regex flags',
+    'action.copied': 'Copied', 'action.copy': 'Copy', 'action.run': 'Run', 'action.history': 'History', 'favorite.title': 'Favorites', 'aria.flags': 'Regex flags',
     'flag.global': 'g · Global', 'flag.ignoreCase': 'i · Ignore case', 'flag.multiline': 'm · Multiline',
     'flag.dotAll': 's · Dot matches newline', 'pane.source': 'Test text', 'pane.characters': '{count} chars', 'aria.source': 'Regex test text',
     'result.invalid': 'Invalid regex: {error}', 'result.matches': '{count} matches', 'result.waiting': 'Waiting to run',
@@ -48,7 +48,7 @@ export const regexMessages = defineMessages({
   'ja-JP': {
     'session.label': 'セッション', 'session.summary': '/{flags} · 一致 {count} 件{error}', 'session.error': ' · 式エラー',
     'tab.test': '式のテスト', 'tab.common': 'よく使う正規表現', 'action.clear': 'テスト内容を消去', 'field.pattern': '正規表現',
-    'action.copied': 'コピー済み', 'action.copy': 'コピー', 'action.run': '実行', 'aria.flags': '正規表現フラグ',
+    'action.copied': 'コピー済み', 'action.copy': 'コピー', 'action.run': '実行', 'action.history': '履歴', 'favorite.title': 'お気に入り', 'aria.flags': '正規表現フラグ',
     'flag.global': 'g · グローバル', 'flag.ignoreCase': 'i · 大文字小文字を無視', 'flag.multiline': 'm · 複数行',
     'flag.dotAll': 's · ドットで改行にも一致', 'pane.source': 'テストテキスト', 'pane.characters': '{count} 文字', 'aria.source': 'Regex テストテキスト',
     'result.invalid': '無効な正規表現：{error}', 'result.matches': '{count} 件一致', 'result.waiting': '実行待ち',

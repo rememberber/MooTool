@@ -11,26 +11,24 @@ describe('Calculator session description', () => {
       binary: '11111111',
       floatHex: '3F800000',
       floatDecimal: '1.0',
-      floatBits: 32,
+      floatBits: '32',
       floatByteOrder: 'big',
-      gcdValues: ['54', '24'],
-      lcmValues: ['54', '24'],
-      permutationValues: ['5', '2'],
-      combinationValues: ['5', '2'],
-      history: [
-        { operation: 'expression', input: '9 * 9', output: '81' },
-        { operation: 'expression', input: '2 * (3 + 4)', output: '14' }
-      ],
+      gcdFirst: '54',
+      gcdSecond: '24',
+      lcmFirst: '54',
+      lcmSecond: '24',
+      permutationN: '5',
+      permutationM: '2',
+      combinationN: '5',
+      combinationM: '2',
+      log: ['表达式: 9 * 9 = 81', '2 * (3 + 4) = 14'],
       error: null
     }, 'zh-CN')
 
     expect(JSON.parse(description.stateDigest)).toMatchObject({
       expression: '9 * 9',
       result: '81',
-      history: [
-        { operation: 'expression', input: '9 * 9', output: '81' },
-        { operation: 'expression', input: '2 * (3 + 4)', output: '14' }
-      ]
+      log: ['表达式: 9 * 9 = 81', '2 * (3 + 4) = 14']
     })
     expect(description.stateSummary).toBe('9 * 9 = 81 · 2 条记录')
   })

@@ -151,7 +151,9 @@ fn validate_note_relative_path(path: &str) -> Result<(), String> {
         || path.contains("//")
         || path.contains('\\')
         || path.chars().any(char::is_control)
-        || path.split('/').any(|part| part.is_empty() || part == "." || part == ".." || part.chars().count() > 260)
+        || path.split('/').any(|part| {
+            part.is_empty() || part == "." || part == ".." || part.chars().count() > 260
+        })
     {
         return Err("invalid note file path".into());
     }
@@ -268,6 +270,65 @@ pub struct SaveHostProfileInput {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct FuncHistoryRecord {
+    pub id: i64,
+    pub func_type: String,
+    pub summary: String,
+    pub input_text: String,
+    pub output_text: String,
+    pub extra_data: Option<String>,
+    pub create_time: String,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveFuncHistoryInput {
+    pub func_type: String,
+    #[serde(default)]
+    pub summary: Option<String>,
+    pub input_text: String,
+    pub output_text: String,
+    #[serde(default)]
+    pub extra_data: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NamedFavorite {
+    pub id: i64,
+    pub kind: String,
+    pub folder_id: i64,
+    pub name: String,
+    pub value: String,
+    pub description: String,
+    pub create_time: String,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveNamedFavoriteInput {
+    #[serde(default)]
+    pub id: Option<i64>,
+    pub kind: String,
+    #[serde(default)]
+    pub folder_id: Option<i64>,
+    pub name: String,
+    pub value: String,
+    #[serde(default)]
+    pub description: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FavoriteFolder {
+    pub id: i64,
+    pub kind: String,
+    pub title: String,
+    pub create_time: String,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct HostProfile {
     pub id: i64,
     pub name: String,
@@ -316,9 +377,10 @@ fn valid_sqlite_date(value: &str) -> bool {
         && bytes[10] == b' '
         && bytes[13] == b':'
         && bytes[16] == b':'
-        && bytes.iter().enumerate().all(|(index, byte)| {
-            matches!(index, 4 | 7 | 10 | 13 | 16) || byte.is_ascii_digit()
-        })
+        && bytes
+            .iter()
+            .enumerate()
+            .all(|(index, byte)| matches!(index, 4 | 7 | 10 | 13 | 16) || byte.is_ascii_digit())
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -383,7 +445,10 @@ pub fn validate_translation_word_fields(
     if source_text.is_empty() {
         return Err("Source text is required".into());
     }
-    if utf16_len(source_text) > 50_000 || utf16_len(target_text) > 50_000 || utf16_len(remark) > 2_000 {
+    if utf16_len(source_text) > 50_000
+        || utf16_len(target_text) > 50_000
+        || utf16_len(remark) > 2_000
+    {
         return Err("Invalid string value".into());
     }
     validate_language_pair(source_lang, target_lang)

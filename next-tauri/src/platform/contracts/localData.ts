@@ -83,6 +83,34 @@ export interface ToolFavorite {
   updatedAt: number
 }
 
+export type NamedFavoriteKind = 'regex' | 'cron' | 'color'
+
+export interface NamedFavorite {
+  id: number
+  kind: NamedFavoriteKind
+  folderId: number
+  name: string
+  value: string
+  description: string
+  createTime: string
+}
+
+export interface SaveNamedFavoriteInput {
+  id?: number
+  kind: NamedFavoriteKind
+  folderId?: number
+  name: string
+  value: string
+  description?: string
+}
+
+export interface FavoriteFolder {
+  id: number
+  kind: NamedFavoriteKind
+  title: string
+  createTime: string
+}
+
 export interface QuickNoteAttachment {
   id: string
   noteId: string
@@ -106,6 +134,24 @@ export interface BoardMessage {
   updatedAt: number
 }
 
+export interface FuncHistoryRecord {
+  id: number
+  funcType: string
+  summary: string
+  inputText: string
+  outputText: string
+  extraData: string | null
+  createTime: string
+}
+
+export interface SaveFuncHistoryInput {
+  funcType: string
+  summary?: string
+  inputText: string
+  outputText: string
+  extraData?: string | null
+}
+
 export interface LocalDataApi {
   listNotes(): Promise<QuickNote[]>
   saveNote(note: QuickNote): Promise<QuickNote>
@@ -124,6 +170,20 @@ export interface LocalDataApi {
   listToolFavorites(toolId: string): Promise<ToolFavorite[]>
   saveToolFavorite(favorite: ToolFavorite): Promise<ToolFavorite>
   deleteToolFavorite(id: string): Promise<boolean>
+  listFavoriteFolders(kind: NamedFavoriteKind): Promise<FavoriteFolder[]>
+  createFavoriteFolder(kind: NamedFavoriteKind, title: string): Promise<FavoriteFolder>
+  renameFavoriteFolder(id: number, title: string): Promise<FavoriteFolder>
+  deleteFavoriteFolder(id: number): Promise<void>
+  listNamedFavorites(kind: NamedFavoriteKind, folderId?: number): Promise<NamedFavorite[]>
+  saveNamedFavorite(input: SaveNamedFavoriteInput): Promise<NamedFavorite>
+  deleteNamedFavorite(id: number): Promise<boolean>
+  moveNamedFavorite(id: number, direction: -1 | 1): Promise<void>
+  listFuncHistory(funcType: string, keyword?: string): Promise<FuncHistoryRecord[]>
+  saveFuncHistory(input: SaveFuncHistoryInput): Promise<FuncHistoryRecord | null>
+  deleteFuncHistory(id: number): Promise<boolean>
+  clearFuncHistory(funcType: string): Promise<number>
+  getToolDraft(kind: 'regex' | 'calculator'): Promise<string | null>
+  saveToolDraft(kind: 'regex' | 'calculator', value: string): Promise<void>
   listMessages(): Promise<BoardMessage[]>
   saveMessage(message: BoardMessage): Promise<BoardMessage>
   deleteMessage(id: string): Promise<boolean>

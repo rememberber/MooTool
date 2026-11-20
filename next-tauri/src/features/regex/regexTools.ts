@@ -40,6 +40,43 @@ export const commonRegexes = [
 
 const maxMatches = 5_000
 
+export type RegexEngine = 'java' | 'javascript'
+
+export type RegexDraft = {
+  pattern: string
+  source: string
+  replacement: string
+  options: RegexOptions
+  engine: RegexEngine
+}
+
+export function normalizeRegexDraft(value: unknown): RegexDraft {
+  const fallback: RegexDraft = {
+    pattern: '(moo)(\\d+)',
+    source: 'moo1\nMOO22\nmoo333',
+    replacement: '$1-$2',
+    options: { global: true, ignoreCase: false, multiline: false, dotAll: false, unicode: false },
+    engine: 'java'
+  }
+  if (!value || typeof value !== 'object') return fallback
+  const record = value as Record<string, unknown>
+  if (typeof record.pattern !== 'string' || typeof record.source !== 'string') return fallback
+  const options = record.options && typeof record.options === 'object' ? record.options as Partial<RegexOptions> : {}
+  return {
+    pattern: record.pattern,
+    source: record.source,
+    replacement: typeof record.replacement === 'string' ? record.replacement : fallback.replacement,
+    engine: record.engine === 'javascript' ? 'javascript' : 'java',
+    options: {
+      global: options.global !== false,
+      ignoreCase: options.ignoreCase === true,
+      multiline: options.multiline === true,
+      dotAll: options.dotAll === true,
+      unicode: options.unicode === true
+    }
+  }
+}
+
 export function regexFlags(options: RegexOptions): string {
   return `${options.global ? 'g' : ''}${options.ignoreCase ? 'i' : ''}${options.multiline ? 'm' : ''}${options.dotAll ? 's' : ''}${options.unicode ? 'u' : ''}`
 }

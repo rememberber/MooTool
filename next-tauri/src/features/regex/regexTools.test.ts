@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { commonRegexes, matchRegex, regexFlags, replaceRegex, type RegexOptions } from './regexTools'
+import { commonRegexes, matchRegex, normalizeRegexDraft, regexFlags, replaceRegex, type RegexOptions } from './regexTools'
 
 const options: RegexOptions = {
   global: true,
@@ -31,6 +31,18 @@ describe('regex tools', () => {
 
   it('advances safely after zero-width Unicode matches', () => {
     expect(matchRegex('(?=🐮)', '🐮🐮', options).map((match) => match.index)).toEqual([0, 2])
+  })
+
+  it('reads a missing engine as Java and keeps an explicit JavaScript draft', () => {
+    expect(normalizeRegexDraft(null).engine).toBe('java')
+    expect(normalizeRegexDraft(null).options.unicode).toBe(false)
+    expect(normalizeRegexDraft({ pattern: 'a', source: 'a' }).engine).toBe('java')
+    expect(normalizeRegexDraft({
+      pattern: 'a',
+      source: 'a',
+      engine: 'javascript',
+      options: { unicode: true }
+    })).toMatchObject({ engine: 'javascript', options: { unicode: true } })
   })
 
   it('builds deterministic flags and supports replacements', () => {

@@ -20,8 +20,10 @@ import {
 } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import { historyApi } from '../../platform/api/historyApi'
+import { localDataApi } from '../../platform/api/localDataApi'
 import { userFilesApi } from '../../platform/api/userFilesApi'
-import { OPERATION_HISTORY_LIMIT, type OperationHistory } from '../../platform/contracts/history'
+import { OPERATION_HISTORY_LIMIT } from '../../platform/contracts/history'
+import type { FuncHistoryRecord } from '../../platform/contracts/localData'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { ResizableColumns } from '../../shared/ResizableColumns'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
@@ -32,6 +34,7 @@ import {
   decodeQrImage,
   defaultQrOptions,
   generateQrPngDataUrl,
+  normalizeQrSize,
   QrToolError,
   readQrLogo,
   type QrErrorCorrection,
@@ -57,7 +60,7 @@ export function QrcodeSurface() {
   const recognitionFile = useRef<File | null>(null)
   const [recognitionName, setRecognitionName] = useState('')
   const [recognitionUrl, setRecognitionUrl] = useState('')
-  const [history, setHistory] = useState<OperationHistory[]>([])
+  const [history, setHistory] = useState<FuncHistoryRecord[]>([])
   const [hydrated, setHydrated] = useState(false)
   const [decoded, setDecoded] = useState('')
   const [notice, setNotice] = useState<Notice>({ key: 'notice.ready' })
@@ -97,18 +100,27 @@ export function QrcodeSurface() {
   useEffect(() => {
     if (tab !== 'history') return
     let active = true
-    void historyApi.list(OPERATION_HISTORY_LIMIT).then((items) => {
-      if (active) setHistory(items.filter((item) => item.toolId === 'qrcode'))
+    void localDataApi.listFuncHistory('qrCode').then((items) => {
+      if (active) setHistory(items)
     }).catch(() => undefined)
     return () => { active = false }
-  }, [OPERATION_HISTORY_LIMIT, tab])
+  }, [tab])
 
   async function generate(): Promise<void> {
     setBusy(true)
     try {
-      const output = await generateQrPngDataUrl(source, options, logoDataUrl)
+      const normalizedSize = normalizeQrSize(options.size)
+      const output = await generateQrPngDataUrl(source, { ...options, size: normalizedSize }, logoDataUrl)
       setPng(output)
-      await save((current) => ({ ...current, tools: { ...current.tools, qrCodeSize: options.size, qrErrorCorrection: options.errorCorrection } }))
+      if (normalizedSize !== options.size) setOptions((current) => ({ ...current, size: normalizedSize }))
+      await save((current) => ({ ...current, tools: { ...current.tools, qrCodeSize: normalizedSize, qrErrorCorrection: options.errorCorrection } }))
+      void localDataApi.saveFuncHistory({
+        funcType: 'qrCode',
+        summary: t('history.generate'),
+        inputText: source,
+        outputText: output,
+        extraData: JSON.stringify({ operation: 'generate', size: normalizedSize, correction: options.errorCorrection })
+      })
       await historyApi.record({
         id: crypto.randomUUID(),
         toolId: 'qrcode',
@@ -122,7 +134,6 @@ export function QrcodeSurface() {
       }, OPERATION_HISTORY_LIMIT)
       succeed('notice.generated')
     } catch (cause) {
-      setPng('')
       fail(cause)
     } finally {
       setBusy(false)
@@ -141,6 +152,13 @@ export function QrcodeSurface() {
     try {
       const value = await decodeQrImage(file)
       setDecoded(value)
+      void localDataApi.saveFuncHistory({
+        funcType: 'qrCode',
+        summary: t('history.recognize'),
+        inputText: name || file.name,
+        outputText: value,
+        extraData: JSON.stringify({ operation: 'recognize' })
+      })
       await historyApi.record({
         id: crypto.randomUUID(),
         toolId: 'qrcode',
@@ -190,7 +208,7 @@ export function QrcodeSurface() {
     try {
       const file = await clipboardApi.readImageFile()
       if (!file) { failMessage('error.clipboardEmpty'); return }
-      await decode(file)
+      await decode(file, t('scan.clipboard'))
     } catch (cause) { fail(cause) }
   }
 
@@ -252,14 +270,14 @@ export function QrcodeSurface() {
                 </select>
               </label>
               <label>{t('option.size')}
-                <input type="number" min={120} max={2000} value={options.size} onChange={(event) => patchOptions({ size: Number(event.target.value) })} />
+                <span><input type="number" min={120} max={2000} value={options.size} onChange={(event) => patchOptions({ size: Number(event.target.value) })} /><em>px</em></span>
               </label>
               <label className="qrcode-logo-input">{t('option.logo')}
                 <span className="secondary-button"><ImagePlus />{logoName || t('action.chooseLogo')}<input type="file" accept="image/*" onChange={(event) => { void chooseLogo(event.target.files?.[0]); event.target.value = '' }} /></span>
               </label>
               {logoDataUrl && <button className="secondary-button" type="button" onClick={() => { setLogoDataUrl(''); setLogoName('') }}>{t('action.removeLogo')}</button>}
             </div>
-            <button className="primary-button" type="button" disabled={busy || !source.trim()} onClick={() => void generate()}><QrCode />{busy ? t('session.waitGenerate') : t('action.generate')}</button>
+            <button className="primary-button" type="button" disabled={busy || !source.trim()} onClick={() => void generate()}><QrCode />{busy ? t('action.processing') : t('action.generate')}</button>
           </section>
           <section className="qrcode-preview-card">
             <div className="qrcode-preview">{png ? <img src={png} alt={t('preview.alt')} /> : <QrCode />}</div>
@@ -293,20 +311,21 @@ export function QrcodeSurface() {
           {history.length === 0 ? <p role="status">{t('history.empty')}</p> : history.map((record) => (
             <article key={record.id}>
               <button type="button" onClick={() => {
-                const metadata = parseOperationMetadata(record)
-                if (metadata.operation === 'decode') {
+                let operation = ''
+                try { operation = (JSON.parse(record.extraData ?? '{}') as { operation?: string }).operation ?? '' } catch { operation = '' }
+                if (operation === 'generate') {
+                  setSource(record.inputText)
+                  setPng(record.outputText)
+                  setTab('generate')
+                } else {
                   setRecognitionName(record.inputText)
                   setDecoded(record.outputText)
                   setTab('recognize')
-                } else {
-                  setSource(record.inputText)
-                  setPng(record.outputText.startsWith('data:image') ? record.outputText : '')
-                  setTab('generate')
                 }
               }}>
-                <History /><span><strong>{record.action}</strong><small>{new Date(record.createdAt).toLocaleString()}</small><p>{record.inputText}</p></span>
+                <History /><span><strong>{record.summary}</strong><small>{new Date(record.createTime.replace(' ', 'T')).toLocaleString(settings.general.language)}</small><p>{record.inputText}</p></span>
               </button>
-              <button type="button" aria-label={t('history.delete')} onClick={() => void historyApi.delete(record.id).then(() => setHistory((current) => current.filter((item) => item.id !== record.id)))}><Trash2 /></button>
+              <button type="button" aria-label={t('history.delete')} onClick={() => void localDataApi.deleteFuncHistory(record.id).then(() => setHistory((current) => current.filter((item) => item.id !== record.id)))}><Trash2 /></button>
             </article>
           ))}
         </section>

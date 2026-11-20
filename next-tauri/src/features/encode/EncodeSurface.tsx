@@ -6,15 +6,18 @@ import {
   Clipboard,
   Copy,
   Eraser,
+  History,
   TriangleAlert
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import { localDataApi } from '../../platform/api/localDataApi'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { ResizableThreeColumns } from '../../shared/ResizableThreeColumns'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { FuncHistoryDialog } from '../history/FuncHistoryDialog'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import {
@@ -36,8 +39,8 @@ type EncodeMessageKey = LocalizedMessageKey<typeof encodeMessages>
 type EncodeNotice = { key: EncodeMessageKey; values?: MessageValues } | { raw: string }
 
 const initialPairs: Record<EncodeTab, Pair> = {
-  unicode: { left: 'MooTool 编码转换', right: '' },
-  url: { left: 'https://mootool.app/search?q=编码', right: '' },
+  unicode: { left: encodeMessages['zh-CN']['sample.unicode'], right: '' },
+  url: { left: encodeMessages['zh-CN']['sample.url'], right: '' },
   hex: { left: 'MooTool', right: '' },
   ascii: { left: 'MooTool', right: '' }
 }
@@ -51,6 +54,7 @@ export function EncodeSurface() {
   const [notice, setNotice] = useState<EncodeNotice>({ key: 'notice.ready', values: { tab: t('tab.unicode') } })
   const [failed, setFailed] = useState(false)
   const [copiedSide, setCopiedSide] = useState<'left' | 'right' | ''>('')
+  const [historyOpen, setHistoryOpen] = useState(false)
   const pair = pairs[tab]
   const labels = labelsFor(tab, t)
   const noticeText = 'raw' in notice ? notice.raw : t(notice.key, notice.values)
@@ -96,8 +100,16 @@ export function EncodeSurface() {
       updatePair(direction === 'forward' ? { right: output } : { left: output })
       setNotice({ key: 'notice.done', values: { action: direction === 'forward' ? labels.forward : labels.reverse } })
       setFailed(false)
-      recordOperation(direction === 'forward' ? labels.forward : labels.reverse, `${t(`tab.${tab}`)} · ${input.length} → ${output.length}`, 'success', {
+      const summary = direction === 'forward' ? labels.forward : labels.reverse
+      recordOperation(summary, `${t(`tab.${tab}`)} · ${input.length} → ${output.length}`, 'success', {
         inputText: input, outputText: output, metadata: { tab, direction, charset, asciiFormat }
+      })
+      void localDataApi.saveFuncHistory({
+        funcType: 'encode',
+        summary,
+        inputText: input,
+        outputText: output,
+        extraData: JSON.stringify({ tab, direction, charset, asciiFormat })
       })
     } catch (cause) {
       setNotice(cause instanceof EncodeToolError
@@ -161,7 +173,7 @@ export function EncodeSurface() {
         )}
         {tab === 'ascii' && (
           <label className="utility-select">
-            {t('field.codePointFormat')}
+            ASCII
             <select
               value={asciiFormat}
               onChange={(event) => setAsciiFormat(event.target.value as AsciiFormat)}
@@ -171,11 +183,12 @@ export function EncodeSurface() {
             </select>
           </label>
         )}
+        <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('action.history')}</button>
         <button
           className="icon-button encode-clear"
           type="button"
           aria-label={t('action.clear')}
-          onClick={() => updatePair({ left: '', right: '' })}
+          onClick={() => setPairs({ ...initialPairs, [tab]: { left: '', right: '' } })}
         >
           <Eraser />
         </button>
@@ -194,7 +207,6 @@ export function EncodeSurface() {
           <button
             className="primary-button"
             type="button"
-            disabled={!pair.left}
             onClick={() => convert('forward')}
           >
             <ArrowRight />{labels.forward}
@@ -202,7 +214,6 @@ export function EncodeSurface() {
           <button
             className="secondary-button"
             type="button"
-            disabled={!pair.right}
             onClick={() => convert('reverse')}
           >
             <ArrowLeft />{labels.reverse}
@@ -223,6 +234,26 @@ export function EncodeSurface() {
         <code>{session.summary}</code>
       </footer>
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
+      {historyOpen && <FuncHistoryDialog funcType="encode" onClose={() => setHistoryOpen(false)} onApply={(record) => {
+        try {
+          const meta = JSON.parse(record.extraData ?? '{}') as { tab?: EncodeTab; direction?: ConversionDirection; charset?: UrlCharset; asciiFormat?: AsciiFormat }
+          const nextTab = meta.tab && encodeTabs.includes(meta.tab) ? meta.tab : 'unicode'
+          const direction = meta.direction === 'reverse' ? 'reverse' : 'forward'
+          setTab(nextTab)
+          setPairs((current) => ({
+            ...current,
+            [nextTab]: direction === 'reverse'
+              ? { left: record.outputText, right: record.inputText }
+              : { left: record.inputText, right: record.outputText }
+          }))
+          if (meta.charset === 'utf-8' || meta.charset === 'gb2312') setCharset(meta.charset)
+          if (meta.asciiFormat === 'decimal' || meta.asciiFormat === 'hex') setAsciiFormat(meta.asciiFormat)
+          setFailed(false)
+        } catch {
+          updatePair({ right: record.outputText })
+        }
+        setHistoryOpen(false)
+      }} />}
     </main>
   )
 }

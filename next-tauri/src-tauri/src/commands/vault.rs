@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::Stdio,
     sync::{
         Arc, Mutex,
@@ -17,8 +17,8 @@ use crate::{
     contracts::{
         error::AppResult,
         vault::{
-            VaultDocument, VaultGitChange, VaultGitCommit, VaultGitDetails, VaultGitDiffFile, VaultGitDiffInput,
-            VaultGitDiffResult, VaultGitOperation, VaultGitRequest,
+            VaultDocument, VaultGitChange, VaultGitCommit, VaultGitDetails, VaultGitDiffFile,
+            VaultGitDiffInput, VaultGitDiffResult, VaultGitOperation, VaultGitRequest,
             VaultGitResult, VaultGitStatus, VaultSaveRequest, VaultSnapshot, VaultTrashResult,
         },
     },
@@ -90,11 +90,7 @@ pub async fn get_vault_snapshot(
     repository: tauri::State<'_, VaultRepository>,
     settings: tauri::State<'_, SettingsRepository>,
 ) -> AppResult<VaultSnapshot> {
-    vault_snapshot(
-        &repository,
-        settings.snapshot().vault.hide_gitignored_files,
-    )
-    .await
+    vault_snapshot(&repository, settings.snapshot().vault.hide_gitignored_files).await
 }
 
 async fn vault_snapshot(
@@ -147,7 +143,9 @@ pub async fn configure_vault(
     let previous_root = repository.configured_root()?;
     let root = repository.configure(&app, PathBuf::from(root_directory))?;
     let mut next = settings.snapshot();
-    next.vault.root_directory = Some(root.to_string_lossy().into_owned());
+    let root_path = root.to_string_lossy().into_owned();
+    next.vault.root_directory = Some(root_path.clone());
+    next.vault.json_path = root_path;
     let saved = match settings.replace(next) {
         Ok(saved) => saved,
         Err(error) => {
@@ -174,10 +172,12 @@ pub fn disconnect_vault(
     repository.disconnect()?;
     let mut next = settings.snapshot();
     next.vault.root_directory = None;
-    let saved = settings.replace(next)?;
+    next.vault.json_path.clear();
+    let saved = settings.replace(next.clone())?;
+    configure_from_settings(&app, &repository, &saved, None);
     app.emit(SETTINGS_CHANGED_EVENT, &saved)
         .map_err(|error| format!("Vault was disconnected but settings sync failed: {error}"))?;
-    tracing::info!("JSON Vault disconnected");
+    tracing::info!("JSON Vault restored to the default data directory");
     Ok(())
 }
 
@@ -240,7 +240,6 @@ pub fn duplicate_vault_document(
 
 #[tauri::command]
 pub fn delete_vault_document(
-    app: tauri::AppHandle,
     repository: tauri::State<'_, VaultRepository>,
     relative_path: String,
     expected_fingerprint: String,
@@ -249,31 +248,19 @@ pub fn delete_vault_document(
     if current.fingerprint != expected_fingerprint {
         return Err("JSON Vault document changed outside MooTool; reload before deleting".into());
     }
-    let trash_root = app
-        .path()
-        .app_data_dir()
-        .map_err(|error| format!("failed to resolve Vault recovery directory: {error}"))?
-        .join("vault-trash");
-    let result = repository.trash_document(&relative_path, &trash_root)?;
-    tracing::info!(vault.document = %result.relative_path, "JSON Vault document moved to recovery storage");
+    let result = repository.trash_document(&relative_path)?;
+    tracing::info!(vault.document = %result.relative_path, "JSON Vault document deleted");
     Ok(result)
 }
 
 #[tauri::command]
 pub fn delete_vault_entry(
-    app: tauri::AppHandle,
     repository: tauri::State<'_, VaultRepository>,
     relative_path: String,
     expected_fingerprint: Option<String>,
 ) -> AppResult<VaultTrashResult> {
-    let trash_root = app
-        .path()
-        .app_data_dir()
-        .map_err(|error| format!("failed to resolve Vault recovery directory: {error}"))?
-        .join("vault-trash");
-    let result =
-        repository.trash_entry(&relative_path, expected_fingerprint.as_deref(), &trash_root)?;
-    tracing::info!(vault.entry = %result.relative_path, "JSON Vault entry moved to recovery storage");
+    let result = repository.trash_entry(&relative_path, expected_fingerprint.as_deref())?;
+    tracing::info!(vault.entry = %result.relative_path, "JSON Vault entry deleted");
     Ok(result)
 }
 
@@ -367,7 +354,11 @@ fn open_directory(path: &std::path::Path) -> AppResult<()> {
     }
 }
 
-fn write_exported_vault_file(directory: &std::path::Path, relative_path: &str, content: &str) -> Result<(), String> {
+fn write_exported_vault_file(
+    directory: &std::path::Path,
+    relative_path: &str,
+    content: &str,
+) -> Result<(), String> {
     let base = export_base_name(relative_path);
     for suffix in 0..10_000 {
         let name = if suffix == 0 {
@@ -376,7 +367,11 @@ fn write_exported_vault_file(directory: &std::path::Path, relative_path: &str, c
             format!("{base}-{suffix}.json")
         };
         let target = directory.join(&name);
-        match std::fs::OpenOptions::new().write(true).create_new(true).open(&target) {
+        match std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&target)
+        {
             Ok(mut file) => {
                 std::io::Write::write_all(&mut file, content.as_bytes())
                     .map_err(|error| format!("failed to export {}: {error}", target.display()))?;
@@ -396,8 +391,10 @@ fn export_base_name(relative_path: &str) -> String {
     let sanitized: String = stem
         .chars()
         .map(|character| {
-            if matches!(character, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*')
-                || character.is_ascii_control()
+            if matches!(
+                character,
+                '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*'
+            ) || character.is_ascii_control()
             {
                 '_'
             } else {
@@ -568,11 +565,28 @@ pub fn configure_from_settings(
     app: &tauri::AppHandle,
     repository: &VaultRepository,
     settings: &crate::contracts::settings::AppSettings,
+    data_root: Option<&Path>,
 ) {
-    let Some(root) = settings.vault.root_directory.as_ref() else {
-        return;
+    let data_directory = if let Some(root) = data_root {
+        root.to_path_buf()
+    } else if let Some(config) = app.try_state::<super::native_acceptance::NativeAcceptanceConfig>()
+    {
+        config.data_root.clone()
+    } else {
+        match super::settings::data_directory(app, settings) {
+            Ok(directory) => directory,
+            Err(error) => {
+                tracing::warn!(error.message = %crate::contracts::error::redact_for_log(&error), "JSON Vault data directory is unavailable");
+                return;
+            }
+        }
     };
-    if let Err(error) = repository.configure(app, PathBuf::from(root)) {
+    let root = settings.vault.resolved_json_vault(&data_directory);
+    if let Err(error) = std::fs::create_dir_all(&root) {
+        tracing::warn!(error.message = %crate::contracts::error::redact_for_log(&error.to_string()), "JSON Vault directory could not be created");
+        return;
+    }
+    if let Err(error) = repository.configure(app, root) {
         tracing::warn!(error.message = %crate::contracts::error::redact_for_log(&error), "saved JSON Vault is unavailable");
     }
 }
@@ -614,9 +628,7 @@ async fn execute_git_operation(
             )
             .await
         }
-        VaultGitOperation::ContinueOperation => {
-            continue_operation(root, username, control).await
-        }
+        VaultGitOperation::ContinueOperation => continue_operation(root, username, control).await,
     }
 }
 
@@ -644,12 +656,16 @@ async fn initialize_repository(
     if !inspect_git_status(root).await?.dirty {
         return Ok(git_result(VaultGitOperation::Init, initialized));
     }
-    let mut committed = commit_changes(root, "Initial MooTool Vault setup", username, control).await?;
+    let mut committed =
+        commit_changes(root, "Initial MooTool Vault setup", username, control).await?;
     committed.operation = VaultGitOperation::Init;
     Ok(committed)
 }
 
-async fn pull_repository(root: &PathBuf, control: Arc<GitControl>) -> Result<VaultGitResult, String> {
+async fn pull_repository(
+    root: &PathBuf,
+    control: Arc<GitControl>,
+) -> Result<VaultGitResult, String> {
     if inspect_git_status(root).await?.merging {
         return Ok(message_result(
             VaultGitOperation::Pull,
@@ -694,12 +710,7 @@ async fn commit_changes(
     if !added.status.success() {
         return Ok(git_result(VaultGitOperation::Commit, added));
     }
-    let committed = run_git(
-        root,
-        &["commit", "--message", &message],
-        control,
-    )
-    .await?;
+    let committed = run_git(root, &["commit", "--message", &message], control).await?;
     Ok(git_result(VaultGitOperation::Commit, committed))
 }
 
@@ -729,7 +740,13 @@ async fn ensure_identity(root: &PathBuf, username: &str) -> Result<(), String> {
 async fn inspect_git_status(root: &PathBuf) -> Result<VaultGitStatus, String> {
     let output = run_git_unmanaged(
         root,
-        &["status", "--porcelain=v1", "-z", "--branch", "--untracked-files=all"],
+        &[
+            "status",
+            "--porcelain=v1",
+            "-z",
+            "--branch",
+            "--untracked-files=all",
+        ],
     )
     .await;
     let Ok(output) = output else {
@@ -870,8 +887,16 @@ fn message_result(operation: VaultGitOperation, success: bool, message: &str) ->
         operation,
         success,
         exit_code: Some(if success { 0 } else { 1 }),
-        stdout: if success { message.to_string() } else { String::new() },
-        stderr: if success { String::new() } else { message.to_string() },
+        stdout: if success {
+            message.to_string()
+        } else {
+            String::new()
+        },
+        stderr: if success {
+            String::new()
+        } else {
+            message.to_string()
+        },
     }
 }
 
@@ -924,18 +949,35 @@ struct DiffPreview {
 
 impl DiffPreview {
     fn missing() -> Self {
-        Self { text: String::new(), state: "text" }
+        Self {
+            text: String::new(),
+            state: "text",
+        }
     }
     fn binary() -> Self {
-        Self { text: String::new(), state: "binary" }
+        Self {
+            text: String::new(),
+            state: "binary",
+        }
     }
     fn too_large() -> Self {
-        Self { text: String::new(), state: "too-large" }
+        Self {
+            text: String::new(),
+            state: "too-large",
+        }
     }
 }
 
-async fn diff_vault_files(root: &PathBuf, input: &VaultGitDiffInput) -> Result<VaultGitDiffResult, String> {
-    if let Some(commit) = input.commit.as_deref().map(str::trim).filter(|value| !value.is_empty()) {
+async fn diff_vault_files(
+    root: &PathBuf,
+    input: &VaultGitDiffInput,
+) -> Result<VaultGitDiffResult, String> {
+    if let Some(commit) = input
+        .commit
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
         validate_vault_commit(commit)?;
         return commit_diff(root, commit).await;
     }
@@ -943,7 +985,11 @@ async fn diff_vault_files(root: &PathBuf, input: &VaultGitDiffInput) -> Result<V
     if !status.repository {
         return Err("Git repository is not initialized in the Vault root".into());
     }
-    let selected = input.path.as_deref().map(str::trim).filter(|value| !value.is_empty());
+    let selected = input
+        .path
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
     if let Some(path) = selected {
         validate_git_relative_path(path)?;
     }
@@ -952,7 +998,10 @@ async fn diff_vault_files(root: &PathBuf, input: &VaultGitDiffInput) -> Result<V
         if selected.is_some_and(|path| path != change.path) {
             continue;
         }
-        let before_path = change.original_path.clone().unwrap_or_else(|| change.path.clone());
+        let before_path = change
+            .original_path
+            .clone()
+            .unwrap_or_else(|| change.path.clone());
         let before = if change.status.contains('?') {
             DiffPreview::missing()
         } else {
@@ -970,19 +1019,57 @@ async fn diff_vault_files(root: &PathBuf, input: &VaultGitDiffInput) -> Result<V
 
 async fn commit_diff(root: &PathBuf, commit: &str) -> Result<VaultGitDiffResult, String> {
     let parent = run_git_unmanaged(root, &["rev-parse", "--verify", &format!("{commit}^")]).await?;
-    let parent_ref = parent.status.success().then(|| bounded_output(parent.stdout).trim().to_string());
+    let parent_ref = parent
+        .status
+        .success()
+        .then(|| bounded_output(parent.stdout).trim().to_string());
     let listed = if let Some(parent_ref) = &parent_ref {
-        run_git_unmanaged(root, &["diff", "--name-status", "-z", "-M", "-C", parent_ref, commit]).await?
+        run_git_unmanaged(
+            root,
+            &[
+                "diff",
+                "--name-status",
+                "-z",
+                "-M",
+                "-C",
+                parent_ref,
+                commit,
+            ],
+        )
+        .await?
     } else {
-        run_git_unmanaged(root, &["diff-tree", "--root", "--no-commit-id", "--name-status", "-z", "-r", "-M", "-C", commit]).await?
+        run_git_unmanaged(
+            root,
+            &[
+                "diff-tree",
+                "--root",
+                "--no-commit-id",
+                "--name-status",
+                "-z",
+                "-r",
+                "-M",
+                "-C",
+                commit,
+            ],
+        )
+        .await?
     };
     if !listed.status.success() {
-        return Err(bounded_output(if listed.stderr.is_empty() { listed.stdout } else { listed.stderr }));
+        return Err(bounded_output(if listed.stderr.is_empty() {
+            listed.stdout
+        } else {
+            listed.stderr
+        }));
     }
     let mut files = Vec::new();
     for change in parse_name_status(&bounded_output(listed.stdout)) {
         let before = if let Some(parent_ref) = &parent_ref {
-            read_git_blob(root, parent_ref, change.original_path.as_deref().unwrap_or(&change.path)).await
+            read_git_blob(
+                root,
+                parent_ref,
+                change.original_path.as_deref().unwrap_or(&change.path),
+            )
+            .await
         } else {
             DiffPreview::missing()
         };
@@ -1000,7 +1087,10 @@ async fn read_git_blob(root: &PathBuf, revision: &str, path: &str) -> DiffPrevie
     if !size_output.status.success() {
         return DiffPreview::missing();
     }
-    let size: u64 = bounded_output(size_output.stdout).trim().parse().unwrap_or(0);
+    let size: u64 = bounded_output(size_output.stdout)
+        .trim()
+        .parse()
+        .unwrap_or(0);
     if size > DIFF_PREVIEW_LIMIT {
         return DiffPreview::too_large();
     }
@@ -1013,26 +1103,39 @@ async fn read_git_blob(root: &PathBuf, revision: &str, path: &str) -> DiffPrevie
     preview_git_bytes(&content.stdout)
 }
 
-fn read_worktree_preview(root: &PathBuf, path: &str) -> DiffPreview {
+fn read_worktree_preview(root: &Path, path: &str) -> DiffPreview {
     let target = root.join(path);
     let Ok(metadata) = std::fs::metadata(&target) else {
         return DiffPreview::missing();
     };
     if !metadata.is_file() || metadata.len() > DIFF_PREVIEW_LIMIT {
-        return if metadata.is_file() { DiffPreview::too_large() } else { DiffPreview::binary() };
+        return if metadata.is_file() {
+            DiffPreview::too_large()
+        } else {
+            DiffPreview::binary()
+        };
     }
-    std::fs::read(&target).map(|bytes| preview_git_bytes(&bytes)).unwrap_or_else(|_| DiffPreview::missing())
+    std::fs::read(&target)
+        .map(|bytes| preview_git_bytes(&bytes))
+        .unwrap_or_else(|_| DiffPreview::missing())
 }
 
 fn preview_git_bytes(bytes: &[u8]) -> DiffPreview {
     if bytes.contains(&0) {
         DiffPreview::binary()
     } else {
-        DiffPreview { text: String::from_utf8_lossy(bytes).into_owned(), state: "text" }
+        DiffPreview {
+            text: String::from_utf8_lossy(bytes).into_owned(),
+            state: "text",
+        }
     }
 }
 
-fn build_vault_diff_file(change: VaultGitChange, before: DiffPreview, after: DiffPreview) -> VaultGitDiffFile {
+fn build_vault_diff_file(
+    change: VaultGitChange,
+    before: DiffPreview,
+    after: DiffPreview,
+) -> VaultGitDiffFile {
     let preview = if before.state == "binary" || after.state == "binary" {
         "binary"
     } else if before.state == "too-large" || after.state == "too-large" {
@@ -1041,8 +1144,16 @@ fn build_vault_diff_file(change: VaultGitChange, before: DiffPreview, after: Dif
         "text"
     };
     VaultGitDiffFile {
-        before: if preview == "text" { before.text } else { String::new() },
-        after: if preview == "text" { after.text } else { String::new() },
+        before: if preview == "text" {
+            before.text
+        } else {
+            String::new()
+        },
+        after: if preview == "text" {
+            after.text
+        } else {
+            String::new()
+        },
         preview: preview.into(),
         path: change.path,
         original_path: change.original_path,
@@ -1063,12 +1174,20 @@ fn parse_name_status(output: &str) -> Vec<VaultGitChange> {
         let (status, inline_path) = record.split_once('\t').unwrap_or((record, ""));
         let renamed = status.starts_with('R') || status.starts_with('C');
         let original_path = if renamed {
-            let value = if inline_path.is_empty() { take_record(&records, &mut index) } else { inline_path };
+            let value = if inline_path.is_empty() {
+                take_record(&records, &mut index)
+            } else {
+                inline_path
+            };
             Some(value.to_string()).filter(|value| !value.is_empty())
         } else {
             None
         };
-        let path = if renamed || inline_path.is_empty() { take_record(&records, &mut index) } else { inline_path };
+        let path = if renamed || inline_path.is_empty() {
+            take_record(&records, &mut index)
+        } else {
+            inline_path
+        };
         if path.is_empty() {
             continue;
         }
@@ -1122,7 +1241,9 @@ fn take_record<'a>(records: &[&'a str], index: &mut usize) -> &'a str {
 }
 
 fn validate_vault_commit(value: &str) -> Result<(), String> {
-    if (7..=40).contains(&value.len()) && value.chars().all(|character| character.is_ascii_hexdigit()) {
+    if (7..=40).contains(&value.len())
+        && value.chars().all(|character| character.is_ascii_hexdigit())
+    {
         Ok(())
     } else {
         Err("Invalid Git commit".into())
@@ -1149,7 +1270,14 @@ async fn discard_change(
     }
     let restored = run_git(
         root,
-        &["restore", "--staged", "--worktree", "--source=HEAD", "--", &path],
+        &[
+            "restore",
+            "--staged",
+            "--worktree",
+            "--source=HEAD",
+            "--",
+            &path,
+        ],
         control.clone(),
     )
     .await?;
@@ -1330,14 +1458,18 @@ mod tests {
 
     #[test]
     fn reads_nul_separated_git_paths_including_renames_and_newlines() {
-        let (branch, changes) = parse_porcelain_z("## main...origin/main [ahead 2, behind 1]\0 M Work/API ideas.json\0?? odd\nname.json\0UU Work/conflict.json\0R  copied.json\0copy me.json\0");
+        let (branch, changes) = parse_porcelain_z(
+            "## main...origin/main [ahead 2, behind 1]\0 M Work/API ideas.json\0?? odd\nname.json\0UU Work/conflict.json\0R  copied.json\0copy me.json\0",
+        );
         assert_eq!(parse_branch(&branch), "main");
         assert_eq!(changes.len(), 4);
         assert_eq!(changes[1].path, "odd\nname.json");
         assert!(changes[2].conflict);
         assert_eq!(changes[3].path, "copied.json");
         assert_eq!(changes[3].original_path.as_deref(), Some("copy me.json"));
-        let named = parse_name_status("M\0Work/API ideas.json\0R100\0copy me.json\0copied.json\0A\0odd\nname.json\0");
+        let named = parse_name_status(
+            "M\0Work/API ideas.json\0R100\0copy me.json\0copied.json\0A\0odd\nname.json\0",
+        );
         assert_eq!(named[0].path, "Work/API ideas.json");
         assert_eq!(named[1].original_path.as_deref(), Some("copy me.json"));
         assert_eq!(named[1].path, "copied.json");
@@ -1426,15 +1558,48 @@ mod tests {
     async fn reports_a_merge_and_rebase_without_counting_them_as_clean() {
         let directory = tempfile::TempDir::new().expect("Vault directory");
         let root = directory.path().to_path_buf();
-        assert!(run_git_unmanaged(&root, &["init"]).await.expect("git init").status.success());
-        assert!(run_git_unmanaged(&root, &["config", "user.email", "mootool@localhost"]).await.expect("email").status.success());
-        assert!(run_git_unmanaged(&root, &["config", "user.name", "MooTool"]).await.expect("name").status.success());
+        assert!(
+            run_git_unmanaged(&root, &["init"])
+                .await
+                .expect("git init")
+                .status
+                .success()
+        );
+        assert!(
+            run_git_unmanaged(&root, &["config", "user.email", "mootool@localhost"])
+                .await
+                .expect("email")
+                .status
+                .success()
+        );
+        assert!(
+            run_git_unmanaged(&root, &["config", "user.name", "MooTool"])
+                .await
+                .expect("name")
+                .status
+                .success()
+        );
         std::fs::write(root.join("example.json"), "{}\n").expect("Vault JSON");
-        assert!(run_git_unmanaged(&root, &["add", "--all"]).await.expect("add").status.success());
-        assert!(run_git_unmanaged(&root, &["commit", "--message", "Initial"]).await.expect("commit").status.success());
-        let head = run_git_unmanaged(&root, &["rev-parse", "HEAD"]).await.expect("head");
+        assert!(
+            run_git_unmanaged(&root, &["add", "--all"])
+                .await
+                .expect("add")
+                .status
+                .success()
+        );
+        assert!(
+            run_git_unmanaged(&root, &["commit", "--message", "Initial"])
+                .await
+                .expect("commit")
+                .status
+                .success()
+        );
+        let head = run_git_unmanaged(&root, &["rev-parse", "HEAD"])
+            .await
+            .expect("head");
         std::fs::write(root.join(".git").join("MERGE_HEAD"), &head.stdout).expect("merge head");
-        std::fs::write(root.join("example.json"), "{\n  \"changed\": true\n}\n").expect("conflicted edit");
+        std::fs::write(root.join("example.json"), "{\n  \"changed\": true\n}\n")
+            .expect("conflicted edit");
         let merging = inspect_git_status(&root).await.expect("merge status");
         assert!(merging.merging);
         assert_eq!(merging.operation, "merge");
@@ -1472,7 +1637,9 @@ mod tests {
         assert!(again.success);
         assert_eq!(again.stdout, "Git repository is already initialized");
 
-        let head = run_git_unmanaged(&root, &["rev-parse", "HEAD"]).await.expect("head");
+        let head = run_git_unmanaged(&root, &["rev-parse", "HEAD"])
+            .await
+            .expect("head");
         std::fs::write(root.join(".git").join("MERGE_HEAD"), &head.stdout).expect("merge head");
         std::fs::write(root.join("example.json"), "{\"changed\":true}\n").expect("edit");
         let skipped = commit_changes(&root, "Should not commit", "", control.clone())
@@ -1542,7 +1709,12 @@ mod tests {
         assert!(!merged.status.success(), "the two edits should conflict");
         let status = inspect_git_status(&root).await.expect("conflict status");
         assert!(status.merging);
-        assert!(status.changes.iter().any(|change| change.conflict && change.path == "example.json"));
+        assert!(
+            status
+                .changes
+                .iter()
+                .any(|change| change.conflict && change.path == "example.json")
+        );
         let continued = continue_operation(&root, "", control.clone())
             .await
             .expect("continue");
@@ -1557,7 +1729,9 @@ mod tests {
             std::fs::read_to_string(root.join("example.json")).expect("restored"),
             "{\"value\":3}\n"
         );
-        let idle = continue_operation(&root, "", control).await.expect("idle continue");
+        let idle = continue_operation(&root, "", control)
+            .await
+            .expect("idle continue");
         assert!(!idle.success);
         assert_eq!(idle.stderr, "No merge or rebase is in progress");
     }
@@ -1575,7 +1749,10 @@ mod tests {
         std::fs::write(root.join("example.json"), "{\"value\":2}\n").expect("edit");
         let working = diff_vault_files(
             &root,
-            &VaultGitDiffInput { path: Some("example.json".into()), commit: None },
+            &VaultGitDiffInput {
+                path: Some("example.json".into()),
+                commit: None,
+            },
         )
         .await
         .expect("working diff");
@@ -1587,11 +1764,16 @@ mod tests {
             .await
             .expect("commit");
         assert!(committed.success, "{}", committed.stderr);
-        let head = run_git_unmanaged(&root, &["rev-parse", "HEAD"]).await.expect("head");
+        let head = run_git_unmanaged(&root, &["rev-parse", "HEAD"])
+            .await
+            .expect("head");
         let hash = String::from_utf8_lossy(&head.stdout).trim().to_string();
         let historical = diff_vault_files(
             &root,
-            &VaultGitDiffInput { path: None, commit: Some(hash) },
+            &VaultGitDiffInput {
+                path: None,
+                commit: Some(hash),
+            },
         )
         .await
         .expect("commit diff");
@@ -1599,16 +1781,31 @@ mod tests {
         assert_eq!(historical.files[0].before, "{\"value\":1}\n");
         assert_eq!(historical.files[0].after, "{\"value\":2}\n");
         let exported = tempfile::TempDir::new().expect("export directory");
-        write_exported_vault_file(exported.path(), "Work/API/example.json", "{\"value\":1}\n").expect("first export");
-        write_exported_vault_file(exported.path(), "other/example.json", "{\"value\":2}\n").expect("second export");
-        write_exported_vault_file(exported.path(), "bad/a:b?.txt", "text\n").expect("sanitized export");
-        assert_eq!(std::fs::read_to_string(exported.path().join("example.json")).expect("first"), "{\"value\":1}\n");
-        assert_eq!(std::fs::read_to_string(exported.path().join("example-1.json")).expect("second"), "{\"value\":2}\n");
-        assert_eq!(std::fs::read_to_string(exported.path().join("a_b_.json")).expect("sanitized"), "text\n");
+        write_exported_vault_file(exported.path(), "Work/API/example.json", "{\"value\":1}\n")
+            .expect("first export");
+        write_exported_vault_file(exported.path(), "other/example.json", "{\"value\":2}\n")
+            .expect("second export");
+        write_exported_vault_file(exported.path(), "bad/a:b?.txt", "text\n")
+            .expect("sanitized export");
+        assert_eq!(
+            std::fs::read_to_string(exported.path().join("example.json")).expect("first"),
+            "{\"value\":1}\n"
+        );
+        assert_eq!(
+            std::fs::read_to_string(exported.path().join("example-1.json")).expect("second"),
+            "{\"value\":2}\n"
+        );
+        assert_eq!(
+            std::fs::read_to_string(exported.path().join("a_b_.json")).expect("sanitized"),
+            "text\n"
+        );
 
         let invalid = diff_vault_files(
             &root,
-            &VaultGitDiffInput { path: None, commit: Some("not-a-commit".into()) },
+            &VaultGitDiffInput {
+                path: None,
+                commit: Some("not-a-commit".into()),
+            },
         )
         .await;
         assert!(invalid.is_err());

@@ -1,8 +1,10 @@
-import { ChevronLeft, ChevronRight, FolderOpen, Minus, Plus, Search, Trash2, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Copy, Files, FolderOpen, Minus, Plus, Search, Trash2, X } from 'lucide-react'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { useLocalizedMessages, type LocalizedMessageKey } from '../../app/localizedMessages'
+import { clipboardApi } from '../../platform/api/clipboardApi'
 import { CodeEditor } from '../../shared/CodeEditor'
+import type { CodeEditorViewState } from '../../shared/codeEditorViewState'
 import { defaultFindReplaceOptions, type FindReplaceOptions } from '../../shared/findReplace'
 import {
   classifyPreview,
@@ -19,6 +21,7 @@ import {
   type TextEncoding
 } from './filePreview'
 import { filePreviewMessages } from './filePreviewMessages'
+import { previewLanguageExtensions } from './previewLanguage'
 
 const PdfPreview = lazy(() => import('./PdfPreview').then((module) => ({ default: module.PdfPreview })))
 
@@ -29,6 +32,7 @@ export function FilePreviewSurface() {
   const [files, setFiles] = useState<File[]>([])
   const [index, setIndex] = useState(0)
   const [notice, setNotice] = useState<PreviewMessageKey | ''>('')
+  const [dragging, setDragging] = useState(false)
   const [batch, setBatch] = useState(0)
   const input = useRef<HTMLInputElement>(null)
   const root = useRef<HTMLElement>(null)
@@ -60,15 +64,24 @@ export function FilePreviewSurface() {
 
   function drop(event: DragEvent): void {
     event.preventDefault()
+    setDragging(false)
     select(Array.from(event.dataTransfer.files))
   }
 
   return (
     <main
       ref={root}
-      className="utility-workbench file-preview-workbench"
+      className={`utility-workbench file-preview-workbench${dragging ? ' file-preview-workbench--dragging' : ''}`}
       tabIndex={-1}
-      onDragOver={(event) => event.preventDefault()}
+      onDragOver={(event) => {
+        event.preventDefault()
+        if (!event.dataTransfer.types.includes('Files')) return
+        event.dataTransfer.dropEffect = 'copy'
+        setDragging(true)
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false)
+      }}
       onDrop={drop}
       onKeyDown={(event) => {
         if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
@@ -109,20 +122,32 @@ export function FilePreviewSurface() {
               </button>
             ))}
           </nav>
-          <PreviewPane
-            key={`${batch}:${index}`}
-            file={file}
-            kind={kind}
-            initialState={views.current.states.get(index)}
-            onStateChange={(patch) => {
-              if (views.current.batch !== batch) return
-              views.current.states.set(index, { ...views.current.states.get(index), ...patch })
-            }}
-          />
+          <div className="file-preview-detail">
+            <header className="file-preview-metadata">
+              <strong title={file.name}>{file.name}</strong>
+              <span>{formatPreviewSize(file.size)} · {file.lastModified ? new Date(file.lastModified).toLocaleString() : '—'}</span>
+            </header>
+            <PreviewPane
+              key={`${batch}:${index}`}
+              file={file}
+              kind={kind}
+              initialState={views.current.states.get(index)}
+              onStateChange={(patch) => {
+                if (views.current.batch !== batch) return
+                views.current.states.set(index, { ...views.current.states.get(index), ...patch })
+              }}
+            />
+          </div>
         </section>
       ) : (
-        <button className="file-preview-drop" type="button" onClick={() => input.current?.click()}>{t('empty')}</button>
+        <button className="file-preview-drop" type="button" onClick={() => input.current?.click()}>
+          <Files size={38} />
+          <strong>{t('empty')}</strong>
+          <span>{t('hint')}</span>
+        </button>
       )}
+      <footer className="file-preview-footer">{t('footer')}</footer>
+      {dragging && <div className="file-preview-drop-overlay" aria-hidden="true"><Files size={30} />{t('drop')}</div>}
     </main>
   )
 }
@@ -148,12 +173,17 @@ function PreviewPane({ file, kind, initialState, onStateChange }: {
   const [findNotice, setFindNotice] = useState<PreviewMessageKey | ''>('')
   const [zoom, setZoom] = useState<number | null>(initialState?.imageZoom ?? null)
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null)
+  const [imageError, setImageError] = useState(false)
+  const [decoded, setDecoded] = useState(false)
   const editor = useRef<EditorView | null>(null)
+  const editorView = useRef<CodeEditorViewState | undefined>(initialState?.editor)
 
   useEffect(() => {
     let active = true
     setText('')
     setError('')
+    setDecoded(false)
+    setImageError(false)
     setJsonValid(true)
     if (kind === 'unsupported') return
     if (kind === 'pdf') return
@@ -181,6 +211,7 @@ function PreviewPane({ file, kind, initialState, onStateChange }: {
         } else {
           setText(decoded.text)
         }
+        setDecoded(true)
       } catch (cause) {
         setError(cause instanceof PreviewError ? t(`error.${cause.code === 'tooLarge' ? 'unreadable' : cause.code}`) : t('error.unreadable'))
       }
@@ -236,13 +267,18 @@ function PreviewPane({ file, kind, initialState, onStateChange }: {
           <button type="button" aria-label={t('image.zoomIn')} onClick={() => { const next = Math.min(4, (zoom ?? 1) * 1.25); setZoom(next); onStateChange({ imageZoom: next }) }}><Plus /></button>
           <span>{zoom !== null ? `${Math.round(zoom * 100)}%` : ''} {dimensions ? `${dimensions.width} × ${dimensions.height}` : ''}</span>
         </div>
-        {imageUrl && (
-          <img
-            alt={file.name}
-            src={imageUrl}
-            style={zoom !== null && dimensions ? { width: dimensions.width * zoom, height: dimensions.height * zoom } : undefined}
-            onLoad={(event) => setDimensions({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
-          />
+        {imageError ? <p className="file-preview-empty" role="status">{t('error.image')}</p> : (
+          <div className={zoom === null ? 'file-preview-image-stage file-preview-image--fit' : 'file-preview-image-stage'}>
+            {imageUrl && (
+              <img
+                alt={file.name}
+                src={imageUrl}
+                style={zoom !== null && dimensions ? { width: dimensions.width * zoom, height: dimensions.height * zoom } : undefined}
+                onLoad={(event) => setDimensions({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
+                onError={() => setImageError(true)}
+              />
+            )}
+          </div>
         )}
       </section>
     )
@@ -272,7 +308,8 @@ function PreviewPane({ file, kind, initialState, onStateChange }: {
         </label>
         <label><input type="checkbox" checked={wrap} onChange={(event) => { setWrap(event.target.checked); onStateChange({ wrap: event.target.checked }) }} />{t('wrap')}</label>
         {kind === 'json' && <label><input type="checkbox" checked={formatted} onChange={(event) => { setFormatted(event.target.checked); onStateChange({ formatted: event.target.checked }) }} />{t('formatJson')}</label>}
-        <button type="button" disabled={Boolean(error)} onClick={openFind}><Search />{t('action.find')}</button>
+        <button type="button" title={t('find.shortcut')} disabled={Boolean(error)} onClick={openFind}><Search />{t('action.find')}</button>
+        <button type="button" aria-label={t('action.copy')} disabled={Boolean(error) || !decoded} onClick={() => void clipboardApi.writeText(text)}><Copy />{t('action.copy')}</button>
         <span>{encodingName.toUpperCase()} · {kind === 'json' && !jsonValid ? t('invalidJson') : t('status.readOnly')}</span>
       </div>
       {findOpen && (
@@ -287,7 +324,20 @@ function PreviewPane({ file, kind, initialState, onStateChange }: {
           <button type="button" aria-label={t('find.close')} onClick={() => { setFindOpen(false); setFindNotice(''); onStateChange({ findOpen: false }) }}><X /></button>
         </div>
       )}
-      {error ? <p role="alert">{error}</p> : <CodeEditor ariaLabel={file.name} value={text} readOnly lineWrapping={wrap} searchQuery={findOpen ? findQuery : ''} searchOptions={previewOptions} onReady={(view) => { editor.current = view }} />}
+      {error ? <p role="alert">{error}</p> : decoded ? (
+        <CodeEditor
+          ariaLabel={t('text')}
+          value={text}
+          readOnly
+          lineWrapping={wrap}
+          searchQuery={findOpen ? findQuery : ''}
+          searchOptions={previewOptions}
+          initialViewState={editorView.current}
+          onViewStateChange={(state) => { editorView.current = state; onStateChange({ editor: state }) }}
+          extensions={previewLanguageExtensions(file.name)}
+          onReady={(view) => { editor.current = view }}
+        />
+      ) : <p role="status">{t('loading')}</p>}
     </section>
   )
 }

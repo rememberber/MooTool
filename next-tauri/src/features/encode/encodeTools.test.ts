@@ -27,19 +27,20 @@ describe('encoding tools', () => {
     expect(urlDecode('%GG', 'utf-8')).toBe('%GG')
   })
 
-  it('round-trips UTF-8 text through Base64 and URL-safe Base64', () => {
+  it('round-trips standard Base64 and rejects URL-safe input', () => {
     const source = 'MooTool · 你好'
     const encoded = textToBase64(source)
     expect(base64ToText(encoded)).toBe(source)
-    expect(base64ToText(encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')))
-      .toBe(source)
-    expect(() => base64ToText('???')).toThrow('ENCODE_TOOL_base64')
+    expect(base64ToText(` ${encoded.slice(0, 4)}\n${encoded.slice(4)} `)).toBe(source)
+    expect(() => base64ToText(encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''))).toThrow('Invalid Base64')
+    expect(() => base64ToText('???')).toThrow('Invalid Base64')
   })
 
   it('round-trips UTF-8 text through hexadecimal bytes', () => {
     const source = 'MooTool 你好'
     expect(hexToText(textToHex(source))).toBe(source)
-    expect(() => hexToText('abc')).toThrow('ENCODE_TOOL_hex')
+    expect(() => hexToText('abc')).toThrow('Invalid hexadecimal input')
+    expect(() => asciiToText('1114112')).toThrow('Invalid code point: 1114112')
   })
 
   it('converts decimal and hexadecimal code points', () => {

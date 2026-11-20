@@ -148,7 +148,10 @@ pub struct AppearanceSettings {
     #[serde(default = "default_true")]
     pub unified_background: bool,
     pub accent_color: AccentColor,
-    #[serde(default = "default_interface_font_family", deserialize_with = "deserialize_interface_font_family")]
+    #[serde(
+        default = "default_interface_font_family",
+        deserialize_with = "deserialize_interface_font_family"
+    )]
     pub font_family: String,
     #[serde(default = "default_interface_font_size")]
     pub font_size: u8,
@@ -228,7 +231,10 @@ impl<'de> Deserialize<'de> for LayoutSettings {
     {
         let file = LayoutSettingsFile::deserialize(deserializer)?;
         Ok(Self {
-            hide_navigation_titles: file.hide_navigation_titles.or(file.sidebar_compact).unwrap_or(false),
+            hide_navigation_titles: file
+                .hide_navigation_titles
+                .or(file.sidebar_compact)
+                .unwrap_or(false),
             navigation_style: file.navigation_style,
             compact_navigation: file.compact_navigation,
             show_separators: file.show_separators,
@@ -303,7 +309,9 @@ fn deserialize_editor_font_name<'de, D>(deserializer: D) -> Result<String, D::Er
 where
     D: Deserializer<'de>,
 {
-    Ok(normalize_editor_font_name(&String::deserialize(deserializer)?))
+    Ok(normalize_editor_font_name(&String::deserialize(
+        deserializer,
+    )?))
 }
 
 fn normalize_editor_font_name(value: &str) -> String {
@@ -318,7 +326,9 @@ fn normalize_editor_font_name(value: &str) -> String {
 fn pane_size_key_valid(key: &str) -> bool {
     let count = key.chars().count();
     (1..=64).contains(&count)
-        && key.chars().all(|char| char.is_ascii_alphanumeric() || char == '-')
+        && key
+            .chars()
+            .all(|char| char.is_ascii_alphanumeric() || char == '-')
 }
 
 fn deserialize_pane_sizes<'de, D>(deserializer: D) -> Result<BTreeMap<String, Vec<f64>>, D::Error>
@@ -341,7 +351,9 @@ where
             continue;
         }
         let numbers: Vec<f64> = list.iter().filter_map(serde_json::Value::as_f64).collect();
-        if numbers.len() != list.len() || numbers.iter().any(|size| !size.is_finite() || *size <= 0.0) {
+        if numbers.len() != list.len()
+            || numbers.iter().any(|size| !size.is_finite() || *size <= 0.0)
+        {
             continue;
         }
         let total: f64 = numbers.iter().sum();
@@ -424,7 +436,11 @@ impl Default for NetworkSettingsFile {
 }
 
 fn normalize_timeout_ms(milliseconds: Option<u64>, seconds: Option<u64>, default_ms: u64) -> u32 {
-    let raw = milliseconds.unwrap_or_else(|| seconds.map(|value| value.saturating_mul(1_000)).unwrap_or(default_ms));
+    let raw = milliseconds.unwrap_or_else(|| {
+        seconds
+            .map(|value| value.saturating_mul(1_000))
+            .unwrap_or(default_ms)
+    });
     raw.clamp(1_000, 120_000) as u32
 }
 
@@ -434,19 +450,31 @@ impl<'de> Deserialize<'de> for NetworkSettings {
         D: Deserializer<'de>,
     {
         let file = NetworkSettingsFile::deserialize(deserializer)?;
-        let proxy_enabled = file.proxy_enabled.unwrap_or(file.proxy_mode.as_deref() == Some("manual"));
+        let proxy_enabled = file
+            .proxy_enabled
+            .unwrap_or(file.proxy_mode.as_deref() == Some("manual"));
         let proxy_port = match file.proxy_port {
             serde_json::Value::String(text) => text.trim().chars().take(16).collect(),
-            serde_json::Value::Number(number) if proxy_enabled || number.as_u64() != Some(8080) => number.to_string(),
+            serde_json::Value::Number(number) if proxy_enabled || number.as_u64() != Some(8080) => {
+                number.to_string()
+            }
             _ => String::new(),
         };
         Ok(Self {
-            request_timeout_ms: normalize_timeout_ms(file.request_timeout_ms, file.timeout_seconds, 30_000),
+            request_timeout_ms: normalize_timeout_ms(
+                file.request_timeout_ms,
+                file.timeout_seconds,
+                30_000,
+            ),
             proxy_enabled,
             proxy_host: file.proxy_host,
             proxy_port,
             proxy_username: file.proxy_username,
-            translation_timeout_ms: normalize_timeout_ms(file.translation_timeout_ms, file.translation_timeout_seconds, 15_000),
+            translation_timeout_ms: normalize_timeout_ms(
+                file.translation_timeout_ms,
+                file.translation_timeout_seconds,
+                15_000,
+            ),
         })
     }
 }
@@ -480,6 +508,7 @@ pub struct RuntimeSettings {
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct RuntimeRunOptionSettings {
+    #[serde(rename = "arguments", alias = "argumentsText")]
     pub arguments_text: String,
     pub working_directory: String,
 }
@@ -507,12 +536,17 @@ pub const OPERATION_HISTORY_LIMIT: u16 = 500;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
-pub struct DataSettings {}
+pub struct DataSettings {
+    pub directory: String,
+}
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct VaultSettings {
+    #[serde(default = "default_true")]
     pub auto_commit: bool,
+    pub quick_note_path: String,
+    pub json_path: String,
     pub root_directory: Option<String>,
     pub git_remote: String,
     pub git_username: String,
@@ -526,21 +560,46 @@ pub struct VaultSettings {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[derive(Default)]
 pub enum VaultTreeExpandMode {
+    #[default]
     ExpandAll,
     CollapseAll,
 }
 
-impl Default for VaultTreeExpandMode {
-    fn default() -> Self {
-        Self::ExpandAll
+impl VaultSettings {
+    pub fn json_vault_root(&self) -> Option<String> {
+        let json_path = self.json_path.trim();
+        if !json_path.is_empty() {
+            return Some(json_path.to_string());
+        }
+        self.root_directory
+            .as_ref()
+            .map(|path| path.trim().to_string())
+            .filter(|path| !path.is_empty())
     }
+
+    pub fn resolved_json_vault(&self, data_directory: &std::path::Path) -> std::path::PathBuf {
+        self.json_vault_root()
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| data_directory.join("json-vault"))
+    }
+}
+
+fn vault_directory_valid(path: &str) -> bool {
+    let path = path.trim();
+    path.is_empty()
+        || (path.len() <= 4_096
+            && std::path::Path::new(path).is_absolute()
+            && !path.chars().any(char::is_control))
 }
 
 impl Default for VaultSettings {
     fn default() -> Self {
         Self {
-            auto_commit: false,
+            auto_commit: true,
+            quick_note_path: String::new(),
+            json_path: String::new(),
             root_directory: None,
             git_remote: String::new(),
             git_username: String::new(),
@@ -565,22 +624,12 @@ pub struct ShortcutSettings {
 
 #[derive(Deserialize)]
 #[serde(default, rename_all = "camelCase")]
+#[derive(Default)]
 struct ShortcutSettingsFile {
     search: Option<String>,
     settings: Option<String>,
     global_search_enabled: Option<bool>,
     global_search: Option<String>,
-}
-
-impl Default for ShortcutSettingsFile {
-    fn default() -> Self {
-        Self {
-            search: None,
-            settings: None,
-            global_search_enabled: None,
-            global_search: None,
-        }
-    }
 }
 
 impl<'de> Deserialize<'de> for ShortcutSettings {
@@ -592,7 +641,9 @@ impl<'de> Deserialize<'de> for ShortcutSettings {
         let legacy_palette = file.global_search_enabled.is_none();
         let search = file.search.clone().unwrap_or_else(|| {
             if legacy_palette {
-                file.global_search.clone().unwrap_or_else(|| "CommandOrControl+K".into())
+                file.global_search
+                    .clone()
+                    .unwrap_or_else(|| "CommandOrControl+K".into())
             } else {
                 "CommandOrControl+K".into()
             }
@@ -604,7 +655,8 @@ impl<'de> Deserialize<'de> for ShortcutSettings {
             global_search: if legacy_palette {
                 "CommandOrControl+Shift+Space".into()
             } else {
-                file.global_search.unwrap_or_else(|| "CommandOrControl+Shift+Space".into())
+                file.global_search
+                    .unwrap_or_else(|| "CommandOrControl+Shift+Space".into())
             },
         })
     }
@@ -785,19 +837,32 @@ impl AppSettings {
         {
             return Err("vault git remote or username is invalid".into());
         }
-        if self.vault.root_directory.as_ref().is_some_and(|path| {
-            path.trim().is_empty()
-                || path.len() > 4_096
-                || !std::path::Path::new(path).is_absolute()
-        }) {
+        if !vault_directory_valid(&self.data.directory)
+            || !vault_directory_valid(&self.vault.quick_note_path)
+            || !vault_directory_valid(&self.vault.json_path)
+            || self
+                .vault
+                .root_directory
+                .as_ref()
+                .is_some_and(|path| !vault_directory_valid(path))
+        {
             return Err("vault root directory must be an absolute path".into());
         }
         validate_shortcut("search", &self.shortcuts.search)?;
         validate_shortcut("global search", &self.shortcuts.global_search)?;
         validate_shortcut("settings", &self.shortcuts.settings)?;
-        if self.shortcuts.search.eq_ignore_ascii_case(&self.shortcuts.settings)
-            || self.shortcuts.global_search.eq_ignore_ascii_case(&self.shortcuts.settings)
-            || self.shortcuts.search.eq_ignore_ascii_case(&self.shortcuts.global_search)
+        if self
+            .shortcuts
+            .search
+            .eq_ignore_ascii_case(&self.shortcuts.settings)
+            || self
+                .shortcuts
+                .global_search
+                .eq_ignore_ascii_case(&self.shortcuts.settings)
+            || self
+                .shortcuts
+                .search
+                .eq_ignore_ascii_case(&self.shortcuts.global_search)
         {
             return Err("search, global search, and settings shortcuts must be different".into());
         }
@@ -873,7 +938,10 @@ fn validate_tool_defaults(settings: &ToolSettings) -> Result<(), String> {
     if !(120..=2_000).contains(&settings.qr_code_size)
         || !matches!(settings.qr_error_correction.as_str(), "L" | "M" | "Q" | "H")
         || !(1..=4_096).contains(&settings.random_string_length)
-        || !matches!(settings.translation_provider.as_str(), "google" | "bing" | "deepl")
+        || !matches!(
+            settings.translation_provider.as_str(),
+            "google" | "bing" | "deepl"
+        )
         || settings.translation_source_lang.is_empty()
         || settings.translation_source_lang.len() > 32
         || settings.translation_target_lang.is_empty()
@@ -1000,7 +1068,10 @@ fn validate_custom_groups(groups: &[CustomToolGroup]) -> Result<(), String> {
             return Err("custom group name must contain 1 to 40 safe characters".into());
         }
         if group.tool_ids.is_empty() || group.tool_ids.len() > PRODUCT_TOOL_IDS.len() {
-            return Err(format!("custom group must contain between 1 and {} tools", PRODUCT_TOOL_IDS.len()));
+            return Err(format!(
+                "custom group must contain between 1 and {} tools",
+                PRODUCT_TOOL_IDS.len()
+            ));
         }
         let mut tool_ids = HashSet::new();
         if group.tool_ids.iter().any(|tool_id| {
@@ -1035,10 +1106,9 @@ mod tests {
         assert!(settings.general.auto_download_updates);
         assert_eq!(settings.editor.json_font_size, 14);
         assert_eq!(settings.editor.quick_note_font_name, "ui-monospace");
-        let legacy: EditorSettings = serde_json::from_str(
-            r#"{"jsonFontFamily":"mono","quickNoteFontFamily":"system"}"#,
-        )
-        .expect("editor");
+        let legacy: EditorSettings =
+            serde_json::from_str(r#"{"jsonFontFamily":"mono","quickNoteFontFamily":"system"}"#)
+                .expect("editor");
         assert_eq!(legacy.json_font_name, "ui-monospace");
         assert_eq!(legacy.quick_note_font_name, "system-ui");
         let stored = serde_json::to_value(&legacy).expect("json");
@@ -1048,36 +1118,53 @@ mod tests {
             r#"{"paneSizes":{"json":[200,600,200],"legacy":260,"../unsafe":[1,1]}}"#,
         )
         .expect("layout");
-        assert_eq!(panes.pane_sizes.get("json").expect("json"), &vec![0.2, 0.6, 0.2]);
+        assert_eq!(
+            panes.pane_sizes.get("json").expect("json"),
+            &vec![0.2, 0.6, 0.2]
+        );
         assert!(!panes.pane_sizes.contains_key("legacy"));
         assert!(!panes.pane_sizes.contains_key("../unsafe"));
-        let manual: NetworkSettings = serde_json::from_str(r#"{"proxyMode":"manual","proxyPort":7890}"#).expect("proxy");
+        let manual: NetworkSettings =
+            serde_json::from_str(r#"{"proxyMode":"manual","proxyPort":7890}"#).expect("proxy");
         assert!(manual.proxy_enabled);
         assert_eq!(manual.proxy_port, "7890");
-        let system: NetworkSettings = serde_json::from_str(r#"{"proxyMode":"system","proxyPort":8080}"#).expect("proxy");
+        let system: NetworkSettings =
+            serde_json::from_str(r#"{"proxyMode":"system","proxyPort":8080}"#).expect("proxy");
         assert!(!system.proxy_enabled);
         assert_eq!(system.proxy_port, "");
         let stored_proxy = serde_json::to_value(NetworkSettings::default()).expect("proxy json");
         assert_eq!(stored_proxy["proxyEnabled"], false);
         assert_eq!(stored_proxy["proxyPort"], "");
-        let interface_font: AppearanceSettings = serde_json::from_str(r#"{"fontFamily":"mono"}"#).expect("font");
+        let interface_font: AppearanceSettings =
+            serde_json::from_str(r#"{"fontFamily":"mono"}"#).expect("font");
         assert_eq!(interface_font.font_family, "ui-monospace");
-        let system_font: AppearanceSettings = serde_json::from_str(r#"{"fontFamily":"system"}"#).expect("font");
+        let system_font: AppearanceSettings =
+            serde_json::from_str(r#"{"fontFamily":"system"}"#).expect("font");
         assert_eq!(system_font.font_family, "system-ui");
         assert_eq!(AppearanceSettings::default().font_family, "system-ui");
-        let legacy_scale: AppearanceSettings = serde_json::from_str(r#"{"uiScale":90}"#).expect("scale");
+        let legacy_scale: AppearanceSettings =
+            serde_json::from_str(r#"{"uiScale":90}"#).expect("scale");
         assert!(serde_json::to_value(legacy_scale).expect("appearance")["uiScale"].is_null());
         assert_eq!(settings.editor.quick_note_font_size, 14);
         assert_eq!(settings.network.translation_timeout_ms, 15_000);
-        let legacy_timeout: NetworkSettings = serde_json::from_str(r#"{"timeoutSeconds":45,"translationTimeoutSeconds":20}"#).expect("timeout");
+        let legacy_timeout: NetworkSettings =
+            serde_json::from_str(r#"{"timeoutSeconds":45,"translationTimeoutSeconds":20}"#)
+                .expect("timeout");
         assert_eq!(legacy_timeout.request_timeout_ms, 45_000);
         assert_eq!(legacy_timeout.translation_timeout_ms, 20_000);
-        let clamped_timeout: NetworkSettings = serde_json::from_str(r#"{"requestTimeoutMs":50,"translationTimeoutMs":999999}"#).expect("timeout");
+        let clamped_timeout: NetworkSettings =
+            serde_json::from_str(r#"{"requestTimeoutMs":50,"translationTimeoutMs":999999}"#)
+                .expect("timeout");
         assert_eq!(clamped_timeout.request_timeout_ms, 1_000);
         assert_eq!(clamped_timeout.translation_timeout_ms, 120_000);
-        let legacy_layout: LayoutSettings = serde_json::from_str(r#"{"sidebarCompact":true,"hiddenTools":["json","missing"]}"#).expect("layout");
+        let legacy_layout: LayoutSettings =
+            serde_json::from_str(r#"{"sidebarCompact":true,"hiddenTools":["json","missing"]}"#)
+                .expect("layout");
         assert!(legacy_layout.hide_navigation_titles);
-        assert_eq!(legacy_layout.hidden_navigation_tool_ids, vec!["json".to_string(), "missing".to_string()]);
+        assert_eq!(
+            legacy_layout.hidden_navigation_tool_ids,
+            vec!["json".to_string(), "missing".to_string()]
+        );
         let stored_layout = serde_json::to_value(LayoutSettings::default()).expect("layout json");
         assert_eq!(stored_layout["hideNavigationTitles"], false);
         assert!(stored_layout.get("density").is_none());
@@ -1085,27 +1172,52 @@ mod tests {
         assert!(stored_layout.get("showGroupTitles").is_none());
         assert!(stored_layout.get("hiddenNavigationToolIds").is_some());
         assert!(settings.editor.soft_wrap);
-        let legacy_wrap: EditorSettings = serde_json::from_str(r#"{"wordWrap":false,"fontSize":18,"tabSize":8}"#).expect("editor");
+        let legacy_wrap: EditorSettings =
+            serde_json::from_str(r#"{"wordWrap":false,"fontSize":18,"tabSize":8}"#)
+                .expect("editor");
         assert!(!legacy_wrap.soft_wrap);
         let stored_editor = serde_json::to_value(EditorSettings::default()).expect("editor json");
         assert_eq!(stored_editor["softWrap"], true);
         assert!(stored_editor.get("wordWrap").is_none());
         assert!(stored_editor.get("fontSize").is_none());
         assert!(stored_editor.get("tabSize").is_none());
-        let legacy_shortcuts: ShortcutSettings = serde_json::from_str(r#"{"globalSearch":"CommandOrControl+K","settings":"CommandOrControl+,"}"#).expect("shortcuts");
+        let legacy_shortcuts: ShortcutSettings = serde_json::from_str(
+            r#"{"globalSearch":"CommandOrControl+K","settings":"CommandOrControl+,"}"#,
+        )
+        .expect("shortcuts");
         assert_eq!(legacy_shortcuts.search, "CommandOrControl+K");
         assert!(!legacy_shortcuts.global_search_enabled);
-        assert_eq!(legacy_shortcuts.global_search, "CommandOrControl+Shift+Space");
-        let stored_shortcuts = serde_json::to_value(ShortcutSettings::default()).expect("shortcuts json");
+        assert_eq!(
+            legacy_shortcuts.global_search,
+            "CommandOrControl+Shift+Space"
+        );
+        let stored_shortcuts =
+            serde_json::to_value(ShortcutSettings::default()).expect("shortcuts json");
         assert_eq!(stored_shortcuts["search"], "CommandOrControl+K");
-        assert_eq!(stored_shortcuts["globalSearch"], "CommandOrControl+Shift+Space");
+        assert_eq!(
+            stored_shortcuts["globalSearch"],
+            "CommandOrControl+Shift+Space"
+        );
         assert_eq!(stored_shortcuts["globalSearchEnabled"], false);
-        let legacy_data: DataSettings = serde_json::from_str(r#"{"historyLimit":42}"#).expect("data");
+        let legacy_data: DataSettings =
+            serde_json::from_str(r#"{"historyLimit":42}"#).expect("data");
         let stored_data = serde_json::to_value(legacy_data).expect("data json");
         assert!(stored_data.get("historyLimit").is_none());
-        assert!(serde_json::to_value(DataSettings::default()).expect("default data").get("historyLimit").is_none());
-        assert_eq!(settings.vault.quick_note_tree_expand_mode, VaultTreeExpandMode::ExpandAll);
-        assert_eq!(settings.vault.json_tree_expand_mode, VaultTreeExpandMode::ExpandAll);
+        assert_eq!(stored_data["directory"], "");
+        assert!(
+            serde_json::to_value(DataSettings::default())
+                .expect("default data")
+                .get("historyLimit")
+                .is_none()
+        );
+        assert_eq!(
+            settings.vault.quick_note_tree_expand_mode,
+            VaultTreeExpandMode::ExpandAll
+        );
+        assert_eq!(
+            settings.vault.json_tree_expand_mode,
+            VaultTreeExpandMode::ExpandAll
+        );
         assert!(settings.validate().is_ok());
     }
 
@@ -1162,13 +1274,53 @@ mod tests {
 
     #[test]
     fn missing_escape_hides_window_stays_enabled() {
-        let settings: GeneralSettings = serde_json::from_str(r#"{"language":"en-US"}"#).expect("settings");
+        let settings: GeneralSettings =
+            serde_json::from_str(r#"{"language":"en-US"}"#).expect("settings");
         assert!(settings.escape_hides_window);
-        let disabled: GeneralSettings = serde_json::from_str(r#"{"escapeHidesWindow":false}"#).expect("settings");
+        let disabled: GeneralSettings =
+            serde_json::from_str(r#"{"escapeHidesWindow":false}"#).expect("settings");
         assert!(!disabled.escape_hides_window);
-        let hidden: GeneralSettings = serde_json::from_str(r#"{"closeBehavior":"minimizeToTray"}"#).expect("settings");
+        let hidden: GeneralSettings =
+            serde_json::from_str(r#"{"closeBehavior":"minimizeToTray"}"#).expect("settings");
         assert_eq!(hidden.close_behavior, CloseBehavior::Hide);
         let stored = serde_json::to_string(&CloseBehavior::Hide).expect("json");
         assert_eq!(stored, "\"hide\"");
+    }
+
+    #[test]
+    fn runtime_arguments_keep_the_electron_field_name() {
+        let legacy: RuntimeRunOptionSettings =
+            serde_json::from_str(r#"{"argumentsText":"--old","workingDirectory":"/tmp"}"#)
+                .expect("legacy option");
+        assert_eq!(legacy.arguments_text, "--old");
+        assert_eq!(legacy.working_directory, "/tmp");
+        let stored = serde_json::to_value(&legacy).expect("json");
+        assert_eq!(stored["arguments"], "--old");
+        assert!(stored.get("argumentsText").is_none());
+        let current: RuntimeRunOptionSettings =
+            serde_json::from_str(r#"{"arguments":"--new"}"#).expect("current option");
+        assert_eq!(current.arguments_text, "--new");
+    }
+
+    #[test]
+    fn json_vault_path_keeps_the_existing_root_until_a_separate_path_is_saved() {
+        let mut vault = VaultSettings::default();
+        assert_eq!(vault.json_vault_root(), None);
+        vault.root_directory = Some("/vault/json".into());
+        assert_eq!(vault.json_vault_root().as_deref(), Some("/vault/json"));
+        vault.json_path = "/vault/notes".into();
+        assert_eq!(vault.json_vault_root().as_deref(), Some("/vault/notes"));
+        assert_eq!(
+            VaultSettings::default().resolved_json_vault(std::path::Path::new("/data")),
+            std::path::PathBuf::from("/data/json-vault")
+        );
+        let restored: VaultSettings =
+            serde_json::from_str(r#"{"rootDirectory":"/old/json"}"#).expect("vault");
+        assert!(restored.auto_commit);
+        let disabled: VaultSettings =
+            serde_json::from_str(r#"{"autoCommit":false}"#).expect("vault");
+        assert!(!disabled.auto_commit);
+        assert_eq!(restored.quick_note_path, "");
+        assert_eq!(restored.json_vault_root().as_deref(), Some("/old/json"));
     }
 }

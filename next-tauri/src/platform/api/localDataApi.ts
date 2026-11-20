@@ -1,11 +1,17 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listStoredHostProfiles, replaceStoredHostProfile, saveStoredHostProfile } from '../../features/host/hostProfileStore'
 import { listStoredTranslationHistory, listStoredTranslationWords, saveStoredTranslationWord } from '../../features/translation/translationRecords'
+import { clearFuncHistory, deleteFuncHistory, listFuncHistory, saveFuncHistory } from './funcHistoryStore'
 import {
   normalizeNoteSyntax,
   type BoardMessage,
+  type FuncHistoryRecord,
   type HostProfile,
   type LocalDataApi,
+  type FavoriteFolder,
+  type NamedFavorite,
+  type NamedFavoriteKind,
+  type SaveNamedFavoriteInput,
   type CreateQuickNoteInput,
   type QuickNote,
   type QuickNoteFolder,
@@ -43,6 +49,20 @@ export function createLocalDataApi(invokeCommand: Invoke = invoke): LocalDataApi
     listToolFavorites: (toolId) => invokeCommand<ToolFavorite[]>('list_tool_favorites', { toolId }),
     saveToolFavorite: (favorite) => invokeCommand<ToolFavorite>('save_tool_favorite', { favorite }),
     deleteToolFavorite: (id) => invokeCommand<boolean>('delete_tool_favorite', { id }),
+    listFavoriteFolders: (kind) => invokeCommand<FavoriteFolder[]>('list_favorite_folders', { kind }),
+    createFavoriteFolder: (kind, title) => invokeCommand<FavoriteFolder>('create_favorite_folder', { kind, title }),
+    renameFavoriteFolder: (id, title) => invokeCommand<FavoriteFolder>('rename_favorite_folder', { id, title }),
+    deleteFavoriteFolder: (id) => invokeCommand<void>('delete_favorite_folder', { id }),
+    listNamedFavorites: (kind, folderId) => invokeCommand<NamedFavorite[]>('list_named_favorites', { kind, folderId }),
+    saveNamedFavorite: (input) => invokeCommand<NamedFavorite>('save_named_favorite', { input }),
+    deleteNamedFavorite: (id) => invokeCommand<boolean>('delete_named_favorite', { id }),
+    moveNamedFavorite: (id, direction) => invokeCommand<void>('move_named_favorite', { id, direction }),
+    listFuncHistory: (funcType, keyword = '') => invokeCommand<FuncHistoryRecord[]>('list_func_history', { funcType, keyword }),
+    saveFuncHistory: (input) => invokeCommand<FuncHistoryRecord | null>('save_func_history', { input }),
+    deleteFuncHistory: (id) => invokeCommand<boolean>('delete_func_history', { id }),
+    clearFuncHistory: (funcType) => invokeCommand<number>('clear_func_history', { funcType }),
+    getToolDraft: (kind) => invokeCommand<string | null>('get_tool_draft', { kind }),
+    saveToolDraft: (kind, value) => invokeCommand<void>('save_tool_draft', { kind, value }),
     listMessages: () => invokeCommand<BoardMessage[]>('list_board_messages'),
     saveMessage: (message) => invokeCommand<BoardMessage>('save_board_message', { message }),
     deleteMessage: (id) => invokeCommand<boolean>('delete_board_message', { id }),
@@ -175,11 +195,28 @@ function createBrowserLocalDataApi(): LocalDataApi {
       writeBrowserList(TOOL_FAVORITES_KEY, [saved, ...values.filter((item) => item.id !== saved.id && !(item.toolId === saved.toolId && item.name === saved.name))])
       return saved
     },
+    listFavoriteFolders: async (kind) => listBrowserFavoriteFolders(kind),
+    createFavoriteFolder: async (kind, title) => createBrowserFavoriteFolder(kind, title),
+    renameFavoriteFolder: async (id, title) => renameBrowserFavoriteFolder(id, title),
+    deleteFavoriteFolder: async (id) => { deleteBrowserFavoriteFolder(id) },
+    listNamedFavorites: async (kind, folderId) => listBrowserNamedFavorites(kind, folderId),
+    saveNamedFavorite: async (input) => saveBrowserNamedFavorite(input),
+    deleteNamedFavorite: async (id) => deleteBrowserNamedFavorite(id),
+    moveNamedFavorite: async (id, direction) => { moveBrowserNamedFavorite(id, direction) },
     deleteToolFavorite: async (id) => {
       const values = readToolFavorites()
       const next = values.filter((item) => item.id !== id)
       writeBrowserList(TOOL_FAVORITES_KEY, next)
       return next.length !== values.length
+    },
+    listFuncHistory: async (funcType, keyword = '') => listFuncHistory(funcType, keyword),
+    saveFuncHistory: async (input) => saveFuncHistory(input),
+    deleteFuncHistory: async (id) => deleteFuncHistory(id),
+    clearFuncHistory: async (funcType) => clearFuncHistory(funcType),
+    getToolDraft: async (kind) => window.localStorage.getItem(`mootool.${kind}.draft`),
+    saveToolDraft: async (kind, value) => {
+      JSON.parse(value)
+      window.localStorage.setItem(`mootool.${kind}.draft`, value)
     },
     listMessages: async () => readBrowserList<BoardMessage>(MESSAGES_KEY),
     saveMessage: async (message) => {
@@ -311,6 +348,148 @@ function readFolderList(): QuickNoteFolder[] {
   } catch {
     return []
   }
+}
+
+const NAMED_FAVORITES_KEY = 'mootool.named-favorites.v1'
+const favoriteKinds = ['regex', 'cron', 'color'] as const
+
+type StoredFavorite = NamedFavorite & { sortOrder: number }
+type NamedFavoriteStore = { folders: FavoriteFolder[]; favorites: StoredFavorite[] }
+
+function readNamedFavoriteStore(): NamedFavoriteStore {
+  try {
+    const raw = window.localStorage.getItem(NAMED_FAVORITES_KEY)
+    const parsed = raw ? JSON.parse(raw) as { folders?: unknown; favorites?: unknown } : {}
+    return {
+      folders: Array.isArray(parsed.folders) ? parsed.folders as FavoriteFolder[] : [],
+      favorites: Array.isArray(parsed.favorites) ? (parsed.favorites as StoredFavorite[]).map((item) => ({ ...item, sortOrder: item.sortOrder ?? 0 })) : []
+    }
+  } catch {
+    return { folders: [], favorites: [] }
+  }
+}
+
+function writeNamedFavoriteStore(store: NamedFavoriteStore): void {
+  window.localStorage.setItem(NAMED_FAVORITES_KEY, JSON.stringify(store))
+}
+
+function sqliteNow(): string {
+  const now = new Date()
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
+}
+
+function ensureBrowserFavoriteFolder(kind: NamedFavoriteKind) {
+  const store = readNamedFavoriteStore()
+  const existing = store.folders.find((folder) => folder.kind === kind)
+  if (existing) return { store, folderId: existing.id }
+  const folder = { id: Math.max(0, ...store.folders.map((item) => item.id)) + 1, kind, title: '默认收藏夹', createTime: sqliteNow() }
+  store.folders.push(folder)
+  writeNamedFavoriteStore(store)
+  return { store, folderId: folder.id }
+}
+
+function listBrowserFavoriteFolders(kind: NamedFavoriteKind): FavoriteFolder[] {
+  if (!favoriteKinds.includes(kind)) throw new Error('Invalid favorite kind')
+  const { store } = ensureBrowserFavoriteFolder(kind)
+  return store.folders.filter((folder) => folder.kind === kind).sort((left, right) => left.id - right.id)
+}
+
+function createBrowserFavoriteFolder(kind: NamedFavoriteKind, title: string): FavoriteFolder {
+  const name = title.trim()
+  if (!favoriteKinds.includes(kind) || !name || [...name].length > 80) throw new Error('Invalid favorite folder')
+  const store = readNamedFavoriteStore()
+  if (store.folders.some((folder) => folder.kind === kind && folder.title === name)) throw new Error('Favorite folder already exists')
+  const folder: FavoriteFolder = { id: Math.max(0, ...store.folders.map((item) => item.id)) + 1, kind, title: name, createTime: sqliteNow() }
+  store.folders.push(folder)
+  writeNamedFavoriteStore(store)
+  return folder
+}
+
+function renameBrowserFavoriteFolder(id: number, title: string): FavoriteFolder {
+  const name = title.trim()
+  if (!name || [...name].length > 80) throw new Error('Invalid favorite folder')
+  const store = readNamedFavoriteStore()
+  const folder = store.folders.find((item) => item.id === id)
+  if (!folder) throw new Error('Favorite folder was not found')
+  if (store.folders.some((item) => item.kind === folder.kind && item.title === name && item.id !== id)) throw new Error('Favorite folder already exists')
+  folder.title = name
+  writeNamedFavoriteStore(store)
+  return folder
+}
+
+function deleteBrowserFavoriteFolder(id: number): void {
+  const store = readNamedFavoriteStore()
+  const folder = store.folders.find((item) => item.id === id)
+  if (!folder) return
+  store.folders = store.folders.filter((item) => item.id !== id)
+  store.favorites = store.favorites.filter((item) => item.folderId !== id)
+  writeNamedFavoriteStore(store)
+  ensureBrowserFavoriteFolder(folder.kind)
+}
+
+function compareFavorites(left: StoredFavorite, right: StoredFavorite): number {
+  return left.sortOrder - right.sortOrder || left.name.localeCompare(right.name, undefined, { sensitivity: 'accent' }) || left.id - right.id
+}
+
+function listBrowserNamedFavorites(kind: NamedFavoriteKind, folderId?: number): NamedFavorite[] {
+  if (!favoriteKinds.includes(kind)) throw new Error('Invalid favorite kind')
+  const { store } = ensureBrowserFavoriteFolder(kind)
+  return store.favorites
+    .filter((item) => item.kind === kind && (folderId === undefined || item.folderId === folderId))
+    .sort(compareFavorites)
+    .map(({ sortOrder: _sortOrder, ...item }) => item)
+}
+
+function saveBrowserNamedFavorite(input: SaveNamedFavoriteInput): NamedFavorite {
+  const name = input.name.trim()
+  const value = input.value.trim()
+  if (!favoriteKinds.includes(input.kind) || !name || !value || [...name].length > 80) throw new Error('Invalid favorite')
+  const store = readNamedFavoriteStore()
+  const folderId = input.folderId ?? ensureBrowserFavoriteFolder(input.kind).folderId
+  const folder = store.folders.find((item) => item.id === folderId) ?? ensureBrowserFavoriteFolder(input.kind).store.folders.find((item) => item.id === folderId)
+  if (!folder || folder.kind !== input.kind) throw new Error('Favorite folder does not match favorite kind')
+  const currentStore = readNamedFavoriteStore()
+  if (input.id != null) {
+    const current = currentStore.favorites.find((item) => item.id === input.id && item.kind === input.kind)
+    if (!current) throw new Error('Favorite was not found')
+    const saved = { ...current, folderId, name, value, description: input.description ?? '' }
+    currentStore.favorites = currentStore.favorites.map((item) => item.id === saved.id ? saved : item)
+    writeNamedFavoriteStore(currentStore)
+    const { sortOrder: _sortOrder, ...record } = saved
+    return record
+  }
+  const current = currentStore.favorites.find((item) => item.kind === input.kind && item.folderId === folderId && item.name === name)
+  const saved: StoredFavorite = current
+    ? { ...current, value, description: input.description ?? '', createTime: sqliteNow() }
+    : { id: Math.max(0, ...currentStore.favorites.map((item) => item.id)) + 1, kind: input.kind, folderId, name, value, description: input.description ?? '', createTime: sqliteNow(), sortOrder: 0 }
+  currentStore.favorites = [saved, ...currentStore.favorites.filter((item) => item.id !== saved.id)]
+  writeNamedFavoriteStore(currentStore)
+  const { sortOrder: _sortOrder, ...record } = saved
+  return record
+}
+
+function moveBrowserNamedFavorite(id: number, direction: -1 | 1): void {
+  const store = readNamedFavoriteStore()
+  const current = store.favorites.find((item) => item.id === id)
+  if (!current) throw new Error('Favorite was not found')
+  const items = store.favorites.filter((item) => item.folderId === current.folderId).sort(compareFavorites)
+  const index = items.findIndex((item) => item.id === id)
+  const target = index + direction
+  if (index < 0 || target < 0 || target >= items.length) return
+  const [moved] = items.splice(index, 1)
+  items.splice(target, 0, moved)
+  items.forEach((item, position) => { item.sortOrder = position })
+  writeNamedFavoriteStore(store)
+}
+
+function deleteBrowserNamedFavorite(id: number): boolean {
+  const store = readNamedFavoriteStore()
+  const next = store.favorites.filter((item) => item.id !== id)
+  const removed = next.length !== store.favorites.length
+  store.favorites = next
+  if (removed) writeNamedFavoriteStore(store)
+  return removed
 }
 
 function readToolFavorites(): ToolFavorite[] {

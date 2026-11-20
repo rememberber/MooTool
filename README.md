@@ -39,7 +39,7 @@ MooTool now has 7 independent product lines, each with its own code, build, vers
 | --- | --- | --- | --- |
 | [**MooTool Next Electron**](next/README.md) | Electron, Vite, React, TypeScript; the currently recommended desktop edition. | Windows / Linux / macOS | Stable: [Download 1.3.7](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.3.7) |
 | [**MooTool Java**](src/) | Java, Swing; the original desktop edition, still maintained. | Windows / Linux / macOS | Stable: [Download 1.8.8](https://github.com/rememberber/MooTool/releases/tag/v1.8.8) · [Gitee mirror](https://gitee.com/zhoubochina/MooTool/releases) |
-| [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2, Rust, React, TypeScript; 25 tools with independent storage and updates. | Windows / Linux / macOS | Release candidate: [Download 0.1.0-rc.2](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2) |
+| [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2, Rust, React, TypeScript; 27 tools with independent storage and updates. | Windows / Linux / macOS | Release candidate: [Download 0.1.0-rc.3](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.3) |
 | [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI, AppKit, system frameworks; native workspaces, JSON vault, quick notes, and image attachments. | macOS 14+ | Pre-release: [Download 0.8.0](https://github.com/rememberber/MooTool/releases/tag/next-macos-native-v0.8.0) |
 | [**MooTool Next Flutter**](next-flutter/README.md) | Flutter, Dart; tools and desktop channels are implemented, with platform acceptance and some capabilities still in progress. | Windows / Linux / macOS | 0.1.0 development build; local run and unsigned packaging scripts available. |
 | [**MooTool Next Compose**](next-compose/README.md) | Kotlin, Compose Multiplatform Desktop; multiple tools, quick notes, and backup/restore implemented. | Windows / Linux / macOS | 0.1.0 development build; local macOS app-image build verified, with its own JVM runtime. |
@@ -118,7 +118,7 @@ Other local stdio MCP clients can use **Copy MCP configuration**. See the [AI in
 
 - [MooTool Next Electron 1.3.7 (recommended)](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.3.7)
 - [MooTool Java 1.8.8](https://github.com/rememberber/MooTool/releases/tag/v1.8.8)
-- [MooTool Next Tauri 0.1.0-rc.2 (release candidate)](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2)
+- [MooTool Next Tauri 0.1.0-rc.3 (release candidate)](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.3)
 - [MooTool Next macOS Native 0.8.0 (pre-release)](https://github.com/rememberber/MooTool/releases/tag/next-macos-native-v0.8.0)
 - [All GitHub Releases](https://github.com/rememberber/MooTool/releases)
 - [MooTool Java releases on Gitee](https://gitee.com/zhoubochina/MooTool/releases)

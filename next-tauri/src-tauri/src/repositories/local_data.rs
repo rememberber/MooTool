@@ -6,12 +6,15 @@ use crate::contracts::{
     image::ImageAssetSummary,
     local_data::{
         BoardMessage, HostProfile, OperationHistory, QuickNote, QuickNoteAttachment,
-        SaveHostProfileInput, SaveTranslationHistoryInput, SaveTranslationWordInput,
-        validate_host_content, validate_host_name, validate_translation_word_fields,
-        QuickNoteFolder, ToolFavorite, TranslationHistory, TranslationWord,
-        validate_note_folder_path,
+        QuickNoteFolder, SaveHostProfileInput, SaveTranslationHistoryInput,
+        SaveTranslationWordInput, ToolFavorite, TranslationHistory, TranslationWord,
+        validate_host_content, validate_host_name, validate_note_folder_path,
+        validate_translation_word_fields,
     },
-    network::{validate_saved_http_request, HttpRequestHistory, HttpRequestSpec, HttpResponseData, SaveHttpRequestInput, SavedHttpRequest},
+    network::{
+        HttpRequestHistory, HttpRequestSpec, HttpResponseData, SaveHttpRequestInput,
+        SavedHttpRequest, validate_saved_http_request,
+    },
     product_import::{ProductImportCounts, ProductImportRecords},
     translation::TranslationProvider,
 };
@@ -42,6 +45,26 @@ impl LocalDataRepository {
         Ok(Self {
             connection: Mutex::new(connection),
         })
+    }
+
+    pub fn reopen(&self, file_path: PathBuf) -> Result<(), String> {
+        if let Some(parent) = file_path.parent() {
+            fs::create_dir_all(parent).map_err(|error| {
+                format!(
+                    "failed to create local data directory {}: {error}",
+                    parent.display()
+                )
+            })?;
+        }
+        let connection = Connection::open(&file_path).map_err(|error| {
+            format!(
+                "failed to open local database {}: {error}",
+                file_path.display()
+            )
+        })?;
+        initialize(&connection)?;
+        *self.lock()? = connection;
+        Ok(())
     }
 
     #[cfg(test)]
@@ -536,6 +559,401 @@ impl LocalDataRepository {
             .map_err(database_error)
     }
 
+    pub fn get_tool_draft(&self, kind: &str) -> Result<Option<String>, String> {
+        validate_tool_draft_kind(kind)?;
+        self.lock()?
+            .query_row(
+                "SELECT value FROM t_tool_draft WHERE kind = ?1",
+                [kind],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(database_error)
+    }
+
+    pub fn save_tool_draft(&self, kind: &str, value: &str) -> Result<(), String> {
+        validate_tool_draft_kind(kind)?;
+        if value.len() > 1_048_576 || serde_json::from_str::<serde_json::Value>(value).is_err() {
+            return Err("Invalid draft".into());
+        }
+        self.lock()?
+            .execute(
+                "INSERT INTO t_tool_draft (kind, value) VALUES (?1, ?2)
+                 ON CONFLICT(kind) DO UPDATE SET value = excluded.value",
+                params![kind, value],
+            )
+            .map(|_| ())
+            .map_err(database_error)
+    }
+
+    pub fn list_func_history(
+        &self,
+        func_type: &str,
+        keyword: &str,
+    ) -> Result<Vec<crate::contracts::local_data::FuncHistoryRecord>, String> {
+        let func_type = normalize_func_type(func_type)?;
+        let keyword = keyword.chars().take(200).collect::<String>();
+        let connection = self.lock()?;
+        let mut statement = if keyword.trim().is_empty() {
+            connection
+                .prepare(
+                    "SELECT id, func_type, summary, input_text, output_text, extra_data, create_time
+                     FROM t_func_history
+                     WHERE func_type = ?1
+                     ORDER BY create_time DESC, id DESC",
+                )
+                .map_err(database_error)?
+        } else {
+            connection
+                .prepare(
+                    "SELECT id, func_type, summary, input_text, output_text, extra_data, create_time
+                     FROM t_func_history
+                     WHERE func_type = ?1 AND (
+                       summary LIKE ?2 OR input_text LIKE ?3 OR output_text LIKE ?4 OR extra_data LIKE ?5
+                     )
+                     ORDER BY create_time DESC, id DESC",
+                )
+                .map_err(database_error)?
+        };
+        let pattern = format!("%{}%", keyword.trim());
+        let rows = if keyword.trim().is_empty() {
+            statement.query_map(params![func_type], map_func_history)
+        } else {
+            statement.query_map(
+                params![func_type, pattern, pattern, pattern, pattern],
+                map_func_history,
+            )
+        }
+        .map_err(database_error)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(database_error)
+    }
+
+    pub fn save_func_history(
+        &self,
+        input: crate::contracts::local_data::SaveFuncHistoryInput,
+    ) -> Result<Option<crate::contracts::local_data::FuncHistoryRecord>, String> {
+        let func_type = normalize_func_type(&input.func_type)?;
+        let input_text = truncate_chars(&input.input_text, 20 * 1024 * 1024);
+        let output_text = truncate_chars(&input.output_text, 20 * 1024 * 1024);
+        if input_text.trim().is_empty() && output_text.trim().is_empty() {
+            return Ok(None);
+        }
+        let summary = input
+            .summary
+            .as_deref()
+            .map(|value| truncate_chars(value, 200))
+            .unwrap_or_default();
+        let summary = {
+            let trimmed = summary.trim();
+            if trimmed.is_empty() {
+                preview_history_text(&input_text, 40)
+            } else {
+                trimmed.to_string()
+            }
+        };
+        let extra_data = input
+            .extra_data
+            .map(|value| truncate_chars(&value, 100_000))
+            .filter(|value| !value.is_empty());
+        let connection = self.lock()?;
+        connection
+            .execute(
+                "INSERT INTO t_func_history (func_type, summary, input_text, output_text, extra_data, create_time)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                params![
+                    func_type,
+                    summary,
+                    input_text,
+                    output_text,
+                    extra_data,
+                    sqlite_date_now()
+                ],
+            )
+            .map_err(database_error)?;
+        let id = connection.last_insert_rowid();
+        connection
+            .execute(
+                "DELETE FROM t_func_history
+                 WHERE func_type = ?1 AND id NOT IN (
+                   SELECT id FROM t_func_history
+                   WHERE func_type = ?1
+                   ORDER BY create_time DESC, id DESC
+                   LIMIT 200
+                 )",
+                params![func_type],
+            )
+            .map_err(database_error)?;
+        connection
+            .query_row(
+                "SELECT id, func_type, summary, input_text, output_text, extra_data, create_time
+                 FROM t_func_history WHERE id = ?1",
+                params![id],
+                map_func_history,
+            )
+            .optional()
+            .map_err(database_error)
+    }
+
+    pub fn delete_func_history(&self, id: i64) -> Result<bool, String> {
+        if id <= 0 {
+            return Err("Invalid history id".into());
+        }
+        self.lock()?
+            .execute("DELETE FROM t_func_history WHERE id = ?1", params![id])
+            .map(|affected| affected > 0)
+            .map_err(database_error)
+    }
+
+    pub fn list_favorite_folders(
+        &self,
+        kind: &str,
+    ) -> Result<Vec<crate::contracts::local_data::FavoriteFolder>, String> {
+        let kind = normalize_favorite_kind(kind)?;
+        let connection = self.lock()?;
+        ensure_default_favorite_folder(&connection, &kind)?;
+        let mut statement = connection
+            .prepare(
+                "SELECT id, kind, title, create_time
+                 FROM t_next_favorite_folder WHERE kind = ?1 ORDER BY id",
+            )
+            .map_err(database_error)?;
+        let rows = statement
+            .query_map(params![kind], map_favorite_folder)
+            .map_err(database_error)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(database_error)
+    }
+
+    pub fn create_favorite_folder(
+        &self,
+        kind: &str,
+        title: &str,
+    ) -> Result<crate::contracts::local_data::FavoriteFolder, String> {
+        let kind = normalize_favorite_kind(kind)?;
+        let title = normalize_folder_title(title)?;
+        let connection = self.lock()?;
+        connection
+            .execute(
+                "INSERT INTO t_next_favorite_folder (kind, title, create_time) VALUES (?1, ?2, ?3)",
+                params![kind, title, sqlite_date_now()],
+            )
+            .map_err(database_error)?;
+        connection
+            .query_row(
+                "SELECT id, kind, title, create_time FROM t_next_favorite_folder WHERE id = ?1",
+                params![connection.last_insert_rowid()],
+                map_favorite_folder,
+            )
+            .map_err(database_error)
+    }
+
+    pub fn rename_favorite_folder(
+        &self,
+        id: i64,
+        title: &str,
+    ) -> Result<crate::contracts::local_data::FavoriteFolder, String> {
+        let title = normalize_folder_title(title)?;
+        let connection = self.lock()?;
+        let changed = connection
+            .execute(
+                "UPDATE t_next_favorite_folder SET title = ?1 WHERE id = ?2",
+                params![title, id],
+            )
+            .map_err(database_error)?;
+        if changed == 0 {
+            return Err("Favorite folder was not found".into());
+        }
+        connection
+            .query_row(
+                "SELECT id, kind, title, create_time FROM t_next_favorite_folder WHERE id = ?1",
+                params![id],
+                map_favorite_folder,
+            )
+            .map_err(database_error)
+    }
+
+    pub fn delete_favorite_folder(&self, id: i64) -> Result<(), String> {
+        let connection = self.lock()?;
+        let kind: Option<String> = connection
+            .query_row(
+                "SELECT kind FROM t_next_favorite_folder WHERE id = ?1",
+                params![id],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(database_error)?;
+        let Some(kind) = kind else { return Ok(()) };
+        connection
+            .execute(
+                "DELETE FROM t_next_favorite_folder WHERE id = ?1",
+                params![id],
+            )
+            .map_err(database_error)?;
+        ensure_default_favorite_folder(&connection, &kind)?;
+        Ok(())
+    }
+
+    pub fn list_named_favorites(
+        &self,
+        kind: &str,
+        folder_id: Option<i64>,
+    ) -> Result<Vec<crate::contracts::local_data::NamedFavorite>, String> {
+        let kind = normalize_favorite_kind(kind)?;
+        let connection = self.lock()?;
+        ensure_default_favorite_folder(&connection, &kind)?;
+        let mut statement = if folder_id.is_some() {
+            connection.prepare(
+                "SELECT id, kind, folder_id, name, value, description, create_time
+                 FROM t_next_favorite
+                 WHERE kind = ?1 AND folder_id = ?2
+                 ORDER BY sort_order, name COLLATE NOCASE, id",
+            )
+        } else {
+            connection.prepare(
+                "SELECT id, kind, folder_id, name, value, description, create_time
+                 FROM t_next_favorite
+                 WHERE kind = ?1
+                 ORDER BY sort_order, name COLLATE NOCASE, id",
+            )
+        }
+        .map_err(database_error)?;
+        let rows = match folder_id {
+            Some(folder_id) => statement.query_map(params![kind, folder_id], map_named_favorite),
+            None => statement.query_map(params![kind], map_named_favorite),
+        }
+        .map_err(database_error)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(database_error)
+    }
+
+    pub fn save_named_favorite(
+        &self,
+        input: crate::contracts::local_data::SaveNamedFavoriteInput,
+    ) -> Result<crate::contracts::local_data::NamedFavorite, String> {
+        let kind = normalize_favorite_kind(&input.kind)?;
+        let name = input.name.trim();
+        let value = input.value.trim();
+        if name.is_empty() || value.is_empty() || name.chars().count() > 80 {
+            return Err("Invalid favorite".into());
+        }
+        let description = input.description.unwrap_or_default();
+        let connection = self.lock()?;
+        let folder_id = match input.folder_id {
+            Some(folder_id) => favorite_folder_for_kind(&connection, folder_id, &kind)?,
+            None => ensure_default_favorite_folder(&connection, &kind)?,
+        };
+        if let Some(id) = input.id {
+            let changed = connection
+                .execute(
+                    "UPDATE t_next_favorite
+                     SET folder_id = ?1, name = ?2, value = ?3, description = ?4
+                     WHERE id = ?5 AND kind = ?6",
+                    params![folder_id, name, value, description, id, kind],
+                )
+                .map_err(database_error)?;
+            if changed == 0 {
+                return Err("Favorite was not found".into());
+            }
+            return connection
+                .query_row(
+                    "SELECT id, kind, folder_id, name, value, description, create_time
+                     FROM t_next_favorite WHERE id = ?1",
+                    params![id],
+                    map_named_favorite,
+                )
+                .map_err(database_error);
+        }
+        let created = sqlite_date_now();
+        connection
+            .execute(
+                "INSERT INTO t_next_favorite (kind, folder_id, name, value, description, create_time)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                 ON CONFLICT(kind, folder_id, name) DO UPDATE SET
+                   value = excluded.value,
+                   description = excluded.description,
+                   create_time = excluded.create_time",
+                params![kind, folder_id, name, value, description, created],
+            )
+            .map_err(database_error)?;
+        connection
+            .query_row(
+                "SELECT id, kind, folder_id, name, value, description, create_time
+                 FROM t_next_favorite WHERE kind = ?1 AND folder_id = ?2 AND name = ?3",
+                params![kind, folder_id, name],
+                map_named_favorite,
+            )
+            .map_err(database_error)
+    }
+
+    pub fn move_named_favorite(&self, id: i64, direction: i64) -> Result<(), String> {
+        if direction != -1 && direction != 1 {
+            return Err("Invalid favorite move".into());
+        }
+        let connection = self.lock()?;
+        let located: Option<(String, i64)> = connection
+            .query_row(
+                "SELECT kind, folder_id FROM t_next_favorite WHERE id = ?1",
+                params![id],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()
+            .map_err(database_error)?;
+        let Some((_, folder_id)) = located else {
+            return Err("Favorite was not found".into());
+        };
+        let mut statement = connection
+            .prepare(
+                "SELECT id FROM t_next_favorite WHERE folder_id = ?1 ORDER BY sort_order, name COLLATE NOCASE, id",
+            )
+            .map_err(database_error)?;
+        let items = statement
+            .query_map(params![folder_id], |row| row.get::<_, i64>(0))
+            .map_err(database_error)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(database_error)?;
+        let Some(index) = items.iter().position(|item| *item == id) else {
+            return Err("Favorite was not found".into());
+        };
+        let target = index as i64 + direction;
+        if target < 0 || target >= items.len() as i64 {
+            return Ok(());
+        }
+        let mut items = items;
+        items.swap(index, target as usize);
+        connection
+            .execute("BEGIN IMMEDIATE", [])
+            .map_err(database_error)?;
+        for (position, item_id) in items.iter().enumerate() {
+            if let Err(error) = connection.execute(
+                "UPDATE t_next_favorite SET sort_order = ?1 WHERE id = ?2",
+                params![position as i64, item_id],
+            ) {
+                let _ = connection.execute("ROLLBACK", []);
+                return Err(database_error(error));
+            }
+        }
+        connection.execute("COMMIT", []).map_err(database_error)?;
+        Ok(())
+    }
+
+    pub fn delete_named_favorite(&self, id: i64) -> Result<bool, String> {
+        if id <= 0 {
+            return Err("Invalid favorite id".into());
+        }
+        self.lock()?
+            .execute("DELETE FROM t_next_favorite WHERE id = ?1", params![id])
+            .map(|affected| affected > 0)
+            .map_err(database_error)
+    }
+
+    pub fn clear_func_history(&self, func_type: &str) -> Result<usize, String> {
+        let func_type = normalize_func_type(func_type)?;
+        self.lock()?
+            .execute(
+                "DELETE FROM t_func_history WHERE func_type = ?1",
+                params![func_type],
+            )
+            .map_err(database_error)
+    }
+
     pub fn list_host_profiles(
         &self,
         keyword: &str,
@@ -590,11 +1008,15 @@ impl LocalDataRepository {
         let connection = self.lock()?;
         let existing = match id {
             Some(id) => connection
-                .query_row("SELECT id FROM t_host WHERE id = ?1", [id], |row| row.get::<_, i64>(0))
+                .query_row("SELECT id FROM t_host WHERE id = ?1", [id], |row| {
+                    row.get::<_, i64>(0)
+                })
                 .optional()
                 .map_err(database_error)?,
             None => connection
-                .query_row("SELECT id FROM t_host WHERE name = ?1", [name], |row| row.get::<_, i64>(0))
+                .query_row("SELECT id FROM t_host WHERE name = ?1", [name], |row| {
+                    row.get::<_, i64>(0)
+                })
                 .optional()
                 .map_err(database_error)?,
         };
@@ -665,22 +1087,32 @@ impl LocalDataRepository {
         rows.collect::<Result<Vec<_>, _>>().map_err(database_error)
     }
 
-    pub fn save_http_request(&self, input: SaveHttpRequestInput) -> Result<SavedHttpRequest, String> {
+    pub fn save_http_request(
+        &self,
+        input: SaveHttpRequestInput,
+    ) -> Result<SavedHttpRequest, String> {
         validate_saved_http_request(&input)?;
-        let name = {
-            let trimmed = input.name.trim();
-            if trimmed.is_empty() { "Untitled" } else { trimmed }
+        let name = input.name.trim();
+        let body_type = if input.body_type.trim().is_empty() {
+            "application/json".to_string()
+        } else {
+            input.body_type.trim().to_string()
         };
-        let body_type = if input.body_type.trim().is_empty() { "application/json".to_string() } else { input.body_type.trim().to_string() };
         let id = input.id.filter(|id| *id > 0);
         let connection = self.lock()?;
         let existing = match id {
             Some(id) => connection
-                .query_row("SELECT id FROM t_msg_http WHERE id = ?1", [id], |row| row.get::<_, i64>(0))
+                .query_row("SELECT id FROM t_msg_http WHERE id = ?1", [id], |row| {
+                    row.get::<_, i64>(0)
+                })
                 .optional()
                 .map_err(database_error)?,
             None => connection
-                .query_row("SELECT id FROM t_msg_http WHERE msg_name = ?1", [name], |row| row.get::<_, i64>(0))
+                .query_row(
+                    "SELECT id FROM t_msg_http WHERE msg_name = ?1",
+                    [name],
+                    |row| row.get::<_, i64>(0),
+                )
                 .optional()
                 .map_err(database_error)?,
         };
@@ -710,17 +1142,23 @@ impl LocalDataRepository {
     }
 
     pub fn delete_http_request(&self, id: i64) -> Result<bool, String> {
-        if id <= 0 { return Err("Invalid HTTP request".into()); }
-        self.lock()?.execute("DELETE FROM t_msg_http WHERE id = ?1", [id]).map(|affected| affected > 0).map_err(database_error)
+        if id <= 0 {
+            return Err("Invalid HTTP request".into());
+        }
+        self.lock()?
+            .execute("DELETE FROM t_msg_http WHERE id = ?1", [id])
+            .map(|affected| affected > 0)
+            .map_err(database_error)
     }
 
-    pub fn record_http_history(&self, request: &HttpRequestSpec, response: &HttpResponseData) -> Result<(), String> {
+    pub fn record_http_history(
+        &self,
+        request: &HttpRequestSpec,
+        response: &HttpResponseData,
+    ) -> Result<(), String> {
         let connection = self.lock()?;
         let now = sqlite_date_now();
-        let title = {
-            let trimmed = request.name.trim();
-            if trimmed.is_empty() { "Untitled" } else { trimmed }
-        };
+        let title = request.name.trim();
         let status = format!("{} {}", response.status, response.status_text.trim());
         let status = status.trim();
         connection.execute(
@@ -774,12 +1212,19 @@ impl LocalDataRepository {
     }
 
     pub fn delete_http_history(&self, id: i64) -> Result<bool, String> {
-        if id <= 0 { return Err("Invalid HTTP request".into()); }
-        self.lock()?.execute("DELETE FROM t_http_request_history WHERE id = ?1", [id]).map(|affected| affected > 0).map_err(database_error)
+        if id <= 0 {
+            return Err("Invalid HTTP request".into());
+        }
+        self.lock()?
+            .execute("DELETE FROM t_http_request_history WHERE id = ?1", [id])
+            .map(|affected| affected > 0)
+            .map_err(database_error)
     }
 
     pub fn clear_http_history(&self) -> Result<usize, String> {
-        self.lock()?.execute("DELETE FROM t_http_request_history", []).map_err(database_error)
+        self.lock()?
+            .execute("DELETE FROM t_http_request_history", [])
+            .map_err(database_error)
     }
 
     pub fn list_translation_words(&self, keyword: &str) -> Result<Vec<TranslationWord>, String> {
@@ -806,9 +1251,18 @@ impl LocalDataRepository {
         rows.collect::<Result<Vec<_>, _>>().map_err(database_error)
     }
 
-    pub fn save_translation_word(&self, input: SaveTranslationWordInput) -> Result<TranslationWord, String> {
+    pub fn save_translation_word(
+        &self,
+        input: SaveTranslationWordInput,
+    ) -> Result<TranslationWord, String> {
         let source_text = input.source_text.trim();
-        validate_translation_word_fields(source_text, &input.target_text, &input.source_lang, &input.target_lang, &input.remark)?;
+        validate_translation_word_fields(
+            source_text,
+            &input.target_text,
+            &input.source_lang,
+            &input.target_lang,
+            &input.remark,
+        )?;
         let id = input.id.filter(|id| *id > 0);
         let connection = self.lock()?;
         let existing = match id {
@@ -867,7 +1321,10 @@ impl LocalDataRepository {
             .map_err(database_error)
     }
 
-    pub fn list_translation_history(&self, keyword: &str) -> Result<Vec<TranslationHistory>, String> {
+    pub fn list_translation_history(
+        &self,
+        keyword: &str,
+    ) -> Result<Vec<TranslationHistory>, String> {
         let connection = self.lock()?;
         let trimmed = keyword.trim();
         let mut statement = connection
@@ -891,8 +1348,17 @@ impl LocalDataRepository {
         rows.collect::<Result<Vec<_>, _>>().map_err(database_error)
     }
 
-    pub fn save_translation_history(&self, input: SaveTranslationHistoryInput) -> Result<TranslationHistory, String> {
-        validate_translation_word_fields(&input.source_text, &input.target_text, &input.source_lang, &input.target_lang, "")?;
+    pub fn save_translation_history(
+        &self,
+        input: SaveTranslationHistoryInput,
+    ) -> Result<TranslationHistory, String> {
+        validate_translation_word_fields(
+            &input.source_text,
+            &input.target_text,
+            &input.source_lang,
+            &input.target_lang,
+            "",
+        )?;
         let connection = self.lock()?;
         let now = sqlite_date_now();
         connection
@@ -1209,7 +1675,13 @@ impl LocalDataRepository {
                 .execute(
                     "INSERT OR IGNORE INTO t_host (id, name, content, create_time, modified_time)
                      VALUES (?1, ?2, ?3, ?4, ?5)",
-                    params![profile.id, profile.name, profile.content, profile.create_time, profile.modified_time],
+                    params![
+                        profile.id,
+                        profile.name,
+                        profile.content,
+                        profile.create_time,
+                        profile.modified_time
+                    ],
                 )
                 .map_err(database_error)?;
         }
@@ -1570,6 +2042,43 @@ fn initialize(connection: &Connection) -> Result<(), String> {
                ON operation_history (created_at DESC);
              CREATE INDEX IF NOT EXISTS operation_history_tool
                ON operation_history (tool_id, created_at DESC);
+             CREATE TABLE IF NOT EXISTS t_tool_draft (
+               kind TEXT PRIMARY KEY NOT NULL,
+               value TEXT NOT NULL
+             );
+             CREATE TABLE IF NOT EXISTS t_func_history (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               func_type TEXT NOT NULL,
+               summary TEXT,
+               input_text TEXT,
+               output_text TEXT,
+               extra_data TEXT,
+               create_time TEXT
+             );
+             CREATE INDEX IF NOT EXISTS t_func_history_func_type_create_time_index
+               ON t_func_history (func_type, create_time DESC);
+             CREATE TABLE IF NOT EXISTS t_next_favorite_folder (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               kind TEXT NOT NULL,
+               title TEXT NOT NULL,
+               create_time TEXT NOT NULL,
+               UNIQUE(kind, title)
+             );
+             CREATE TABLE IF NOT EXISTS t_next_favorite (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               kind TEXT NOT NULL,
+               folder_id INTEGER NOT NULL REFERENCES t_next_favorite_folder(id) ON DELETE CASCADE,
+               name TEXT NOT NULL,
+               value TEXT NOT NULL,
+               description TEXT NOT NULL DEFAULT '',
+               create_time TEXT NOT NULL,
+               sort_order INTEGER NOT NULL DEFAULT 0,
+               UNIQUE(kind, folder_id, name)
+             );
+             CREATE INDEX IF NOT EXISTS t_next_favorite_folder_kind_index
+               ON t_next_favorite_folder (kind, id);
+             CREATE INDEX IF NOT EXISTS t_next_favorite_kind_folder_name_index
+               ON t_next_favorite (kind, folder_id, name COLLATE NOCASE);
              CREATE TABLE IF NOT EXISTS product_import_runs (
                fingerprint TEXT PRIMARY KEY NOT NULL,
                source_product TEXT NOT NULL,
@@ -1725,7 +2234,9 @@ fn migrate_translation_records(connection: &Connection) -> Result<(), String> {
             .collect::<Result<Vec<_>, _>>()
             .map_err(database_error)?;
         drop(statement);
-        for (source_text, target_text, source_lang, target_lang, remark, created_at, updated_at) in rows {
+        for (source_text, target_text, source_lang, target_lang, remark, created_at, updated_at) in
+            rows
+        {
             if source_text.trim().is_empty() {
                 continue;
             }
@@ -1746,7 +2257,9 @@ fn migrate_translation_records(connection: &Connection) -> Result<(), String> {
                 )
                 .map_err(database_error)?;
         }
-        connection.execute("DROP TABLE translation_words", []).map_err(database_error)?;
+        connection
+            .execute("DROP TABLE translation_words", [])
+            .map_err(database_error)?;
     }
     if table_exists(connection, "translation_history")? {
         let mut statement = connection
@@ -1787,7 +2300,9 @@ fn migrate_translation_records(connection: &Connection) -> Result<(), String> {
                 )
                 .map_err(database_error)?;
         }
-        connection.execute("DROP TABLE translation_history", []).map_err(database_error)?;
+        connection
+            .execute("DROP TABLE translation_history", [])
+            .map_err(database_error)?;
     }
     Ok(())
 }
@@ -1829,7 +2344,8 @@ fn json_text<T: serde::Serialize>(value: &T) -> Result<String, String> {
 }
 
 fn json_headers(value: &str) -> Vec<crate::contracts::network::HttpHeader> {
-    let mut entries: Vec<crate::contracts::network::HttpHeader> = serde_json::from_str(value).unwrap_or_default();
+    let mut entries: Vec<crate::contracts::network::HttpHeader> =
+        serde_json::from_str(value).unwrap_or_default();
     for (index, entry) in entries.iter_mut().enumerate() {
         if entry.id.is_empty() {
             entry.id = format!("entry-{index}");
@@ -1839,7 +2355,8 @@ fn json_headers(value: &str) -> Vec<crate::contracts::network::HttpHeader> {
 }
 
 fn json_cookies(value: &str) -> Vec<crate::contracts::network::HttpCookie> {
-    let mut entries: Vec<crate::contracts::network::HttpCookie> = serde_json::from_str(value).unwrap_or_default();
+    let mut entries: Vec<crate::contracts::network::HttpCookie> =
+        serde_json::from_str(value).unwrap_or_default();
     for (index, entry) in entries.iter_mut().enumerate() {
         if entry.id.is_empty() {
             entry.id = format!("cookie-{index}");
@@ -1902,10 +2419,22 @@ fn migrate_http_records(connection: &Connection) -> Result<(), String> {
         let mut statement = connection
             .prepare("SELECT payload_json, created_at, updated_at FROM http_saved_requests ORDER BY updated_at ASC, id ASC")
             .map_err(database_error)?;
-        let rows = statement.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?, row.get::<_, i64>(2)?))).map_err(database_error)?.collect::<Result<Vec<_>, _>>().map_err(database_error)?;
+        let rows = statement
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, i64>(1)?,
+                    row.get::<_, i64>(2)?,
+                ))
+            })
+            .map_err(database_error)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(database_error)?;
         drop(statement);
         for (payload, created_at, updated_at) in rows {
-            let Ok(legacy) = serde_json::from_str::<LegacySavedHttpRequest>(&payload) else { continue };
+            let Ok(legacy) = serde_json::from_str::<LegacySavedHttpRequest>(&payload) else {
+                continue;
+            };
             let _ = connection.execute(
                 "INSERT INTO t_msg_http (msg_name, method, url, params, headers, cookies, body, body_type, create_time, modified_time, response_body, response_headers, response_cookies)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
@@ -1926,14 +2455,24 @@ fn migrate_http_records(connection: &Connection) -> Result<(), String> {
                 ],
             );
         }
-        connection.execute("DROP TABLE http_saved_requests", []).map_err(database_error)?;
+        connection
+            .execute("DROP TABLE http_saved_requests", [])
+            .map_err(database_error)?;
     }
     if table_exists(connection, "http_request_history")? {
         let mut statement = connection.prepare("SELECT payload_json, created_at FROM http_request_history ORDER BY created_at ASC, id ASC").map_err(database_error)?;
-        let rows = statement.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))).map_err(database_error)?.collect::<Result<Vec<_>, _>>().map_err(database_error)?;
+        let rows = statement
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+            })
+            .map_err(database_error)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(database_error)?;
         drop(statement);
         for (payload, created_at) in rows {
-            let Ok(legacy) = serde_json::from_str::<LegacyHttpHistory>(&payload) else { continue };
+            let Ok(legacy) = serde_json::from_str::<LegacyHttpHistory>(&payload) else {
+                continue;
+            };
             let _ = connection.execute(
                 "INSERT INTO t_http_request_history (request_id, title, method, url, params, headers, cookies, body, body_type, response_body, response_headers, response_cookies, status, cost_time, create_time, modified_time)
                  VALUES (NULL, ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, '', ?11, ?12, ?13, ?13)",
@@ -1954,7 +2493,9 @@ fn migrate_http_records(connection: &Connection) -> Result<(), String> {
                 ],
             );
         }
-        connection.execute("DROP TABLE http_request_history", []).map_err(database_error)?;
+        connection
+            .execute("DROP TABLE http_request_history", [])
+            .map_err(database_error)?;
     }
     Ok(())
 }
@@ -2016,13 +2557,100 @@ fn provider_from_stored(value: &str) -> TranslationProvider {
     }
 }
 
+fn normalize_favorite_kind(kind: &str) -> Result<String, String> {
+    match kind.trim() {
+        "regex" | "cron" | "color" => Ok(kind.trim().to_string()),
+        _ => Err("Invalid favorite kind".into()),
+    }
+}
+
+fn ensure_default_favorite_folder(
+    connection: &rusqlite::Connection,
+    kind: &str,
+) -> Result<i64, String> {
+    if let Some(id) = connection
+        .query_row(
+            "SELECT id FROM t_next_favorite_folder WHERE kind = ?1 ORDER BY id LIMIT 1",
+            params![kind],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(database_error)?
+    {
+        return Ok(id);
+    }
+    connection
+        .execute(
+            "INSERT INTO t_next_favorite_folder (kind, title, create_time) VALUES (?1, ?2, ?3)",
+            params![kind, "默认收藏夹", sqlite_date_now()],
+        )
+        .map_err(database_error)?;
+    Ok(connection.last_insert_rowid())
+}
+
+fn normalize_folder_title(title: &str) -> Result<String, String> {
+    let title = title.trim();
+    if title.is_empty() || title.chars().count() > 80 {
+        return Err("Invalid favorite folder".into());
+    }
+    Ok(title.to_string())
+}
+
+fn favorite_folder_for_kind(
+    connection: &rusqlite::Connection,
+    id: i64,
+    kind: &str,
+) -> Result<i64, String> {
+    let folder_kind: Option<String> = connection
+        .query_row(
+            "SELECT kind FROM t_next_favorite_folder WHERE id = ?1",
+            params![id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(database_error)?;
+    match folder_kind {
+        Some(folder_kind) if folder_kind == kind => Ok(id),
+        Some(_) => Err("Favorite folder does not match favorite kind".into()),
+        None => Err("Favorite folder was not found".into()),
+    }
+}
+
+fn map_favorite_folder(
+    row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<crate::contracts::local_data::FavoriteFolder> {
+    Ok(crate::contracts::local_data::FavoriteFolder {
+        id: row.get(0)?,
+        kind: row.get(1)?,
+        title: row.get(2)?,
+        create_time: row.get(3)?,
+    })
+}
+
+fn map_named_favorite(
+    row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<crate::contracts::local_data::NamedFavorite> {
+    Ok(crate::contracts::local_data::NamedFavorite {
+        id: row.get(0)?,
+        kind: row.get(1)?,
+        folder_id: row.get(2)?,
+        name: row.get(3)?,
+        value: row.get(4)?,
+        description: row.get(5)?,
+        create_time: row.get(6)?,
+    })
+}
+
 fn sqlite_date_now() -> String {
-    sqlite_date(time::OffsetDateTime::now_local().unwrap_or_else(|_| time::OffsetDateTime::now_utc()))
+    sqlite_date(
+        time::OffsetDateTime::now_local().unwrap_or_else(|_| time::OffsetDateTime::now_utc()),
+    )
 }
 
 fn sqlite_date_from_millis(millis: i64) -> String {
-    let utc = time::OffsetDateTime::from_unix_timestamp_nanos((millis as i128).saturating_mul(1_000_000))
-        .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
+    let utc =
+        time::OffsetDateTime::from_unix_timestamp_nanos((millis as i128).saturating_mul(1_000_000))
+            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
     let local = time::UtcOffset::current_local_offset()
         .map(|offset| utc.to_offset(offset))
         .unwrap_or(utc);
@@ -2074,6 +2702,59 @@ fn validate_delete_id(id: &str) -> Result<(), String> {
         return Err("invalid local record ID".into());
     }
     Ok(())
+}
+
+fn map_func_history(
+    row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<crate::contracts::local_data::FuncHistoryRecord> {
+    Ok(crate::contracts::local_data::FuncHistoryRecord {
+        id: row.get(0)?,
+        func_type: row.get(1)?,
+        summary: row.get::<_, Option<String>>(2)?.unwrap_or_default(),
+        input_text: row.get::<_, Option<String>>(3)?.unwrap_or_default(),
+        output_text: row.get::<_, Option<String>>(4)?.unwrap_or_default(),
+        extra_data: row.get(5)?,
+        create_time: row.get::<_, Option<String>>(6)?.unwrap_or_default(),
+    })
+}
+
+fn normalize_func_type(value: &str) -> Result<String, String> {
+    let func_type = value.trim();
+    let mut chars = func_type.chars();
+    let valid = matches!(chars.next(), Some(first) if first.is_ascii_alphabetic())
+        && func_type.chars().count() <= 64
+        && func_type
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '-');
+    if valid {
+        Ok(func_type.to_string())
+    } else {
+        Err("Invalid function type".into())
+    }
+}
+
+fn truncate_chars(value: &str, max_chars: usize) -> String {
+    value.chars().take(max_chars).collect()
+}
+
+fn preview_history_text(value: &str, max_chars: usize) -> String {
+    let normalized = value.replace(['\r', '\n'], " ").trim().to_string();
+    if normalized.chars().count() <= max_chars {
+        normalized
+    } else {
+        format!(
+            "{}...",
+            normalized.chars().take(max_chars).collect::<String>()
+        )
+    }
+}
+
+fn validate_tool_draft_kind(kind: &str) -> Result<(), String> {
+    if kind == "regex" || kind == "calculator" {
+        Ok(())
+    } else {
+        Err("Invalid draft kind".into())
+    }
 }
 
 fn validate_tool_id(value: &str) -> Result<(), String> {
@@ -2352,6 +3033,105 @@ mod tests {
     }
 
     #[test]
+    fn stores_regex_and_calculator_drafts_in_the_electron_table() {
+        let repository = LocalDataRepository::open_in_memory().expect("open repository");
+        assert!(
+            repository
+                .get_tool_draft("calculator")
+                .expect("read")
+                .is_none()
+        );
+        repository
+            .save_tool_draft("calculator", r#"{"expression":"7*8","hex":"abcd"}"#)
+            .expect("save calculator");
+        repository
+            .save_tool_draft("calculator", r#"{"expression":"9*9"}"#)
+            .expect("replace calculator");
+        repository
+            .save_tool_draft("regex", r#"{"pattern":"a","engine":"java"}"#)
+            .expect("save regex");
+
+        assert_eq!(
+            repository
+                .get_tool_draft("calculator")
+                .expect("read calculator")
+                .as_deref(),
+            Some(r#"{"expression":"9*9"}"#)
+        );
+        assert_eq!(
+            repository
+                .get_tool_draft("regex")
+                .expect("read regex")
+                .as_deref(),
+            Some(r#"{"pattern":"a","engine":"java"}"#)
+        );
+        assert!(repository.save_tool_draft("host", "{}").is_err());
+        assert!(
+            repository
+                .save_tool_draft("calculator", "not-json")
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn stores_function_history_with_the_electron_limit_and_search() {
+        let repository = LocalDataRepository::open_in_memory().expect("open repository");
+        let blank = crate::contracts::local_data::SaveFuncHistoryInput {
+            func_type: "calculator".into(),
+            summary: None,
+            input_text: "  ".into(),
+            output_text: "\n".into(),
+            extra_data: None,
+        };
+        assert!(
+            repository
+                .save_func_history(blank)
+                .expect("blank")
+                .is_none()
+        );
+
+        for index in 1..=201 {
+            repository
+                .save_func_history(crate::contracts::local_data::SaveFuncHistoryInput {
+                    func_type: "calculator".into(),
+                    summary: Some(format!("表达式 {index}")),
+                    input_text: format!("{index}*2"),
+                    output_text: format!("{}", index * 2),
+                    extra_data: None,
+                })
+                .expect("save")
+                .expect("saved row");
+        }
+        let listed = repository
+            .list_func_history("calculator", "")
+            .expect("list");
+        assert_eq!(listed.len(), 200);
+        assert_eq!(listed[0].summary, "表达式 201");
+        assert_eq!(listed[0].output_text, "402");
+        assert!(listed[0].create_time.len() == 19);
+        let found = repository
+            .list_func_history("calculator", "表达式 200")
+            .expect("search");
+        assert_eq!(found.len(), 1);
+        assert!(repository.delete_func_history(found[0].id).expect("delete"));
+        assert_eq!(
+            repository.clear_func_history("calculator").expect("clear"),
+            199
+        );
+        assert!(
+            repository
+                .save_func_history(crate::contracts::local_data::SaveFuncHistoryInput {
+                    func_type: "nope type".into(),
+                    summary: None,
+                    input_text: "a".into(),
+                    output_text: "b".into(),
+                    extra_data: None,
+                })
+                .is_err()
+        );
+    }
+
+    #[test]
     fn keeps_the_database_inside_the_requested_tauri_path() {
         let directory = tempfile::TempDir::new().expect("temporary directory");
         let path = directory.path().join(DATABASE_FILE_NAME);
@@ -2448,8 +3228,19 @@ mod tests {
             })
             .expect("update by name");
         assert_eq!(renamed.id, saved.id);
-        assert_eq!(repository.list_host_profiles("build", true).expect("search").len(), 1);
-        assert!(repository.list_host_profiles("missing", false).expect("name search").is_empty());
+        assert_eq!(
+            repository
+                .list_host_profiles("build", true)
+                .expect("search")
+                .len(),
+            1
+        );
+        assert!(
+            repository
+                .list_host_profiles("missing", false)
+                .expect("name search")
+                .is_empty()
+        );
         assert!(repository.delete_host_profile(saved.id).expect("delete"));
     }
 
@@ -2479,12 +3270,20 @@ mod tests {
         assert_eq!(profiles[0].id, 1);
         assert_eq!(profiles[0].name, "Development");
         assert_eq!(profiles[0].create_time.len(), 19);
-        assert!(repository.list_host_profiles("api.local", true).expect("content search").len() == 1);
+        assert!(
+            repository
+                .list_host_profiles("api.local", true)
+                .expect("content search")
+                .len()
+                == 1
+        );
     }
 
     #[test]
     fn persists_http_collections_and_limits_request_history() {
-        use crate::contracts::network::{HttpHeader, HttpRequestSpec, HttpResponseData, SaveHttpRequestInput};
+        use crate::contracts::network::{
+            HttpHeader, HttpRequestSpec, HttpResponseData, SaveHttpRequestInput,
+        };
 
         fn request(name: &str) -> HttpRequestSpec {
             HttpRequestSpec {
@@ -2492,7 +3291,12 @@ mod tests {
                 name: name.into(),
                 method: "POST".into(),
                 url: "https://example.com/items".into(),
-                params: vec![HttpHeader { id: "page".into(), name: "page".into(), value: "1".into(), enabled: true }],
+                params: vec![HttpHeader {
+                    id: "page".into(),
+                    name: "page".into(),
+                    value: "1".into(),
+                    enabled: true,
+                }],
                 headers: vec![],
                 cookies: vec![],
                 body: "{}".into(),
@@ -2504,42 +3308,62 @@ mod tests {
         }
 
         let repository = LocalDataRepository::open_in_memory().expect("open repository");
-        let saved = repository.save_http_request(SaveHttpRequestInput {
-            id: None,
-            name: " Create item ".into(),
-            method: "POST".into(),
-            url: "https://example.com/items".into(),
-            params: vec![HttpHeader { id: "page".into(), name: "page".into(), value: "1".into(), enabled: true }],
-            headers: vec![],
-            cookies: vec![],
-            body: "{}".into(),
-            body_type: String::new(),
-            response_body: "{}".into(),
-            response_headers: "content-type: application/json".into(),
-            response_cookies: String::new(),
-        }).expect("save request");
+        let saved = repository
+            .save_http_request(SaveHttpRequestInput {
+                id: None,
+                name: " Create item ".into(),
+                method: "POST".into(),
+                url: "https://example.com/items".into(),
+                params: vec![HttpHeader {
+                    id: "page".into(),
+                    name: "page".into(),
+                    value: "1".into(),
+                    enabled: true,
+                }],
+                headers: vec![],
+                cookies: vec![],
+                body: "{}".into(),
+                body_type: String::new(),
+                response_body: "{}".into(),
+                response_headers: "content-type: application/json".into(),
+                response_cookies: String::new(),
+            })
+            .expect("save request");
         assert_eq!(saved.id, 1);
         assert_eq!(saved.name, "Create item");
         assert_eq!(saved.body_type, "application/json");
-        let updated = repository.save_http_request(SaveHttpRequestInput {
-            id: None,
-            name: "Create item".into(),
-            method: "PUT".into(),
-            url: "https://example.com/items".into(),
-            params: vec![],
-            headers: vec![],
-            cookies: vec![],
-            body: String::new(),
-            body_type: "text/plain".into(),
-            response_body: String::new(),
-            response_headers: String::new(),
-            response_cookies: String::new(),
-        }).expect("update by name");
+        let updated = repository
+            .save_http_request(SaveHttpRequestInput {
+                id: None,
+                name: "Create item".into(),
+                method: "PUT".into(),
+                url: "https://example.com/items".into(),
+                params: vec![],
+                headers: vec![],
+                cookies: vec![],
+                body: String::new(),
+                body_type: "text/plain".into(),
+                response_body: String::new(),
+                response_headers: String::new(),
+                response_cookies: String::new(),
+            })
+            .expect("update by name");
         assert_eq!(updated.id, saved.id);
         assert_eq!(updated.method, "PUT");
         assert_eq!(updated.create_time, saved.create_time);
-        assert_eq!(repository.list_http_requests("create").expect("name search").len(), 1);
-        assert!(repository.list_http_requests("example.com").expect("url is not searched").is_empty());
+        assert_eq!(
+            repository
+                .list_http_requests("create")
+                .expect("name search")
+                .len(),
+            1
+        );
+        assert!(
+            repository
+                .list_http_requests("example.com")
+                .expect("url is not searched")
+                .is_empty()
+        );
 
         let response = HttpResponseData {
             status: 201,
@@ -2556,7 +3380,9 @@ mod tests {
         for index in 0..501 {
             let mut spec = request(&format!("item {index}"));
             spec.saved_id = Some(saved.id);
-            repository.record_http_history(&spec, &response).expect("record history");
+            repository
+                .record_http_history(&spec, &response)
+                .expect("record history");
         }
         let history = repository.list_http_history("").expect("history");
         assert_eq!(history.len(), 500);
@@ -2564,7 +3390,13 @@ mod tests {
         assert_eq!(history[0].request_id_value, Some(1));
         assert_eq!(history[0].status, "201");
         assert_eq!(history[0].cost_time, 12);
-        assert!(repository.list_http_history("example.com").expect("url search").len() == 500);
+        assert!(
+            repository
+                .list_http_history("example.com")
+                .expect("url search")
+                .len()
+                == 500
+        );
         assert!(repository.delete_http_request(saved.id).expect("delete"));
         assert_eq!(repository.clear_http_history().expect("clear"), 500);
     }
@@ -2597,8 +3429,19 @@ mod tests {
             .expect("update word by language pair");
         assert_eq!(updated.id, saved.id);
         assert_eq!(updated.create_time, saved.create_time);
-        assert_eq!(repository.list_translation_words("您好").expect("search").len(), 1);
-        assert!(repository.list_translation_words("missing").expect("miss").is_empty());
+        assert_eq!(
+            repository
+                .list_translation_words("您好")
+                .expect("search")
+                .len(),
+            1
+        );
+        assert!(
+            repository
+                .list_translation_words("missing")
+                .expect("miss")
+                .is_empty()
+        );
 
         let history = repository
             .save_translation_history(SaveTranslationHistoryInput {
@@ -2623,12 +3466,18 @@ mod tests {
                 })
                 .expect("save extra history");
         }
-        let listed = repository.list_translation_history("").expect("list history");
+        let listed = repository
+            .list_translation_history("")
+            .expect("list history");
         assert_eq!(listed.len(), 500);
         assert_eq!(listed[0].id, 501);
         assert!(listed.iter().all(|item| item.source_text != "hello"));
         assert_eq!(repository.clear_translation_history().expect("clear"), 500);
-        assert!(repository.delete_translation_word(saved.id).expect("delete"));
+        assert!(
+            repository
+                .delete_translation_word(saved.id)
+                .expect("delete")
+        );
     }
 
     #[test]
@@ -2723,7 +3572,13 @@ mod tests {
                 .expect("marker")
         );
         assert_eq!(repository.list_notes().expect("notes").len(), 1);
-        assert_eq!(repository.list_host_profiles("", true).expect("hosts").len(), 1);
+        assert_eq!(
+            repository
+                .list_host_profiles("", true)
+                .expect("hosts")
+                .len(),
+            1
+        );
     }
 
     #[test]
@@ -2749,5 +3604,105 @@ mod tests {
         let notes = repository.list_notes().expect("list restored");
         assert_eq!(notes.len(), 1);
         assert_eq!(notes[0].id, "before-backup");
+    }
+
+    #[test]
+    fn stores_named_favorites_in_the_electron_tables() {
+        let repository = LocalDataRepository::open_in_memory().expect("open repository");
+        let saved = repository
+            .save_named_favorite(crate::contracts::local_data::SaveNamedFavoriteInput {
+                id: None,
+                kind: "color".into(),
+                folder_id: None,
+                name: "Coral".into(),
+                value: "#de8f7d".into(),
+                description: None,
+            })
+            .expect("save favorite");
+        assert_eq!(saved.value, "#de8f7d");
+        let updated = repository
+            .save_named_favorite(crate::contracts::local_data::SaveNamedFavoriteInput {
+                id: None,
+                kind: "color".into(),
+                folder_id: None,
+                name: "Coral".into(),
+                value: "#DE8F7D".into(),
+                description: Some(String::new()),
+            })
+            .expect("update favorite");
+        assert_eq!(updated.id, saved.id);
+        assert_eq!(updated.value, "#DE8F7D");
+        let listed = repository
+            .list_named_favorites("color", None)
+            .expect("list favorites");
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].folder_id, saved.folder_id);
+        assert!(
+            repository
+                .save_named_favorite(crate::contracts::local_data::SaveNamedFavoriteInput {
+                    id: None,
+                    kind: "json".into(),
+                    folder_id: None,
+                    name: "Nope".into(),
+                    value: "{}".into(),
+                    description: None,
+                })
+                .is_err()
+        );
+        assert!(
+            repository
+                .delete_named_favorite(saved.id)
+                .expect("delete favorite")
+        );
+        assert!(
+            repository
+                .list_named_favorites("color", None)
+                .expect("list after delete")
+                .is_empty()
+        );
+        let folder = repository
+            .create_favorite_folder("regex", "工作")
+            .expect("create folder");
+        let first = repository
+            .save_named_favorite(crate::contracts::local_data::SaveNamedFavoriteInput {
+                id: None,
+                kind: "regex".into(),
+                folder_id: Some(folder.id),
+                name: "A".into(),
+                value: "a+".into(),
+                description: None,
+            })
+            .expect("save a");
+        let second = repository
+            .save_named_favorite(crate::contracts::local_data::SaveNamedFavoriteInput {
+                id: None,
+                kind: "regex".into(),
+                folder_id: Some(folder.id),
+                name: "B".into(),
+                value: "b+".into(),
+                description: Some("note".into()),
+            })
+            .expect("save b");
+        repository.move_named_favorite(second.id, -1).expect("move");
+        let ordered = repository
+            .list_named_favorites("regex", Some(folder.id))
+            .expect("list folder");
+        assert_eq!(ordered[0].id, second.id);
+        assert_eq!(ordered[1].id, first.id);
+        repository
+            .rename_favorite_folder(folder.id, "常用")
+            .expect("rename folder");
+        repository
+            .delete_favorite_folder(folder.id)
+            .expect("delete folder");
+        let folders = repository.list_favorite_folders("regex").expect("folders");
+        assert_eq!(folders.len(), 1);
+        assert_eq!(folders[0].title, "默认收藏夹");
+        assert!(
+            repository
+                .list_named_favorites("regex", Some(folders[0].id))
+                .expect("default folder")
+                .is_empty()
+        );
     }
 }

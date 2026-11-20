@@ -4,20 +4,15 @@ import {
   CheckCircle2,
   Maximize2,
   Minimize2,
-  Save,
   Sparkles,
   Sun,
-  Trash2,
   TriangleAlert
 } from 'lucide-react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey } from '../../app/localizedMessages'
-import { localDataApi } from '../../platform/api/localDataApi'
 import { nativeDesktopApi } from '../../platform/api/nativeDesktopApi'
-import type { BoardMessage, BoardMessageColor } from '../../platform/contracts/localData'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
-import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import { messageBoardMessages } from './messageBoardMessages'
 
 type BoardTheme = 'sunbeam' | 'coral' | 'cobalt' | 'forest' | 'paper' | 'midnight'
@@ -61,19 +56,16 @@ const themes: Array<{ id: BoardTheme; labelKey: BoardMessageKey; colors: [string
 ]
 
 export function MessageBoardSurface() {
-  const dialog = useDesktopDialog()
   const { t } = useLocalizedMessages(messageBoardMessages)
   const initial = useRef(readPreferences(t('preset.away')))
   const [message, setMessage] = useState(initial.current.message)
   const [theme, setTheme] = useState(initial.current.theme)
   const [alignment, setAlignment] = useState(initial.current.alignment)
   const [size, setSize] = useState(initial.current.size)
-  const [savedMessages, setSavedMessages] = useState<BoardMessage[]>([])
   const [presenting, setPresenting] = useState(false)
   const [displayAwake, setDisplayAwake] = useState(false)
   const [notice, setNotice] = useState<BoardNotice>({ key: 'notice.ready' })
   const [failed, setFailed] = useState(false)
-  const [busy, setBusy] = useState(false)
   const frameRef = useRef<HTMLDivElement>(null)
   const labelRef = useRef<HTMLDivElement>(null)
   const visibleMessage = message.trim() || t('display.empty')
@@ -85,18 +77,11 @@ export function MessageBoardSurface() {
       theme,
       alignment,
       size,
-      presenting,
-      saved: savedMessages.length
+      presenting
     }),
     summary: `${theme} · ${alignment} · ${message.length}/${maximumMessageLength}`
-  }), [alignment, message, presenting, savedMessages.length, size, theme])
+  }), [alignment, message, presenting, size, theme])
   const { sessionId, reportError } = useToolSessionReport('message-board', session.digest, session.summary)
-
-  useEffect(() => {
-    void localDataApi.listMessages()
-      .then(setSavedMessages)
-      .catch((cause) => fail(cause))
-  }, [])
 
   useEffect(() => {
     window.localStorage.setItem(storageKey, JSON.stringify({ message, theme, alignment, size }))
@@ -161,68 +146,6 @@ export function MessageBoardSurface() {
         // State is already restored even if the host rejects the fullscreen exit request.
       }
     }
-  }
-
-  async function savePreset(): Promise<void> {
-    if (!message.trim()) {
-      setFailed(true)
-      setNotice({ key: 'error.empty' })
-      return
-    }
-    const duplicate = savedMessages.find((item) => item.content === message.trim())
-    if (duplicate) {
-      setFailed(false)
-      setNotice({ key: 'notice.duplicate' })
-      return
-    }
-    setBusy(true)
-    try {
-      const now = Date.now()
-      const saved = await localDataApi.saveMessage({
-        id: crypto.randomUUID(),
-        content: message.trim(),
-        color: themeToColor(theme),
-        pinned: false,
-        createdAt: now,
-        updatedAt: now
-      })
-      setSavedMessages([saved, ...savedMessages])
-      succeed('notice.saved')
-    } catch (cause) {
-      fail(cause)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function removePreset(item: BoardMessage): Promise<void> {
-    if (!await dialog.confirm(t('confirm.delete'), { dangerous: true })) return
-    setBusy(true)
-    try {
-      await localDataApi.deleteMessage(item.id)
-      setSavedMessages(savedMessages.filter((saved) => saved.id !== item.id))
-      succeed('notice.deleted')
-    } catch (cause) {
-      fail(cause)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  function useSaved(item: BoardMessage): void {
-    setMessage(item.content.slice(0, maximumMessageLength))
-    setTheme(colorToTheme(item.color))
-    succeed('notice.applied')
-  }
-
-  function succeed(key: BoardMessageKey): void {
-    setNotice({ key })
-    setFailed(false)
-  }
-
-  function fail(cause: unknown): void {
-    setNotice({ raw: cause instanceof Error ? cause.message : String(cause) })
-    setFailed(true)
   }
 
   if (presenting) {
@@ -309,21 +232,6 @@ export function MessageBoardSurface() {
           <span>{t('preview.hint')}</span>
         </section>
 
-        <aside className="message-display-saved">
-          <header>
-            <div><strong>{t('saved.title')}</strong><span>{savedMessages.length}</span></div>
-            <button className="secondary-button" type="button" disabled={busy || !message.trim()} onClick={() => void savePreset()}><Save />{t('action.saveCurrent')}</button>
-          </header>
-          <div>
-            {savedMessages.map((item) => (
-              <article key={item.id}>
-                <button type="button" onClick={() => useSaved(item)}>{item.content}</button>
-                <button type="button" title={t('action.delete')} disabled={busy} onClick={() => void removePreset(item)}><Trash2 /></button>
-              </article>
-            ))}
-            {!savedMessages.length && <p>{t('saved.empty')}</p>}
-          </div>
-        </aside>
       </section>
 
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}>
@@ -367,26 +275,3 @@ function readPreferences(fallbackMessage: string): BoardPreferences {
   }
 }
 
-function themeToColor(theme: BoardTheme): BoardMessageColor {
-  const colors: Record<BoardTheme, BoardMessageColor> = {
-    sunbeam: 'yellow',
-    coral: 'pink',
-    cobalt: 'blue',
-    forest: 'green',
-    paper: 'gray',
-    midnight: 'purple'
-  }
-  return colors[theme]
-}
-
-function colorToTheme(color: BoardMessageColor): BoardTheme {
-  const themesByColor: Record<BoardMessageColor, BoardTheme> = {
-    yellow: 'sunbeam',
-    pink: 'coral',
-    blue: 'cobalt',
-    green: 'forest',
-    gray: 'paper',
-    purple: 'midnight'
-  }
-  return themesByColor[color]
-}

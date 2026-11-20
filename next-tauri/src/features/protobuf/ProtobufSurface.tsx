@@ -8,18 +8,21 @@ import {
   Clipboard,
   Copy,
   FileCode2,
+  History,
   Play,
   TriangleAlert
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import { localDataApi } from '../../platform/api/localDataApi'
 import { json } from '@codemirror/lang-json'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { ResizableColumns } from '../../shared/ResizableColumns'
 import { ResizableThreeColumns } from '../../shared/ResizableThreeColumns'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { FuncHistoryDialog } from '../history/FuncHistoryDialog'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import {
@@ -38,37 +41,23 @@ type ProtobufMessageKey = LocalizedMessageKey<typeof protobufMessages>
 type ProtobufNotice = { key: ProtobufMessageKey; values?: MessageValues } | { raw: string }
 type ProtobufTab = 'json' | 'wire' | 'convert'
 
-const defaultSchema = `syntax = "proto3";
-package mootool.demo;
+const defaultSchema = 'syntax = "proto3";\n\nmessage Person {\n  string name = 1;\n  int32 age = 2;\n}'
 
-message Person {
-  uint64 id = 1;
-  string name = 2;
-  repeated string tags = 3;
-  Role role = 4;
+const defaultJson = '{\n  "name": "MooTool",\n  "age": 25\n}'
+
+function electronBinaryFormat(value: ProtobufBinaryFormat): 'Hex' | 'Base64' {
+  return value === 'base64' ? 'Base64' : 'Hex'
 }
-
-enum Role {
-  ROLE_UNSPECIFIED = 0;
-  ADMIN = 1;
-  MEMBER = 2;
-}`
-
-const defaultJson = `{
-  "id": "9007199254740993",
-  "name": "MooTool",
-  "tags": ["tauri", "desktop"],
-  "role": "ADMIN"
-}`
 
 export function ProtobufSurface() {
   const { t } = useLocalizedMessages(protobufMessages)
   const [schema, setSchema] = useState(defaultSchema)
-  const [messageName, setMessageName] = useState('mootool.demo.Person')
+  const [messageName, setMessageName] = useState('Person')
   const [jsonInput, setJsonInput] = useState(defaultJson)
   const [binaryInput, setBinaryInput] = useState('')
-  const [format, setFormat] = useState<ProtobufBinaryFormat>('base64')
+  const [format, setFormat] = useState<ProtobufBinaryFormat>('hex')
   const [tab, setTab] = useState<ProtobufTab>('json')
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [wireInput, setWireInput] = useState('')
   const [wireFormat, setWireFormat] = useState<ProtobufBinaryFormat>('hex')
   const [wireOutput, setWireOutput] = useState('')
@@ -144,6 +133,7 @@ export function ProtobufSurface() {
         inputText: JSON.stringify({ schema, jsonInput, binaryInput: '' }), outputText: output,
         metadata: { direction: 'encode', messageName, format }
       })
+      rememberProtobuf(t('history.jsonToBinary'), jsonInput, output, `json|jsonToBinary|${messageName}|${electronBinaryFormat(format)}`)
     } catch (cause) {
       fail(cause)
     }
@@ -158,6 +148,7 @@ export function ProtobufSurface() {
         inputText: JSON.stringify({ schema, jsonInput: '', binaryInput }), outputText: output,
         metadata: { direction: 'decode', messageName, format }
       })
+      rememberProtobuf(t('history.binaryToJson'), binaryInput, output, `json|binaryToJson|${messageName}|${electronBinaryFormat(format)}`)
     } catch (cause) {
       fail(cause)
     }
@@ -174,9 +165,11 @@ export function ProtobufSurface() {
   }
 
   function formatProto(): void {
+    const before = schema
     const output = formatProtoDefinition(schema)
     setSchema(output)
     succeed('notice.formatted')
+    rememberProtobuf(t('history.format'), before, output, 'json|format')
   }
 
   function decodeWireInput(): void {
@@ -187,6 +180,7 @@ export function ProtobufSurface() {
       recordOperation(t('action.decodeWire'), `${wireFormat.toUpperCase()} · ${output.length}`, 'success', {
         inputText: wireInput, outputText: output, metadata: { direction: 'wire', format: wireFormat }
       })
+      rememberProtobuf(t('history.wire'), wireInput, output, `wire|decode|${electronBinaryFormat(wireFormat)}`)
     } catch (cause) {
       fail(cause)
     }
@@ -203,6 +197,7 @@ export function ProtobufSurface() {
       recordOperation(t(direction === 'hexToBase64' ? 'action.hexToBase64' : 'action.base64ToHex'), String(output.length), 'success', {
         inputText: direction === 'hexToBase64' ? hex : base64, outputText: output, metadata: { direction }
       })
+      rememberProtobuf(t(direction === 'hexToBase64' ? 'history.hexToBase64' : 'history.base64ToHex'), direction === 'hexToBase64' ? hex : base64, output, `convert|${direction}`)
     } catch (cause) {
       fail(cause)
     }
@@ -217,6 +212,26 @@ export function ProtobufSurface() {
       setNotice({ key: 'error.clipboard' })
       setFailed(true)
     }
+  }
+
+  function rememberProtobuf(summary: string, inputText: string, outputText: string, extraData: string): void {
+    void localDataApi.saveFuncHistory({ funcType: 'protobuf', summary, inputText, outputText, extraData })
+  }
+
+  function applyProtobufHistory(record: { extraData: string | null; inputText: string; outputText: string }): void {
+    const [historyTab, operation, historyMessage, historyFormat] = (record.extraData ?? '').split('|')
+    if (historyTab === 'json' || historyTab === 'wire' || historyTab === 'convert') setTab(historyTab)
+    if (historyMessage) setMessageName(historyMessage)
+    if (historyFormat === 'Hex' || historyFormat === 'Base64') setFormat(historyFormat === 'Base64' ? 'base64' : 'hex')
+    if (operation === 'jsonToBinary') { setJsonInput(record.inputText); setBinaryInput(record.outputText) }
+    else if (operation === 'binaryToJson') { setBinaryInput(record.inputText); setJsonInput(record.outputText) }
+    else if (operation === 'format') setSchema(record.outputText)
+    else if (operation === 'decode') {
+      setWireInput(record.inputText)
+      setWireOutput(record.outputText)
+      if (historyFormat === 'Hex' || historyFormat === 'Base64') setWireFormat(historyFormat === 'Base64' ? 'base64' : 'hex')
+    } else if (operation === 'hexToBase64') { setHex(record.inputText); setBase64(record.outputText) }
+    else if (operation === 'base64ToHex') { setBase64(record.inputText); setHex(record.outputText) }
   }
 
   function succeed(key: ProtobufMessageKey, values?: MessageValues): void {
@@ -244,6 +259,7 @@ export function ProtobufSurface() {
             <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>{t(`tab.${id}`)}</button>
           ))}
         </div>
+        <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('action.history')}</button>
         {tab === 'json' && <label className="utility-select">
           {t('field.message')}
           <select value={messageName} onChange={(event) => setMessageName(event.target.value)}>
@@ -357,6 +373,7 @@ export function ProtobufSurface() {
         <code>{session.summary}</code>
       </footer>
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
+      {historyOpen && <FuncHistoryDialog funcType="protobuf" onClose={() => setHistoryOpen(false)} onApply={(record) => { applyProtobufHistory(record); setHistoryOpen(false) }} />}
     </main>
   )
 }

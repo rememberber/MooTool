@@ -2,7 +2,7 @@ import { defineMessages } from '../../app/localizedMessages'
 
 export const calculatorMessages = defineMessages({
   'zh-CN': {
-    'title': '计算器', 'action.clearHistory': '清空记录', 'action.calculate': '计算',
+    'title': '计算器', 'action.clearHistory': '清空记录', 'action.calculate': '计算', 'action.convert': '转换', 'action.history': '历史',
     'arithmetic.title': '四则运算', 'expression.label': '表达式', 'base.title': '进制转换',
     'base.hex': '十六进制', 'base.decimal': '十进制', 'base.binary': '二进制',
     'base.hint': '支持整数和小数，例如 A.F → 10.9375；可带 0x / 0b 前缀。仅转换目标进制中可有限表示的小数。',
@@ -10,7 +10,7 @@ export const calculatorMessages = defineMessages({
     'float.byteOrder': '字节序', 'float.bigEndian': '大端（高位字节在前）', 'float.littleEndian': '小端（低位字节在前）',
     'float.hint': '输入 {digits} 位十六进制编码，可带 0x 前缀或用空格分隔字节。例如：32 位大端 3F800000 → 1.0。',
     'integer.gcd': '最大公约数', 'integer.lcm': '最小公倍数', 'integer.permutation': '排列 A(n,m)',
-    'integer.combination': '组合 C(n,m)', 'integer.calculateGcd': '计算 GCD', 'integer.calculateLcm': '计算 LCM',
+    'integer.combination': '组合 C(n,m)', 'integer.calculateGcd': '计算最大公约数', 'integer.calculateLcm': '计算最小公倍数',
     'integer.value1': '数值 1', 'integer.value2': '数值 2', 'result.title': '计算结果',
     'history.title': '计算记录', 'history.empty': '暂无计算记录', 'history.entry': '{label}: {input} = {output}',
     'history.expression': '表达式', 'history.hexToDec': 'HEX → DEC', 'history.decToHex': 'DEC → HEX',
@@ -34,14 +34,14 @@ export const calculatorMessages = defineMessages({
     'host.error.containerNotReady': 'Calculator WebView 容器尚未就绪'
   },
   'en-US': {
-    'title': 'Calculator', 'action.clearHistory': 'Clear history', 'action.calculate': 'Calculate',
+    'title': 'Calculator', 'action.clearHistory': 'Clear history', 'action.calculate': 'Calculate', 'action.convert': 'Convert', 'action.history': 'History',
     'arithmetic.title': 'Arithmetic', 'expression.label': 'Expression', 'base.title': 'Base conversion',
     'base.hex': 'Hexadecimal', 'base.decimal': 'Decimal', 'base.binary': 'Binary',
     'base.hint': 'Supports integers and fractions, e.g. A.F → 10.9375, with optional 0x / 0b prefixes. Fractions must terminate in the target base.',
     'float.title': 'IEEE 754 floating point: HEX → DEC', 'float.format': 'Float format', 'float.bits32': '32-bit (single precision)', 'float.bits64': '64-bit (double precision)',
     'float.byteOrder': 'Byte order', 'float.bigEndian': 'Big endian (most significant byte first)', 'float.littleEndian': 'Little endian (least significant byte first)',
     'float.hint': 'Enter {digits} hexadecimal digits, optionally prefixed with 0x or separated into bytes by spaces. Example: 32-bit big endian 3F800000 → 1.0.',
-    'integer.gcd': 'Greatest common divisor', 'integer.lcm': 'Least common multiple', 'integer.permutation': 'Permutation A(n,m)',
+    'integer.gcd': 'GCD', 'integer.lcm': 'LCM', 'integer.permutation': 'Permutation A(n,m)',
     'integer.combination': 'Combination C(n,m)', 'integer.calculateGcd': 'Calculate GCD', 'integer.calculateLcm': 'Calculate LCM',
     'integer.value1': 'Value 1', 'integer.value2': 'Value 2', 'result.title': 'Result',
     'history.title': 'Calculation history', 'history.empty': 'No calculation history', 'history.entry': '{label}: {input} = {output}',
@@ -66,7 +66,7 @@ export const calculatorMessages = defineMessages({
     'host.error.containerNotReady': 'The Calculator WebView container is not ready'
   },
   'ja-JP': {
-    'title': '電卓', 'action.clearHistory': '履歴をクリア', 'action.calculate': '計算',
+    'title': '電卓', 'action.clearHistory': '履歴をクリア', 'action.calculate': '計算', 'action.convert': '変換', 'action.history': '履歴',
     'arithmetic.title': '四則演算', 'expression.label': '式', 'base.title': '基数変換',
     'base.hex': '16 進数', 'base.decimal': '10 進数', 'base.binary': '2 進数',
     'base.hint': '整数と小数に対応（例：A.F → 10.9375）。0x / 0b 接頭辞も使用できます。変換先の基数で有限小数になる値のみ変換できます。',
@@ -74,7 +74,7 @@ export const calculatorMessages = defineMessages({
     'float.byteOrder': 'バイト順', 'float.bigEndian': 'ビッグエンディアン（上位バイトから）', 'float.littleEndian': 'リトルエンディアン（下位バイトから）',
     'float.hint': '{digits} 桁の16進数を入力してください。0x 接頭辞やバイト間の空白も使用できます。例：32 ビット・ビッグエンディアンの 3F800000 → 1.0。',
     'integer.gcd': '最大公約数', 'integer.lcm': '最小公倍数', 'integer.permutation': '順列 A(n,m)',
-    'integer.combination': '組合せ C(n,m)', 'integer.calculateGcd': 'GCD を計算', 'integer.calculateLcm': 'LCM を計算',
+    'integer.combination': '組合せ C(n,m)', 'integer.calculateGcd': '最大公約数を計算', 'integer.calculateLcm': '最小公倍数を計算',
     'integer.value1': '値 1', 'integer.value2': '値 2', 'result.title': '計算結果',
     'history.title': '計算履歴', 'history.empty': '計算履歴はありません', 'history.entry': '{label}: {input} = {output}',
     'history.expression': '式', 'history.hexToDec': 'HEX → DEC', 'history.decToHex': 'DEC → HEX',
